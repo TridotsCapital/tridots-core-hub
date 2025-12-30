@@ -196,6 +196,58 @@
     @apply bg-muted text-muted-foreground border border-muted-foreground/20;
   }
 
+  .status-aguardando_pagamento {
+    @apply bg-purple-100 text-purple-700 border border-purple-200;
+  }
+
+  .status-ativo {
+    @apply bg-emerald-100 text-emerald-700 border border-emerald-200;
+  }
+
+  /* Kanban urgency borders */
+  .urgency-low {
+    @apply border-l-4 border-l-success;
+  }
+
+  .urgency-medium {
+    @apply border-l-4 border-l-warning;
+  }
+
+  .urgency-high {
+    @apply border-l-4 border-l-destructive;
+  }
+
+  .urgency-high-pulse {
+    @apply border-l-4 border-l-destructive;
+    animation: urgency-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes urgency-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+
+  /* Kanban card styles */
+  .kanban-card {
+    @apply bg-card rounded-lg shadow-sm border border-border/50 p-4 cursor-grab active:cursor-grabbing transition-all duration-200;
+  }
+
+  .kanban-card:hover {
+    @apply shadow-md -translate-y-0.5;
+  }
+
+  .kanban-card.dragging {
+    @apply shadow-xl rotate-2 opacity-90;
+  }
+
+  .kanban-column {
+    @apply bg-muted/50 rounded-xl p-3 min-h-[500px];
+  }
+
+  .kanban-column-header {
+    @apply flex items-center justify-between mb-4 px-2;
+  }
+
   .card-hover {
     @apply transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-0.5;
   }

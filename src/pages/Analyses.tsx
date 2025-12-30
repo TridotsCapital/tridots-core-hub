@@ -1,12 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAnalyses } from '@/hooks/useAnalyses';
 import { useAgencies } from '@/hooks/useAgencies';
+import { useTeamMembers } from '@/hooks/useAnalysesKanban';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { KanbanBoard } from '@/components/kanban';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import {
   Table,
   TableBody,
@@ -22,21 +25,32 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Search, FileSearch, Eye } from 'lucide-react';
+import { Plus, Search, FileSearch, Eye, LayoutGrid, List } from 'lucide-react';
 import { statusConfig, AnalysisStatus } from '@/types/database';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+
+type ViewMode = 'kanban' | 'table';
 
 export default function Analyses() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<AnalysisStatus | 'all'>('all');
   const [agencyFilter, setAgencyFilter] = useState<string>('all');
+  const [analystFilter, setAnalystFilter] = useState<string>('all');
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    return (localStorage.getItem('analyses-view-mode') as ViewMode) || 'kanban';
+  });
 
   const { data: agencies } = useAgencies();
+  const { data: teamMembers } = useTeamMembers();
   const { data: analyses, isLoading } = useAnalyses({
     status: statusFilter !== 'all' ? statusFilter : undefined,
     agency_id: agencyFilter !== 'all' ? agencyFilter : undefined,
   });
+
+  useEffect(() => {
+    localStorage.setItem('analyses-view-mode', viewMode);
+  }, [viewMode]);
 
   const filteredAnalyses = analyses?.filter(analysis => 
     analysis.inquilino_nome.toLowerCase().includes(search.toLowerCase()) ||
@@ -73,6 +87,8 @@ export default function Analyses() {
                 <SelectItem value="pendente">Pendente</SelectItem>
                 <SelectItem value="em_analise">Em Análise</SelectItem>
                 <SelectItem value="aprovada">Aprovada</SelectItem>
+                <SelectItem value="aguardando_pagamento">Aguardando Pagamento</SelectItem>
+                <SelectItem value="ativo">Ativo</SelectItem>
                 <SelectItem value="reprovada">Reprovada</SelectItem>
                 <SelectItem value="cancelada">Cancelada</SelectItem>
               </SelectContent>
@@ -91,97 +107,136 @@ export default function Analyses() {
                 ))}
               </SelectContent>
             </Select>
+
+            <Select value={analystFilter} onValueChange={setAnalystFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Analista" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os analistas</SelectItem>
+                {teamMembers?.map((member) => (
+                  <SelectItem key={member.id} value={member.id}>
+                    {member.full_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
-          <Button asChild>
-            <Link to="/analyses/new">
-              <Plus className="h-4 w-4 mr-2" />
-              Nova Análise
-            </Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <ToggleGroup 
+              type="single" 
+              value={viewMode} 
+              onValueChange={(v) => v && setViewMode(v as ViewMode)}
+              className="border rounded-lg p-1"
+            >
+              <ToggleGroupItem value="kanban" aria-label="Visualização Kanban" className="px-3">
+                <LayoutGrid className="h-4 w-4" />
+              </ToggleGroupItem>
+              <ToggleGroupItem value="table" aria-label="Visualização Tabela" className="px-3">
+                <List className="h-4 w-4" />
+              </ToggleGroupItem>
+            </ToggleGroup>
+
+            <Button asChild>
+              <Link to="/analyses/new">
+                <Plus className="h-4 w-4 mr-2" />
+                Nova Análise
+              </Link>
+            </Button>
+          </div>
         </div>
 
-        {/* Table */}
-        <Card>
-          <CardContent className="p-0">
-            {isLoading ? (
-              <div className="flex items-center justify-center py-16">
-                <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-              </div>
-            ) : filteredAnalyses?.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-                <FileSearch className="h-12 w-12 mb-4 opacity-50" />
-                <p>Nenhuma análise encontrada</p>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Inquilino</TableHead>
-                    <TableHead>Imobiliária</TableHead>
-                    <TableHead>Imóvel</TableHead>
-                    <TableHead>Valor</TableHead>
-                    <TableHead>Data</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="w-[80px]">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredAnalyses?.map((analysis) => (
-                    <TableRow key={analysis.id}>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">{analysis.inquilino_nome}</p>
-                          <p className="text-sm text-muted-foreground font-mono">
-                            {analysis.inquilino_cpf}
-                          </p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-sm">
-                          {analysis.agency?.razao_social || '-'}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="max-w-[200px]">
-                          <p className="truncate text-sm">{analysis.imovel_endereco}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {analysis.imovel_cidade}/{analysis.imovel_estado}
-                          </p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className="font-medium">
-                          {formatCurrency(analysis.valor_aluguel)}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-sm text-muted-foreground">
-                          {format(new Date(analysis.created_at), "dd/MM/yyyy", { locale: ptBR })}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant="secondary"
-                          className={`status-badge ${statusConfig[analysis.status].class}`}
-                        >
-                          {statusConfig[analysis.status].label}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Button variant="ghost" size="icon" asChild>
-                          <Link to={`/analyses/${analysis.id}`}>
-                            <Eye className="h-4 w-4" />
-                          </Link>
-                        </Button>
-                      </TableCell>
+        {/* Content */}
+        {viewMode === 'kanban' ? (
+          <KanbanBoard 
+            filters={{
+              agency_id: agencyFilter !== 'all' ? agencyFilter : undefined,
+              analyst_id: analystFilter !== 'all' ? analystFilter : undefined,
+            }} 
+          />
+        ) : (
+          <Card>
+            <CardContent className="p-0">
+              {isLoading ? (
+                <div className="flex items-center justify-center py-16">
+                  <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : filteredAnalyses?.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+                  <FileSearch className="h-12 w-12 mb-4 opacity-50" />
+                  <p>Nenhuma análise encontrada</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Inquilino</TableHead>
+                      <TableHead>Imobiliária</TableHead>
+                      <TableHead>Imóvel</TableHead>
+                      <TableHead>Valor</TableHead>
+                      <TableHead>Data</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="w-[80px]">Ações</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredAnalyses?.map((analysis) => (
+                      <TableRow key={analysis.id}>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{analysis.inquilino_nome}</p>
+                            <p className="text-sm text-muted-foreground font-mono">
+                              {analysis.inquilino_cpf}
+                            </p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm">
+                            {analysis.agency?.razao_social || '-'}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <div className="max-w-[200px]">
+                            <p className="truncate text-sm">{analysis.imovel_endereco}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {analysis.imovel_cidade}/{analysis.imovel_estado}
+                            </p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <span className="font-medium">
+                            {formatCurrency(analysis.valor_aluguel)}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm text-muted-foreground">
+                            {format(new Date(analysis.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant="secondary"
+                            className={`status-badge ${statusConfig[analysis.status].class}`}
+                          >
+                            {statusConfig[analysis.status].label}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Button variant="ghost" size="icon" asChild>
+                            <Link to={`/analyses/${analysis.id}`}>
+                              <Eye className="h-4 w-4" />
+                            </Link>
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
     </DashboardLayout>
   );

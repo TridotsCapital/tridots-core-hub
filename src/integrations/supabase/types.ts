@@ -217,6 +217,47 @@ export type Database = {
           },
         ]
       }
+      analysis_documents: {
+        Row: {
+          analysis_id: string
+          created_at: string
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string | null
+          id: string
+          uploaded_by: string
+        }
+        Insert: {
+          analysis_id: string
+          created_at?: string
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type?: string | null
+          id?: string
+          uploaded_by: string
+        }
+        Update: {
+          analysis_id?: string
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          file_type?: string | null
+          id?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analysis_documents_analysis_id_fkey"
+            columns: ["analysis_id"]
+            isOneToOne: false
+            referencedRelation: "analyses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -433,6 +474,8 @@ export type Database = {
         | "aprovada"
         | "reprovada"
         | "cancelada"
+        | "aguardando_pagamento"
+        | "ativo"
       app_role: "master" | "analyst"
       commission_status: "pendente" | "paga" | "cancelada" | "estornada"
       commission_type: "setup" | "recorrente"
@@ -569,6 +612,8 @@ export const Constants = {
         "aprovada",
         "reprovada",
         "cancelada",
+        "aguardando_pagamento",
+        "ativo",
       ],
       app_role: ["master", "analyst"],
       commission_status: ["pendente", "paga", "cancelada", "estornada"],
