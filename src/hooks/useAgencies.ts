@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Agency } from '@/types/database';
+import type { TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
 
 export function useAgencies(activeOnly = true) {
@@ -46,7 +47,7 @@ export function useCreateAgency() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: Record<string, unknown>) => {
+    mutationFn: async (data: TablesInsert<'agencies'>) => {
       const { data: result, error } = await supabase
         .from('agencies')
         .insert([data])
@@ -70,7 +71,7 @@ export function useUpdateAgency() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, ...data }: Partial<Agency> & { id: string }) => {
+    mutationFn: async ({ id, ...data }: { id: string } & TablesUpdate<'agencies'>) => {
       const { data: result, error } = await supabase
         .from('agencies')
         .update(data)
