@@ -21,6 +21,9 @@ import {
   FileSearch,
   DollarSign,
   TrendingUp,
+  FileText,
+  Shield,
+  Users,
   LogOut,
 } from 'lucide-react';
 
@@ -49,6 +52,23 @@ const menuItems = [
     title: 'Painel Financeiro',
     icon: TrendingUp,
     path: '/financial',
+  },
+  {
+    title: 'Documentos',
+    icon: FileText,
+    path: '/documents',
+  },
+  {
+    title: 'Auditoria',
+    icon: Shield,
+    path: '/audit',
+    masterOnly: true,
+  },
+  {
+    title: 'Usuários',
+    icon: Users,
+    path: '/users',
+    masterOnly: true,
   },
 ];
 

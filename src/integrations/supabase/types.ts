@@ -363,6 +363,72 @@ export type Database = {
           },
         ]
       }
+      digital_acceptances: {
+        Row: {
+          accepted_at: string
+          accepted_by_cpf: string
+          accepted_by_email: string | null
+          accepted_by_name: string
+          analysis_id: string
+          created_at: string
+          document_hash: string
+          geolocation_city: string | null
+          geolocation_country: string | null
+          geolocation_state: string | null
+          id: string
+          ip_address: unknown
+          term_template_id: string
+          user_agent: string
+        }
+        Insert: {
+          accepted_at?: string
+          accepted_by_cpf: string
+          accepted_by_email?: string | null
+          accepted_by_name: string
+          analysis_id: string
+          created_at?: string
+          document_hash: string
+          geolocation_city?: string | null
+          geolocation_country?: string | null
+          geolocation_state?: string | null
+          id?: string
+          ip_address: unknown
+          term_template_id: string
+          user_agent: string
+        }
+        Update: {
+          accepted_at?: string
+          accepted_by_cpf?: string
+          accepted_by_email?: string | null
+          accepted_by_name?: string
+          analysis_id?: string
+          created_at?: string
+          document_hash?: string
+          geolocation_city?: string | null
+          geolocation_country?: string | null
+          geolocation_state?: string | null
+          id?: string
+          ip_address?: unknown
+          term_template_id?: string
+          user_agent?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "digital_acceptances_analysis_id_fkey"
+            columns: ["analysis_id"]
+            isOneToOne: false
+            referencedRelation: "analyses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "digital_acceptances_term_template_id_fkey"
+            columns: ["term_template_id"]
+            isOneToOne: false
+            referencedRelation: "term_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       internal_chat: {
         Row: {
           analysis_id: string
@@ -431,6 +497,51 @@ export type Database = {
           full_name?: string
           id?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      term_templates: {
+        Row: {
+          created_at: string
+          description: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string | null
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+          uploaded_by: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+          uploaded_by: string
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          file_type?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+          uploaded_by?: string
+          version?: number
         }
         Relationships: []
       }
