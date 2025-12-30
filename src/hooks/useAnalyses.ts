@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import type { AnalysisStatus } from '@/types/database';
+import type { Analysis, AnalysisStatus } from '@/types/database';
+import type { TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
 
 export function useAnalyses(filters?: { status?: AnalysisStatus; agency_id?: string }) {
@@ -21,7 +22,7 @@ export function useAnalyses(filters?: { status?: AnalysisStatus; agency_id?: str
 
       const { data, error } = await query;
       if (error) throw error;
-      return data;
+      return data as Analysis[];
     },
   });
 }
@@ -39,7 +40,7 @@ export function useAnalysis(id: string | undefined) {
         .maybeSingle();
 
       if (error) throw error;
-      return data;
+      return data as Analysis | null;
     },
     enabled: !!id,
   });
@@ -49,7 +50,7 @@ export function useCreateAnalysis() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: Record<string, unknown>) => {
+    mutationFn: async (data: TablesInsert<'analyses'>) => {
       const { data: result, error } = await supabase
         .from('analyses')
         .insert([data])
@@ -73,7 +74,7 @@ export function useUpdateAnalysis() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, ...data }: { id: string } & Record<string, unknown>) => {
+    mutationFn: async ({ id, ...data }: { id: string } & TablesUpdate<'analyses'>) => {
       const { data: result, error } = await supabase
         .from('analyses')
         .update(data)
@@ -100,7 +101,7 @@ export function useUpdateAnalysisStatus() {
 
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: AnalysisStatus }) => {
-      const updates: Partial<Analysis> = { status };
+      const updates: TablesUpdate<'analyses'> = { status };
       
       // Set timestamp based on status
       if (status === 'aprovada') updates.approved_at = new Date().toISOString();

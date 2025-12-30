@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Commission, CommissionStatus } from '@/types/database';
+import type { TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
 
 export function useCommissions(filters?: { status?: CommissionStatus; agency_id?: string }) {
@@ -34,7 +35,7 @@ export function useCreateCommission() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: Record<string, unknown>) => {
+    mutationFn: async (data: TablesInsert<'commissions'>) => {
       const { data: result, error } = await supabase
         .from('commissions')
         .insert([data])
@@ -59,7 +60,7 @@ export function useUpdateCommissionStatus() {
 
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: CommissionStatus }) => {
-      const updates: Partial<Commission> = { status };
+      const updates: TablesUpdate<'commissions'> = { status };
       
       if (status === 'paga') {
         updates.data_pagamento = new Date().toISOString();
