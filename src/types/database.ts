@@ -2,7 +2,7 @@
 
 export type AppRole = 'master' | 'analyst';
 
-export type AnalysisStatus = 'pendente' | 'em_analise' | 'aprovada' | 'reprovada' | 'cancelada';
+export type AnalysisStatus = 'pendente' | 'em_analise' | 'aprovada' | 'reprovada' | 'cancelada' | 'aguardando_pagamento' | 'ativo';
 
 export type CommissionStatus = 'pendente' | 'paga' | 'cancelada' | 'estornada';
 
@@ -161,7 +161,30 @@ export const statusConfig: Record<AnalysisStatus, { label: string; class: string
   aprovada: { label: 'Aprovada', class: 'status-aprovada' },
   reprovada: { label: 'Reprovada', class: 'status-reprovada' },
   cancelada: { label: 'Cancelada', class: 'status-cancelada' },
+  aguardando_pagamento: { label: 'Aguardando Pagamento', class: 'status-aguardando_pagamento' },
+  ativo: { label: 'Ativo', class: 'status-ativo' },
 };
+
+// Kanban column order
+export const kanbanColumns: AnalysisStatus[] = [
+  'pendente',
+  'em_analise',
+  'aprovada',
+  'aguardando_pagamento',
+  'ativo',
+];
+
+// Analysis document type
+export interface AnalysisDocument {
+  id: string;
+  analysis_id: string;
+  uploaded_by: string;
+  file_name: string;
+  file_path: string;
+  file_size: number;
+  file_type: string | null;
+  created_at: string;
+}
 
 export const commissionStatusConfig: Record<CommissionStatus, { label: string; class: string }> = {
   pendente: { label: 'Pendente', class: 'status-pendente' },
