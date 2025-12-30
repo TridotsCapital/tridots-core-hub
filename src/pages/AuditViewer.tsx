@@ -34,8 +34,8 @@ const AuditViewer = () => {
   const [endDate, setEndDate] = useState<string>("");
 
   const { data: logs, isLoading } = useAuditLogs({
-    tableName: tableName || undefined,
-    action: action || undefined,
+    tableName: tableName && tableName !== "all" ? tableName : undefined,
+    action: action && action !== "all" ? action : undefined,
     startDate: startDate || undefined,
     endDate: endDate || undefined,
   });
@@ -115,7 +115,7 @@ const AuditViewer = () => {
                     <SelectValue placeholder="Todas" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todas</SelectItem>
+                    <SelectItem value="all">Todas</SelectItem>
                     <SelectItem value="analyses">Análises</SelectItem>
                     <SelectItem value="agencies">Imobiliárias</SelectItem>
                     <SelectItem value="commissions">Comissões</SelectItem>
@@ -133,7 +133,7 @@ const AuditViewer = () => {
                     <SelectValue placeholder="Todas" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todas</SelectItem>
+                    <SelectItem value="all">Todas</SelectItem>
                     <SelectItem value="INSERT">Criação</SelectItem>
                     <SelectItem value="UPDATE">Atualização</SelectItem>
                     <SelectItem value="DELETE">Exclusão</SelectItem>
