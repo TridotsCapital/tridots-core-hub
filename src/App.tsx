@@ -12,6 +12,10 @@ import Analyses from "./pages/Analyses";
 import AnalysisForm from "./pages/AnalysisForm";
 import Commissions from "./pages/Commissions";
 import FinancialDashboard from "./pages/FinancialDashboard";
+import DocumentCenter from "./pages/DocumentCenter";
+import AuditViewer from "./pages/AuditViewer";
+import UserManagement from "./pages/UserManagement";
+import DigitalAcceptance from "./pages/DigitalAcceptance";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +38,10 @@ const App = () => (
             <Route path="/analyses/:id" element={<AnalysisForm />} />
             <Route path="/commissions" element={<Commissions />} />
             <Route path="/financial" element={<FinancialDashboard />} />
+            <Route path="/documents" element={<DocumentCenter />} />
+            <Route path="/audit" element={<AuditViewer />} />
+            <Route path="/users" element={<UserManagement />} />
+            <Route path="/accept/:analysisId" element={<DigitalAcceptance />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
