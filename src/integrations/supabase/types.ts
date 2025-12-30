@@ -112,6 +112,7 @@ export type Database = {
           rejected_at: string | null
           setup_fee: number
           status: Database["public"]["Enums"]["analysis_status"]
+          taxa_garantia_percentual: number
           updated_at: string
           valor_aluguel: number
           valor_condominio: number | null
@@ -156,6 +157,7 @@ export type Database = {
           rejected_at?: string | null
           setup_fee?: number
           status?: Database["public"]["Enums"]["analysis_status"]
+          taxa_garantia_percentual?: number
           updated_at?: string
           valor_aluguel: number
           valor_condominio?: number | null
@@ -200,6 +202,7 @@ export type Database = {
           rejected_at?: string | null
           setup_fee?: number
           status?: Database["public"]["Enums"]["analysis_status"]
+          taxa_garantia_percentual?: number
           updated_at?: string
           valor_aluguel?: number
           valor_condominio?: number | null
@@ -454,7 +457,16 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      financial_summary: {
+        Row: {
+          mes: string | null
+          quantidade: number | null
+          status: Database["public"]["Enums"]["commission_status"] | null
+          total_valor: number | null
+          type: Database["public"]["Enums"]["commission_type"] | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_any_role: { Args: { _user_id: string }; Returns: boolean }
