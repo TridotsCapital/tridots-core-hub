@@ -3,119 +3,119 @@
 @tailwind utilities;
 
 /* TRIDOTS GARANTIA Design System
-   Professional dark theme with teal/cyan accents for a fintech feel
+   Professional blue theme based on brand identity
 */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
-    --foreground: 222 47% 11%;
+    --background: 210 25% 98%;
+    --foreground: 215 50% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 215 50% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 215 50% 15%;
 
-    --primary: 173 80% 36%;
+    --primary: 210 72% 45%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222 47% 11%;
+    --secondary: 210 30% 94%;
+    --secondary-foreground: 210 72% 35%;
 
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 210 25% 95%;
+    --muted-foreground: 215 20% 50%;
 
-    --accent: 173 58% 92%;
-    --accent-foreground: 173 80% 26%;
+    --accent: 210 60% 92%;
+    --accent-foreground: 210 72% 35%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 76% 36%;
+    --success: 152 69% 39%;
     --success-foreground: 0 0% 100%;
 
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
 
-    --info: 199 89% 48%;
+    --info: 210 72% 50%;
     --info-foreground: 0 0% 100%;
 
     --border: 214 32% 91%;
     --input: 214 32% 91%;
-    --ring: 173 80% 36%;
+    --ring: 210 72% 45%;
 
-    --radius: 0.625rem;
+    --radius: 0.75rem;
 
     /* Status colors */
     --status-pendente: 38 92% 50%;
-    --status-em-analise: 199 89% 48%;
-    --status-aprovada: 142 76% 36%;
-    --status-reprovada: 0 84% 60%;
-    --status-cancelada: 215 16% 47%;
+    --status-em-analise: 210 72% 50%;
+    --status-aprovada: 152 69% 39%;
+    --status-reprovada: 0 72% 51%;
+    --status-cancelada: 215 20% 50%;
 
-    --sidebar-background: 222 47% 11%;
-    --sidebar-foreground: 210 40% 96%;
-    --sidebar-primary: 173 80% 40%;
+    --sidebar-background: 210 72% 25%;
+    --sidebar-foreground: 210 25% 98%;
+    --sidebar-primary: 210 60% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 47% 16%;
-    --sidebar-accent-foreground: 210 40% 96%;
-    --sidebar-border: 222 47% 18%;
-    --sidebar-ring: 173 80% 40%;
+    --sidebar-accent: 210 72% 32%;
+    --sidebar-accent-foreground: 210 25% 98%;
+    --sidebar-border: 210 72% 35%;
+    --sidebar-ring: 210 60% 60%;
 
     /* Typography */
-    --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
   }
 
   .dark {
-    --background: 222 47% 6%;
-    --foreground: 210 40% 98%;
+    --background: 215 50% 8%;
+    --foreground: 210 25% 98%;
 
-    --card: 222 47% 9%;
-    --card-foreground: 210 40% 98%;
+    --card: 215 50% 11%;
+    --card-foreground: 210 25% 98%;
 
-    --popover: 222 47% 9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 215 50% 11%;
+    --popover-foreground: 210 25% 98%;
 
-    --primary: 173 80% 40%;
+    --primary: 210 72% 50%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 222 47% 14%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 215 50% 16%;
+    --secondary-foreground: 210 25% 90%;
 
-    --muted: 222 47% 14%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 215 50% 16%;
+    --muted-foreground: 215 20% 60%;
 
-    --accent: 173 80% 16%;
-    --accent-foreground: 173 80% 70%;
+    --accent: 210 50% 20%;
+    --accent-foreground: 210 60% 70%;
 
     --destructive: 0 62% 45%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 76% 42%;
+    --success: 152 69% 42%;
     --success-foreground: 0 0% 100%;
 
     --warning: 38 92% 55%;
     --warning-foreground: 0 0% 0%;
 
-    --info: 199 89% 52%;
+    --info: 210 72% 55%;
     --info-foreground: 0 0% 100%;
 
-    --border: 222 47% 16%;
-    --input: 222 47% 16%;
-    --ring: 173 80% 40%;
+    --border: 215 50% 18%;
+    --input: 215 50% 18%;
+    --ring: 210 72% 50%;
 
-    --sidebar-background: 222 47% 7%;
-    --sidebar-foreground: 210 40% 96%;
-    --sidebar-primary: 173 80% 45%;
+    --sidebar-background: 215 50% 7%;
+    --sidebar-foreground: 210 25% 96%;
+    --sidebar-primary: 210 72% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 47% 12%;
-    --sidebar-accent-foreground: 210 40% 96%;
-    --sidebar-border: 222 47% 12%;
-    --sidebar-ring: 173 80% 45%;
+    --sidebar-accent: 215 50% 14%;
+    --sidebar-accent-foreground: 210 25% 96%;
+    --sidebar-border: 215 50% 14%;
+    --sidebar-ring: 210 72% 55%;
   }
 }
 
@@ -143,59 +143,95 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-muted-foreground/30 rounded-full;
+    @apply bg-primary/30 rounded-full;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-muted-foreground/50;
+    @apply bg-primary/50;
   }
 }
 
 @layer components {
   .gradient-primary {
-    @apply bg-gradient-to-r from-primary to-primary/80;
+    background: linear-gradient(135deg, hsl(210 72% 45%) 0%, hsl(210 72% 35%) 100%);
+  }
+
+  .gradient-hero {
+    background: linear-gradient(135deg, hsl(210 72% 30%) 0%, hsl(210 72% 45%) 50%, hsl(210 60% 55%) 100%);
   }
 
   .gradient-subtle {
-    @apply bg-gradient-to-br from-background to-muted/50;
+    background: linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--muted) / 0.5) 100%);
   }
 
   .glass {
-    @apply bg-card/80 backdrop-blur-md border border-border/50;
+    @apply bg-card/90 backdrop-blur-md border border-border/50 shadow-sm;
+  }
+
+  .glass-strong {
+    @apply bg-card/95 backdrop-blur-xl border border-border/60 shadow-md;
   }
 
   .status-badge {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold tracking-wide;
   }
 
   .status-pendente {
-    @apply bg-warning/15 text-warning;
+    @apply bg-warning/15 text-warning border border-warning/20;
   }
 
   .status-em_analise {
-    @apply bg-info/15 text-info;
+    @apply bg-info/15 text-info border border-info/20;
   }
 
   .status-aprovada {
-    @apply bg-success/15 text-success;
+    @apply bg-success/15 text-success border border-success/20;
   }
 
   .status-reprovada {
-    @apply bg-destructive/15 text-destructive;
+    @apply bg-destructive/15 text-destructive border border-destructive/20;
   }
 
   .status-cancelada {
-    @apply bg-muted text-muted-foreground;
+    @apply bg-muted text-muted-foreground border border-muted-foreground/20;
+  }
+
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-0.5;
+  }
+
+  .btn-glow {
+    @apply relative overflow-hidden;
+  }
+
+  .btn-glow::after {
+    content: '';
+    @apply absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full;
+    animation: shimmer 2s infinite;
+  }
+
+  @keyframes shimmer {
+    100% {
+      transform: translateX(100%);
+    }
   }
 }
 
 @layer utilities {
   .animate-fade-in {
-    animation: fadeIn 0.3s ease-out;
+    animation: fadeIn 0.4s ease-out;
   }
 
   .animate-slide-in {
-    animation: slideIn 0.3s ease-out;
+    animation: slideIn 0.4s ease-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.5s ease-out;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.3s ease-out;
   }
 
   @keyframes fadeIn {
@@ -216,5 +252,31 @@
       opacity: 1;
       transform: translateY(0);
     }
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .text-gradient {
+    @apply bg-gradient-to-r from-primary via-primary/80 to-primary bg-clip-text text-transparent;
   }
 }
