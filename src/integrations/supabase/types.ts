@@ -457,18 +457,19 @@ export type Database = {
       }
     }
     Views: {
-      financial_summary: {
-        Row: {
-          mes: string | null
-          quantidade: number | null
-          status: Database["public"]["Enums"]["commission_status"] | null
-          total_valor: number | null
-          type: Database["public"]["Enums"]["commission_type"] | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
+      get_financial_summary: {
+        Args: { end_date?: string; start_date?: string }
+        Returns: {
+          mes: string
+          quantidade: number
+          status: string
+          tipo: string
+          total_valor: number
+        }[]
+      }
       has_any_role: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {

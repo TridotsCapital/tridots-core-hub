@@ -451,7 +451,7 @@ export default function AnalysisForm() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="setup_fee">Taxa de Setup</Label>
+              <Label htmlFor="setup_fee">Taxa de Setup (R$)</Label>
               <Input
                 id="setup_fee"
                 type="number"
@@ -459,6 +459,21 @@ export default function AnalysisForm() {
                 placeholder="0.00"
                 {...register('setup_fee', { valueAsNumber: true })}
               />
+              <p className="text-xs text-muted-foreground">Valor fixo cobrado na ativação</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="taxa_garantia_percentual">Taxa de Garantia Tridots (%)</Label>
+              <Input
+                id="taxa_garantia_percentual"
+                type="number"
+                step="0.01"
+                min="0"
+                max="100"
+                placeholder="8.00"
+                {...register('taxa_garantia_percentual', { valueAsNumber: true })}
+              />
+              <p className="text-xs text-muted-foreground">Percentual sobre o aluguel cobrado mensalmente</p>
             </div>
           </CardContent>
         </Card>

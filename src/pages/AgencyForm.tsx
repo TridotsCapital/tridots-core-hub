@@ -133,20 +133,29 @@ export default function AgencyForm() {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="percentual_comissao_recorrente">% Comissão Recorrente *</Label>
-              <Input
-                id="percentual_comissao_recorrente"
-                type="number"
-                step="0.01"
-                min="0"
-                max="100"
-                placeholder="0.00"
-                {...register('percentual_comissao_recorrente', { 
-                  required: 'Percentual é obrigatório',
-                  valueAsNumber: true 
-                })}
-              />
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="percentual_comissao_recorrente">
+                % Comissão Recorrente sobre Taxa Tridots *
+              </Label>
+              <div className="relative">
+                <Input
+                  id="percentual_comissao_recorrente"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  placeholder="0.00"
+                  className="pr-8"
+                  {...register('percentual_comissao_recorrente', { 
+                    required: 'Percentual é obrigatório',
+                    valueAsNumber: true 
+                  })}
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Percentual que a imobiliária recebe sobre a taxa de garantia cobrada pela Tridots
+              </p>
             </div>
           </CardContent>
         </Card>

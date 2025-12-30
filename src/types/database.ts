@@ -90,6 +90,7 @@ export interface Analysis {
   valor_outros_encargos: number | null;
   valor_total: number;
   setup_fee: number;
+  taxa_garantia_percentual: number;
   
   observacoes: string | null;
   

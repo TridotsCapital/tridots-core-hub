@@ -11,6 +11,7 @@ import AgencyForm from "./pages/AgencyForm";
 import Analyses from "./pages/Analyses";
 import AnalysisForm from "./pages/AnalysisForm";
 import Commissions from "./pages/Commissions";
+import FinancialDashboard from "./pages/FinancialDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="/analyses/new" element={<AnalysisForm />} />
             <Route path="/analyses/:id" element={<AnalysisForm />} />
             <Route path="/commissions" element={<Commissions />} />
+            <Route path="/financial" element={<FinancialDashboard />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
