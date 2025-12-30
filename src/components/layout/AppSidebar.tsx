@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import tridotsLogo from '@/assets/tridots-logo.png';
 import {
   Sidebar,
   SidebarContent,
@@ -20,7 +21,6 @@ import {
   FileSearch,
   DollarSign,
   LogOut,
-  Shield,
 } from 'lucide-react';
 
 const menuItems = [
@@ -67,19 +67,23 @@ export function AppSidebar() {
     <Sidebar className="border-r border-sidebar-border">
       <SidebarHeader className="border-b border-sidebar-border p-4">
         <Link to="/" className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-sidebar-primary flex items-center justify-center">
-            <Shield className="w-5 h-5 text-sidebar-primary-foreground" />
+          <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center overflow-hidden">
+            <img 
+              src={tridotsLogo} 
+              alt="Tridots Garantia" 
+              className="w-8 h-8 object-contain"
+            />
           </div>
           <div>
-            <h1 className="font-bold text-sidebar-foreground">TRIDOTS</h1>
-            <p className="text-xs text-sidebar-foreground/60">GARANTIA</p>
+            <h1 className="font-bold text-sidebar-foreground tracking-tight">TRIDOTS</h1>
+            <p className="text-xs text-sidebar-foreground/70 font-medium tracking-widest">GARANTIA</p>
           </div>
         </Link>
       </SidebarHeader>
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/60">
+          <SidebarGroupLabel className="text-sidebar-foreground/60 text-xs font-semibold tracking-wider uppercase">
             Menu Principal
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -89,10 +93,11 @@ export function AppSidebar() {
                   <SidebarMenuButton
                     asChild
                     isActive={location.pathname === item.path}
+                    className="transition-all duration-200"
                   >
                     <Link to={item.path}>
                       <item.icon className="w-4 h-4" />
-                      <span>{item.title}</span>
+                      <span className="font-medium">{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -104,18 +109,18 @@ export function AppSidebar() {
 
       <SidebarFooter className="border-t border-sidebar-border p-4">
         <div className="flex items-center gap-3">
-          <Avatar className="h-9 w-9">
+          <Avatar className="h-9 w-9 ring-2 ring-sidebar-primary/30">
             <AvatarImage src={profile?.avatar_url || undefined} />
-            <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground text-sm">
+            <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground text-sm font-semibold">
               {initials}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-sidebar-foreground truncate">
+            <p className="text-sm font-semibold text-sidebar-foreground truncate">
               {profile?.full_name || 'Usuário'}
             </p>
-            <p className="text-xs text-sidebar-foreground/60 capitalize">
-              {role || 'Sem função'}
+            <p className="text-xs text-sidebar-foreground/60 capitalize font-medium">
+              {role === 'master' ? 'Administrador' : role || 'Sem função'}
             </p>
           </div>
           <Button

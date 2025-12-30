@@ -6,8 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
+import tridotsLogo from '@/assets/tridots-logo.png';
 
 export default function Auth() {
   const [email, setEmail] = useState('');
@@ -70,13 +71,24 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/30 p-4">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/5 via-transparent to-transparent" />
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Background with gradient */}
+      <div className="absolute inset-0 gradient-hero" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-white/10 via-transparent to-transparent" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-primary/20 via-transparent to-transparent" />
       
-      <Card className="w-full max-w-md relative animate-fade-in glass">
-        <CardHeader className="text-center space-y-4">
-          <div className="mx-auto w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center shadow-lg shadow-primary/30">
-            <Shield className="w-8 h-8 text-primary-foreground" />
+      {/* Decorative elements */}
+      <div className="absolute top-20 left-20 w-72 h-72 bg-white/5 rounded-full blur-3xl" />
+      <div className="absolute bottom-20 right-20 w-96 h-96 bg-white/5 rounded-full blur-3xl" />
+      
+      <Card className="w-full max-w-md relative animate-scale-in glass-strong shadow-2xl">
+        <CardHeader className="text-center space-y-4 pb-2">
+          <div className="mx-auto w-20 h-20 rounded-2xl bg-white flex items-center justify-center shadow-lg shadow-primary/30">
+            <img 
+              src={tridotsLogo} 
+              alt="Tridots Garantia" 
+              className="w-16 h-16 object-contain"
+            />
           </div>
           <div>
             <CardTitle className="text-2xl font-bold tracking-tight">TRIDOTS GARANTIA</CardTitle>
@@ -86,17 +98,17 @@ export default function Auth() {
           </div>
         </CardHeader>
         
-        <CardContent>
+        <CardContent className="pt-4">
           <Tabs defaultValue="login" className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="login">Entrar</TabsTrigger>
-              <TabsTrigger value="signup">Cadastrar</TabsTrigger>
+              <TabsTrigger value="login" className="font-semibold">Entrar</TabsTrigger>
+              <TabsTrigger value="signup" className="font-semibold">Cadastrar</TabsTrigger>
             </TabsList>
             
             <TabsContent value="login">
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="login-email">Email</Label>
+                  <Label htmlFor="login-email" className="font-medium">Email</Label>
                   <Input
                     id="login-email"
                     type="email"
@@ -104,11 +116,12 @@ export default function Auth() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
+                    className="h-11"
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="login-password">Senha</Label>
+                  <Label htmlFor="login-password" className="font-medium">Senha</Label>
                   <div className="relative">
                     <Input
                       id="login-password"
@@ -117,12 +130,13 @@ export default function Auth() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
+                      className="h-11 pr-10"
                     />
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-foreground"
                       onClick={() => setShowPassword(!showPassword)}
                     >
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -130,7 +144,7 @@ export default function Auth() {
                   </div>
                 </div>
                 
-                <Button type="submit" className="w-full" disabled={loading}>
+                <Button type="submit" className="w-full h-11 font-semibold" disabled={loading}>
                   {loading ? 'Entrando...' : 'Entrar'}
                 </Button>
               </form>
@@ -139,7 +153,7 @@ export default function Auth() {
             <TabsContent value="signup">
               <form onSubmit={handleSignup} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="signup-name">Nome completo</Label>
+                  <Label htmlFor="signup-name" className="font-medium">Nome completo</Label>
                   <Input
                     id="signup-name"
                     type="text"
@@ -147,11 +161,12 @@ export default function Auth() {
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     required
+                    className="h-11"
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
+                  <Label htmlFor="signup-email" className="font-medium">Email</Label>
                   <Input
                     id="signup-email"
                     type="email"
@@ -159,11 +174,12 @@ export default function Auth() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
+                    className="h-11"
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="signup-password">Senha</Label>
+                  <Label htmlFor="signup-password" className="font-medium">Senha</Label>
                   <div className="relative">
                     <Input
                       id="signup-password"
@@ -173,12 +189,13 @@ export default function Auth() {
                       onChange={(e) => setPassword(e.target.value)}
                       required
                       minLength={6}
+                      className="h-11 pr-10"
                     />
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-foreground"
                       onClick={() => setShowPassword(!showPassword)}
                     >
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -186,7 +203,7 @@ export default function Auth() {
                   </div>
                 </div>
                 
-                <Button type="submit" className="w-full" disabled={loading}>
+                <Button type="submit" className="w-full h-11 font-semibold" disabled={loading}>
                   {loading ? 'Criando conta...' : 'Criar conta'}
                 </Button>
               </form>

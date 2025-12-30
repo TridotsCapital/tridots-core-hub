@@ -11,7 +11,8 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  TrendingUp
+  TrendingUp,
+  ArrowUpRight
 } from 'lucide-react';
 import { statusConfig } from '@/types/database';
 import { Link } from 'react-router-dom';
@@ -37,15 +38,17 @@ export default function Dashboard() {
 
   return (
     <DashboardLayout title="Dashboard" description="Visão geral do sistema">
-      <div className="space-y-6 animate-fade-in">
+      <div className="space-y-6">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="glass">
+          <Card className="card-hover border-l-4 border-l-warning animate-slide-up" style={{ animationDelay: '0ms' }}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Análises Pendentes
               </CardTitle>
-              <Clock className="h-4 w-4 text-warning" />
+              <div className="p-2 rounded-lg bg-warning/10">
+                <Clock className="h-4 w-4 text-warning" />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">{loadingAnalyses ? '-' : pendingAnalyses}</div>
@@ -55,12 +58,14 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card className="glass">
+          <Card className="card-hover border-l-4 border-l-success animate-slide-up" style={{ animationDelay: '50ms' }}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Análises Aprovadas
               </CardTitle>
-              <CheckCircle className="h-4 w-4 text-success" />
+              <div className="p-2 rounded-lg bg-success/10">
+                <CheckCircle className="h-4 w-4 text-success" />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">{loadingAnalyses ? '-' : approvedAnalyses}</div>
@@ -70,12 +75,14 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card className="glass">
+          <Card className="card-hover border-l-4 border-l-primary animate-slide-up" style={{ animationDelay: '100ms' }}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Imobiliárias Ativas
               </CardTitle>
-              <Building2 className="h-4 w-4 text-primary" />
+              <div className="p-2 rounded-lg bg-primary/10">
+                <Building2 className="h-4 w-4 text-primary" />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">{loadingAgencies ? '-' : agencies?.length || 0}</div>
@@ -85,12 +92,14 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card className="glass">
+          <Card className="card-hover border-l-4 border-l-warning animate-slide-up" style={{ animationDelay: '150ms' }}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Comissões Pendentes
               </CardTitle>
-              <DollarSign className="h-4 w-4 text-warning" />
+              <div className="p-2 rounded-lg bg-warning/10">
+                <DollarSign className="h-4 w-4 text-warning" />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{loadingCommissions ? '-' : formatCurrency(pendingCommissions)}</div>
@@ -103,30 +112,36 @@ export default function Dashboard() {
 
         {/* Secondary Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
+          <Card className="card-hover animate-slide-up" style={{ animationDelay: '200ms' }}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Em Análise</CardTitle>
-              <FileSearch className="h-4 w-4 text-info" />
+              <div className="p-2 rounded-lg bg-info/10">
+                <FileSearch className="h-4 w-4 text-info" />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{inProgressAnalyses}</div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="card-hover animate-slide-up" style={{ animationDelay: '250ms' }}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Reprovadas</CardTitle>
-              <XCircle className="h-4 w-4 text-destructive" />
+              <div className="p-2 rounded-lg bg-destructive/10">
+                <XCircle className="h-4 w-4 text-destructive" />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{rejectedAnalyses}</div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="card-hover animate-slide-up" style={{ animationDelay: '300ms' }}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Comissões Pagas</CardTitle>
-              <TrendingUp className="h-4 w-4 text-success" />
+              <div className="p-2 rounded-lg bg-success/10">
+                <TrendingUp className="h-4 w-4 text-success" />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{formatCurrency(paidCommissions)}</div>
@@ -135,11 +150,15 @@ export default function Dashboard() {
         </div>
 
         {/* Recent Analyses */}
-        <Card>
+        <Card className="animate-slide-up" style={{ animationDelay: '350ms' }}>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Análises Recentes</CardTitle>
-            <Link to="/analyses" className="text-sm text-primary hover:underline">
+            <CardTitle className="text-lg font-semibold">Análises Recentes</CardTitle>
+            <Link 
+              to="/analyses" 
+              className="text-sm text-primary hover:text-primary/80 font-medium flex items-center gap-1 transition-colors"
+            >
               Ver todas
+              <ArrowUpRight className="w-3 h-3" />
             </Link>
           </CardHeader>
           <CardContent>
@@ -149,24 +168,28 @@ export default function Dashboard() {
               </div>
             ) : recentAnalyses.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                Nenhuma análise encontrada
+                <FileSearch className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                <p>Nenhuma análise encontrada</p>
               </div>
             ) : (
-              <div className="space-y-3">
-                {recentAnalyses.map((analysis) => (
+              <div className="space-y-2">
+                {recentAnalyses.map((analysis, index) => (
                   <Link
                     key={analysis.id}
                     to={`/analyses/${analysis.id}`}
-                    className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors"
+                    className="flex items-center justify-between p-4 rounded-xl hover:bg-muted/50 transition-all duration-200 group animate-fade-in"
+                    style={{ animationDelay: `${index * 50}ms` }}
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{analysis.inquilino_nome}</p>
+                      <p className="font-semibold truncate group-hover:text-primary transition-colors">
+                        {analysis.inquilino_nome}
+                      </p>
                       <p className="text-sm text-muted-foreground truncate">
                         {analysis.agency?.razao_social}
                       </p>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm text-muted-foreground">
+                    <div className="flex items-center gap-4">
+                      <span className="text-sm font-medium text-muted-foreground hidden sm:block">
                         {formatCurrency(analysis.valor_aluguel)}
                       </span>
                       <Badge 
