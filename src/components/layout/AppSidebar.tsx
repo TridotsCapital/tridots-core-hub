@@ -20,6 +20,7 @@ import {
   Building2,
   FileSearch,
   DollarSign,
+  TrendingUp,
   LogOut,
 } from 'lucide-react';
 
@@ -43,6 +44,11 @@ const menuItems = [
     title: 'Comissões',
     icon: DollarSign,
     path: '/commissions',
+  },
+  {
+    title: 'Painel Financeiro',
+    icon: TrendingUp,
+    path: '/financial',
   },
 ];
 
