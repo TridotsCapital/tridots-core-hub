@@ -4,3 +4,4 @@ export { default as AgencyContracts } from './AgencyContracts';
 export { default as AgencyContractDetail } from './AgencyContractDetail';
 export { default as AgencySupport } from './AgencySupport';
 export { default as AgencyNewAnalysis } from './AgencyNewAnalysis';
+export { default as AgencyCollaborators } from './AgencyCollaborators';

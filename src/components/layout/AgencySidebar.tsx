@@ -5,7 +5,8 @@ import {
   FileCheck, 
   HelpCircle,
   LogOut,
-  Plus
+  Plus,
+  Users
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
@@ -29,6 +30,7 @@ const menuItems = [
   { title: "Dashboard", icon: LayoutDashboard, path: "/agency" },
   { title: "Minhas Análises", icon: FileSearch, path: "/agency/analyses" },
   { title: "Meus Contratos", icon: FileCheck, path: "/agency/contracts" },
+  { title: "Colaboradores", icon: Users, path: "/agency/collaborators" },
   { title: "Suporte", icon: HelpCircle, path: "/agency/support" },
 ];
 

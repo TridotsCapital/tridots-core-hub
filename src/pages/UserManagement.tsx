@@ -40,9 +40,10 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Loader2, Users, Shield, Crown, UserCheck, Trash2 } from "lucide-react";
+import { Loader2, Users, Shield, Crown, UserCheck, Trash2, Plus } from "lucide-react";
 import { Navigate } from "react-router-dom";
 import { Database } from "@/integrations/supabase/types";
+import { AddUserDialog } from "@/components/users/AddUserDialog";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -55,6 +56,7 @@ const UserManagement = () => {
 
   const [selectedUser, setSelectedUser] = useState<UserWithRole | null>(null);
   const [isRemoveOpen, setIsRemoveOpen] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
   if (loading) {
     return (
@@ -133,14 +135,20 @@ const UserManagement = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <Users className="h-8 w-8" />
-            Gestão de Usuários
-          </h1>
-          <p className="text-muted-foreground">
-            Gerencie os usuários internos e suas permissões
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+              <Users className="h-8 w-8" />
+              Gestão de Usuários
+            </h1>
+            <p className="text-muted-foreground">
+              Gerencie os usuários internos e suas permissões
+            </p>
+          </div>
+          <Button onClick={() => setIsAddDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Adicionar Membro
+          </Button>
         </div>
 
         {/* Stats */}
@@ -300,7 +308,6 @@ const UserManagement = () => {
           </CardContent>
         </Card>
 
-        {/* Remove Role Confirmation */}
         <AlertDialog open={isRemoveOpen} onOpenChange={setIsRemoveOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
@@ -322,6 +329,12 @@ const UserManagement = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        <AddUserDialog
+          open={isAddDialogOpen}
+          onOpenChange={setIsAddDialogOpen}
+          type="team"
+        />
       </div>
     </DashboardLayout>
   );
