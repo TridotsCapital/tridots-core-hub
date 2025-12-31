@@ -4,6 +4,81 @@ import { useToast } from "@/hooks/use-toast";
 import { Ticket, TicketMessage, TicketNotification, QuickReply, TypingIndicator, TicketStatus, TicketCategory, TicketPriority } from "@/types/tickets";
 import { useEffect } from "react";
 
+interface CreateTicketData {
+  agency_id: string;
+  subject: string;
+  description?: string;
+  category: TicketCategory;
+  priority?: TicketPriority;
+}
+
+export function useCreateTicket() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (data: CreateTicketData) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Usuário não autenticado");
+
+      const { data: ticket, error } = await supabase
+        .from("tickets")
+        .insert({
+          agency_id: data.agency_id,
+          created_by: user.id,
+          subject: data.subject,
+          description: data.description,
+          category: data.category,
+          priority: data.priority || "media",
+          status: "aberto",
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return ticket;
+    },
+    onSuccess: (ticket) => {
+      queryClient.invalidateQueries({ queryKey: ["tickets"] });
+      queryClient.invalidateQueries({ queryKey: ["agency-tickets"] });
+      toast({
+        title: "Chamado aberto com sucesso",
+        description: `Protocolo: #${ticket.id.slice(0, 8).toUpperCase()}`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro ao abrir chamado",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+}
+
+export function useAgencyTickets(agencyId: string | undefined) {
+  return useQuery({
+    queryKey: ["agency-tickets", agencyId],
+    queryFn: async () => {
+      if (!agencyId) return [];
+
+      const { data, error } = await supabase
+        .from("tickets")
+        .select(`
+          *,
+          created_by_profile:profiles!tickets_created_by_fkey(full_name, email),
+          assigned_to_profile:profiles!tickets_assigned_to_fkey(full_name, email)
+        `)
+        .eq("agency_id", agencyId)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!agencyId,
+  });
+}
+
 interface TicketFilters {
   status?: TicketStatus;
   category?: TicketCategory;

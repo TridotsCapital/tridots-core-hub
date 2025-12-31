@@ -4,3 +4,6 @@ export { AgencyMiniKanban } from './AgencyMiniKanban';
 export { AgencyEarningsChart } from './AgencyEarningsChart';
 export { AgencyPortfolioChart } from './AgencyPortfolioChart';
 export { AgencyPeriodFilter } from './AgencyPeriodFilter';
+export { AgencyTicketForm } from './AgencyTicketForm';
+export { AgencyTicketList } from './AgencyTicketList';
+export { AgencyTicketDetail } from './AgencyTicketDetail';
