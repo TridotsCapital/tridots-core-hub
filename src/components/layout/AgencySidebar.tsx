@@ -52,20 +52,22 @@ export function AgencySidebar() {
   };
 
   return (
-    <Sidebar className="border-r border-border/40">
-      <SidebarHeader className="border-b border-border/40 p-4">
+    <Sidebar className="border-r border-border/30 bg-white">
+      <SidebarHeader className="border-b border-border/30 p-4 bg-gradient-to-br from-primary/5 to-transparent">
         <div className="flex items-center gap-3">
-          <img src={tridotsLogo} alt="Tridots" className="h-8 w-8" />
+          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+            <img src={tridotsLogo} alt="Tridots" className="h-7 w-7" />
+          </div>
           <div>
-            <h1 className="text-lg font-semibold text-foreground">Portal</h1>
-            <p className="text-xs text-muted-foreground">Imobiliária Parceira</p>
+            <h1 className="text-lg font-bold text-foreground tracking-tight">Portal</h1>
+            <p className="text-xs text-primary font-semibold">Imobiliária Parceira</p>
           </div>
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="p-2">
+      <SidebarContent className="p-2 bg-white">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wider px-2 mb-2">
+          <SidebarGroupLabel className="text-xs font-medium text-muted-foreground/70 uppercase tracking-wider px-2 mb-2">
             Menu
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -76,8 +78,8 @@ export function AgencySidebar() {
                     <NavLink
                       to={item.path}
                       end={item.path === "/agency"}
-                      className="flex items-center gap-3 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-                      activeClassName="bg-primary/10 text-primary font-medium"
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-primary/5 transition-all"
+                      activeClassName="bg-primary/10 text-primary font-semibold shadow-sm"
                     >
                       <item.icon className="h-4 w-4" />
                       <span>{item.title}</span>
@@ -90,13 +92,12 @@ export function AgencySidebar() {
         </SidebarGroup>
 
         <SidebarGroup className="mt-4">
-          <SidebarGroupLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wider px-2 mb-2">
+          <SidebarGroupLabel className="text-xs font-medium text-muted-foreground/70 uppercase tracking-wider px-2 mb-2">
             Ações Rápidas
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <Button 
-              className="w-full justify-start gap-2" 
-              variant="outline"
+              className="w-full justify-start gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm" 
               onClick={() => navigate("/agency/analyses/new")}
             >
               <Plus className="h-4 w-4" />
@@ -106,22 +107,22 @@ export function AgencySidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-border/40 p-4">
+      <SidebarFooter className="border-t border-border/30 p-4 bg-muted/20">
         <div className="flex items-center gap-3">
-          <Avatar className="h-9 w-9">
-            <AvatarFallback className="bg-primary/10 text-primary text-sm">
+          <Avatar className="h-9 w-9 ring-2 ring-primary/20">
+            <AvatarFallback className="bg-primary text-primary-foreground text-sm font-semibold">
               {profile?.full_name ? getInitials(profile.full_name) : "U"}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{profile?.full_name}</p>
+            <p className="text-sm font-semibold text-foreground truncate">{profile?.full_name}</p>
             <p className="text-xs text-muted-foreground truncate">{profile?.email}</p>
           </div>
           <Button
             variant="ghost"
             size="icon"
             onClick={handleSignOut}
-            className="shrink-0"
+            className="shrink-0 text-muted-foreground hover:text-foreground hover:bg-muted"
           >
             <LogOut className="h-4 w-4" />
           </Button>
