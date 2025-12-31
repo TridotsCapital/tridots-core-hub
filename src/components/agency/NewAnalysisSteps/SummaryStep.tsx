@@ -1,9 +1,10 @@
 import { UseFormReturn } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
 import { FormField, FormItem, FormControl, FormMessage } from '@/components/ui/form';
 import { formatCurrency, PROPERTY_TYPES, BRAZILIAN_STATES } from '@/lib/validators';
-import { FileCheck, Home, User, Users, DollarSign } from 'lucide-react';
+import { FileCheck, Home, User, Users, DollarSign, MessageSquare } from 'lucide-react';
 
 interface SummaryStepProps {
   form: UseFormReturn<any>;
@@ -198,16 +199,35 @@ export function SummaryStep({ form }: SummaryStepProps) {
       </Card>
 
       {/* Observations */}
-      {values.observacoes && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Observações</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{values.observacoes}</p>
-          </CardContent>
-        </Card>
-      )}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <MessageSquare className="h-4 w-4" />
+            Observações (Opcional)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <FormField
+            control={form.control}
+            name="observacoes"
+            render={({ field }) => (
+              <FormItem>
+                <FormControl>
+                  <Textarea
+                    {...field}
+                    placeholder="Informações adicionais sobre a análise..."
+                    rows={4}
+                    maxLength={500}
+                  />
+                </FormControl>
+                <div className="text-xs text-muted-foreground text-right">
+                  {field.value?.length || 0}/500 caracteres
+                </div>
+              </FormItem>
+            )}
+          />
+        </CardContent>
+      </Card>
 
       {/* Confirmation Checkbox */}
       <div className="rounded-lg border p-4">
