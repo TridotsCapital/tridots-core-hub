@@ -17,6 +17,8 @@ import AuditViewer from "./pages/AuditViewer";
 import UserManagement from "./pages/UserManagement";
 import DigitalAcceptance from "./pages/DigitalAcceptance";
 import TicketCenter from "./pages/TicketCenter";
+import Contracts from "./pages/Contracts";
+import ContractDetail from "./pages/ContractDetail";
 import NotFound from "./pages/NotFound";
 
 // Agency Portal Pages
@@ -56,6 +58,8 @@ const App = () => (
             <Route path="/users" element={<UserManagement />} />
             <Route path="/accept/:analysisId" element={<DigitalAcceptance />} />
             <Route path="/tickets" element={<TicketCenter />} />
+            <Route path="/contracts" element={<Contracts />} />
+            <Route path="/contracts/:id" element={<ContractDetail />} />
             
             {/* Agency Portal Routes */}
             <Route path="/agency" element={<AgencyDashboard />} />

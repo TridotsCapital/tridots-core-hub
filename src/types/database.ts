@@ -48,6 +48,7 @@ export interface Agency {
   responsavel_email: string | null;
   responsavel_telefone: string | null;
   percentual_comissao_recorrente: number;
+  percentual_comissao_setup: number;
   active: boolean;
   created_at: string;
   updated_at: string;
