@@ -54,27 +54,29 @@ export function DashboardLayout({ children, title, description }: DashboardLayou
   }
 
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b border-border bg-card/50 backdrop-blur-sm px-6 sticky top-0 z-10">
-          <SidebarTrigger className="-ml-2" />
-          <Separator orientation="vertical" className="h-6" />
-          <div className="flex-1">
-            {title && (
-              <div>
-                <h1 className="font-semibold text-lg">{title}</h1>
-                {description && (
-                  <p className="text-sm text-muted-foreground">{description}</p>
-                )}
-              </div>
-            )}
-          </div>
-        </header>
-        <main className="flex-1 p-6 bg-muted/30">
-          {children}
-        </main>
-      </SidebarInset>
-    </SidebarProvider>
+    <div className="theme-admin">
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset>
+          <header className="flex h-16 shrink-0 items-center gap-2 border-b-2 border-foreground/10 bg-card/95 backdrop-blur-sm px-6 sticky top-0 z-10">
+            <SidebarTrigger className="-ml-2" />
+            <Separator orientation="vertical" className="h-6" />
+            <div className="flex-1">
+              {title && (
+                <div>
+                  <h1 className="font-semibold text-lg">{title}</h1>
+                  {description && (
+                    <p className="text-sm text-muted-foreground">{description}</p>
+                  )}
+                </div>
+              )}
+            </div>
+          </header>
+          <main className="flex-1 p-6 bg-muted/30">
+            {children}
+          </main>
+        </SidebarInset>
+      </SidebarProvider>
+    </div>
   );
 }

@@ -73,6 +73,10 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        admin: {
+          accent: "hsl(var(--admin-accent, 45 93% 47%))",
+          "accent-foreground": "hsl(var(--admin-accent-foreground, 0 0% 10%))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

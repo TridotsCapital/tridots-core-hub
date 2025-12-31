@@ -96,7 +96,7 @@ export function AppSidebar() {
     .toUpperCase() || '?';
 
   return (
-    <Sidebar className="border-r border-sidebar-border">
+    <Sidebar className="border-r border-sidebar-border bg-sidebar">
       <SidebarHeader className="border-b border-sidebar-border p-4">
         <Link to="/" className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center overflow-hidden">
@@ -109,13 +109,17 @@ export function AppSidebar() {
           <div>
             <h1 className="font-bold text-sidebar-foreground tracking-tight">TRIDOTS</h1>
             <p className="text-xs text-sidebar-foreground/70 font-medium tracking-widest">GARANTIA</p>
+            <div className="flex items-center gap-1.5 mt-1">
+              <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+              <span className="text-[10px] font-semibold text-amber-400 uppercase tracking-wider">Equipe Interna</span>
+            </div>
           </div>
         </Link>
       </SidebarHeader>
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/60 text-xs font-semibold tracking-wider uppercase">
+          <SidebarGroupLabel className="text-sidebar-foreground/50 text-xs font-semibold tracking-wider uppercase">
             Menu Principal
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -125,7 +129,7 @@ export function AppSidebar() {
                   <SidebarMenuButton
                     asChild
                     isActive={location.pathname === item.path}
-                    className="transition-all duration-200"
+                    className="transition-all duration-200 data-[active=true]:bg-sidebar-accent data-[active=true]:text-amber-400"
                   >
                     <Link to={item.path}>
                       <item.icon className="w-4 h-4" />
@@ -141,9 +145,9 @@ export function AppSidebar() {
 
       <SidebarFooter className="border-t border-sidebar-border p-4">
         <div className="flex items-center gap-3">
-          <Avatar className="h-9 w-9 ring-2 ring-sidebar-primary/30">
+          <Avatar className="h-9 w-9 ring-2 ring-amber-400/40">
             <AvatarImage src={profile?.avatar_url || undefined} />
-            <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground text-sm font-semibold">
+            <AvatarFallback className="bg-amber-400 text-amber-950 text-sm font-semibold">
               {initials}
             </AvatarFallback>
           </Avatar>
