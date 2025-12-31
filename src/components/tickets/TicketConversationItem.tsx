@@ -1,0 +1,84 @@
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Ticket, ticketStatusConfig, ticketPriorityConfig } from "@/types/tickets";
+import { formatDistanceToNow } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { cn } from "@/lib/utils";
+
+interface TicketConversationItemProps {
+  ticket: Ticket;
+  isSelected: boolean;
+  lastMessage?: string;
+  unreadCount?: number;
+  onClick: () => void;
+}
+
+export function TicketConversationItem({
+  ticket,
+  isSelected,
+  lastMessage,
+  unreadCount = 0,
+  onClick,
+}: TicketConversationItemProps) {
+  const statusConfig = ticketStatusConfig[ticket.status];
+  const priorityConfig = ticketPriorityConfig[ticket.priority];
+
+  // Calculate wait time color
+  const getWaitTimeColor = () => {
+    const hours = (Date.now() - new Date(ticket.updated_at).getTime()) / (1000 * 60 * 60);
+    if (ticket.status === 'resolvido') return 'border-l-green-500';
+    if (hours > 48 || ticket.category === 'urgente') return 'border-l-red-500';
+    if (hours > 24) return 'border-l-yellow-500';
+    return 'border-l-green-500';
+  };
+
+  const agencyName = ticket.agency?.nome_fantasia || ticket.agency?.razao_social || 'Imobiliária';
+  const initials = agencyName.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase();
+
+  return (
+    <div
+      onClick={onClick}
+      className={cn(
+        "flex items-start gap-3 p-4 cursor-pointer transition-all duration-200 border-l-4",
+        "hover:bg-muted/50",
+        getWaitTimeColor(),
+        isSelected ? "bg-primary/5 border-l-primary" : "border-l-transparent"
+      )}
+    >
+      <Avatar className="h-12 w-12 shrink-0">
+        <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+          {initials}
+        </AvatarFallback>
+      </Avatar>
+
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between gap-2">
+          <span className="font-semibold text-sm truncate">{agencyName}</span>
+          <span className="text-xs text-muted-foreground whitespace-nowrap">
+            {formatDistanceToNow(new Date(ticket.updated_at), { addSuffix: false, locale: ptBR })}
+          </span>
+        </div>
+
+        <p className="text-sm font-medium truncate mt-0.5">{ticket.subject}</p>
+
+        <p className="text-xs text-muted-foreground truncate mt-1">
+          {lastMessage || ticket.description || 'Sem mensagens ainda'}
+        </p>
+
+        <div className="flex items-center gap-2 mt-2">
+          <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0", statusConfig.color)}>
+            {statusConfig.label}
+          </Badge>
+          <span className={cn("text-xs", priorityConfig.color)}>
+            {priorityConfig.icon}
+          </span>
+          {unreadCount > 0 && (
+            <span className="ml-auto bg-primary text-primary-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+              {unreadCount}
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
