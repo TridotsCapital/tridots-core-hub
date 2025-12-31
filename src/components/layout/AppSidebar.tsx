@@ -25,6 +25,7 @@ import {
   Shield,
   Users,
   LogOut,
+  Headphones,
 } from 'lucide-react';
 
 const menuItems = [
@@ -57,6 +58,11 @@ const menuItems = [
     title: 'Documentos',
     icon: FileText,
     path: '/documents',
+  },
+  {
+    title: 'Central de Atendimento',
+    icon: Headphones,
+    path: '/tickets',
   },
   {
     title: 'Auditoria',

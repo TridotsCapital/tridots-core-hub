@@ -16,6 +16,7 @@ import DocumentCenter from "./pages/DocumentCenter";
 import AuditViewer from "./pages/AuditViewer";
 import UserManagement from "./pages/UserManagement";
 import DigitalAcceptance from "./pages/DigitalAcceptance";
+import TicketCenter from "./pages/TicketCenter";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +43,7 @@ const App = () => (
             <Route path="/audit" element={<AuditViewer />} />
             <Route path="/users" element={<UserManagement />} />
             <Route path="/accept/:analysisId" element={<DigitalAcceptance />} />
+            <Route path="/tickets" element={<TicketCenter />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
