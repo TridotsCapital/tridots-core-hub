@@ -19,6 +19,15 @@ import DigitalAcceptance from "./pages/DigitalAcceptance";
 import TicketCenter from "./pages/TicketCenter";
 import NotFound from "./pages/NotFound";
 
+// Agency Portal Pages
+import { 
+  AgencyDashboard, 
+  AgencyAnalyses, 
+  AgencyContracts, 
+  AgencySupport,
+  AgencyNewAnalysis 
+} from "./pages/agency";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -29,6 +38,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
+            {/* Tridots Team Routes */}
             <Route path="/" element={<Dashboard />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/agencies" element={<Agencies />} />
@@ -44,6 +54,14 @@ const App = () => (
             <Route path="/users" element={<UserManagement />} />
             <Route path="/accept/:analysisId" element={<DigitalAcceptance />} />
             <Route path="/tickets" element={<TicketCenter />} />
+            
+            {/* Agency Portal Routes */}
+            <Route path="/agency" element={<AgencyDashboard />} />
+            <Route path="/agency/analyses" element={<AgencyAnalyses />} />
+            <Route path="/agency/analyses/new" element={<AgencyNewAnalysis />} />
+            <Route path="/agency/contracts" element={<AgencyContracts />} />
+            <Route path="/agency/support" element={<AgencySupport />} />
+            
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
