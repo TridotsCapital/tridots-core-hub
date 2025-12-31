@@ -72,10 +72,10 @@ export function TicketChatArea({ ticketId, onClose }: TicketChatAreaProps) {
     }, 2000);
   };
 
-  const handleSendMessage = async (message: string) => {
+  const handleSendMessage = async (message: string, attachments?: string[]) => {
     if (!ticketId || !ticket) return;
 
-    await sendMessage.mutateAsync({ ticketId, message });
+    await sendMessage.mutateAsync({ ticketId, message, attachmentsUrl: attachments });
     setIsTyping(false);
     setTypingIndicator.mutate({ ticketId, isTyping: false });
 
