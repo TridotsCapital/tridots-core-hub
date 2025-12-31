@@ -26,7 +26,8 @@ import {
   AgencyContracts, 
   AgencyContractDetail,
   AgencySupport,
-  AgencyNewAnalysis 
+  AgencyNewAnalysis,
+  AgencyCollaborators
 } from "./pages/agency";
 
 const queryClient = new QueryClient();
@@ -62,6 +63,7 @@ const App = () => (
             <Route path="/agency/analyses/new" element={<AgencyNewAnalysis />} />
             <Route path="/agency/contracts" element={<AgencyContracts />} />
             <Route path="/agency/contracts/:id" element={<AgencyContractDetail />} />
+            <Route path="/agency/collaborators" element={<AgencyCollaborators />} />
             <Route path="/agency/support" element={<AgencySupport />} />
             
             <Route path="*" element={<NotFound />} />
