@@ -15,7 +15,7 @@ import { useAnalysisDraft } from '@/hooks/useAnalysisDraft';
 import { validateCPF } from '@/lib/validators';
 import { GuaranteeSimulator, SimulatorValues } from './GuaranteeSimulator';
 import { AnalysisSuccessScreen } from './AnalysisSuccessScreen';
-import { PropertyStep, TenantStep, SpouseStep, FinancialStep, SummaryStep } from './NewAnalysisSteps';
+import { PropertyStep, TenantStep, SpouseStep, SummaryStep } from './NewAnalysisSteps';
 
 const formSchema = z.object({
   // Property
@@ -72,7 +72,6 @@ const STEPS = [
   { id: 'property', title: 'Imóvel', component: PropertyStep },
   { id: 'tenant', title: 'Inquilino', component: TenantStep },
   { id: 'spouse', title: 'Cônjuge', component: SpouseStep },
-  { id: 'financial', title: 'Financeiro', component: FinancialStep },
   { id: 'summary', title: 'Resumo', component: SummaryStep },
 ];
 
@@ -151,7 +150,6 @@ export function NewAnalysisForm({ agencyId }: NewAnalysisFormProps) {
       0: ['imovelCep', 'imovelEndereco', 'imovelNumero', 'imovelBairro', 'imovelCidade', 'imovelEstado', 'valorAluguel'],
       1: ['inquilinoNome', 'inquilinoCpf', 'inquilinoRendaMensal'],
       2: [],
-      3: ['taxaGarantiaPercentual', 'setupFee'],
     };
 
     const fieldsToValidate = stepFields[currentStep] || [];
@@ -171,7 +169,6 @@ export function NewAnalysisForm({ agencyId }: NewAnalysisFormProps) {
 
     setIsSubmitting(true);
     try {
-      const totalEncargos = data.valorAluguel + data.valorCondominio + data.valorIptu;
       const { data: analysis, error } = await supabase
         .from('analyses')
         .insert({
@@ -188,7 +185,6 @@ export function NewAnalysisForm({ agencyId }: NewAnalysisFormProps) {
           valor_aluguel: data.valorAluguel,
           valor_condominio: data.valorCondominio,
           valor_iptu: data.valorIptu,
-          valor_total: totalEncargos,
           inquilino_nome: data.inquilinoNome,
           inquilino_cpf: data.inquilinoCpf.replace(/\D/g, ''),
           inquilino_rg: data.inquilinoRg || null,
