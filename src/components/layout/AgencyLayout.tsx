@@ -10,9 +10,10 @@ interface AgencyLayoutProps {
   children: ReactNode;
   title: string;
   description?: string;
+  actions?: ReactNode;
 }
 
-export function AgencyLayout({ children, title, description }: AgencyLayoutProps) {
+export function AgencyLayout({ children, title, description, actions }: AgencyLayoutProps) {
   const navigate = useNavigate();
   const { user, loading, role } = useAuth();
   const [agencyId, setAgencyId] = useState<string | null>(null);
@@ -114,6 +115,7 @@ export function AgencyLayout({ children, title, description }: AgencyLayoutProps
                 <p className="text-sm text-muted-foreground">{description}</p>
               )}
             </div>
+            {actions && <div className="flex items-center gap-2">{actions}</div>}
             {agencyName && (
               <div className="text-right">
                 <p className="text-sm font-medium">{agencyName}</p>
