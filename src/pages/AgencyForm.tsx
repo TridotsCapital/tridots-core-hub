@@ -25,6 +25,7 @@ export default function AgencyForm() {
     defaultValues: {
       active: true,
       percentual_comissao_recorrente: 0,
+      percentual_comissao_setup: 100,
     },
     values: agency ? {
       cnpj: agency.cnpj,
@@ -40,6 +41,7 @@ export default function AgencyForm() {
       responsavel_email: agency.responsavel_email,
       responsavel_telefone: agency.responsavel_telefone,
       percentual_comissao_recorrente: agency.percentual_comissao_recorrente,
+      percentual_comissao_setup: agency.percentual_comissao_setup,
       active: agency.active,
     } : undefined,
   });
@@ -132,8 +134,16 @@ export default function AgencyForm() {
                 {...register('telefone')}
               />
             </div>
+          </CardContent>
+        </Card>
 
-            <div className="space-y-2 md:col-span-2">
+        {/* Commission Settings */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Configurações de Comissão</CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
               <Label htmlFor="percentual_comissao_recorrente">
                 % Comissão Recorrente sobre Taxa Tridots *
               </Label>
@@ -155,6 +165,31 @@ export default function AgencyForm() {
               </div>
               <p className="text-xs text-muted-foreground">
                 Percentual que a imobiliária recebe sobre a taxa de garantia cobrada pela Tridots
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="percentual_comissao_setup">
+                % Comissão sobre Setup Fee *
+              </Label>
+              <div className="relative">
+                <Input
+                  id="percentual_comissao_setup"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  placeholder="100.00"
+                  className="pr-8"
+                  {...register('percentual_comissao_setup', { 
+                    required: 'Percentual é obrigatório',
+                    valueAsNumber: true 
+                  })}
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Percentual do setup fee que é repassado à imobiliária (padrão: 100%)
               </p>
             </div>
           </CardContent>

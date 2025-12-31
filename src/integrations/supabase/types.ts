@@ -27,6 +27,7 @@ export type Database = {
           id: string
           nome_fantasia: string | null
           percentual_comissao_recorrente: number
+          percentual_comissao_setup: number
           razao_social: string
           responsavel_email: string | null
           responsavel_nome: string
@@ -46,6 +47,7 @@ export type Database = {
           id?: string
           nome_fantasia?: string | null
           percentual_comissao_recorrente?: number
+          percentual_comissao_setup?: number
           razao_social: string
           responsavel_email?: string | null
           responsavel_nome: string
@@ -65,6 +67,7 @@ export type Database = {
           id?: string
           nome_fantasia?: string | null
           percentual_comissao_recorrente?: number
+          percentual_comissao_setup?: number
           razao_social?: string
           responsavel_email?: string | null
           responsavel_nome?: string

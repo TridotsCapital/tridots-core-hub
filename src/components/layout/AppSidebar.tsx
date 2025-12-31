@@ -21,11 +21,12 @@ import {
   FileSearch,
   DollarSign,
   TrendingUp,
-  FileText,
-  Shield,
+  FolderOpen,
+  ScrollText,
   Users,
   LogOut,
   Headphones,
+  FileCheck,
 } from 'lucide-react';
 
 const menuItems = [
@@ -35,9 +36,9 @@ const menuItems = [
     path: '/',
   },
   {
-    title: 'Imobiliárias',
-    icon: Building2,
-    path: '/agencies',
+    title: 'Chamados',
+    icon: Headphones,
+    path: '/tickets',
   },
   {
     title: 'Análises',
@@ -45,35 +46,40 @@ const menuItems = [
     path: '/analyses',
   },
   {
+    title: 'Contratos',
+    icon: FileCheck,
+    path: '/contracts',
+  },
+  {
+    title: 'Imobiliárias',
+    icon: Building2,
+    path: '/agencies',
+  },
+  {
     title: 'Comissões',
     icon: DollarSign,
     path: '/commissions',
   },
   {
-    title: 'Painel Financeiro',
+    title: 'Financeiro',
     icon: TrendingUp,
     path: '/financial',
   },
   {
-    title: 'Documentos',
-    icon: FileText,
+    title: 'Drive Documentos',
+    icon: FolderOpen,
     path: '/documents',
-  },
-  {
-    title: 'Central de Atendimento',
-    icon: Headphones,
-    path: '/tickets',
-  },
-  {
-    title: 'Auditoria',
-    icon: Shield,
-    path: '/audit',
-    masterOnly: true,
   },
   {
     title: 'Usuários',
     icon: Users,
     path: '/users',
+    masterOnly: true,
+  },
+  {
+    title: 'Logs',
+    icon: ScrollText,
+    path: '/audit',
     masterOnly: true,
   },
 ];
