@@ -37,11 +37,11 @@ const formSchema = z.object({
   inquilinoNome: z.string().min(3, 'Nome obrigatório'),
   inquilinoCpf: z.string().refine(val => validateCPF(val), 'CPF inválido'),
   inquilinoRg: z.string().optional(),
-  inquilinoDataNascimento: z.string().optional(),
-  inquilinoEmail: z.string().email('E-mail inválido').optional().or(z.literal('')),
-  inquilinoTelefone: z.string().optional(),
-  inquilinoProfissao: z.string().optional(),
-  inquilinoEmpresa: z.string().optional(),
+  inquilinoDataNascimento: z.string().min(1, 'Data de nascimento obrigatória'),
+  inquilinoEmail: z.string().min(1, 'E-mail obrigatório').email('E-mail inválido'),
+  inquilinoTelefone: z.string().min(10, 'Telefone inválido (mínimo 10 dígitos)'),
+  inquilinoProfissao: z.string().min(2, 'Profissão obrigatória'),
+  inquilinoEmpresa: z.string().min(2, 'Empresa obrigatória'),
   inquilinoRendaMensal: z.number().min(1, 'Renda obrigatória'),
   inquilinoRendaMensalDisplay: z.string().optional(),
   // Spouse
@@ -148,7 +148,7 @@ export function NewAnalysisForm({ agencyId }: NewAnalysisFormProps) {
   const handleNext = async () => {
     const stepFields: Record<number, (keyof FormData)[]> = {
       0: ['imovelCep', 'imovelEndereco', 'imovelNumero', 'imovelBairro', 'imovelCidade', 'imovelEstado', 'valorAluguel'],
-      1: ['inquilinoNome', 'inquilinoCpf', 'inquilinoRendaMensal'],
+      1: ['inquilinoNome', 'inquilinoCpf', 'inquilinoDataNascimento', 'inquilinoEmail', 'inquilinoTelefone', 'inquilinoProfissao', 'inquilinoEmpresa', 'inquilinoRendaMensal'],
       2: [],
     };
 

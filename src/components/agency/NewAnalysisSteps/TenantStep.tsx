@@ -111,7 +111,7 @@ export function TenantStep({ form }: TenantStepProps) {
         name="inquilinoDataNascimento"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Data de Nascimento</FormLabel>
+            <FormLabel>Data de Nascimento *</FormLabel>
             <FormControl>
               <Input {...field} type="date" />
             </FormControl>
@@ -127,7 +127,7 @@ export function TenantStep({ form }: TenantStepProps) {
           name="inquilinoEmail"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>E-mail</FormLabel>
+              <FormLabel>E-mail *</FormLabel>
               <FormControl>
                 <Input
                   {...field}
@@ -146,7 +146,7 @@ export function TenantStep({ form }: TenantStepProps) {
           name="inquilinoTelefone"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Telefone</FormLabel>
+              <FormLabel>Telefone *</FormLabel>
               <FormControl>
                 <Input
                   {...field}
@@ -171,7 +171,7 @@ export function TenantStep({ form }: TenantStepProps) {
             name="inquilinoProfissao"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Profissão</FormLabel>
+                <FormLabel>Profissão *</FormLabel>
                 <FormControl>
                   <Input {...field} placeholder="Ex: Engenheiro, Médico, etc." />
                 </FormControl>
@@ -185,7 +185,7 @@ export function TenantStep({ form }: TenantStepProps) {
             name="inquilinoEmpresa"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Empresa</FormLabel>
+                <FormLabel>Empresa *</FormLabel>
                 <FormControl>
                   <Input {...field} placeholder="Nome da empresa" />
                 </FormControl>
