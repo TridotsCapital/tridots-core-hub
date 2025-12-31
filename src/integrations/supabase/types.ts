@@ -874,7 +874,7 @@ export type Database = {
         | "cancelada"
         | "aguardando_pagamento"
         | "ativo"
-      app_role: "master" | "analyst"
+      app_role: "master" | "analyst" | "agency_user"
       commission_status: "pendente" | "paga" | "cancelada" | "estornada"
       commission_type: "setup" | "recorrente"
       notification_type:
@@ -1025,7 +1025,7 @@ export const Constants = {
         "aguardando_pagamento",
         "ativo",
       ],
-      app_role: ["master", "analyst"],
+      app_role: ["master", "analyst", "agency_user"],
       commission_status: ["pendente", "paga", "cancelada", "estornada"],
       commission_type: ["setup", "recorrente"],
       notification_type: [
