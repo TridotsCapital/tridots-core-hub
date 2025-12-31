@@ -10,3 +10,4 @@ export { AgencyTicketDetail } from './AgencyTicketDetail';
 export { AgencyKanbanBoard } from './AgencyKanbanBoard';
 export { AgencyKanbanCard } from './AgencyKanbanCard';
 export { AgencyAnalysisDrawer } from './AgencyAnalysisDrawer';
+export { DraftBanner } from './DraftBanner';

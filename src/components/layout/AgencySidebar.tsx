@@ -1,4 +1,4 @@
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { 
   LayoutDashboard, 
   FileSearch, 
@@ -6,11 +6,20 @@ import {
   HelpCircle,
   LogOut,
   Plus,
-  Users
+  Users,
+  Play
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAnalysisDraft } from "@/hooks/useAnalysisDraft";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Sidebar,
   SidebarContent,
@@ -35,9 +44,9 @@ const menuItems = [
 ];
 
 export function AgencySidebar() {
-  const location = useLocation();
   const navigate = useNavigate();
   const { profile, signOut } = useAuth();
+  const { hasDraft, getLastSavedTime } = useAnalysisDraft();
 
   const handleSignOut = async () => {
     await signOut();
@@ -98,13 +107,40 @@ export function AgencySidebar() {
             Ações Rápidas
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <Button 
-              className="w-full justify-start gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm" 
-              onClick={() => navigate("/agency/analyses/new")}
-            >
-              <Plus className="h-4 w-4" />
-              Nova Análise
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    className={`w-full justify-start gap-2 shadow-sm ${
+                      hasDraft 
+                        ? 'bg-amber-600 hover:bg-amber-700 text-white' 
+                        : 'bg-primary hover:bg-primary/90 text-primary-foreground'
+                    }`}
+                    onClick={() => navigate("/agency/analyses/new")}
+                  >
+                    {hasDraft ? (
+                      <>
+                        <Play className="h-4 w-4" />
+                        Continuar Análise
+                        <Badge variant="secondary" className="ml-auto bg-white/20 text-white text-[10px] px-1.5">
+                          Rascunho
+                        </Badge>
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="h-4 w-4" />
+                        Nova Análise
+                      </>
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                {hasDraft && (
+                  <TooltipContent side="right">
+                    <p>Última edição: {getLastSavedTime()}</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
