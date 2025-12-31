@@ -12,6 +12,7 @@ import {
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAnalysisDraft } from "@/hooks/useAnalysisDraft";
+import { NotificationCenter } from "@/components/notifications";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -65,14 +66,17 @@ export function AgencySidebar() {
   return (
     <Sidebar className="border-r border-border/30 bg-white">
       <SidebarHeader className="border-b border-border/30 p-4 bg-gradient-to-br from-primary/5 to-transparent">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-            <img src={tridotsLogo} alt="Tridots" className="h-7 w-7" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+              <img src={tridotsLogo} alt="Tridots" className="h-7 w-7" />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold text-foreground tracking-tight">Portal</h1>
+              <p className="text-xs text-primary font-semibold">Imobiliária Parceira</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-lg font-bold text-foreground tracking-tight">Portal</h1>
-            <p className="text-xs text-primary font-semibold">Imobiliária Parceira</p>
-          </div>
+          <NotificationCenter isAgencyPortal={true} />
         </div>
       </SidebarHeader>
 
