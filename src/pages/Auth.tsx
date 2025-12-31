@@ -1,23 +1,22 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth, getDefaultRouteForRole } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import tridotsLogo from '@/assets/tridots-logo.png';
+import { LoginForm } from '@/components/auth/LoginForm';
+import { TeamSignupForm } from '@/components/auth/TeamSignupForm';
+import { AgencySignupForm, AgencySignupData } from '@/components/auth/AgencySignupForm';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function Auth() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { signIn, signUp, user, role } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  
+  const isTeamSignup = searchParams.get('team') === 'tridots';
 
   // Redirect if already logged in
   useEffect(() => {
@@ -26,8 +25,7 @@ export default function Auth() {
     }
   }, [user, role, navigate]);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleLogin = async (email: string, password: string) => {
     setLoading(true);
     
     const { error } = await signIn(email, password);
@@ -40,23 +38,15 @@ export default function Auth() {
       }
     } else {
       toast.success('Login realizado com sucesso!');
-      // Navigation will be handled by useEffect when role is loaded
     }
     
     setLoading(false);
   };
 
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (password.length < 6) {
-      toast.error('A senha deve ter pelo menos 6 caracteres');
-      return;
-    }
-    
+  const handleTeamSignup = async (data: { email: string; password: string; fullName: string }) => {
     setLoading(true);
     
-    const { error } = await signUp(email, password, fullName);
+    const { error, data: authData } = await signUp(data.email, data.password, data.fullName);
     
     if (error) {
       if (error.message.includes('already registered')) {
@@ -64,8 +54,69 @@ export default function Auth() {
       } else {
         toast.error('Erro ao criar conta: ' + error.message);
       }
-    } else {
-      toast.success('Conta criada! Você pode fazer login agora.');
+      setLoading(false);
+      return;
+    }
+
+    // Call edge function to set analyst role
+    if (authData?.user) {
+      const { error: roleError } = await supabase.functions.invoke('register-team-member', {
+        body: { user_id: authData.user.id }
+      });
+
+      if (roleError) {
+        console.error('Error setting role:', roleError);
+        toast.error('Conta criada, mas houve um erro ao definir permissões. Entre em contato com o suporte.');
+      } else {
+        toast.success('Conta de analista criada com sucesso!');
+      }
+    }
+    
+    setLoading(false);
+  };
+
+  const handleAgencySignup = async (formData: AgencySignupData) => {
+    setLoading(true);
+    
+    // First create the auth user
+    const { error, data: authData } = await signUp(formData.email, formData.password, formData.responsavel_nome);
+    
+    if (error) {
+      if (error.message.includes('already registered')) {
+        toast.error('Este email já está cadastrado');
+      } else {
+        toast.error('Erro ao criar conta: ' + error.message);
+      }
+      setLoading(false);
+      return;
+    }
+
+    // Call edge function to create agency
+    if (authData?.user) {
+      const { error: agencyError } = await supabase.functions.invoke('register-agency', {
+        body: {
+          user_id: authData.user.id,
+          cnpj: formData.cnpj.replace(/\D/g, ''),
+          razao_social: formData.razao_social,
+          nome_fantasia: formData.nome_fantasia || null,
+          email: formData.email,
+          telefone: formData.telefone || null,
+          responsavel_nome: formData.responsavel_nome,
+          responsavel_email: formData.responsavel_email || null,
+          responsavel_telefone: formData.responsavel_telefone || null,
+          endereco: formData.endereco || null,
+          cidade: formData.cidade || null,
+          estado: formData.estado || null,
+          cep: formData.cep?.replace(/\D/g, '') || null,
+        }
+      });
+
+      if (agencyError) {
+        console.error('Error creating agency:', agencyError);
+        toast.error('Conta criada, mas houve um erro ao cadastrar a imobiliária. Entre em contato com o suporte.');
+      } else {
+        toast.success('Cadastro realizado! Seu perfil está em análise.');
+      }
     }
     
     setLoading(false);
@@ -82,7 +133,7 @@ export default function Auth() {
       <div className="absolute top-20 left-20 w-72 h-72 bg-white/5 rounded-full blur-3xl" />
       <div className="absolute bottom-20 right-20 w-96 h-96 bg-white/5 rounded-full blur-3xl" />
       
-      <Card className="w-full max-w-md relative animate-scale-in glass-strong shadow-2xl">
+      <Card className={`w-full relative animate-scale-in glass-strong shadow-2xl ${isTeamSignup ? 'max-w-md' : 'max-w-lg'}`}>
         <CardHeader className="text-center space-y-4 pb-2">
           <div className="mx-auto w-20 h-20 rounded-2xl bg-white flex items-center justify-center shadow-lg shadow-primary/30">
             <img 
@@ -94,122 +145,48 @@ export default function Auth() {
           <div>
             <CardTitle className="text-2xl font-bold tracking-tight">TRIDOTS GARANTIA</CardTitle>
             <CardDescription className="text-muted-foreground mt-2">
-              Sistema de Gestão de Análises de Crédito
+              {isTeamSignup 
+                ? 'Cadastro de Membro da Equipe' 
+                : 'Sistema de Gestão de Análises de Crédito'
+              }
             </CardDescription>
           </div>
         </CardHeader>
         
         <CardContent className="pt-4">
-          <Tabs defaultValue="login" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="login" className="font-semibold">Entrar</TabsTrigger>
-              <TabsTrigger value="signup" className="font-semibold">Cadastrar</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="login">
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="login-email" className="font-medium">Email</Label>
-                  <Input
-                    id="login-email"
-                    type="email"
-                    placeholder="seu@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    className="h-11"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="login-password" className="font-medium">Senha</Label>
-                  <div className="relative">
-                    <Input
-                      id="login-password"
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      className="h-11 pr-10"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-foreground"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                </div>
-                
-                <Button type="submit" className="w-full h-11 font-semibold" disabled={loading}>
-                  {loading ? 'Entrando...' : 'Entrar'}
-                </Button>
-              </form>
-            </TabsContent>
-            
-            <TabsContent value="signup">
-              <form onSubmit={handleSignup} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signup-name" className="font-medium">Nome completo</Label>
-                  <Input
-                    id="signup-name"
-                    type="text"
-                    placeholder="João Silva"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    required
-                    className="h-11"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email" className="font-medium">Email</Label>
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    placeholder="seu@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    className="h-11"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password" className="font-medium">Senha</Label>
-                  <div className="relative">
-                    <Input
-                      id="signup-password"
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="Mínimo 6 caracteres"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      minLength={6}
-                      className="h-11 pr-10"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-foreground"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                </div>
-                
-                <Button type="submit" className="w-full h-11 font-semibold" disabled={loading}>
-                  {loading ? 'Criando conta...' : 'Criar conta'}
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
+          {isTeamSignup ? (
+            // Team signup - simplified form
+            <Tabs defaultValue="signup" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsTrigger value="login" className="font-semibold">Entrar</TabsTrigger>
+                <TabsTrigger value="signup" className="font-semibold">Cadastrar</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="login">
+                <LoginForm onSubmit={handleLogin} loading={loading} />
+              </TabsContent>
+              
+              <TabsContent value="signup">
+                <TeamSignupForm onSubmit={handleTeamSignup} loading={loading} />
+              </TabsContent>
+            </Tabs>
+          ) : (
+            // Regular flow - agency signup
+            <Tabs defaultValue="login" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsTrigger value="login" className="font-semibold">Entrar</TabsTrigger>
+                <TabsTrigger value="signup" className="font-semibold">Cadastrar Imobiliária</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="login">
+                <LoginForm onSubmit={handleLogin} loading={loading} />
+              </TabsContent>
+              
+              <TabsContent value="signup">
+                <AgencySignupForm onSubmit={handleAgencySignup} loading={loading} />
+              </TabsContent>
+            </Tabs>
+          )}
         </CardContent>
       </Card>
     </div>
