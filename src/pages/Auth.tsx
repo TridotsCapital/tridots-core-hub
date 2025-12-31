@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, getDefaultRouteForRole } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,14 +16,15 @@ export default function Auth() {
   const [fullName, setFullName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { signIn, signUp, user } = useAuth();
+  const { signIn, signUp, user, role } = useAuth();
   const navigate = useNavigate();
 
   // Redirect if already logged in
-  if (user) {
-    navigate('/');
-    return null;
-  }
+  useEffect(() => {
+    if (user && role !== null) {
+      navigate(getDefaultRouteForRole(role));
+    }
+  }, [user, role, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,7 +40,7 @@ export default function Auth() {
       }
     } else {
       toast.success('Login realizado com sucesso!');
-      navigate('/');
+      // Navigation will be handled by useEffect when role is loaded
     }
     
     setLoading(false);
