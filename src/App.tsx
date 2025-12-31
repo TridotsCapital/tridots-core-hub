@@ -24,6 +24,7 @@ import {
   AgencyDashboard, 
   AgencyAnalyses, 
   AgencyContracts, 
+  AgencyContractDetail,
   AgencySupport,
   AgencyNewAnalysis 
 } from "./pages/agency";
@@ -60,6 +61,7 @@ const App = () => (
             <Route path="/agency/analyses" element={<AgencyAnalyses />} />
             <Route path="/agency/analyses/new" element={<AgencyNewAnalysis />} />
             <Route path="/agency/contracts" element={<AgencyContracts />} />
+            <Route path="/agency/contracts/:id" element={<AgencyContractDetail />} />
             <Route path="/agency/support" element={<AgencySupport />} />
             
             <Route path="*" element={<NotFound />} />
