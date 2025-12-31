@@ -316,7 +316,10 @@ export function NewAnalysisForm({ agencyId }: NewAnalysisFormProps) {
       {/* Auto-save indicator */}
       <div className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1">
         <Save className="h-3 w-3" />
-        Rascunho salvo automaticamente
+        {getLastSavedTime() 
+          ? `Rascunho salvo às ${new Date(draft?.lastSavedAt || '').toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+          : 'Rascunho salvo automaticamente'
+        }
       </div>
     </div>
   );

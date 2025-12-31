@@ -6,9 +6,11 @@ import {
   AgencyMiniKanban, 
   AgencyEarningsChart, 
   AgencyPortfolioChart,
-  AgencyPeriodFilter 
+  AgencyPeriodFilter,
+  DraftBanner
 } from "@/components/agency";
-import { 
+import { useAnalysisDraft } from "@/hooks/useAnalysisDraft";
+import {
   useAgencyDashboard, 
   useAgencyRanking, 
   useAgencyProjection, 
@@ -23,6 +25,7 @@ export default function AgencyDashboard() {
   const [period, setPeriod] = useState<PeriodFilterType>('year');
   
   const { data: agencyId } = useCurrentAgencyId();
+  const { hasDraft, getLastSavedTime, clearDraft } = useAnalysisDraft();
   const { data: dashboardData, isLoading: loadingDashboard } = useAgencyDashboard(agencyId, period);
   const { data: ranking, isLoading: loadingRanking } = useAgencyRanking(agencyId);
   const { data: projection, isLoading: loadingProjection } = useAgencyProjection(agencyId);
@@ -38,6 +41,14 @@ export default function AgencyDashboard() {
       description="Acompanhe sua performance e ganhos com a Tridots Garantia"
     >
       <div className="space-y-6">
+        {/* Draft Banner */}
+        {hasDraft && (
+          <DraftBanner 
+            lastSavedTime={getLastSavedTime()} 
+            onDiscard={clearDraft} 
+          />
+        )}
+
         {/* Period Filter */}
         <div className="flex justify-end">
           <AgencyPeriodFilter value={period} onChange={setPeriod} />
