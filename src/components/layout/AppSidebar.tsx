@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import tridotsLogo from '@/assets/tridots-logo.png';
+import { NotificationCenter } from '@/components/notifications';
 import {
   Sidebar,
   SidebarContent,
@@ -104,23 +105,26 @@ export function AppSidebar() {
   return (
     <Sidebar className="border-r border-sidebar-border bg-sidebar">
       <SidebarHeader className="border-b border-sidebar-border p-4">
-        <Link to="/" className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center overflow-hidden">
-            <img 
-              src={tridotsLogo} 
-              alt="Tridots Garantia" 
-              className="w-8 h-8 object-contain"
-            />
-          </div>
-          <div>
-            <h1 className="font-bold text-sidebar-foreground tracking-tight">TRIDOTS</h1>
-            <p className="text-xs text-sidebar-foreground/70 font-medium tracking-widest">GARANTIA</p>
-            <div className="flex items-center gap-1.5 mt-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-              <span className="text-[10px] font-semibold text-amber-400 uppercase tracking-wider">Equipe Interna</span>
+        <div className="flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center overflow-hidden">
+              <img 
+                src={tridotsLogo} 
+                alt="Tridots Garantia" 
+                className="w-8 h-8 object-contain"
+              />
             </div>
-          </div>
-        </Link>
+            <div>
+              <h1 className="font-bold text-sidebar-foreground tracking-tight">TRIDOTS</h1>
+              <p className="text-xs text-sidebar-foreground/70 font-medium tracking-widest">GARANTIA</p>
+              <div className="flex items-center gap-1.5 mt-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                <span className="text-[10px] font-semibold text-amber-400 uppercase tracking-wider">Equipe Interna</span>
+              </div>
+            </div>
+          </Link>
+          <NotificationCenter isAgencyPortal={false} />
+        </div>
       </SidebarHeader>
 
       <SidebarContent>
