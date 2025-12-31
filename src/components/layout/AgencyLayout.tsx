@@ -1,0 +1,131 @@
+import { ReactNode, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import { AgencySidebar } from "./AgencySidebar";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2 } from "lucide-react";
+
+interface AgencyLayoutProps {
+  children: ReactNode;
+  title: string;
+  description?: string;
+}
+
+export function AgencyLayout({ children, title, description }: AgencyLayoutProps) {
+  const navigate = useNavigate();
+  const { user, loading, role } = useAuth();
+  const [agencyId, setAgencyId] = useState<string | null>(null);
+  const [agencyName, setAgencyName] = useState<string | null>(null);
+  const [loadingAgency, setLoadingAgency] = useState(true);
+
+  useEffect(() => {
+    const fetchAgencyInfo = async () => {
+      if (!user) {
+        setLoadingAgency(false);
+        return;
+      }
+
+      try {
+        // Direct query to agency_users table
+        const { data: agencyUserData, error } = await supabase
+          .from('agency_users' as any)
+          .select('agency_id')
+          .eq('user_id', user.id)
+          .single();
+
+        if (error || !agencyUserData) {
+          setLoadingAgency(false);
+          return;
+        }
+
+        const fetchedAgencyId = (agencyUserData as any).agency_id;
+        setAgencyId(fetchedAgencyId);
+
+        // Fetch agency name
+        const { data: agency } = await supabase
+          .from('agencies')
+          .select('nome_fantasia, razao_social')
+          .eq('id', fetchedAgencyId)
+          .single();
+
+        if (agency) {
+          setAgencyName(agency.nome_fantasia || agency.razao_social);
+        }
+      } catch (err) {
+        console.error('Error fetching agency info:', err);
+      }
+      
+      setLoadingAgency(false);
+    };
+
+    fetchAgencyInfo();
+  }, [user]);
+
+  // Show loading while checking auth
+  if (loading || loadingAgency) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Redirect if not authenticated
+  if (!user) {
+    navigate("/auth");
+    return null;
+  }
+
+  // Redirect if not an agency user
+  if (role !== 'agency_user') {
+    navigate("/");
+    return null;
+  }
+
+  // Show error if no agency linked
+  if (!agencyId) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center max-w-md p-6">
+          <h2 className="text-xl font-semibold mb-2">Acesso Pendente</h2>
+          <p className="text-muted-foreground mb-4">
+            Sua conta ainda não está vinculada a uma imobiliária. 
+            Entre em contato com a equipe Tridots para ativar seu acesso.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full bg-background">
+        <AgencySidebar />
+        <SidebarInset className="flex-1">
+          <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-4 border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-6">
+            <SidebarTrigger className="-ml-2" />
+            <div className="flex-1">
+              <h1 className="text-lg font-semibold">{title}</h1>
+              {description && (
+                <p className="text-sm text-muted-foreground">{description}</p>
+              )}
+            </div>
+            {agencyName && (
+              <div className="text-right">
+                <p className="text-sm font-medium">{agencyName}</p>
+                <p className="text-xs text-muted-foreground">Imobiliária Parceira</p>
+              </div>
+            )}
+          </header>
+          <main className="flex-1 p-6">
+            {children}
+          </main>
+        </SidebarInset>
+      </div>
+    </SidebarProvider>
+  );
+}

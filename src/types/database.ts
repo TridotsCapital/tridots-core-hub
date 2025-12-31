@@ -1,6 +1,14 @@
 // Types for the TRIDOTS GARANTIA system
 
-export type AppRole = 'master' | 'analyst';
+export type AppRole = 'master' | 'analyst' | 'agency_user';
+
+export interface AgencyUser {
+  id: string;
+  user_id: string;
+  agency_id: string;
+  is_primary_contact: boolean;
+  created_at: string;
+}
 
 export type AnalysisStatus = 'pendente' | 'em_analise' | 'aprovada' | 'reprovada' | 'cancelada' | 'aguardando_pagamento' | 'ativo';
 

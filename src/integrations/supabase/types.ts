@@ -821,6 +821,29 @@ export type Database = {
     }
     Functions: {
       cleanup_stale_typing_indicators: { Args: never; Returns: undefined }
+      get_agency_approval_rate: {
+        Args: { _agency_id: string }
+        Returns: {
+          approved: number
+          rate: number
+          total: number
+        }[]
+      }
+      get_agency_projection: {
+        Args: { _agency_id: string }
+        Returns: {
+          contracts_count: number
+          monthly_projection: number
+        }[]
+      }
+      get_agency_ranking: {
+        Args: { _agency_id: string }
+        Returns: {
+          ranking_position: number
+          total_agencies: number
+          total_commissions: number
+        }[]
+      }
       get_financial_summary: {
         Args: { end_date?: string; start_date?: string }
         Returns: {
