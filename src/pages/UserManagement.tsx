@@ -78,14 +78,14 @@ const UserManagement = () => {
         return (
           <Badge className="bg-amber-500 gap-1">
             <Crown className="h-3 w-3" />
-            Master
+            Administrador
           </Badge>
         );
       case "analyst":
         return (
           <Badge className="bg-blue-500 gap-1">
             <UserCheck className="h-3 w-3" />
-            Analyst
+            Analista
           </Badge>
         );
       default:
@@ -161,7 +161,7 @@ const UserManagement = () => {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardDescription>Masters</CardDescription>
+              <CardDescription>Administradores</CardDescription>
               <CardTitle className="text-3xl">
                 {users?.filter((u) => u.role === "master").length || 0}
               </CardTitle>
@@ -169,7 +169,7 @@ const UserManagement = () => {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardDescription>Analysts</CardDescription>
+              <CardDescription>Analistas</CardDescription>
               <CardTitle className="text-3xl">
                 {users?.filter((u) => u.role === "analyst").length || 0}
               </CardTitle>
@@ -251,12 +251,12 @@ const UserManagement = () => {
                             onValueChange={(value) => handleRoleChange(user, value)}
                             disabled={user.id === currentUser?.id}
                           >
-                            <SelectTrigger className="w-32">
+                            <SelectTrigger className="w-36">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="master">Master</SelectItem>
-                              <SelectItem value="analyst">Analyst</SelectItem>
+                              <SelectItem value="master">Administrador</SelectItem>
+                              <SelectItem value="analyst">Analista</SelectItem>
                               <SelectItem value="none">Remover</SelectItem>
                             </SelectContent>
                           </Select>
@@ -282,7 +282,7 @@ const UserManagement = () => {
             <div className="flex items-start gap-4">
               <Badge className="bg-amber-500 gap-1 mt-1">
                 <Crown className="h-3 w-3" />
-                Master
+                Administrador
               </Badge>
               <div>
                 <p className="font-medium">Administrador Total</p>
@@ -295,7 +295,7 @@ const UserManagement = () => {
             <div className="flex items-start gap-4">
               <Badge className="bg-blue-500 gap-1 mt-1">
                 <UserCheck className="h-3 w-3" />
-                Analyst
+                Analista
               </Badge>
               <div>
                 <p className="font-medium">Analista Operacional</p>
