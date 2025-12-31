@@ -74,6 +74,41 @@ export type Database = {
         }
         Relationships: []
       }
+      agency_users: {
+        Row: {
+          agency_id: string
+          created_at: string
+          id: string
+          is_primary_contact: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          agency_id: string
+          created_at?: string
+          id?: string
+          is_primary_contact?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          agency_id?: string
+          created_at?: string
+          id?: string
+          is_primary_contact?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agency_users_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       analyses: {
         Row: {
           agency_id: string
