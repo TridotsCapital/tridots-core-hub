@@ -6,7 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { CheckCheck } from "lucide-react";
+import { CheckCheck, FileIcon, Download, Image as ImageIcon } from "lucide-react";
 
 interface TicketChatMessagesProps {
   messages: TicketMessage[];
@@ -41,6 +41,14 @@ export function TicketChatMessages({
       </div>
     );
   }
+
+  const isImageUrl = (url: string) => {
+    return /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
+  };
+
+  const getFileName = (url: string) => {
+    return url.split('/').pop() || 'arquivo';
+  };
 
   const otherTypingUsers = typingUsers.filter(t => t.user_id !== currentUserId);
 
@@ -86,13 +94,55 @@ export function TicketChatMessages({
                 </div>
                 <div
                   className={cn(
-                    "p-3 text-sm whitespace-pre-wrap",
+                    "p-3 text-sm",
                     isOwn
                       ? "bg-primary text-primary-foreground rounded-tl-2xl rounded-tr-sm rounded-b-2xl"
                       : "bg-muted rounded-tr-2xl rounded-tl-sm rounded-b-2xl"
                   )}
                 >
-                  {msg.message}
+                  {msg.message && (
+                    <p className="whitespace-pre-wrap">{msg.message}</p>
+                  )}
+                  
+                  {/* Attachments */}
+                  {msg.attachments_url && msg.attachments_url.length > 0 && (
+                    <div className={cn("mt-2 space-y-2", !msg.message && "mt-0")}>
+                      {msg.attachments_url.map((url, idx) => (
+                        isImageUrl(url) ? (
+                          <a 
+                            key={idx}
+                            href={url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="block"
+                          >
+                            <img 
+                              src={url} 
+                              alt="Anexo" 
+                              className="max-w-[200px] rounded-lg border hover:opacity-90 transition-opacity"
+                            />
+                          </a>
+                        ) : (
+                          <a
+                            key={idx}
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={cn(
+                              "flex items-center gap-2 p-2 rounded-lg border transition-colors",
+                              isOwn 
+                                ? "bg-primary-foreground/10 hover:bg-primary-foreground/20 text-primary-foreground" 
+                                : "bg-background hover:bg-muted"
+                            )}
+                          >
+                            <FileIcon className="h-4 w-4 shrink-0" />
+                            <span className="text-xs truncate max-w-[150px]">{getFileName(url)}</span>
+                            <Download className="h-3 w-3 shrink-0 ml-auto" />
+                          </a>
+                        )
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div className={cn("flex items-center gap-1 mt-1", isOwn && "justify-end")}>
                   <span className="text-[10px] text-muted-foreground">
