@@ -1,10 +1,11 @@
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useEffect, useState, createContext, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AgencySidebar } from "./AgencySidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
+import { PendingApprovalBanner } from "@/components/agency/PendingApprovalBanner";
 
 interface AgencyLayoutProps {
   children: ReactNode;
@@ -13,11 +14,21 @@ interface AgencyLayoutProps {
   actions?: ReactNode;
 }
 
+// Context to share isAgencyActive state
+interface AgencyStatusContextType {
+  isAgencyActive: boolean;
+}
+
+const AgencyStatusContext = createContext<AgencyStatusContextType>({ isAgencyActive: true });
+
+export const useAgencyStatus = () => useContext(AgencyStatusContext);
+
 export function AgencyLayout({ children, title, description, actions }: AgencyLayoutProps) {
   const navigate = useNavigate();
   const { user, loading, role } = useAuth();
   const [agencyId, setAgencyId] = useState<string | null>(null);
   const [agencyName, setAgencyName] = useState<string | null>(null);
+  const [isAgencyActive, setIsAgencyActive] = useState(true);
   const [loadingAgency, setLoadingAgency] = useState(true);
 
   useEffect(() => {
@@ -43,15 +54,16 @@ export function AgencyLayout({ children, title, description, actions }: AgencyLa
         const fetchedAgencyId = (agencyUserData as any).agency_id;
         setAgencyId(fetchedAgencyId);
 
-        // Fetch agency name
+        // Fetch agency name and active status
         const { data: agency } = await supabase
           .from('agencies')
-          .select('nome_fantasia, razao_social')
+          .select('nome_fantasia, razao_social, active')
           .eq('id', fetchedAgencyId)
           .single();
 
         if (agency) {
           setAgencyName(agency.nome_fantasia || agency.razao_social);
+          setIsAgencyActive(agency.active);
         }
       } catch (err) {
         console.error('Error fetching agency info:', err);
@@ -103,31 +115,36 @@ export function AgencyLayout({ children, title, description, actions }: AgencyLa
   }
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
-        <AgencySidebar />
-        <SidebarInset className="flex-1">
-          <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-4 border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-6">
-            <SidebarTrigger className="-ml-2" />
-            <div className="flex-1">
-              <h1 className="text-lg font-semibold">{title}</h1>
-              {description && (
-                <p className="text-sm text-muted-foreground">{description}</p>
-              )}
-            </div>
-            {actions && <div className="flex items-center gap-2">{actions}</div>}
-            {agencyName && (
-              <div className="text-right">
-                <p className="text-sm font-medium">{agencyName}</p>
-                <p className="text-xs text-muted-foreground">Imobiliária Parceira</p>
+    <AgencyStatusContext.Provider value={{ isAgencyActive }}>
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full bg-background">
+          <AgencySidebar />
+          <SidebarInset className="flex-1">
+            <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-4 border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-6">
+              <SidebarTrigger className="-ml-2" />
+              <div className="flex-1">
+                <h1 className="text-lg font-semibold">{title}</h1>
+                {description && (
+                  <p className="text-sm text-muted-foreground">{description}</p>
+                )}
               </div>
-            )}
-          </header>
-          <main className="flex-1 p-6">
-            {children}
-          </main>
-        </SidebarInset>
-      </div>
-    </SidebarProvider>
+              {actions && <div className="flex items-center gap-2">{actions}</div>}
+              {agencyName && (
+                <div className="text-right">
+                  <p className="text-sm font-medium">{agencyName}</p>
+                  <p className="text-xs text-muted-foreground">Imobiliária Parceira</p>
+                </div>
+              )}
+            </header>
+            <main className="flex-1 p-6">
+              {!isAgencyActive && (
+                <PendingApprovalBanner className="mb-6" />
+              )}
+              {children}
+            </main>
+          </SidebarInset>
+        </div>
+      </SidebarProvider>
+    </AgencyStatusContext.Provider>
   );
 }

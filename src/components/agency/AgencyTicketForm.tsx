@@ -28,9 +28,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Plus, Loader2 } from "lucide-react";
 import { useCreateTicket } from "@/hooks/useTickets";
 import { TicketCategory, TicketPriority } from "@/types/tickets";
+import { useAgencyStatus } from "@/components/layout/AgencyLayout";
 
 const formSchema = z.object({
   subject: z.string().min(5, "O assunto deve ter no mínimo 5 caracteres"),
@@ -61,6 +63,7 @@ const priorityLabels: Record<TicketPriority, string> = {
 export function AgencyTicketForm({ agencyId }: AgencyTicketFormProps) {
   const [open, setOpen] = useState(false);
   const createTicket = useCreateTicket();
+  const { isAgencyActive } = useAgencyStatus();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -83,6 +86,24 @@ export function AgencyTicketForm({ agencyId }: AgencyTicketFormProps) {
     form.reset();
     setOpen(false);
   };
+
+  if (!isAgencyActive) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span>
+            <Button className="gap-2" disabled>
+              <Plus className="h-4 w-4" />
+              Novo Chamado
+            </Button>
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Disponível após aprovação do cadastro</p>
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
