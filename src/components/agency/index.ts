@@ -7,3 +7,6 @@ export { AgencyPeriodFilter } from './AgencyPeriodFilter';
 export { AgencyTicketForm } from './AgencyTicketForm';
 export { AgencyTicketList } from './AgencyTicketList';
 export { AgencyTicketDetail } from './AgencyTicketDetail';
+export { AgencyKanbanBoard } from './AgencyKanbanBoard';
+export { AgencyKanbanCard } from './AgencyKanbanCard';
+export { AgencyAnalysisDrawer } from './AgencyAnalysisDrawer';

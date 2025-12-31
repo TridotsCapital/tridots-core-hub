@@ -890,6 +890,7 @@ export type Database = {
         }[]
       }
       get_suggested_analyst: { Args: never; Returns: string }
+      get_user_agency_id: { Args: { user_uuid: string }; Returns: string }
       has_any_role: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
@@ -898,6 +899,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_agency_user: { Args: { _user_id: string }; Returns: boolean }
       is_master: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
