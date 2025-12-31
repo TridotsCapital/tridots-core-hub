@@ -638,6 +638,83 @@ export type Database = {
           },
         ]
       }
+      ticket_quick_replies: {
+        Row: {
+          category: Database["public"]["Enums"]["ticket_category"] | null
+          content: string
+          created_at: string
+          created_by: string
+          id: string
+          title: string
+          updated_at: string
+          usage_count: number
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["ticket_category"] | null
+          content: string
+          created_at?: string
+          created_by: string
+          id?: string
+          title: string
+          updated_at?: string
+          usage_count?: number
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["ticket_category"] | null
+          content?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          usage_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_quick_replies_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_typing_indicators: {
+        Row: {
+          id: string
+          started_at: string
+          ticket_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          started_at?: string
+          ticket_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          started_at?: string
+          ticket_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_typing_indicators_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_typing_indicators_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tickets: {
         Row: {
           agency_id: string
@@ -743,6 +820,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_stale_typing_indicators: { Args: never; Returns: undefined }
       get_financial_summary: {
         Args: { end_date?: string; start_date?: string }
         Returns: {
@@ -753,6 +831,7 @@ export type Database = {
           total_valor: number
         }[]
       }
+      get_suggested_analyst: { Args: never; Returns: string }
       has_any_role: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
