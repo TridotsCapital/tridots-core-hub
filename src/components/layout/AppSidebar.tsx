@@ -156,7 +156,7 @@ export function AppSidebar() {
               {profile?.full_name || 'Usuário'}
             </p>
             <p className="text-xs text-sidebar-foreground/60 capitalize font-medium">
-              {role === 'master' ? 'Administrador' : role || 'Sem função'}
+              {role === 'master' ? 'Administrador' : role === 'analyst' ? 'Analista' : role === 'agency_user' ? 'Colaborador' : 'Sem função'}
             </p>
           </div>
           <Button
