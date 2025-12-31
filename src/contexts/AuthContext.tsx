@@ -143,3 +143,10 @@ export function useAuth() {
   }
   return context;
 }
+
+export function getDefaultRouteForRole(role: AppRole | null): string {
+  if (role === 'agency_user') {
+    return '/agency';
+  }
+  return '/';
+}
