@@ -182,74 +182,111 @@ export function AgencyTicketDetail({ ticketId, onClose }: AgencyTicketDetailProp
                   <div className="flex justify-center py-8">
                     <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                   </div>
-                ) : messages.length === 0 ? (
+                ) : messages.length === 0 && !ticket.description ? (
                   <div className="text-center py-8 text-muted-foreground">
                     <p>Nenhuma mensagem ainda.</p>
                     <p className="text-sm">Aguarde a resposta da equipe Tridots.</p>
                   </div>
                 ) : (
-                  messages.map((msg: any) => {
-                    const isOwnMessage = msg.sender_id === user?.id;
-                    const senderName = msg.sender?.full_name || "Usuário";
-                    const initials = senderName
-                      .split(" ")
-                      .map((n: string) => n[0])
-                      .slice(0, 2)
-                      .join("")
-                      .toUpperCase();
-
-                    return (
-                      <div
-                        key={msg.id}
-                        className={cn(
-                          "flex gap-3",
-                          isOwnMessage ? "flex-row-reverse" : "flex-row"
-                        )}
-                      >
+                  <>
+                    {/* Show ticket description as initial context if exists */}
+                    {ticket.description && (
+                      <div className="flex gap-3 flex-row">
                         <Avatar className="h-8 w-8 shrink-0">
-                          <AvatarFallback
-                            className={cn(
-                              "text-xs",
-                              isOwnMessage
-                                ? "bg-primary text-primary-foreground"
-                                : "bg-muted"
-                            )}
-                          >
-                            {initials}
+                          <AvatarFallback className="text-xs bg-primary text-primary-foreground">
+                            {(ticket.creator?.full_name || "Você")
+                              .split(" ")
+                              .map((n: string) => n[0])
+                              .slice(0, 2)
+                              .join("")
+                              .toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-
-                        <div
-                          className={cn(
-                            "flex-1 max-w-[80%]",
-                            isOwnMessage ? "text-right" : "text-left"
-                          )}
-                        >
+                        <div className="flex-1 max-w-[80%] text-left">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="text-xs font-medium">
-                              {isOwnMessage ? "Você" : senderName}
+                              {ticket.creator?.full_name || "Você"}
                             </span>
                             <span className="text-xs text-muted-foreground">
-                              {formatDistanceToNow(new Date(msg.created_at), {
+                              {formatDistanceToNow(new Date(ticket.created_at), {
                                 addSuffix: true,
                                 locale: ptBR,
                               })}
                             </span>
+                            <Badge variant="outline" className="text-[10px] px-1 py-0">
+                              Descrição inicial
+                            </Badge>
                           </div>
-                          <div
-                            className={cn(
-                              "inline-block rounded-lg px-4 py-2 text-sm",
-                              isOwnMessage
-                                ? "bg-primary text-primary-foreground"
-                                : "bg-muted"
-                            )}
-                          >
-                            <p className="whitespace-pre-wrap">{msg.message}</p>
+                          <div className="inline-block rounded-lg px-4 py-2 text-sm bg-primary text-primary-foreground">
+                            <p className="whitespace-pre-wrap">{ticket.description}</p>
                           </div>
                         </div>
                       </div>
-                    );
-                  })
+                    )}
+                    {/* Regular messages */}
+                    {messages.map((msg: any) => {
+                      const isOwnMessage = msg.sender_id === user?.id;
+                      const senderName = msg.sender?.full_name || "Usuário";
+                      const initials = senderName
+                        .split(" ")
+                        .map((n: string) => n[0])
+                        .slice(0, 2)
+                        .join("")
+                        .toUpperCase();
+
+                      return (
+                        <div
+                          key={msg.id}
+                          className={cn(
+                            "flex gap-3",
+                            isOwnMessage ? "flex-row-reverse" : "flex-row"
+                          )}
+                        >
+                          <Avatar className="h-8 w-8 shrink-0">
+                            <AvatarFallback
+                              className={cn(
+                                "text-xs",
+                                isOwnMessage
+                                  ? "bg-primary text-primary-foreground"
+                                  : "bg-muted"
+                              )}
+                            >
+                              {initials}
+                            </AvatarFallback>
+                          </Avatar>
+
+                          <div
+                            className={cn(
+                              "flex-1 max-w-[80%]",
+                              isOwnMessage ? "text-right" : "text-left"
+                            )}
+                          >
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-xs font-medium">
+                                {isOwnMessage ? "Você" : senderName}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {formatDistanceToNow(new Date(msg.created_at), {
+                                  addSuffix: true,
+                                  locale: ptBR,
+                                })}
+                              </span>
+                            </div>
+                            <div
+                              className={cn(
+                                "inline-block rounded-lg px-4 py-2 text-sm",
+                                isOwnMessage
+                                  ? "bg-primary text-primary-foreground"
+                                  : "bg-muted"
+                              )}
+                            >
+                              <p className="whitespace-pre-wrap">{msg.message}</p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </>
                 )}
                 <div ref={messagesEndRef} />
               </div>
