@@ -6,6 +6,7 @@ export type NotificationType = 'new_message' | 'status_change' | 'ticket_escalat
 export interface Ticket {
   id: string;
   agency_id: string;
+  analysis_id: string | null;
   created_by: string;
   assigned_to: string | null;
   subject: string;
@@ -40,6 +41,13 @@ export interface Ticket {
     full_name: string;
     email: string;
     avatar_url: string | null;
+  };
+  // Linked contract/analysis data
+  analysis?: {
+    id: string;
+    inquilino_nome: string;
+    imovel_endereco: string;
+    status: string;
   };
 }
 

@@ -795,6 +795,7 @@ export type Database = {
       tickets: {
         Row: {
           agency_id: string
+          analysis_id: string | null
           assigned_to: string | null
           category: Database["public"]["Enums"]["ticket_category"]
           created_at: string
@@ -813,6 +814,7 @@ export type Database = {
         }
         Insert: {
           agency_id: string
+          analysis_id?: string | null
           assigned_to?: string | null
           category?: Database["public"]["Enums"]["ticket_category"]
           created_at?: string
@@ -831,6 +833,7 @@ export type Database = {
         }
         Update: {
           agency_id?: string
+          analysis_id?: string | null
           assigned_to?: string | null
           category?: Database["public"]["Enums"]["ticket_category"]
           created_at?: string
@@ -853,6 +856,13 @@ export type Database = {
             columns: ["agency_id"]
             isOneToOne: false
             referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_analysis_id_fkey"
+            columns: ["analysis_id"]
+            isOneToOne: false
+            referencedRelation: "analyses"
             referencedColumns: ["id"]
           },
           {

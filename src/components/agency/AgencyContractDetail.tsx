@@ -11,6 +11,7 @@ import { formatCurrency, PROPERTY_TYPES, BRAZILIAN_STATES } from '@/lib/validato
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { AgencyDocumentCenter } from './AgencyDocumentCenter';
+import { ContractTicketSheet } from './ContractTicketSheet';
 import type { Database } from '@/integrations/supabase/types';
 
 type AnalysisStatus = Database['public']['Enums']['analysis_status'];
@@ -40,6 +41,7 @@ export function AgencyContractDetail() {
   const [analysis, setAnalysis] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'overview');
+  const [ticketSheetOpen, setTicketSheetOpen] = useState(false);
 
   useEffect(() => {
     const fetchAnalysis = async () => {
@@ -174,15 +176,23 @@ export function AgencyContractDetail() {
           <Button 
             variant="outline" 
             size="sm"
-            onClick={() => navigate('/agency/support', { 
-              state: { prefillSubject: `Dúvida sobre análise #${analysis.id.slice(0, 8).toUpperCase()}` } 
-            })}
+            onClick={() => setTicketSheetOpen(true)}
           >
             <MessageSquare className="h-4 w-4 mr-2" />
             Abrir Chamado
           </Button>
         </div>
       </div>
+
+      {/* Ticket Sheet */}
+      <ContractTicketSheet
+        open={ticketSheetOpen}
+        onOpenChange={setTicketSheetOpen}
+        analysisId={analysis.id}
+        agencyId={analysis.agency_id}
+        contractRef={analysis.id.slice(0, 8).toUpperCase()}
+        tenantName={analysis.inquilino_nome}
+      />
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>

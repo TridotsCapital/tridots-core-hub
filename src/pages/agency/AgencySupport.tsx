@@ -6,7 +6,7 @@ import { AgencyTicketChatArea } from "@/components/agency/AgencyTicketChatArea";
 import { useAgencyUser } from "@/hooks/useAgencyUser";
 import { useAgencyTickets } from "@/hooks/useTickets";
 import { useUnreadItemIds, useMarkItemAsRead } from "@/hooks/useUnreadItemIds";
-import { Loader2, Search, MessageSquare, Clock } from "lucide-react";
+import { Loader2, Search, MessageSquare, Clock, FileText } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -69,6 +69,7 @@ export default function AgencySupport() {
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilterValue>("all");
+  const [hasContractFilter, setHasContractFilter] = useState(false);
   
   const { data: agencyUser, isLoading: agencyUserLoading } = useAgencyUser();
   const { data: tickets = [], isLoading: ticketsLoading } = useAgencyTickets(
@@ -105,11 +106,13 @@ export default function AgencySupport() {
       ticket.id.toLowerCase().includes(search.toLowerCase());
     
     if (statusFilter === "unread") {
-      return matchesSearch && unreadIds?.chamados.has(ticket.id);
+      const matchesContract = !hasContractFilter || ticket.analysis_id !== null;
+      return matchesSearch && unreadIds?.chamados.has(ticket.id) && matchesContract;
     }
     
     const matchesStatus = statusFilter === "all" || ticket.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesContract = !hasContractFilter || ticket.analysis_id !== null;
+    return matchesSearch && matchesStatus && matchesContract;
   });
 
   if (agencyUserLoading) {
@@ -163,6 +166,15 @@ export default function AgencySupport() {
                 {filter.label}
               </Button>
             ))}
+            <Button
+              variant={hasContractFilter ? "default" : "outline"}
+              size="sm"
+              onClick={() => setHasContractFilter(!hasContractFilter)}
+              className="whitespace-nowrap"
+            >
+              <FileText className="h-4 w-4 mr-1" />
+              Com Contrato
+            </Button>
           </div>
           <AgencyTicketForm agencyId={agencyUser.agency_id} />
         </div>
@@ -221,13 +233,19 @@ export default function AgencySupport() {
                               <span className="text-xs font-mono text-muted-foreground">
                                 #{ticket.id.slice(0, 8).toUpperCase()}
                               </span>
-                              <Badge
-                                variant="outline"
-                                className={cn("text-xs", categoryConfig[ticket.category as TicketCategory].className)}
-                              >
-                                {categoryConfig[ticket.category as TicketCategory].label}
+                            <Badge
+                              variant="outline"
+                              className={cn("text-xs", categoryConfig[ticket.category as TicketCategory].className)}
+                            >
+                              {categoryConfig[ticket.category as TicketCategory].label}
+                            </Badge>
+                            {ticket.analysis_id && (
+                              <Badge variant="secondary" className="text-[10px]">
+                                <FileText className="h-3 w-3 mr-0.5" />
+                                Contrato
                               </Badge>
-                            </div>
+                            )}
+                          </div>
                             <h4 className="font-medium text-foreground truncate">
                               {ticket.subject}
                             </h4>
