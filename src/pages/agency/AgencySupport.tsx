@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 import { AgencyLayout } from "@/components/layout/AgencyLayout";
 import { AgencyTicketForm } from "@/components/agency/AgencyTicketForm";
 import { AgencyTicketChatArea } from "@/components/agency/AgencyTicketChatArea";
 import { useAgencyUser } from "@/hooks/useAgencyUser";
 import { useAgencyTickets } from "@/hooks/useTickets";
 import { useUnreadItemIds, useMarkItemAsRead } from "@/hooks/useUnreadItemIds";
-import { Loader2, Search, MessageSquare, Clock, FileText } from "lucide-react";
+import { Loader2, Search, MessageSquare, Clock, FileText, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -66,10 +66,12 @@ const statusFilters: { value: StatusFilterValue; label: string }[] = [
 
 export default function AgencySupport() {
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilterValue>("all");
   const [hasContractFilter, setHasContractFilter] = useState(false);
+  const [contractFilter, setContractFilter] = useState<string | null>(null);
   
   const { data: agencyUser, isLoading: agencyUserLoading } = useAgencyUser();
   const { data: tickets = [], isLoading: ticketsLoading } = useAgencyTickets(
@@ -77,6 +79,14 @@ export default function AgencySupport() {
   );
   const { data: unreadIds } = useUnreadItemIds();
   const markAsRead = useMarkItemAsRead();
+
+  // Read contract filter from URL
+  useEffect(() => {
+    const contract = searchParams.get('contract');
+    if (contract) {
+      setContractFilter(contract);
+    }
+  }, [searchParams]);
 
   // Auto-open ticket from notification
   useEffect(() => {
@@ -94,6 +104,11 @@ export default function AgencySupport() {
     setSelectedTicketId(ticketId);
   };
 
+  const clearContractFilter = () => {
+    setContractFilter(null);
+    setSearchParams({});
+  };
+
   // Sort tickets by most recent activity
   const sortedTickets = [...tickets].sort((a, b) => 
     new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
@@ -101,6 +116,11 @@ export default function AgencySupport() {
 
   // Filter tickets
   const filteredTickets = sortedTickets.filter((ticket) => {
+    // Contract filter from URL
+    if (contractFilter && ticket.analysis_id !== contractFilter) {
+      return false;
+    }
+
     const matchesSearch =
       ticket.subject.toLowerCase().includes(search.toLowerCase()) ||
       ticket.id.toLowerCase().includes(search.toLowerCase());
@@ -140,6 +160,27 @@ export default function AgencySupport() {
   return (
     <AgencyLayout title="Suporte" description="Central de atendimento e tickets">
       <div className="h-[calc(100vh-9rem)] flex flex-col">
+        {/* Contract filter banner */}
+        {contractFilter && (
+          <div className="flex items-center gap-2 px-4 py-2 mb-3 bg-amber-50 border border-amber-200 rounded-lg">
+            <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300">
+              Filtrado por contrato
+            </Badge>
+            <span className="text-sm text-amber-700">
+              Mostrando apenas chamados do contrato #{contractFilter.slice(0, 8).toUpperCase()}
+            </span>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="ml-auto h-7 text-amber-700 hover:text-amber-900 hover:bg-amber-100"
+              onClick={clearContractFilter}
+            >
+              <X className="h-4 w-4 mr-1" />
+              Limpar filtro
+            </Button>
+          </div>
+        )}
+
         {/* Top filter bar */}
         <div className="flex flex-col sm:flex-row gap-3 pb-4">
           <div className="relative flex-1 max-w-md">
@@ -197,7 +238,7 @@ export default function AgencySupport() {
                 <MessageSquare className="h-12 w-12 mb-3 opacity-50" />
                 <p className="font-medium">Nenhum chamado encontrado</p>
                 <p className="text-sm text-center mt-1">
-                  {search || statusFilter !== "all"
+                  {search || statusFilter !== "all" || contractFilter
                     ? "Tente buscar com outros filtros"
                     : "Seus chamados aparecerão aqui"}
                 </p>

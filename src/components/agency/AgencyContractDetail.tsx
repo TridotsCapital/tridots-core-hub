@@ -5,13 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Home, User, Users, DollarSign, Calendar, CheckCircle, Clock, XCircle, CreditCard, FileText, Download, Loader2, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Home, User, Users, DollarSign, Calendar, CheckCircle, Clock, XCircle, CreditCard, FileText, Loader2, MessageSquare, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { formatCurrency, PROPERTY_TYPES, BRAZILIAN_STATES } from '@/lib/validators';
+import { formatCurrency, PROPERTY_TYPES } from '@/lib/validators';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { AgencyDocumentCenter } from './AgencyDocumentCenter';
 import { ContractTicketSheet } from './ContractTicketSheet';
+import { useTicketCountByAnalysis, useTicketsByAnalysis } from '@/hooks/useTickets';
 import type { Database } from '@/integrations/supabase/types';
 
 type AnalysisStatus = Database['public']['Enums']['analysis_status'];
@@ -26,12 +27,21 @@ const STATUS_CONFIG: Record<AnalysisStatus, { label: string; color: string; icon
   ativo: { label: 'Ativo', color: 'bg-green-100 text-green-800 border-green-200', icon: CheckCircle },
 };
 
+const TICKET_STATUS_LABELS: Record<string, string> = {
+  aberto: 'Aberto',
+  em_atendimento: 'Em Atendimento',
+  aguardando_cliente: 'Aguardando Resposta',
+  resolvido: 'Resolvido',
+};
+
 interface TimelineEvent {
   date: string;
   title: string;
   description: string;
   icon: any;
   iconColor: string;
+  type?: 'contract' | 'ticket';
+  ticketId?: string;
 }
 
 export function AgencyContractDetail() {
@@ -42,6 +52,9 @@ export function AgencyContractDetail() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'overview');
   const [ticketSheetOpen, setTicketSheetOpen] = useState(false);
+
+  const { data: ticketCount = 0 } = useTicketCountByAnalysis(id);
+  const { data: tickets = [] } = useTicketsByAnalysis(id);
 
   useEffect(() => {
     const fetchAnalysis = async () => {
@@ -97,6 +110,7 @@ export function AgencyContractDetail() {
       description: 'Solicitação de análise de crédito enviada',
       icon: FileText,
       iconColor: 'text-blue-500',
+      type: 'contract',
     },
   ];
 
@@ -107,6 +121,7 @@ export function AgencyContractDetail() {
       description: 'Crédito aprovado pela equipe Tridots',
       icon: CheckCircle,
       iconColor: 'text-green-500',
+      type: 'contract',
     });
   }
 
@@ -117,6 +132,7 @@ export function AgencyContractDetail() {
       description: 'Crédito não aprovado',
       icon: XCircle,
       iconColor: 'text-red-500',
+      type: 'contract',
     });
   }
 
@@ -127,6 +143,7 @@ export function AgencyContractDetail() {
       description: 'Solicitação cancelada',
       icon: XCircle,
       iconColor: 'text-gray-500',
+      type: 'contract',
     });
   }
 
@@ -137,6 +154,7 @@ export function AgencyContractDetail() {
       description: `Setup Fee: ${formatCurrency(analysis.setup_fee)}`,
       icon: CreditCard,
       iconColor: 'text-orange-500',
+      type: 'contract',
     });
   }
 
@@ -147,8 +165,34 @@ export function AgencyContractDetail() {
       description: 'Pagamento confirmado, garantia ativada',
       icon: CheckCircle,
       iconColor: 'text-green-600',
+      type: 'contract',
     });
   }
+
+  // Add ticket events to timeline
+  tickets.forEach((ticket) => {
+    timelineEvents.push({
+      date: ticket.created_at,
+      title: `Chamado Aberto`,
+      description: ticket.subject,
+      icon: MessageSquare,
+      iconColor: 'text-amber-500',
+      type: 'ticket',
+      ticketId: ticket.id,
+    });
+    
+    if (ticket.resolved_at) {
+      timelineEvents.push({
+        date: ticket.resolved_at,
+        title: `Chamado Resolvido`,
+        description: ticket.subject,
+        icon: CheckCircle,
+        iconColor: 'text-amber-600',
+        type: 'ticket',
+        ticketId: ticket.id,
+      });
+    }
+  });
 
   timelineEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
@@ -173,6 +217,16 @@ export function AgencyContractDetail() {
             <StatusIcon className="h-3.5 w-3.5 mr-1.5" />
             {statusConfig.label}
           </Badge>
+          {ticketCount > 0 && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => navigate(`/agency/support?contract=${analysis.id}`)}
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              Ver Chamados ({ticketCount})
+            </Button>
+          )}
           <Button 
             variant="outline" 
             size="sm"
@@ -374,7 +428,7 @@ export function AgencyContractDetail() {
                 <Calendar className="h-4 w-4" />
                 Timeline de Eventos
               </CardTitle>
-              <CardDescription>Histórico completo da análise</CardDescription>
+              <CardDescription>Histórico completo da análise e chamados</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="relative">
@@ -386,11 +440,18 @@ export function AgencyContractDetail() {
                     const EventIcon = event.icon;
                     return (
                       <div key={index} className="relative pl-10">
-                        <div className={`absolute left-0 w-8 h-8 rounded-full bg-background border-2 border-border flex items-center justify-center`}>
+                        <div className={`absolute left-0 w-8 h-8 rounded-full bg-background border-2 ${event.type === 'ticket' ? 'border-amber-300' : 'border-border'} flex items-center justify-center`}>
                           <EventIcon className={`h-4 w-4 ${event.iconColor}`} />
                         </div>
                         <div className="pb-4">
-                          <p className="font-medium">{event.title}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium">{event.title}</p>
+                            {event.type === 'ticket' && (
+                              <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
+                                Chamado
+                              </Badge>
+                            )}
+                          </div>
                           <p className="text-sm text-muted-foreground">{event.description}</p>
                           <p className="text-xs text-muted-foreground mt-1">
                             {format(new Date(event.date), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR })}

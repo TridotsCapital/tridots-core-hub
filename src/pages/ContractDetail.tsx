@@ -20,9 +20,13 @@ import {
   CreditCard, 
   FileText,
   Building2,
+  MessageSquare,
+  Eye,
 } from 'lucide-react';
 import { useContract } from '@/hooks/useContracts';
+import { useTicketCountByAnalysis, useTicketsByAnalysis } from '@/hooks/useTickets';
 import { ContractActions } from '@/components/contracts';
+import { ContractTicketSheet } from '@/components/contracts/ContractTicketSheet';
 import { formatCurrency, PROPERTY_TYPES } from '@/lib/validators';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -46,6 +50,8 @@ interface TimelineEvent {
   description: string;
   icon: any;
   iconColor: string;
+  type?: 'contract' | 'ticket';
+  ticketId?: string;
 }
 
 export default function ContractDetail() {
@@ -53,8 +59,11 @@ export default function ContractDetail() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'overview');
+  const [ticketSheetOpen, setTicketSheetOpen] = useState(false);
 
   const { data: contract, isLoading } = useContract(id);
+  const { data: ticketCount = 0 } = useTicketCountByAnalysis(id);
+  const { data: tickets = [] } = useTicketsByAnalysis(id);
 
   if (isLoading) {
     return (
@@ -92,6 +101,7 @@ export default function ContractDetail() {
       description: 'Solicitação de análise de crédito enviada',
       icon: FileText,
       iconColor: 'text-blue-500',
+      type: 'contract',
     },
   ];
 
@@ -102,6 +112,7 @@ export default function ContractDetail() {
       description: 'Crédito aprovado pela equipe Tridots',
       icon: CheckCircle,
       iconColor: 'text-green-500',
+      type: 'contract',
     });
   }
 
@@ -112,6 +123,7 @@ export default function ContractDetail() {
       description: 'Crédito não aprovado',
       icon: XCircle,
       iconColor: 'text-red-500',
+      type: 'contract',
     });
   }
 
@@ -122,6 +134,7 @@ export default function ContractDetail() {
       description: 'Contrato cancelado',
       icon: XCircle,
       iconColor: 'text-gray-500',
+      type: 'contract',
     });
   }
 
@@ -132,6 +145,7 @@ export default function ContractDetail() {
       description: `Setup Fee: ${formatCurrency(contract.setup_fee)}`,
       icon: CreditCard,
       iconColor: 'text-orange-500',
+      type: 'contract',
     });
   }
 
@@ -142,8 +156,34 @@ export default function ContractDetail() {
       description: 'Pagamento confirmado, garantia ativada',
       icon: CheckCircle,
       iconColor: 'text-green-600',
+      type: 'contract',
     });
   }
+
+  // Add ticket events to timeline
+  tickets.forEach((ticket) => {
+    timelineEvents.push({
+      date: ticket.created_at,
+      title: `Chamado Aberto`,
+      description: ticket.subject,
+      icon: MessageSquare,
+      iconColor: 'text-amber-500',
+      type: 'ticket',
+      ticketId: ticket.id,
+    });
+    
+    if (ticket.resolved_at) {
+      timelineEvents.push({
+        date: ticket.resolved_at,
+        title: `Chamado Resolvido`,
+        description: ticket.subject,
+        icon: CheckCircle,
+        iconColor: 'text-amber-600',
+        type: 'ticket',
+        ticketId: ticket.id,
+      });
+    }
+  });
 
   timelineEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
@@ -167,7 +207,38 @@ export default function ContractDetail() {
               {statusConfig.label}
             </Badge>
           </div>
+          <div className="flex items-center gap-2">
+            {ticketCount > 0 && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate(`/tickets?contract=${contract.id}`)}
+              >
+                <Eye className="h-4 w-4 mr-2" />
+                Ver Chamados ({ticketCount})
+              </Button>
+            )}
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setTicketSheetOpen(true)}
+            >
+              <MessageSquare className="h-4 w-4 mr-2" />
+              Abrir Chamado
+            </Button>
+          </div>
         </div>
+
+        {/* Ticket Sheet */}
+        <ContractTicketSheet
+          open={ticketSheetOpen}
+          onOpenChange={setTicketSheetOpen}
+          analysisId={contract.id}
+          agencyId={contract.agency_id}
+          contractRef={contract.id.slice(0, 8).toUpperCase()}
+          agencyName={contract.agency?.nome_fantasia || contract.agency?.razao_social}
+          tenantName={contract.inquilino_nome}
+        />
 
         {/* Quick Actions */}
         <Card>
@@ -344,7 +415,7 @@ export default function ContractDetail() {
                   <Calendar className="h-4 w-4" />
                   Timeline de Eventos
                 </CardTitle>
-                <CardDescription>Histórico completo do contrato</CardDescription>
+                <CardDescription>Histórico completo do contrato e chamados</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="relative">
@@ -355,11 +426,18 @@ export default function ContractDetail() {
                       const EventIcon = event.icon;
                       return (
                         <div key={index} className="relative pl-10">
-                          <div className="absolute left-0 w-8 h-8 rounded-full bg-background border-2 border-border flex items-center justify-center">
+                          <div className={`absolute left-0 w-8 h-8 rounded-full bg-background border-2 ${event.type === 'ticket' ? 'border-amber-300' : 'border-border'} flex items-center justify-center`}>
                             <EventIcon className={`h-4 w-4 ${event.iconColor}`} />
                           </div>
                           <div className="pb-4">
-                            <p className="font-medium">{event.title}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium">{event.title}</p>
+                              {event.type === 'ticket' && (
+                                <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
+                                  Chamado
+                                </Badge>
+                              )}
+                            </div>
                             <p className="text-sm text-muted-foreground">{event.description}</p>
                             <p className="text-xs text-muted-foreground mt-1">
                               {format(new Date(event.date), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR })}
@@ -439,9 +517,9 @@ export default function ContractDetail() {
                   <div>
                     <span className="text-muted-foreground">Comissão Imobiliária (Setup):</span>
                     <p className="font-medium">
-                      {formatCurrency(contract.setup_fee * ((contract.agency?.percentual_comissao_setup || 100) / 100))}
+                      {formatCurrency(contract.setup_fee * ((contract.agency?.percentual_comissao_setup || 0) / 100))}
                       <span className="text-xs text-muted-foreground ml-1">
-                        ({contract.agency?.percentual_comissao_setup || 100}%)
+                        ({contract.agency?.percentual_comissao_setup || 0}%)
                       </span>
                     </p>
                   </div>
