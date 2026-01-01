@@ -11,8 +11,6 @@ import {
   useAgencyStats 
 } from "@/hooks/useTickets";
 import { useNotificationSound } from "@/hooks/useNotificationSound";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -53,18 +51,6 @@ export function TicketChatArea({ ticketId, onClose }: TicketChatAreaProps) {
   const updateTicket = useUpdateTicket();
   const setTypingIndicator = useSetTypingIndicator();
 
-  // Get analysts for assignment
-  const { data: analysts } = useQuery({
-    queryKey: ["analysts"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select(`id, full_name, user_roles!inner(role)`)
-        .eq("active", true);
-      if (error) throw error;
-      return data;
-    },
-  });
 
   // Handle typing indicator
   const handleTyping = () => {
@@ -113,15 +99,6 @@ export function TicketChatArea({ ticketId, onClose }: TicketChatAreaProps) {
     updateTicket.mutate({ ticketId, updates });
   };
 
-  const handleAssigneeChange = (assigneeId: string) => {
-    if (!ticketId) return;
-    updateTicket.mutate({ 
-      ticketId, 
-      updates: { 
-        assigned_to: assigneeId === 'unassigned' ? null : assigneeId 
-      } 
-    });
-  };
 
   // Empty state
   if (!ticketId) {
@@ -184,22 +161,6 @@ export function TicketChatArea({ ticketId, onClose }: TicketChatAreaProps) {
             </SelectContent>
           </Select>
 
-          <Select 
-            value={ticket.assigned_to || "unassigned"} 
-            onValueChange={handleAssigneeChange}
-          >
-            <SelectTrigger className="w-[130px] h-8 text-xs">
-              <SelectValue placeholder="Atribuir..." />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="unassigned">Não atribuído</SelectItem>
-              {analysts?.map((analyst) => (
-                <SelectItem key={analyst.id} value={analyst.id}>
-                  {analyst.full_name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
 
           <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
             <X className="h-4 w-4" />
