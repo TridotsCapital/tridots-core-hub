@@ -338,6 +338,223 @@ export type Database = {
         }
         Relationships: []
       }
+      claim_files: {
+        Row: {
+          claim_id: string
+          created_at: string
+          description: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: Database["public"]["Enums"]["claim_file_type"]
+          id: string
+          uploaded_by: string
+        }
+        Insert: {
+          claim_id: string
+          created_at?: string
+          description?: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type?: Database["public"]["Enums"]["claim_file_type"]
+          id?: string
+          uploaded_by: string
+        }
+        Update: {
+          claim_id?: string
+          created_at?: string
+          description?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          file_type?: Database["public"]["Enums"]["claim_file_type"]
+          id?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claim_files_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_files_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      claim_items: {
+        Row: {
+          amount: number
+          category: Database["public"]["Enums"]["claim_item_category"]
+          claim_id: string
+          created_at: string
+          description: string | null
+          due_date: string
+          id: string
+          reference_period: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          category: Database["public"]["Enums"]["claim_item_category"]
+          claim_id: string
+          created_at?: string
+          description?: string | null
+          due_date: string
+          id?: string
+          reference_period: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          category?: Database["public"]["Enums"]["claim_item_category"]
+          claim_id?: string
+          created_at?: string
+          description?: string | null
+          due_date?: string
+          id?: string
+          reference_period?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claim_items_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      claim_status_history: {
+        Row: {
+          changed_by: string
+          claim_id: string
+          created_at: string
+          id: string
+          new_status: string
+          observations: string | null
+          old_status: string | null
+          status_type: string
+        }
+        Insert: {
+          changed_by: string
+          claim_id: string
+          created_at?: string
+          id?: string
+          new_status: string
+          observations?: string | null
+          old_status?: string | null
+          status_type: string
+        }
+        Update: {
+          changed_by?: string
+          claim_id?: string
+          created_at?: string
+          id?: string
+          new_status?: string
+          observations?: string | null
+          old_status?: string | null
+          status_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claim_status_history_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_status_history_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      claims: {
+        Row: {
+          agency_id: string
+          analysis_id: string
+          canceled_at: string | null
+          canceled_by: string | null
+          created_at: string
+          created_by: string
+          id: string
+          internal_status: Database["public"]["Enums"]["claim_internal_status"]
+          observations: string | null
+          public_status: Database["public"]["Enums"]["claim_public_status"]
+          total_claimed_value: number
+          updated_at: string
+        }
+        Insert: {
+          agency_id: string
+          analysis_id: string
+          canceled_at?: string | null
+          canceled_by?: string | null
+          created_at?: string
+          created_by: string
+          id?: string
+          internal_status?: Database["public"]["Enums"]["claim_internal_status"]
+          observations?: string | null
+          public_status?: Database["public"]["Enums"]["claim_public_status"]
+          total_claimed_value?: number
+          updated_at?: string
+        }
+        Update: {
+          agency_id?: string
+          analysis_id?: string
+          canceled_at?: string | null
+          canceled_by?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          internal_status?: Database["public"]["Enums"]["claim_internal_status"]
+          observations?: string | null
+          public_status?: Database["public"]["Enums"]["claim_public_status"]
+          total_claimed_value?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claims_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claims_analysis_id_fkey"
+            columns: ["analysis_id"]
+            isOneToOne: false
+            referencedRelation: "analyses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claims_canceled_by_fkey"
+            columns: ["canceled_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claims_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       commissions: {
         Row: {
           agency_id: string
@@ -798,6 +1015,7 @@ export type Database = {
           analysis_id: string | null
           assigned_to: string | null
           category: Database["public"]["Enums"]["ticket_category"]
+          claim_id: string | null
           created_at: string
           created_by: string
           description: string | null
@@ -817,6 +1035,7 @@ export type Database = {
           analysis_id?: string | null
           assigned_to?: string | null
           category?: Database["public"]["Enums"]["ticket_category"]
+          claim_id?: string | null
           created_at?: string
           created_by: string
           description?: string | null
@@ -836,6 +1055,7 @@ export type Database = {
           analysis_id?: string | null
           assigned_to?: string | null
           category?: Database["public"]["Enums"]["ticket_category"]
+          claim_id?: string | null
           created_at?: string
           created_by?: string
           description?: string | null
@@ -870,6 +1090,13 @@ export type Database = {
             columns: ["assigned_to"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
             referencedColumns: ["id"]
           },
           {
@@ -964,6 +1191,38 @@ export type Database = {
         | "aguardando_pagamento"
         | "ativo"
       app_role: "master" | "analyst" | "agency_user"
+      claim_file_type:
+        | "boleto"
+        | "contrato"
+        | "vistoria"
+        | "notificacao"
+        | "acordo"
+        | "comprovante"
+        | "outros"
+      claim_internal_status:
+        | "aguardando_analise"
+        | "cobranca_amigavel"
+        | "notificacao_extrajudicial"
+        | "acordo_realizado"
+        | "juridico_acionado"
+        | "encerrado"
+      claim_item_category:
+        | "aluguel"
+        | "condominio"
+        | "iptu"
+        | "luz"
+        | "agua"
+        | "gas"
+        | "danos"
+        | "limpeza"
+        | "pintura"
+        | "multa_contratual"
+        | "outros"
+      claim_public_status:
+        | "solicitado"
+        | "em_analise_tecnica"
+        | "pagamento_programado"
+        | "finalizado"
       commission_status: "pendente" | "paga" | "cancelada" | "estornada"
       commission_type: "setup" | "recorrente"
       notification_type:
@@ -1115,6 +1374,42 @@ export const Constants = {
         "ativo",
       ],
       app_role: ["master", "analyst", "agency_user"],
+      claim_file_type: [
+        "boleto",
+        "contrato",
+        "vistoria",
+        "notificacao",
+        "acordo",
+        "comprovante",
+        "outros",
+      ],
+      claim_internal_status: [
+        "aguardando_analise",
+        "cobranca_amigavel",
+        "notificacao_extrajudicial",
+        "acordo_realizado",
+        "juridico_acionado",
+        "encerrado",
+      ],
+      claim_item_category: [
+        "aluguel",
+        "condominio",
+        "iptu",
+        "luz",
+        "agua",
+        "gas",
+        "danos",
+        "limpeza",
+        "pintura",
+        "multa_contratual",
+        "outros",
+      ],
+      claim_public_status: [
+        "solicitado",
+        "em_analise_tecnica",
+        "pagamento_programado",
+        "finalizado",
+      ],
       commission_status: ["pendente", "paga", "cancelada", "estornada"],
       commission_type: ["setup", "recorrente"],
       notification_type: [
