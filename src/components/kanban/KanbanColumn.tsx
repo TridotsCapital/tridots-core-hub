@@ -10,6 +10,7 @@ interface KanbanColumnProps {
   title: string;
   analyses: Analysis[];
   onCardClick: (analysis: Analysis) => void;
+  unreadIds?: Set<string>;
 }
 
 const columnColors: Record<AnalysisStatus, string> = {
@@ -32,7 +33,7 @@ const headerColors: Record<AnalysisStatus, string> = {
   ativo: 'bg-emerald-600 text-white',
 };
 
-export function KanbanColumn({ status, title, analyses, onCardClick }: KanbanColumnProps) {
+export function KanbanColumn({ status, title, analyses, onCardClick, unreadIds }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: status,
   });
@@ -65,6 +66,7 @@ export function KanbanColumn({ status, title, analyses, onCardClick }: KanbanCol
               key={analysis.id}
               analysis={analysis}
               onClick={() => onCardClick(analysis)}
+              hasUnread={unreadIds?.has(analysis.id) ?? false}
             />
           ))}
 

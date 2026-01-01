@@ -15,6 +15,8 @@ import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { Database } from '@/integrations/supabase/types';
+import { useUnreadItemIds, useMarkItemAsRead } from '@/hooks/useUnreadItemIds';
+import { cn } from '@/lib/utils';
 
 type AnalysisStatus = Database['public']['Enums']['analysis_status'];
 
@@ -50,7 +52,9 @@ const STATUS_CONFIG: Record<AnalysisStatus, { label: string; variant: 'default' 
 export function AgencyContractList({ analyses, isLoading, onRefresh, autoOpenContractId, onAutoOpenHandled }: AgencyContractListProps) {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedAnalysisId, setSelectedAnalysisId] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const { data: unreadIds } = useUnreadItemIds();
+  const markAsRead = useMarkItemAsRead();
 
   // Auto-open contract from notification
   useEffect(() => {
@@ -62,7 +66,6 @@ export function AgencyContractList({ analyses, isLoading, onRefresh, autoOpenCon
       }
     }
   }, [autoOpenContractId, analyses, navigate, onAutoOpenHandled]);
-  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [selectedAnalysis, setSelectedAnalysis] = useState<Analysis | null>(null);
   const [isCanceling, setIsCanceling] = useState(false);
@@ -184,9 +187,28 @@ export function AgencyContractList({ analyses, isLoading, onRefresh, autoOpenCon
                 <TableBody>
                   {filteredAnalyses.map((analysis) => {
                     const statusConfig = STATUS_CONFIG[analysis.status];
+                    const hasUnread = unreadIds?.contratos.has(analysis.id) ?? false;
+
+                    const handleRowClick = () => {
+                      if (hasUnread) {
+                        markAsRead(analysis.id, 'contratos');
+                      }
+                      navigate(`/agency/contracts/${analysis.id}`);
+                    };
+
                     return (
-                      <TableRow key={analysis.id} className="hover:bg-muted/30">
+                      <TableRow 
+                        key={analysis.id} 
+                        className={cn(
+                          "hover:bg-muted/30 cursor-pointer relative",
+                          hasUnread && "bg-red-50/50 dark:bg-red-950/20"
+                        )}
+                        onClick={handleRowClick}
+                      >
                         <TableCell className="font-mono text-xs">
+                          {hasUnread && (
+                            <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-red-500 rounded-r"></span>
+                          )}
                           #{analysis.id.slice(0, 8).toUpperCase()}
                         </TableCell>
                         <TableCell>

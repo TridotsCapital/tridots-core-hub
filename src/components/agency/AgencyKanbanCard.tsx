@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 interface AgencyKanbanCardProps {
   analysis: Analysis;
   onClick: () => void;
+  hasUnread?: boolean;
 }
 
 const formatCurrency = (value: number) => {
@@ -28,18 +29,26 @@ const getUrgencyLevel = (createdAt: string): 'low' | 'medium' | 'high' => {
   return 'high';
 };
 
-export function AgencyKanbanCard({ analysis, onClick }: AgencyKanbanCardProps) {
+export function AgencyKanbanCard({ analysis, onClick, hasUnread = false }: AgencyKanbanCardProps) {
   const urgencyLevel = getUrgencyLevel(analysis.created_at);
   const urgencyClass = getUrgencyClass(analysis.created_at);
 
   return (
     <div
       className={cn(
-        'kanban-card cursor-pointer hover:shadow-md transition-shadow',
-        urgencyClass
+        'kanban-card cursor-pointer hover:shadow-md transition-shadow relative',
+        urgencyClass,
+        hasUnread && 'ring-2 ring-red-500 ring-offset-1'
       )}
       onClick={onClick}
     >
+      {/* Unread indicator */}
+      {hasUnread && (
+        <span className="absolute -top-1 -right-1 flex h-3 w-3 z-10">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+        </span>
+      )}
       {/* Header with name */}
       <div className="flex items-start justify-between gap-2 mb-3">
         <div className="flex-1 min-w-0">

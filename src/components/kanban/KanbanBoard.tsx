@@ -17,6 +17,7 @@ import { StatusChangeConfirmation } from './StatusChangeConfirmation';
 import { useAnalysesKanban, useMoveAnalysis } from '@/hooks/useAnalysesKanban';
 import { Analysis, AnalysisStatus, kanbanColumns, statusConfig } from '@/types/database';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useUnreadItemIds, useMarkItemAsRead } from '@/hooks/useUnreadItemIds';
 
 interface KanbanBoardProps {
   filters?: {
@@ -30,6 +31,8 @@ interface KanbanBoardProps {
 export function KanbanBoard({ filters, autoOpenAnalysisId, onAutoOpenHandled }: KanbanBoardProps) {
   const { data: analyses, isLoading } = useAnalysesKanban(filters);
   const moveAnalysis = useMoveAnalysis();
+  const { data: unreadIds } = useUnreadItemIds();
+  const markAsRead = useMarkItemAsRead();
   
   const [activeCard, setActiveCard] = useState<Analysis | null>(null);
   const [selectedAnalysis, setSelectedAnalysis] = useState<Analysis | null>(null);
@@ -144,6 +147,10 @@ export function KanbanBoard({ filters, autoOpenAnalysisId, onAutoOpenHandled }: 
   };
 
   const handleCardClick = (analysis: Analysis) => {
+    // Mark as read when opening
+    if (unreadIds?.analises.has(analysis.id)) {
+      markAsRead(analysis.id, 'analises');
+    }
     setSelectedAnalysis(analysis);
     setDrawerOpen(true);
   };
@@ -180,6 +187,7 @@ export function KanbanBoard({ filters, autoOpenAnalysisId, onAutoOpenHandled }: 
               title={statusConfig[status].label}
               analyses={analysesByStatus[status]}
               onCardClick={handleCardClick}
+              unreadIds={unreadIds?.analises}
             />
           ))}
         </div>
