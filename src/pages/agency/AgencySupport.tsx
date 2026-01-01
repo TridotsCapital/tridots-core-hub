@@ -136,7 +136,7 @@ export default function AgencySupport() {
 
   return (
     <AgencyLayout title="Suporte" description="Central de atendimento e tickets">
-      <div className="h-[calc(100vh-12rem)] flex flex-col">
+      <div className="h-[calc(100vh-9rem)] flex flex-col">
         {/* Top filter bar */}
         <div className="flex flex-col sm:flex-row gap-3 pb-4">
           <div className="relative flex-1 max-w-md">

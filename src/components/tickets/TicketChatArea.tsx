@@ -15,11 +15,13 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ticketStatusConfig, TicketStatus } from "@/types/tickets";
-import { TicketAgencyHeader } from "./TicketAgencyHeader";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ticketStatusConfig, ticketCategoryConfig, ticketPriorityConfig, TicketStatus } from "@/types/tickets";
 import { TicketChatMessages } from "./TicketChatMessages";
 import { TicketChatInput } from "./TicketChatInput";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface TicketChatAreaProps {
   ticketId: string | null;
@@ -152,44 +154,57 @@ export function TicketChatArea({ ticketId, onClose }: TicketChatAreaProps) {
 
   return (
     <div className="flex-1 flex flex-col h-full bg-background">
-      {/* Agency Header */}
-      <TicketAgencyHeader
-        ticket={ticket}
-        agencyStats={agencyStats}
-        onClose={onClose}
-      />
+      {/* Compact Header with integrated actions */}
+      <div className="flex items-center justify-between px-4 py-2 border-b bg-card">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <span className={cn("text-lg", ticketPriorityConfig[ticket.priority].color)}>
+            {ticketPriorityConfig[ticket.priority].icon}
+          </span>
+          <div className="min-w-0">
+            <h2 className="text-sm font-semibold truncate">{ticket.subject}</h2>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span className="truncate">{ticket.agency?.nome_fantasia || ticket.agency?.razao_social || 'Imobiliária'}</span>
+              <Badge variant="outline" className={cn("text-[10px] h-5", ticketCategoryConfig[ticket.category].color)}>
+                {ticketCategoryConfig[ticket.category].label}
+              </Badge>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <Select value={ticket.status} onValueChange={handleStatusChange}>
+            <SelectTrigger className="w-[130px] h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(ticketStatusConfig).map(([key, config]) => (
+                <SelectItem key={key} value={key}>
+                  {config.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-      {/* Status and Assignee Actions */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b bg-muted/30">
-        <Select value={ticket.status} onValueChange={handleStatusChange}>
-          <SelectTrigger className="w-[160px] h-9">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {Object.entries(ticketStatusConfig).map(([key, config]) => (
-              <SelectItem key={key} value={key}>
-                {config.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          <Select 
+            value={ticket.assigned_to || "unassigned"} 
+            onValueChange={handleAssigneeChange}
+          >
+            <SelectTrigger className="w-[130px] h-8 text-xs">
+              <SelectValue placeholder="Atribuir..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="unassigned">Não atribuído</SelectItem>
+              {analysts?.map((analyst) => (
+                <SelectItem key={analyst.id} value={analyst.id}>
+                  {analyst.full_name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-        <Select 
-          value={ticket.assigned_to || "unassigned"} 
-          onValueChange={handleAssigneeChange}
-        >
-          <SelectTrigger className="w-[160px] h-9">
-            <SelectValue placeholder="Atribuir a..." />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="unassigned">Não atribuído</SelectItem>
-            {analysts?.map((analyst) => (
-              <SelectItem key={analyst.id} value={analyst.id}>
-                {analyst.full_name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Messages */}
