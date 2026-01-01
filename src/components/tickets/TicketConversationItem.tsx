@@ -4,6 +4,7 @@ import { Ticket, ticketStatusConfig, ticketPriorityConfig } from "@/types/ticket
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { FileText } from "lucide-react";
 
 interface TicketConversationItemProps {
   ticket: Ticket;
@@ -83,6 +84,12 @@ export function TicketConversationItem({
           <span className={cn("text-xs", priorityConfig.color)}>
             {priorityConfig.icon}
           </span>
+          {ticket.analysis_id && (
+            <Badge variant="secondary" className="text-[10px] h-4 px-1.5 py-0">
+              <FileText className="h-2.5 w-2.5 mr-0.5" />
+              Contrato
+            </Badge>
+          )}
           {unreadCount > 0 && (
             <span className="ml-auto bg-primary text-primary-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
               {unreadCount}

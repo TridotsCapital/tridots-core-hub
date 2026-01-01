@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Ticket, TicketStatus, TicketCategory, TicketPriority, ticketStatusConfig, ticketCategoryConfig, ticketPriorityConfig } from "@/types/tickets";
 import { TicketConversationItem } from "./TicketConversationItem";
-import { SlidersHorizontal, X, MessageSquare } from "lucide-react";
+import { SlidersHorizontal, X, MessageSquare, FileText } from "lucide-react";
 import { useUnreadItemIds, useMarkItemAsRead } from "@/hooks/useUnreadItemIds";
 
 interface TicketConversationListProps {
@@ -18,6 +18,7 @@ interface TicketConversationListProps {
     category?: TicketCategory | 'all';
     priority?: TicketPriority | 'all';
     unread_only?: boolean;
+    has_contract?: boolean;
   };
   onFiltersChange: (filters: any) => void;
   lastMessages?: Record<string, string>;
@@ -49,17 +50,22 @@ export function TicketConversationList({
     if (filters.unread_only && unreadIds?.chamados) {
       result = result.filter(t => unreadIds.chamados.has(t.id));
     }
+
+    if (filters.has_contract) {
+      result = result.filter(t => t.analysis_id !== null);
+    }
     
     return result;
-  }, [tickets, filters.unread_only, unreadIds]);
+  }, [tickets, filters.unread_only, filters.has_contract, unreadIds]);
 
   const activeFiltersCount = [
     filters.category && filters.category !== 'all',
     filters.priority && filters.priority !== 'all',
+    filters.has_contract,
   ].filter(Boolean).length;
 
   const clearFilters = () => {
-    onFiltersChange({ ...filters, category: 'all', priority: 'all' });
+    onFiltersChange({ ...filters, category: 'all', priority: 'all', has_contract: undefined });
   };
 
   if (isLoading) {
@@ -155,6 +161,29 @@ export function TicketConversationList({
                       ))}
                     </div>
                   </div>
+
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Vínculo</label>
+                    <div className="flex flex-wrap gap-1.5">
+                      <Button
+                        variant={!filters.has_contract ? "default" : "outline"}
+                        size="sm"
+                        className="h-7 text-xs"
+                        onClick={() => onFiltersChange({ ...filters, has_contract: undefined })}
+                      >
+                        Todos
+                      </Button>
+                      <Button
+                        variant={filters.has_contract ? "default" : "outline"}
+                        size="sm"
+                        className="h-7 text-xs"
+                        onClick={() => onFiltersChange({ ...filters, has_contract: true })}
+                      >
+                        <FileText className="h-3 w-3 mr-1" />
+                        Com Contrato
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </PopoverContent>
@@ -173,6 +202,13 @@ export function TicketConversationList({
                 <span className="inline-flex items-center gap-1 bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full">
                   {ticketPriorityConfig[filters.priority]?.label}
                   <X className="h-3 w-3 cursor-pointer" onClick={() => onFiltersChange({ ...filters, priority: 'all' })} />
+                </span>
+              )}
+              {filters.has_contract && (
+                <span className="inline-flex items-center gap-1 bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full">
+                  <FileText className="h-3 w-3" />
+                  Com Contrato
+                  <X className="h-3 w-3 cursor-pointer" onClick={() => onFiltersChange({ ...filters, has_contract: undefined })} />
                 </span>
               )}
             </div>

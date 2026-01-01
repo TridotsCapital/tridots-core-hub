@@ -6,6 +6,7 @@ import { useEffect } from "react";
 
 interface CreateTicketData {
   agency_id: string;
+  analysis_id?: string;
   subject: string;
   description?: string;
   category: TicketCategory;
@@ -25,6 +26,7 @@ export function useCreateTicket() {
         .from("tickets")
         .insert({
           agency_id: data.agency_id,
+          analysis_id: data.analysis_id || null,
           created_by: user.id,
           subject: data.subject,
           description: data.description,
@@ -67,7 +69,8 @@ export function useAgencyTickets(agencyId: string | undefined) {
         .select(`
           *,
           created_by_profile:profiles!tickets_created_by_fkey(full_name, email),
-          assigned_to_profile:profiles!tickets_assigned_to_fkey(full_name, email)
+          assigned_to_profile:profiles!tickets_assigned_to_fkey(full_name, email),
+          analysis:analyses(id, inquilino_nome, imovel_endereco, status)
         `)
         .eq("agency_id", agencyId)
         .order("created_at", { ascending: false });
@@ -99,7 +102,8 @@ export function useTickets(filters?: TicketFilters) {
           *,
           agency:agencies(id, nome_fantasia, razao_social, responsavel_nome, responsavel_email, responsavel_telefone),
           creator:profiles!tickets_created_by_fkey(id, full_name, email, avatar_url),
-          assignee:profiles!tickets_assigned_to_fkey(id, full_name, email, avatar_url)
+          assignee:profiles!tickets_assigned_to_fkey(id, full_name, email, avatar_url),
+          analysis:analyses(id, inquilino_nome, imovel_endereco, status)
         `)
         .order("created_at", { ascending: false });
 
@@ -157,7 +161,8 @@ export function useTicket(ticketId: string | undefined) {
           *,
           agency:agencies(id, nome_fantasia, razao_social, responsavel_nome, responsavel_email, responsavel_telefone),
           creator:profiles!tickets_created_by_fkey(id, full_name, email, avatar_url),
-          assignee:profiles!tickets_assigned_to_fkey(id, full_name, email, avatar_url)
+          assignee:profiles!tickets_assigned_to_fkey(id, full_name, email, avatar_url),
+          analysis:analyses(id, inquilino_nome, imovel_endereco, status)
         `)
         .eq("id", ticketId)
         .single();

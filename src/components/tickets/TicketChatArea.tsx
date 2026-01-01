@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { 
   useTicket, 
@@ -18,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { ticketStatusConfig, ticketCategoryConfig, ticketPriorityConfig, TicketStatus } from "@/types/tickets";
 import { TicketChatMessages } from "./TicketChatMessages";
 import { TicketChatInput } from "./TicketChatInput";
-import { MessageSquare, X } from "lucide-react";
+import { MessageSquare, X, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface TicketChatAreaProps {
@@ -27,6 +28,7 @@ interface TicketChatAreaProps {
 }
 
 export function TicketChatArea({ ticketId, onClose }: TicketChatAreaProps) {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [isTyping, setIsTyping] = useState(false);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
@@ -144,6 +146,16 @@ export function TicketChatArea({ ticketId, onClose }: TicketChatAreaProps) {
               <Badge variant="outline" className={cn("text-[10px] h-5", ticketCategoryConfig[ticket.category].color)}>
                 {ticketCategoryConfig[ticket.category].label}
               </Badge>
+              {ticket.analysis_id && (
+                <Badge 
+                  variant="secondary" 
+                  className="text-[10px] h-5 cursor-pointer hover:bg-secondary/80"
+                  onClick={() => navigate(`/contracts/${ticket.analysis_id}`)}
+                >
+                  <FileText className="h-3 w-3 mr-1" />
+                  Contrato
+                </Badge>
+              )}
             </div>
           </div>
         </div>

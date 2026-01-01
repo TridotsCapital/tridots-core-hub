@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Send, Loader2, Clock, CheckCircle, AlertCircle, MessageSquare } from "lucide-react";
+import { Send, Loader2, Clock, CheckCircle, AlertCircle, MessageSquare, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -66,6 +67,7 @@ const categoryConfig: Record<TicketCategory, { label: string; className: string 
 };
 
 export function AgencyTicketChatArea({ ticketId }: AgencyTicketChatAreaProps) {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [message, setMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -163,6 +165,16 @@ export function AgencyTicketChatArea({ ticketId }: AgencyTicketChatAreaProps) {
           >
             {categoryConfig[ticket.category as TicketCategory].label}
           </Badge>
+          {ticket.analysis_id && (
+            <Badge
+              variant="secondary"
+              className="text-xs shrink-0 cursor-pointer hover:bg-secondary/80"
+              onClick={() => navigate(`/agency/contracts/${ticket.analysis_id}`)}
+            >
+              <FileText className="h-3 w-3 mr-1" />
+              Contrato
+            </Badge>
+          )}
           <h2 className="font-semibold text-sm truncate">
             {ticket.subject}
           </h2>
