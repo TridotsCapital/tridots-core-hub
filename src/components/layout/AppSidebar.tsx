@@ -154,13 +154,15 @@ export function AppSidebar() {
                       isActive={location.pathname === item.path}
                       className="transition-all duration-200 data-[active=true]:bg-sidebar-accent data-[active=true]:text-amber-400"
                     >
-                      <Link to={item.path} className="relative">
-                        <item.icon className="w-4 h-4" />
-                        <span className="font-medium">{item.title}</span>
+                      <Link to={item.path} className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-2">
+                          <item.icon className="w-4 h-4" />
+                          <span className="font-medium">{item.title}</span>
+                        </div>
                         {count > 0 && (
                           <Badge 
                             variant="destructive" 
-                            className="absolute -top-1 -right-1 h-5 min-w-5 text-xs flex items-center justify-center p-0 px-1.5"
+                            className="h-5 min-w-5 text-xs flex items-center justify-center p-0 px-1.5 ml-2"
                           >
                             {count > 99 ? '99+' : count}
                           </Badge>

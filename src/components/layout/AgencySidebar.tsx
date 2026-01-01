@@ -110,15 +110,17 @@ export function AgencySidebar() {
                       <NavLink
                         to={item.path}
                         end={item.path === "/agency"}
-                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-primary/5 transition-all relative"
+                        className="flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-primary/5 transition-all"
                         activeClassName="bg-primary/10 text-primary font-semibold shadow-sm"
                       >
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
+                        <div className="flex items-center gap-3">
+                          <item.icon className="h-4 w-4" />
+                          <span>{item.title}</span>
+                        </div>
                         {count > 0 && (
                           <Badge 
                             variant="destructive" 
-                            className="absolute -top-1 right-1 h-5 min-w-5 text-xs flex items-center justify-center p-0 px-1.5"
+                            className="h-5 min-w-5 text-xs flex items-center justify-center p-0 px-1.5"
                           >
                             {count > 99 ? '99+' : count}
                           </Badge>
