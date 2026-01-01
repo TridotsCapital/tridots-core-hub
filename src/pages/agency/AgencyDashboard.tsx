@@ -38,7 +38,7 @@ export default function AgencyDashboard() {
   return (
     <AgencyLayout 
       title="Dashboard" 
-      description="Acompanhe sua performance e ganhos com a Tridots Garantia"
+      description="Acompanhe sua performance e ganhos com a Tridots Capital"
     >
       <div className="space-y-6">
         {/* Draft Banner */}

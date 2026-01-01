@@ -4,11 +4,11 @@ import { useAuth, getDefaultRouteForRole } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import tridotsLogo from '@/assets/tridots-logo.png';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { TeamSignupForm } from '@/components/auth/TeamSignupForm';
 import { AgencySignupForm, AgencySignupData } from '@/components/auth/AgencySignupForm';
 import { supabase } from '@/integrations/supabase/client';
+import { Building2 } from 'lucide-react';
 
 export default function Auth() {
   const [loading, setLoading] = useState(false);
@@ -136,14 +136,10 @@ export default function Auth() {
       <Card className={`w-full relative animate-scale-in glass-strong shadow-2xl ${isTeamSignup ? 'max-w-md' : 'max-w-lg'}`}>
         <CardHeader className="text-center space-y-4 pb-2">
           <div className="mx-auto w-20 h-20 rounded-2xl bg-white flex items-center justify-center shadow-lg shadow-primary/30">
-            <img 
-              src={tridotsLogo} 
-              alt="Tridots Garantia" 
-              className="w-16 h-16 object-contain"
-            />
+            <Building2 className="w-10 h-10 text-primary" />
           </div>
           <div>
-            <CardTitle className="text-2xl font-bold tracking-tight">TRIDOTS GARANTIA</CardTitle>
+            <CardTitle className="text-2xl font-bold tracking-tight">TRIDOTS CAPITAL</CardTitle>
             <CardDescription className="text-muted-foreground mt-2">
               {isTeamSignup 
                 ? 'Cadastro de Membro da Equipe' 

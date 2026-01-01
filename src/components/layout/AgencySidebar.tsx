@@ -7,7 +7,8 @@ import {
   LogOut,
   Plus,
   Users,
-  Play
+  Play,
+  Building2
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
@@ -34,7 +35,6 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import tridotsLogo from "@/assets/tridots-logo.png";
 
 const menuItems = [
   { title: "Dashboard", icon: LayoutDashboard, path: "/agency" },
@@ -69,7 +69,7 @@ export function AgencySidebar() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-              <img src={tridotsLogo} alt="Tridots" className="h-7 w-7" />
+              <Building2 className="h-6 w-6 text-primary" />
             </div>
             <div>
               <h1 className="text-lg font-bold text-foreground tracking-tight">Portal</h1>

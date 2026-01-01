@@ -7,10 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveTermTemplates, TermTemplate } from "@/hooks/useTermTemplates";
 import { useCreateDigitalAcceptance } from "@/hooks/useDigitalAcceptances";
-import { Loader2, FileText, CheckCircle, Shield, AlertTriangle } from "lucide-react";
+import { Loader2, FileText, CheckCircle, Shield, AlertTriangle, Building2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import tridotsLogo from "@/assets/tridots-logo.png";
 
 interface AnalysisData {
   id: string;
@@ -214,7 +213,9 @@ const DigitalAcceptance = () => {
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Header */}
         <div className="text-center space-y-4">
-          <img src={tridotsLogo} alt="Tridots" className="h-12 mx-auto" />
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-primary/10">
+            <Building2 className="h-8 w-8 text-primary" />
+          </div>
           <div>
             <h1 className="text-2xl font-bold">Aceite Digital de Termos</h1>
             <p className="text-muted-foreground">
