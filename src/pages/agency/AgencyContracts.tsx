@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { AgencyLayout } from "@/components/layout/AgencyLayout";
 import { AgencyContractList } from "@/components/agency/AgencyContractList";
 import { useAuth } from "@/contexts/AuthContext";
@@ -6,10 +7,21 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 
 export default function AgencyContracts() {
+  const location = useLocation();
   const { user } = useAuth();
   const [agencyId, setAgencyId] = useState<string | null>(null);
   const [analyses, setAnalyses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [autoOpenContractId, setAutoOpenContractId] = useState<string | null>(null);
+
+  // Auto-open contract from notification
+  useEffect(() => {
+    const state = location.state as { contractId?: string } | null;
+    if (state?.contractId) {
+      setAutoOpenContractId(state.contractId);
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   const fetchData = async () => {
     if (!user) return;
@@ -68,6 +80,8 @@ export default function AgencyContracts() {
         analyses={analyses} 
         isLoading={loading}
         onRefresh={fetchData}
+        autoOpenContractId={autoOpenContractId}
+        onAutoOpenHandled={() => setAutoOpenContractId(null)}
       />
     </AgencyLayout>
   );

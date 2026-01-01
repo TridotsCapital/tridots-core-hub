@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { AgencyLayout } from "@/components/layout/AgencyLayout";
 import { AgencyKanbanBoard } from "@/components/agency/AgencyKanbanBoard";
 import { AgencyContractList } from "@/components/agency/AgencyContractList";
@@ -23,6 +23,7 @@ type ViewMode = "kanban" | "table";
 const VIEW_MODE_KEY = "agency-analyses-view-mode";
 
 export default function AgencyAnalyses() {
+  const location = useLocation();
   const queryClient = useQueryClient();
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     const saved = localStorage.getItem(VIEW_MODE_KEY);
@@ -30,11 +31,22 @@ export default function AgencyAnalyses() {
   });
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<AnalysisStatus | "all">("all");
+  const [autoOpenAnalysisId, setAutoOpenAnalysisId] = useState<string | null>(null);
 
   const { data: analyses = [], isLoading, refetch } = useAgencyAnalyses({
     search: search || undefined,
     status: statusFilter === "all" ? undefined : statusFilter,
   });
+
+  // Auto-open analysis from notification
+  useEffect(() => {
+    const state = location.state as { analysisId?: string } | null;
+    if (state?.analysisId) {
+      setAutoOpenAnalysisId(state.analysisId);
+      // Clear state to prevent re-opening on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   // Save view mode preference
   useEffect(() => {
@@ -130,7 +142,12 @@ export default function AgencyAnalyses() {
 
         {/* Content */}
         {viewMode === "kanban" ? (
-          <AgencyKanbanBoard analyses={analyses} isLoading={isLoading} />
+          <AgencyKanbanBoard 
+            analyses={analyses} 
+            isLoading={isLoading} 
+            autoOpenAnalysisId={autoOpenAnalysisId}
+            onAutoOpenHandled={() => setAutoOpenAnalysisId(null)}
+          />
         ) : (
           <AgencyContractList 
             analyses={mappedAnalyses} 

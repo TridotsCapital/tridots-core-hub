@@ -1,6 +1,8 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { NotificationCenter } from '@/components/notifications';
+import { useNotificationCounts } from '@/hooks/useNotificationCounts';
+import { Badge } from '@/components/ui/badge';
 import {
   Sidebar,
   SidebarContent,
@@ -28,6 +30,13 @@ import {
   Headphones,
   FileCheck,
 } from 'lucide-react';
+
+// Map paths to notification sources
+const pathToSource: Record<string, 'chamados' | 'analises' | 'contratos'> = {
+  '/tickets': 'chamados',
+  '/analyses': 'analises',
+  '/contracts': 'contratos',
+};
 
 const menuItems = [
   {
@@ -88,6 +97,7 @@ export function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { profile, role, signOut } = useAuth();
+  const { data: notificationCounts } = useNotificationCounts();
 
   const handleSignOut = async () => {
     await signOut();
@@ -100,6 +110,12 @@ export function AppSidebar() {
     .join('')
     .slice(0, 2)
     .toUpperCase() || '?';
+
+  const getNotificationCount = (path: string) => {
+    const source = pathToSource[path];
+    if (!source || !notificationCounts) return 0;
+    return notificationCounts[source];
+  };
 
   return (
     <Sidebar className="border-r border-sidebar-border bg-sidebar">
@@ -129,20 +145,31 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.path}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={location.pathname === item.path}
-                    className="transition-all duration-200 data-[active=true]:bg-sidebar-accent data-[active=true]:text-amber-400"
-                  >
-                    <Link to={item.path}>
-                      <item.icon className="w-4 h-4" />
-                      <span className="font-medium">{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {menuItems.map((item) => {
+                const count = getNotificationCount(item.path);
+                return (
+                  <SidebarMenuItem key={item.path}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location.pathname === item.path}
+                      className="transition-all duration-200 data-[active=true]:bg-sidebar-accent data-[active=true]:text-amber-400"
+                    >
+                      <Link to={item.path} className="relative">
+                        <item.icon className="w-4 h-4" />
+                        <span className="font-medium">{item.title}</span>
+                        {count > 0 && (
+                          <Badge 
+                            variant="destructive" 
+                            className="absolute -top-1 -right-1 h-5 min-w-5 text-xs flex items-center justify-center p-0 px-1.5"
+                          >
+                            {count > 99 ? '99+' : count}
+                          </Badge>
+                        )}
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

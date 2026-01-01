@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useTickets, useTicketNotifications } from "@/hooks/useTickets";
 import { TicketConversationList } from "@/components/tickets/TicketConversationList";
@@ -7,6 +8,7 @@ import { TicketStatus, TicketCategory, TicketPriority } from "@/types/tickets";
 import { Bell } from "lucide-react";
 
 const TicketCenter = () => {
+  const location = useLocation();
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [filters, setFilters] = useState<{
     status?: TicketStatus | 'all';
@@ -20,6 +22,16 @@ const TicketCenter = () => {
 
   const { data: tickets = [], isLoading } = useTickets(filters as any);
   const { data: notifications } = useTicketNotifications();
+
+  // Auto-open ticket from notification
+  useEffect(() => {
+    const state = location.state as { ticketId?: string } | null;
+    if (state?.ticketId) {
+      setSelectedTicketId(state.ticketId);
+      // Clear state to prevent re-opening on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   // Sort tickets by most recent activity (updated_at)
   const sortedTickets = [...tickets].sort((a, b) => 

@@ -116,6 +116,7 @@ export function useMarkAsRead() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['notification-counts', user?.id] });
     },
   });
 }
@@ -148,6 +149,7 @@ export function useMarkAllAsRead() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['notification-counts', user?.id] });
     },
   });
 }
@@ -175,6 +177,7 @@ export function useDeleteNotification() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['notification-counts', user?.id] });
     },
   });
 }

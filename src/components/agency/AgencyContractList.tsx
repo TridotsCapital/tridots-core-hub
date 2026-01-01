@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -33,6 +33,8 @@ interface AgencyContractListProps {
   analyses: Analysis[];
   isLoading: boolean;
   onRefresh: () => void;
+  autoOpenContractId?: string | null;
+  onAutoOpenHandled?: () => void;
 }
 
 const STATUS_CONFIG: Record<AnalysisStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
@@ -45,9 +47,21 @@ const STATUS_CONFIG: Record<AnalysisStatus, { label: string; variant: 'default' 
   ativo: { label: 'Ativo', variant: 'default' },
 };
 
-export function AgencyContractList({ analyses, isLoading, onRefresh }: AgencyContractListProps) {
+export function AgencyContractList({ analyses, isLoading, onRefresh, autoOpenContractId, onAutoOpenHandled }: AgencyContractListProps) {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedAnalysisId, setSelectedAnalysisId] = useState<string | null>(null);
+
+  // Auto-open contract from notification
+  useEffect(() => {
+    if (autoOpenContractId && analyses.length > 0) {
+      const analysis = analyses.find(a => a.id === autoOpenContractId);
+      if (analysis) {
+        navigate(`/agency/contracts/${autoOpenContractId}`);
+        onAutoOpenHandled?.();
+      }
+    }
+  }, [autoOpenContractId, analyses, navigate, onAutoOpenHandled]);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [selectedAnalysis, setSelectedAnalysis] = useState<Analysis | null>(null);

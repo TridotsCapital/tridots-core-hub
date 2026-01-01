@@ -2,7 +2,8 @@ export type NotificationType =
   | 'ticket_message' 
   | 'ticket_status' 
   | 'analysis_message' 
-  | 'analysis_status';
+  | 'analysis_status'
+  | 'contract_status';
 
 export type NotificationSource = 'chamados' | 'analises' | 'contratos';
 
@@ -71,6 +72,13 @@ export const getNotificationConfig = (type: NotificationType): {
         color: 'text-purple-600',
         bgColor: 'bg-purple-50',
         borderColor: 'border-purple-200'
+      };
+    case 'contract_status':
+      return {
+        icon: 'FileCheck',
+        color: 'text-green-600',
+        bgColor: 'bg-green-50',
+        borderColor: 'border-green-200'
       };
     default:
       return {

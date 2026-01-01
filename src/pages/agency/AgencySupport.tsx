@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { AgencyLayout } from "@/components/layout/AgencyLayout";
 import { AgencyTicketForm } from "@/components/agency/AgencyTicketForm";
 import { AgencyTicketList } from "@/components/agency/AgencyTicketList";
@@ -8,11 +9,22 @@ import { useAgencyTickets } from "@/hooks/useTickets";
 import { Loader2 } from "lucide-react";
 
 export default function AgencySupport() {
+  const location = useLocation();
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const { data: agencyUser, isLoading: agencyUserLoading } = useAgencyUser();
   const { data: tickets = [], isLoading: ticketsLoading } = useAgencyTickets(
     agencyUser?.agency_id
   );
+
+  // Auto-open ticket from notification
+  useEffect(() => {
+    const state = location.state as { ticketId?: string } | null;
+    if (state?.ticketId) {
+      setSelectedTicketId(state.ticketId);
+      // Clear state to prevent re-opening on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   if (agencyUserLoading) {
     return (
