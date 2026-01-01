@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { TicketStatus, TicketCategory } from "@/types/tickets";
 import { cn } from "@/lib/utils";
+import { useUnreadItemIds, useMarkItemAsRead } from "@/hooks/useUnreadItemIds";
 
 interface Ticket {
   id: string;
@@ -80,6 +81,15 @@ export function AgencyTicketList({
 }: AgencyTicketListProps) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<TicketStatus | "all">("all");
+  const { data: unreadIds } = useUnreadItemIds();
+  const markAsRead = useMarkItemAsRead();
+
+  const handleSelectTicket = (ticketId: string) => {
+    if (unreadIds?.chamados.has(ticketId)) {
+      markAsRead(ticketId, 'chamados');
+    }
+    onSelectTicket(ticketId);
+  };
 
   const filteredTickets = tickets.filter((ticket) => {
     const matchesSearch =
@@ -144,19 +154,30 @@ export function AgencyTicketList({
               </p>
             </div>
           ) : (
-            filteredTickets.map((ticket) => (
-              <button
-                key={ticket.id}
-                onClick={() => onSelectTicket(ticket.id)}
-                className={cn(
-                  "w-full text-left p-4 rounded-lg border transition-all",
-                  "hover:border-primary/50 hover:shadow-sm",
-                  selectedTicketId === ticket.id
-                    ? "border-primary bg-primary/5"
-                    : "border-border bg-card"
-                )}
-              >
-                <div className="flex items-start justify-between gap-3 mb-2">
+            filteredTickets.map((ticket) => {
+              const hasUnread = unreadIds?.chamados.has(ticket.id) ?? false;
+              return (
+                <button
+                  key={ticket.id}
+                  onClick={() => handleSelectTicket(ticket.id)}
+                  className={cn(
+                    "w-full text-left p-4 rounded-lg border transition-all relative",
+                    "hover:border-primary/50 hover:shadow-sm",
+                    selectedTicketId === ticket.id
+                      ? "border-primary bg-primary/5"
+                      : "border-border bg-card",
+                    hasUnread && selectedTicketId !== ticket.id && "bg-red-50/50 dark:bg-red-950/20 border-red-200"
+                  )}
+                >
+                  {/* Unread indicator */}
+                  {hasUnread && (
+                    <span className="absolute top-2 right-2 flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                    </span>
+                  )}
+                  
+                  <div className="flex items-start justify-between gap-3 mb-2">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-xs font-mono text-muted-foreground">
@@ -196,7 +217,8 @@ export function AgencyTicketList({
                   )}
                 </div>
               </button>
-            ))
+              );
+            })
           )}
         </div>
       </ScrollArea>

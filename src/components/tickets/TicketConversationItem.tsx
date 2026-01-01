@@ -10,6 +10,7 @@ interface TicketConversationItemProps {
   isSelected: boolean;
   lastMessage?: string;
   unreadCount?: number;
+  hasUnread?: boolean;
   onClick: () => void;
 }
 
@@ -18,6 +19,7 @@ export function TicketConversationItem({
   isSelected,
   lastMessage,
   unreadCount = 0,
+  hasUnread = false,
   onClick,
 }: TicketConversationItemProps) {
   const statusConfig = ticketStatusConfig[ticket.status];
@@ -39,12 +41,21 @@ export function TicketConversationItem({
     <div
       onClick={onClick}
       className={cn(
-        "flex items-start gap-3 p-4 cursor-pointer transition-all duration-200 border-l-4",
+        "flex items-start gap-3 p-4 cursor-pointer transition-all duration-200 border-l-4 relative",
         "hover:bg-muted/50",
         getWaitTimeColor(),
-        isSelected ? "bg-primary/5 border-l-primary" : "border-l-transparent"
+        isSelected ? "bg-primary/5 border-l-primary" : "border-l-transparent",
+        hasUnread && !isSelected && "bg-red-50/50 dark:bg-red-950/20"
       )}
     >
+      {/* Unread indicator */}
+      {hasUnread && (
+        <span className="absolute top-2 right-2 flex h-3 w-3">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+        </span>
+      )}
+      
       <Avatar className="h-12 w-12 shrink-0">
         <AvatarFallback className="bg-primary/10 text-primary font-semibold">
           {initials}

@@ -8,6 +8,7 @@ import { Ticket, TicketStatus, TicketCategory, TicketPriority, ticketStatusConfi
 import { TicketConversationItem } from "./TicketConversationItem";
 import { Search, SlidersHorizontal, X, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useUnreadItemIds, useMarkItemAsRead } from "@/hooks/useUnreadItemIds";
 
 interface TicketConversationListProps {
   tickets: Ticket[];
@@ -34,6 +35,16 @@ export function TicketConversationList({
 }: TicketConversationListProps) {
   const [search, setSearch] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const { data: unreadIds } = useUnreadItemIds();
+  const markAsRead = useMarkItemAsRead();
+
+  const handleSelectTicket = (ticketId: string) => {
+    // Mark as read when selecting
+    if (unreadIds?.chamados.has(ticketId)) {
+      markAsRead(ticketId, 'chamados');
+    }
+    onSelectTicket(ticketId);
+  };
 
   const filteredTickets = useMemo(() => {
     if (!search.trim()) return tickets;
@@ -241,7 +252,8 @@ export function TicketConversationList({
                 ticket={ticket}
                 isSelected={selectedTicketId === ticket.id}
                 lastMessage={lastMessages[ticket.id]}
-                onClick={() => onSelectTicket(ticket.id)}
+                hasUnread={unreadIds?.chamados.has(ticket.id) ?? false}
+                onClick={() => handleSelectTicket(ticket.id)}
               />
             ))}
           </div>

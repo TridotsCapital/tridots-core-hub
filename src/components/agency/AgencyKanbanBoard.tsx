@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useUnreadItemIds, useMarkItemAsRead } from '@/hooks/useUnreadItemIds';
 
 interface AgencyKanbanBoardProps {
   analyses: Analysis[];
@@ -38,6 +39,8 @@ export function AgencyKanbanBoard({ analyses, isLoading, autoOpenAnalysisId, onA
   const [selectedAnalysis, setSelectedAnalysis] = useState<Analysis | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [hasShownDragToast, setHasShownDragToast] = useState(false);
+  const { data: unreadIds } = useUnreadItemIds();
+  const markAsRead = useMarkItemAsRead();
 
   // Auto-open analysis from notification
   useEffect(() => {
@@ -52,6 +55,10 @@ export function AgencyKanbanBoard({ analyses, isLoading, autoOpenAnalysisId, onA
   }, [autoOpenAnalysisId, analyses, onAutoOpenHandled]);
 
   const handleCardClick = (analysis: Analysis) => {
+    // Mark as read when opening
+    if (unreadIds?.analises.has(analysis.id)) {
+      markAsRead(analysis.id, 'analises');
+    }
     setSelectedAnalysis(analysis);
     setDrawerOpen(true);
   };
@@ -122,6 +129,7 @@ export function AgencyKanbanBoard({ analyses, isLoading, autoOpenAnalysisId, onA
                           <AgencyKanbanCard
                             analysis={analysis}
                             onClick={() => handleCardClick(analysis)}
+                            hasUnread={unreadIds?.analises.has(analysis.id) ?? false}
                           />
                         </div>
                       ))

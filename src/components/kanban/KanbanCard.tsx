@@ -20,6 +20,7 @@ interface KanbanCardProps {
   analysis: Analysis;
   onClick: () => void;
   isDragging?: boolean;
+  hasUnread?: boolean;
 }
 
 const formatCurrency = (value: number) => {
@@ -40,7 +41,7 @@ const getUrgencyLevel = (createdAt: string): 'low' | 'medium' | 'high' => {
   return 'high';
 };
 
-export function KanbanCard({ analysis, onClick, isDragging }: KanbanCardProps) {
+export function KanbanCard({ analysis, onClick, isDragging, hasUnread = false }: KanbanCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
     id: analysis.id,
   });
@@ -73,12 +74,20 @@ export function KanbanCard({ analysis, onClick, isDragging }: KanbanCardProps) {
       {...attributes}
       {...listeners}
       className={cn(
-        'kanban-card',
+        'kanban-card relative',
         urgencyClass,
-        isDragging && 'opacity-50'
+        isDragging && 'opacity-50',
+        hasUnread && 'ring-2 ring-red-500 ring-offset-1'
       )}
       onClick={onClick}
     >
+      {/* Unread indicator */}
+      {hasUnread && (
+        <span className="absolute -top-1 -right-1 flex h-3 w-3 z-10">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+        </span>
+      )}
       {/* Header with name and quick actions */}
       <div className="flex items-start justify-between gap-2 mb-3">
         <div className="flex-1 min-w-0">
