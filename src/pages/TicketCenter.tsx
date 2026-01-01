@@ -4,24 +4,41 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useTickets, useTicketNotifications } from "@/hooks/useTickets";
 import { TicketConversationList } from "@/components/tickets/TicketConversationList";
 import { TicketChatArea } from "@/components/tickets/TicketChatArea";
-import { TicketStatus, TicketCategory, TicketPriority } from "@/types/tickets";
-import { Bell } from "lucide-react";
+import { TicketStatus, TicketCategory, TicketPriority, ticketStatusConfig } from "@/types/tickets";
+import { Bell, Plus, Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useUnreadItemIds } from "@/hooks/useUnreadItemIds";
 
 const TicketCenter = () => {
   const location = useLocation();
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<TicketStatus | 'all' | 'unread'>('all');
   const [filters, setFilters] = useState<{
     status?: TicketStatus | 'all';
     category?: TicketCategory | 'all';
     priority?: TicketPriority | 'all';
+    unread_only?: boolean;
   }>({
     status: 'all',
     category: 'all',
     priority: 'all',
+    unread_only: false,
   });
 
   const { data: tickets = [], isLoading } = useTickets(filters as any);
   const { data: notifications } = useTicketNotifications();
+  const { data: unreadIds } = useUnreadItemIds();
+
+  // Sync statusFilter with filters
+  useEffect(() => {
+    if (statusFilter === 'unread') {
+      setFilters(f => ({ ...f, status: 'all', unread_only: true }));
+    } else {
+      setFilters(f => ({ ...f, status: statusFilter, unread_only: false }));
+    }
+  }, [statusFilter]);
 
   // Auto-open ticket from notification
   useEffect(() => {
@@ -37,6 +54,27 @@ const TicketCenter = () => {
   const sortedTickets = [...tickets].sort((a, b) => 
     new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
   );
+
+  // Filter by search term
+  const filteredTickets = sortedTickets.filter(ticket => {
+    if (!search.trim()) return true;
+    const searchLower = search.toLowerCase();
+    return (
+      ticket.subject.toLowerCase().includes(searchLower) ||
+      ticket.agency?.nome_fantasia?.toLowerCase().includes(searchLower) ||
+      ticket.agency?.razao_social?.toLowerCase().includes(searchLower) ||
+      ticket.id.toLowerCase().includes(searchLower)
+    );
+  });
+
+  const statusFilterOptions: { value: TicketStatus | 'all' | 'unread'; label: string }[] = [
+    { value: 'all', label: 'Todos' },
+    { value: 'unread', label: 'Não lidos' },
+    { value: 'aberto', label: 'Abertos' },
+    { value: 'em_atendimento', label: 'Em Atendimento' },
+    { value: 'aguardando_cliente', label: 'Aguardando' },
+    { value: 'resolvido', label: 'Resolvidos' },
+  ];
 
   // Sound notification for urgent tickets
   useEffect(() => {
@@ -55,7 +93,7 @@ const TicketCenter = () => {
   return (
     <DashboardLayout>
       <div className="h-[calc(100vh-4rem)] flex flex-col">
-        {/* Header */}
+        {/* Header with title */}
         <div className="flex items-center justify-between px-4 py-3 border-b bg-card">
           <div>
             <h1 className="text-xl font-bold">Central de Atendimento</h1>
@@ -71,12 +109,47 @@ const TicketCenter = () => {
           )}
         </div>
 
+        {/* Top filter bar */}
+        <div className="flex items-center gap-3 px-4 py-3 border-b bg-muted/30">
+          <div className="relative flex-1 max-w-xs">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar chamados..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 h-9"
+            />
+          </div>
+          
+          <div className="flex gap-2 overflow-x-auto">
+            {statusFilterOptions.map((filter) => (
+              <Button
+                key={filter.value}
+                variant={statusFilter === filter.value ? "default" : "outline"}
+                size="sm"
+                onClick={() => setStatusFilter(filter.value)}
+                className="whitespace-nowrap h-9"
+              >
+                {filter.value === "unread" && (
+                  <span className="h-2 w-2 rounded-full bg-red-500 mr-1.5"></span>
+                )}
+                {filter.label}
+              </Button>
+            ))}
+          </div>
+
+          <Button size="sm" className="ml-auto h-9">
+            <Plus className="h-4 w-4 mr-2" />
+            Novo Chamado
+          </Button>
+        </div>
+
         {/* Main content - WhatsApp style layout */}
         <div className="flex-1 flex overflow-hidden">
           {/* Left: Conversation List */}
           <div className="w-[380px] border-r flex-shrink-0">
             <TicketConversationList
-              tickets={sortedTickets}
+              tickets={filteredTickets}
               isLoading={isLoading}
               selectedTicketId={selectedTicketId}
               onSelectTicket={setSelectedTicketId}
