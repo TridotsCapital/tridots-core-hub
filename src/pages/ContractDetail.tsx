@@ -22,11 +22,13 @@ import {
   Building2,
   MessageSquare,
   Eye,
+  ExternalLink,
 } from 'lucide-react';
 import { useContract } from '@/hooks/useContracts';
 import { useTicketCountByAnalysis, useTicketsByAnalysis } from '@/hooks/useTickets';
 import { ContractActions } from '@/components/contracts';
 import { ContractTicketSheet } from '@/components/contracts/ContractTicketSheet';
+import { TicketDetailSheet } from '@/components/tickets/TicketDetailSheet';
 import { formatCurrency, PROPERTY_TYPES } from '@/lib/validators';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -60,6 +62,7 @@ export default function ContractDetail() {
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'overview');
   const [ticketSheetOpen, setTicketSheetOpen] = useState(false);
+  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
 
   const { data: contract, isLoading } = useContract(id);
   const { data: ticketCount = 0 } = useTicketCountByAnalysis(id);
@@ -162,10 +165,11 @@ export default function ContractDetail() {
 
   // Add ticket events to timeline
   tickets.forEach((ticket) => {
+    const ticketRef = `#${ticket.id.slice(0, 8).toUpperCase()}`;
     timelineEvents.push({
       date: ticket.created_at,
       title: `Chamado Aberto`,
-      description: ticket.subject,
+      description: `${ticketRef} - ${ticket.subject}`,
       icon: MessageSquare,
       iconColor: 'text-amber-500',
       type: 'ticket',
@@ -176,7 +180,7 @@ export default function ContractDetail() {
       timelineEvents.push({
         date: ticket.resolved_at,
         title: `Chamado Resolvido`,
-        description: ticket.subject,
+        description: `${ticketRef} - ${ticket.subject}`,
         icon: CheckCircle,
         iconColor: 'text-amber-600',
         type: 'ticket',
@@ -228,6 +232,12 @@ export default function ContractDetail() {
             </Button>
           </div>
         </div>
+
+        {/* Ticket Detail Sheet */}
+        <TicketDetailSheet
+          ticketId={selectedTicketId}
+          onClose={() => setSelectedTicketId(null)}
+        />
 
         {/* Ticket Sheet */}
         <ContractTicketSheet
@@ -431,7 +441,7 @@ export default function ContractDetail() {
                           </div>
                           <div className="pb-4">
                             <div className="flex items-center gap-2">
-                              <p className="font-medium">{event.title}</p>
+                            <p className="font-medium">{event.title}</p>
                               {event.type === 'ticket' && (
                                 <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
                                   Chamado
@@ -442,6 +452,17 @@ export default function ContractDetail() {
                             <p className="text-xs text-muted-foreground mt-1">
                               {format(new Date(event.date), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR })}
                             </p>
+                            {event.type === 'ticket' && event.ticketId && (
+                              <Button
+                                variant="link"
+                                size="sm"
+                                className="h-auto p-0 mt-1 text-xs text-amber-600 hover:text-amber-700"
+                                onClick={() => setSelectedTicketId(event.ticketId!)}
+                              >
+                                <ExternalLink className="h-3 w-3 mr-1" />
+                                Abrir chamado
+                              </Button>
+                            )}
                           </div>
                         </div>
                       );
