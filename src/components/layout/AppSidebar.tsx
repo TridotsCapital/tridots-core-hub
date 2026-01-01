@@ -29,13 +29,15 @@ import {
   LogOut,
   Headphones,
   FileCheck,
+  AlertTriangle,
 } from 'lucide-react';
 
 // Map paths to notification sources
-const pathToSource: Record<string, 'chamados' | 'analises' | 'contratos'> = {
+const pathToSource: Record<string, 'chamados' | 'analises' | 'contratos' | 'sinistros'> = {
   '/tickets': 'chamados',
   '/analyses': 'analises',
   '/contracts': 'contratos',
+  '/claims': 'sinistros',
 };
 
 const menuItems = [
@@ -58,6 +60,11 @@ const menuItems = [
     title: 'Contratos',
     icon: FileCheck,
     path: '/contracts',
+  },
+  {
+    title: 'Sinistros',
+    icon: AlertTriangle,
+    path: '/claims',
   },
   {
     title: 'Imobiliárias',

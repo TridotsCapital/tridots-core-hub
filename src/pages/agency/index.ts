@@ -5,3 +5,6 @@ export { default as AgencyContractDetail } from './AgencyContractDetail';
 export { default as AgencySupport } from './AgencySupport';
 export { default as AgencyNewAnalysis } from './AgencyNewAnalysis';
 export { default as AgencyCollaborators } from './AgencyCollaborators';
+export { default as AgencyClaims } from './AgencyClaims';
+export { default as AgencyClaimDetail } from './AgencyClaimDetail';
+export { default as AgencyNewClaim } from './AgencyNewClaim';

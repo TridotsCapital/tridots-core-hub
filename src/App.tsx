@@ -29,8 +29,15 @@ import {
   AgencyContractDetail,
   AgencySupport,
   AgencyNewAnalysis,
-  AgencyCollaborators
+  AgencyCollaborators,
+  AgencyClaims,
+  AgencyClaimDetail,
+  AgencyNewClaim
 } from "./pages/agency";
+
+// Internal Portal Pages
+import Claims from "./pages/Claims";
+import ClaimDetail from "./pages/ClaimDetail";
 
 const queryClient = new QueryClient();
 
@@ -60,6 +67,8 @@ const App = () => (
             <Route path="/tickets" element={<TicketCenter />} />
             <Route path="/contracts" element={<Contracts />} />
             <Route path="/contracts/:id" element={<ContractDetail />} />
+            <Route path="/claims" element={<Claims />} />
+            <Route path="/claims/:id" element={<ClaimDetail />} />
             
             {/* Agency Portal Routes */}
             <Route path="/agency" element={<AgencyDashboard />} />
@@ -67,6 +76,9 @@ const App = () => (
             <Route path="/agency/analyses/new" element={<AgencyNewAnalysis />} />
             <Route path="/agency/contracts" element={<AgencyContracts />} />
             <Route path="/agency/contracts/:id" element={<AgencyContractDetail />} />
+            <Route path="/agency/claims" element={<AgencyClaims />} />
+            <Route path="/agency/claims/new" element={<AgencyNewClaim />} />
+            <Route path="/agency/claims/:id" element={<AgencyClaimDetail />} />
             <Route path="/agency/collaborators" element={<AgencyCollaborators />} />
             <Route path="/agency/support" element={<AgencySupport />} />
             

@@ -8,7 +8,8 @@ import {
   Plus,
   Users,
   Play,
-  Building2
+  Building2,
+  AlertTriangle
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
@@ -38,16 +39,18 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 // Map paths to notification sources
-const pathToSource: Record<string, 'chamados' | 'analises' | 'contratos'> = {
+const pathToSource: Record<string, 'chamados' | 'analises' | 'contratos' | 'sinistros'> = {
   '/agency/support': 'chamados',
   '/agency/analyses': 'analises',
   '/agency/contracts': 'contratos',
+  '/agency/claims': 'sinistros',
 };
 
 const menuItems = [
   { title: "Dashboard", icon: LayoutDashboard, path: "/agency" },
   { title: "Minhas Análises", icon: FileSearch, path: "/agency/analyses" },
   { title: "Meus Contratos", icon: FileCheck, path: "/agency/contracts" },
+  { title: "Sinistros", icon: AlertTriangle, path: "/agency/claims" },
   { title: "Colaboradores", icon: Users, path: "/agency/collaborators" },
   { title: "Suporte", icon: HelpCircle, path: "/agency/support" },
 ];
