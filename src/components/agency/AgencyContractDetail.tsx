@@ -5,13 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Home, User, Users, DollarSign, Calendar, CheckCircle, Clock, XCircle, CreditCard, FileText, Loader2, MessageSquare, Eye } from 'lucide-react';
+import { ArrowLeft, Home, User, Users, DollarSign, Calendar, CheckCircle, Clock, XCircle, CreditCard, FileText, Loader2, MessageSquare, Eye, ExternalLink } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency, PROPERTY_TYPES } from '@/lib/validators';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { AgencyDocumentCenter } from './AgencyDocumentCenter';
 import { ContractTicketSheet } from './ContractTicketSheet';
+import { AgencyTicketDetail } from './AgencyTicketDetail';
 import { useTicketCountByAnalysis, useTicketsByAnalysis } from '@/hooks/useTickets';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -52,6 +53,7 @@ export function AgencyContractDetail() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'overview');
   const [ticketSheetOpen, setTicketSheetOpen] = useState(false);
+  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
 
   const { data: ticketCount = 0 } = useTicketCountByAnalysis(id);
   const { data: tickets = [] } = useTicketsByAnalysis(id);
@@ -171,10 +173,11 @@ export function AgencyContractDetail() {
 
   // Add ticket events to timeline
   tickets.forEach((ticket) => {
+    const ticketRef = `#${ticket.id.slice(0, 8).toUpperCase()}`;
     timelineEvents.push({
       date: ticket.created_at,
       title: `Chamado Aberto`,
-      description: ticket.subject,
+      description: `${ticketRef} - ${ticket.subject}`,
       icon: MessageSquare,
       iconColor: 'text-amber-500',
       type: 'ticket',
@@ -185,7 +188,7 @@ export function AgencyContractDetail() {
       timelineEvents.push({
         date: ticket.resolved_at,
         title: `Chamado Resolvido`,
-        description: ticket.subject,
+        description: `${ticketRef} - ${ticket.subject}`,
         icon: CheckCircle,
         iconColor: 'text-amber-600',
         type: 'ticket',
@@ -239,6 +242,12 @@ export function AgencyContractDetail() {
       </div>
 
       {/* Ticket Sheet */}
+      {/* Ticket Detail Sheet */}
+      <AgencyTicketDetail
+        ticketId={selectedTicketId}
+        onClose={() => setSelectedTicketId(null)}
+      />
+
       <ContractTicketSheet
         open={ticketSheetOpen}
         onOpenChange={setTicketSheetOpen}
@@ -456,6 +465,17 @@ export function AgencyContractDetail() {
                           <p className="text-xs text-muted-foreground mt-1">
                             {format(new Date(event.date), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR })}
                           </p>
+                          {event.type === 'ticket' && event.ticketId && (
+                            <Button
+                              variant="link"
+                              size="sm"
+                              className="h-auto p-0 mt-1 text-xs text-amber-600 hover:text-amber-700"
+                              onClick={() => setSelectedTicketId(event.ticketId!)}
+                            >
+                              <ExternalLink className="h-3 w-3 mr-1" />
+                              Abrir chamado
+                            </Button>
+                          )}
                         </div>
                       </div>
                     );
