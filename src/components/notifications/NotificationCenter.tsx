@@ -43,18 +43,29 @@ export function NotificationCenter({ isAgencyPortal = false }: NotificationCente
   const handleNotificationClick = (notification: Notification) => {
     setOpen(false);
     
+    // Mark as read when clicking
+    if (!notification.read_at) {
+      markAsRead.mutate(notification.id);
+    }
+    
     // Navigate based on notification type and portal
     if (notification.source === 'chamados') {
       if (isAgencyPortal) {
-        navigate('/suporte', { state: { ticketId: notification.reference_id } });
+        navigate('/agency/support', { state: { ticketId: notification.reference_id } });
       } else {
         navigate('/tickets', { state: { ticketId: notification.reference_id } });
       }
     } else if (notification.source === 'analises') {
       if (isAgencyPortal) {
-        navigate('/analises', { state: { analysisId: notification.reference_id } });
+        navigate('/agency/analyses', { state: { analysisId: notification.reference_id } });
       } else {
         navigate('/analyses', { state: { analysisId: notification.reference_id } });
+      }
+    } else if (notification.source === 'contratos') {
+      if (isAgencyPortal) {
+        navigate('/agency/contracts', { state: { contractId: notification.reference_id } });
+      } else {
+        navigate('/contracts', { state: { contractId: notification.reference_id } });
       }
     }
   };
@@ -134,6 +145,9 @@ export function NotificationCenter({ isAgencyPortal = false }: NotificationCente
               </TabsTrigger>
               <TabsTrigger value="analises" className="text-xs flex-1">
                 Análises
+              </TabsTrigger>
+              <TabsTrigger value="contratos" className="text-xs flex-1">
+                Contratos
               </TabsTrigger>
             </TabsList>
           </div>

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   DndContext,
   DragEndEvent,
@@ -23,9 +23,11 @@ interface KanbanBoardProps {
     agency_id?: string;
     analyst_id?: string;
   };
+  autoOpenAnalysisId?: string | null;
+  onAutoOpenHandled?: () => void;
 }
 
-export function KanbanBoard({ filters }: KanbanBoardProps) {
+export function KanbanBoard({ filters, autoOpenAnalysisId, onAutoOpenHandled }: KanbanBoardProps) {
   const { data: analyses, isLoading } = useAnalysesKanban(filters);
   const moveAnalysis = useMoveAnalysis();
   
@@ -35,6 +37,18 @@ export function KanbanBoard({ filters }: KanbanBoardProps) {
   const [approvalModalOpen, setApprovalModalOpen] = useState(false);
   const [pendingMove, setPendingMove] = useState<{ analysis: Analysis; newStatus: AnalysisStatus } | null>(null);
   const [confirmationOpen, setConfirmationOpen] = useState(false);
+
+  // Auto-open analysis from notification
+  useEffect(() => {
+    if (autoOpenAnalysisId && analyses) {
+      const analysis = analyses.find(a => a.id === autoOpenAnalysisId);
+      if (analysis) {
+        setSelectedAnalysis(analysis);
+        setDrawerOpen(true);
+        onAutoOpenHandled?.();
+      }
+    }
+  }, [autoOpenAnalysisId, analyses, onAutoOpenHandled]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {

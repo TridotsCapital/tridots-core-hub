@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useAnalyses } from '@/hooks/useAnalyses';
 import { useAgencies } from '@/hooks/useAgencies';
 import { useTeamMembers } from '@/hooks/useAnalysesKanban';
@@ -33,10 +33,12 @@ import { ptBR } from 'date-fns/locale';
 type ViewMode = 'kanban' | 'table';
 
 export default function Analyses() {
+  const location = useLocation();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<AnalysisStatus | 'all'>('all');
   const [agencyFilter, setAgencyFilter] = useState<string>('all');
   const [analystFilter, setAnalystFilter] = useState<string>('all');
+  const [autoOpenAnalysisId, setAutoOpenAnalysisId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     return (localStorage.getItem('analyses-view-mode') as ViewMode) || 'kanban';
   });
@@ -47,6 +49,16 @@ export default function Analyses() {
     status: statusFilter !== 'all' ? statusFilter : undefined,
     agency_id: agencyFilter !== 'all' ? agencyFilter : undefined,
   });
+
+  // Auto-open analysis from notification
+  useEffect(() => {
+    const state = location.state as { analysisId?: string } | null;
+    if (state?.analysisId) {
+      setAutoOpenAnalysisId(state.analysisId);
+      // Clear state to prevent re-opening on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   useEffect(() => {
     localStorage.setItem('analyses-view-mode', viewMode);
@@ -153,7 +165,9 @@ export default function Analyses() {
             filters={{
               agency_id: agencyFilter !== 'all' ? agencyFilter : undefined,
               analyst_id: analystFilter !== 'all' ? analystFilter : undefined,
-            }} 
+            }}
+            autoOpenAnalysisId={autoOpenAnalysisId}
+            onAutoOpenHandled={() => setAutoOpenAnalysisId(null)}
           />
         ) : (
           <Card>

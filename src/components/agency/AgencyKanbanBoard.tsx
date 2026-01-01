@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Analysis, AnalysisStatus, kanbanColumns, statusConfig } from '@/types/database';
 import { AgencyKanbanCard } from './AgencyKanbanCard';
 import { AgencyAnalysisDrawer } from './AgencyAnalysisDrawer';
@@ -10,6 +10,8 @@ import { cn } from '@/lib/utils';
 interface AgencyKanbanBoardProps {
   analyses: Analysis[];
   isLoading?: boolean;
+  autoOpenAnalysisId?: string | null;
+  onAutoOpenHandled?: () => void;
 }
 
 const columnColors: Record<AnalysisStatus, string> = {
@@ -32,10 +34,22 @@ const headerColors: Record<AnalysisStatus, string> = {
   ativo: 'bg-green-500',
 };
 
-export function AgencyKanbanBoard({ analyses, isLoading }: AgencyKanbanBoardProps) {
+export function AgencyKanbanBoard({ analyses, isLoading, autoOpenAnalysisId, onAutoOpenHandled }: AgencyKanbanBoardProps) {
   const [selectedAnalysis, setSelectedAnalysis] = useState<Analysis | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [hasShownDragToast, setHasShownDragToast] = useState(false);
+
+  // Auto-open analysis from notification
+  useEffect(() => {
+    if (autoOpenAnalysisId && analyses) {
+      const analysis = analyses.find(a => a.id === autoOpenAnalysisId);
+      if (analysis) {
+        setSelectedAnalysis(analysis);
+        setDrawerOpen(true);
+        onAutoOpenHandled?.();
+      }
+    }
+  }, [autoOpenAnalysisId, analyses, onAutoOpenHandled]);
 
   const handleCardClick = (analysis: Analysis) => {
     setSelectedAnalysis(analysis);

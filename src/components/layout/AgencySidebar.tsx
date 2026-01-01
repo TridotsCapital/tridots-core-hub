@@ -13,6 +13,7 @@ import {
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAnalysisDraft } from "@/hooks/useAnalysisDraft";
+import { useNotificationCounts } from "@/hooks/useNotificationCounts";
 import { NotificationCenter } from "@/components/notifications";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +37,13 @@ import {
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
+// Map paths to notification sources
+const pathToSource: Record<string, 'chamados' | 'analises' | 'contratos'> = {
+  '/agency/support': 'chamados',
+  '/agency/analyses': 'analises',
+  '/agency/contracts': 'contratos',
+};
+
 const menuItems = [
   { title: "Dashboard", icon: LayoutDashboard, path: "/agency" },
   { title: "Minhas Análises", icon: FileSearch, path: "/agency/analyses" },
@@ -48,6 +56,7 @@ export function AgencySidebar() {
   const navigate = useNavigate();
   const { profile, signOut } = useAuth();
   const { hasDraft, getLastSavedTime } = useAnalysisDraft();
+  const { data: notificationCounts } = useNotificationCounts();
 
   const handleSignOut = async () => {
     await signOut();
@@ -61,6 +70,12 @@ export function AgencySidebar() {
       .join("")
       .toUpperCase()
       .slice(0, 2);
+  };
+
+  const getNotificationCount = (path: string) => {
+    const source = pathToSource[path];
+    if (!source || !notificationCounts) return 0;
+    return notificationCounts[source];
   };
 
   return (
@@ -87,21 +102,32 @@ export function AgencySidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to={item.path}
-                      end={item.path === "/agency"}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-primary/5 transition-all"
-                      activeClassName="bg-primary/10 text-primary font-semibold shadow-sm"
-                    >
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {menuItems.map((item) => {
+                const count = getNotificationCount(item.path);
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <NavLink
+                        to={item.path}
+                        end={item.path === "/agency"}
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-primary/5 transition-all relative"
+                        activeClassName="bg-primary/10 text-primary font-semibold shadow-sm"
+                      >
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                        {count > 0 && (
+                          <Badge 
+                            variant="destructive" 
+                            className="absolute -top-1 right-1 h-5 min-w-5 text-xs flex items-center justify-center p-0 px-1.5"
+                          >
+                            {count > 99 ? '99+' : count}
+                          </Badge>
+                        )}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
