@@ -458,6 +458,41 @@ export function useTypingIndicators(ticketId: string | undefined) {
   return query;
 }
 
+// Hook to count tickets for a specific analysis/contract
+export function useTicketCountByAnalysis(analysisId: string | undefined) {
+  return useQuery({
+    queryKey: ["ticket-count-by-analysis", analysisId],
+    queryFn: async () => {
+      if (!analysisId) return 0;
+      const { count, error } = await supabase
+        .from("tickets")
+        .select("*", { count: "exact", head: true })
+        .eq("analysis_id", analysisId);
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: !!analysisId,
+  });
+}
+
+// Hook to fetch tickets for a specific analysis/contract (for timeline)
+export function useTicketsByAnalysis(analysisId: string | undefined) {
+  return useQuery({
+    queryKey: ["tickets-by-analysis", analysisId],
+    queryFn: async () => {
+      if (!analysisId) return [];
+      const { data, error } = await supabase
+        .from("tickets")
+        .select("id, subject, status, created_at, resolved_at")
+        .eq("analysis_id", analysisId)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!analysisId,
+  });
+}
+
 export function useSetTypingIndicator() {
   return useMutation({
     mutationFn: async ({ ticketId, isTyping }: { ticketId: string; isTyping: boolean }) => {

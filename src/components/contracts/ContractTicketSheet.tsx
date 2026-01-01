@@ -16,6 +16,7 @@ interface ContractTicketSheetProps {
   analysisId: string;
   agencyId: string;
   contractRef: string;
+  agencyName?: string;
   tenantName?: string;
 }
 
@@ -25,6 +26,7 @@ export function ContractTicketSheet({
   analysisId,
   agencyId,
   contractRef,
+  agencyName,
   tenantName,
 }: ContractTicketSheetProps) {
   const navigate = useNavigate();
@@ -60,7 +62,7 @@ export function ContractTicketSheet({
 
   const handleViewTickets = () => {
     handleClose();
-    navigate('/agency/support');
+    navigate(`/tickets?contract=${analysisId}`);
   };
 
   if (showSuccess) {
@@ -94,7 +96,8 @@ export function ContractTicketSheet({
           <SheetTitle>Abrir Chamado</SheetTitle>
           <SheetDescription>
             Vinculado ao contrato {contractRef}
-            {tenantName && ` • ${tenantName}`}
+            {agencyName && ` • ${agencyName}`}
+            {tenantName && !agencyName && ` • ${tenantName}`}
           </SheetDescription>
         </SheetHeader>
 

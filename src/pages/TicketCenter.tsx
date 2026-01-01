@@ -1,20 +1,23 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useTickets, useTicketNotifications } from "@/hooks/useTickets";
 import { TicketConversationList } from "@/components/tickets/TicketConversationList";
 import { TicketChatArea } from "@/components/tickets/TicketChatArea";
-import { TicketStatus, TicketCategory, TicketPriority, ticketStatusConfig } from "@/types/tickets";
-import { Bell, Plus, Search } from "lucide-react";
+import { TicketStatus, TicketCategory, TicketPriority } from "@/types/tickets";
+import { Bell, Plus, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { useUnreadItemIds } from "@/hooks/useUnreadItemIds";
 
 const TicketCenter = () => {
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<TicketStatus | 'all' | 'unread'>('all');
+  const [contractFilter, setContractFilter] = useState<string | null>(null);
   const [filters, setFilters] = useState<{
     status?: TicketStatus | 'all';
     category?: TicketCategory | 'all';
@@ -30,6 +33,14 @@ const TicketCenter = () => {
   const { data: tickets = [], isLoading } = useTickets(filters as any);
   const { data: notifications } = useTicketNotifications();
   const { data: unreadIds } = useUnreadItemIds();
+
+  // Read contract filter from URL
+  useEffect(() => {
+    const contract = searchParams.get('contract');
+    if (contract) {
+      setContractFilter(contract);
+    }
+  }, [searchParams]);
 
   // Sync statusFilter with filters
   useEffect(() => {
@@ -50,13 +61,23 @@ const TicketCenter = () => {
     }
   }, [location.state]);
 
+  const clearContractFilter = () => {
+    setContractFilter(null);
+    setSearchParams({});
+  };
+
   // Sort tickets by most recent activity (updated_at)
   const sortedTickets = [...tickets].sort((a, b) => 
     new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
   );
 
-  // Filter by search term
+  // Filter by search term and contract
   const filteredTickets = sortedTickets.filter(ticket => {
+    // Contract filter
+    if (contractFilter && ticket.analysis_id !== contractFilter) {
+      return false;
+    }
+
     if (!search.trim()) return true;
     const searchLower = search.toLowerCase();
     return (
@@ -108,6 +129,27 @@ const TicketCenter = () => {
             </div>
           )}
         </div>
+
+        {/* Contract filter banner */}
+        {contractFilter && (
+          <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 border-b border-amber-200">
+            <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300">
+              Filtrado por contrato
+            </Badge>
+            <span className="text-sm text-amber-700">
+              Mostrando apenas chamados do contrato #{contractFilter.slice(0, 8).toUpperCase()}
+            </span>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="ml-auto h-7 text-amber-700 hover:text-amber-900 hover:bg-amber-100"
+              onClick={clearContractFilter}
+            >
+              <X className="h-4 w-4 mr-1" />
+              Limpar filtro
+            </Button>
+          </div>
+        )}
 
         {/* Top filter bar */}
         <div className="flex items-center gap-3 px-4 py-3 border-b bg-muted/30">
