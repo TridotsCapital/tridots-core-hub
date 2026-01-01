@@ -151,63 +151,54 @@ export function AgencyTicketChatArea({ ticketId }: AgencyTicketChatAreaProps) {
 
   return (
     <div className="flex-1 flex flex-col h-full bg-background">
-      {/* Header */}
-      <div className="p-4 border-b bg-card">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-mono text-muted-foreground">
-                #{ticket.id.slice(0, 8).toUpperCase()}
-              </span>
-              <Badge
-                variant="outline"
-                className={cn("text-xs", categoryConfig[ticket.category as TicketCategory].className)}
-              >
-                {categoryConfig[ticket.category as TicketCategory].label}
-              </Badge>
-            </div>
-            <h2 className="font-semibold text-lg">
-              {ticket.subject}
-            </h2>
-          </div>
+      {/* Compact Header */}
+      <div className="flex items-center justify-between px-4 py-2 border-b bg-card">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <span className="text-xs font-mono text-muted-foreground shrink-0">
+            #{ticket.id.slice(0, 8).toUpperCase()}
+          </span>
           <Badge
             variant="outline"
-            className={cn("shrink-0", statusConfig[ticket.status as TicketStatus].className)}
+            className={cn("text-xs shrink-0", categoryConfig[ticket.category as TicketCategory].className)}
           >
-            {statusConfig[ticket.status as TicketStatus].label}
+            {categoryConfig[ticket.category as TicketCategory].label}
           </Badge>
+          <h2 className="font-semibold text-sm truncate">
+            {ticket.subject}
+          </h2>
         </div>
-
-        {ticket.description && (
-          <p className="text-sm text-muted-foreground mt-2">
-            {ticket.description}
-          </p>
-        )}
-
-        <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
-          <span>
-            Aberto em {format(new Date(ticket.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-          </span>
-          {ticket.first_response_at && (
-            <span>
-              Primeira resposta: {formatDistanceToNow(new Date(ticket.first_response_at), {
-                addSuffix: true,
-                locale: ptBR,
-              })}
-            </span>
-          )}
-        </div>
+        <Badge
+          variant="outline"
+          className={cn("shrink-0 ml-2", statusConfig[ticket.status as TicketStatus].className)}
+        >
+          {statusConfig[ticket.status as TicketStatus].label}
+        </Badge>
       </div>
 
       {/* Messages */}
-      <ScrollArea className="flex-1 p-4">
-        <div className="space-y-4">
+      <ScrollArea className="flex-1 px-4">
+        <div className="py-2 space-y-3">
+          {/* Description as first message */}
+          {ticket.description && (
+            <div className="flex gap-3">
+              <Avatar className="h-8 w-8 shrink-0">
+                <AvatarFallback className="text-xs bg-muted">?</AvatarFallback>
+              </Avatar>
+              <div className="max-w-[80%]">
+                <div className="bg-muted p-3 rounded-tr-2xl rounded-tl-sm rounded-b-2xl">
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Descrição do chamado:</p>
+                  <p className="text-sm whitespace-pre-wrap">{ticket.description}</p>
+                </div>
+              </div>
+            </div>
+          )}
+          
           {messagesLoading ? (
-            <div className="flex justify-center py-8">
+            <div className="flex justify-center py-4">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
-          ) : messages.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
+          ) : messages.length === 0 && !ticket.description ? (
+            <div className="text-center py-4 text-muted-foreground">
               <p>Nenhuma mensagem ainda.</p>
               <p className="text-sm">Aguarde a resposta da equipe Tridots.</p>
             </div>
@@ -243,32 +234,26 @@ export function AgencyTicketChatArea({ ticketId }: AgencyTicketChatAreaProps) {
                     </AvatarFallback>
                   </Avatar>
 
-                  <div
-                    className={cn(
-                      "flex-1 max-w-[80%]",
-                      isOwnMessage ? "text-right" : "text-left"
-                    )}
-                  >
-                    <div className="flex items-center gap-2 mb-1">
+                  <div className={cn("max-w-[80%]", isOwnMessage && "text-right")}>
+                    <div className={cn("flex items-center gap-2 mb-1", isOwnMessage && "flex-row-reverse")}>
                       <span className="text-xs font-medium">
                         {isOwnMessage ? "Você" : senderName}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(msg.created_at), {
-                          addSuffix: true,
-                          locale: ptBR,
-                        })}
                       </span>
                     </div>
                     <div
                       className={cn(
-                        "inline-block rounded-lg px-4 py-2 text-sm",
+                        "inline-block px-4 py-2 text-sm",
                         isOwnMessage
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted"
+                          ? "bg-primary text-primary-foreground rounded-tl-2xl rounded-tr-sm rounded-b-2xl"
+                          : "bg-muted rounded-tr-2xl rounded-tl-sm rounded-b-2xl"
                       )}
                     >
                       <p className="whitespace-pre-wrap">{msg.message}</p>
+                    </div>
+                    <div className={cn("flex items-center gap-1 mt-1", isOwnMessage && "justify-end")}>
+                      <span className="text-[10px] text-muted-foreground">
+                        {format(new Date(msg.created_at), "HH:mm", { locale: ptBR })}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -279,26 +264,26 @@ export function AgencyTicketChatArea({ ticketId }: AgencyTicketChatAreaProps) {
         </div>
       </ScrollArea>
 
-      {/* Input */}
-      <div className="p-4 border-t bg-background">
+      {/* Compact Input */}
+      <div className="px-4 py-2 border-t bg-background">
         {isResolved ? (
-          <div className="flex items-center justify-center gap-2 py-3 text-sm text-muted-foreground">
+          <div className="flex items-center justify-center gap-2 py-2 text-sm text-muted-foreground">
             <CheckCircle className="h-4 w-4 text-emerald-600" />
             Este chamado foi resolvido
           </div>
         ) : (
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-end">
             <Textarea
               placeholder="Digite sua mensagem..."
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyDown={handleKeyDown}
-              className="min-h-[80px] resize-none"
+              className="min-h-[44px] max-h-[120px] resize-none"
               disabled={sendMessage.isPending}
             />
             <Button
               size="icon"
-              className="h-[80px] w-12 shrink-0"
+              className="h-[44px] w-11 shrink-0"
               onClick={handleSendMessage}
               disabled={!message.trim() || sendMessage.isPending}
             >

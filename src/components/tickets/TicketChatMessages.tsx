@@ -54,7 +54,7 @@ export function TicketChatMessages({
 
   return (
     <ScrollArea className="flex-1 px-4">
-      <div className="py-4 space-y-4">
+      <div className="py-2 space-y-3">
         {/* Initial description as first message */}
         {description && (
           <div className="flex gap-3">
