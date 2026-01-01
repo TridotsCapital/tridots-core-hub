@@ -66,8 +66,9 @@ const categoryConfig: Record<TicketCategory, { label: string; className: string 
   },
 };
 
-const statusFilters: { value: TicketStatus | "all"; label: string }[] = [
+const statusFilters: { value: TicketStatus | "all" | "unread"; label: string }[] = [
   { value: "all", label: "Todos" },
+  { value: "unread", label: "Não lidos" },
   { value: "aberto", label: "Abertos" },
   { value: "em_atendimento", label: "Em Atendimento" },
   { value: "resolvido", label: "Resolvidos" },
@@ -80,7 +81,7 @@ export function AgencyTicketList({
   selectedTicketId,
 }: AgencyTicketListProps) {
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<TicketStatus | "all">("all");
+  const [statusFilter, setStatusFilter] = useState<TicketStatus | "all" | "unread">("all");
   const { data: unreadIds } = useUnreadItemIds();
   const markAsRead = useMarkItemAsRead();
 
@@ -95,6 +96,12 @@ export function AgencyTicketList({
     const matchesSearch =
       ticket.subject.toLowerCase().includes(search.toLowerCase()) ||
       ticket.id.toLowerCase().includes(search.toLowerCase());
+    
+    // Unread filter
+    if (statusFilter === "unread") {
+      return matchesSearch && unreadIds?.chamados.has(ticket.id);
+    }
+    
     const matchesStatus =
       statusFilter === "all" || ticket.status === statusFilter;
     return matchesSearch && matchesStatus;
@@ -135,6 +142,9 @@ export function AgencyTicketList({
               onClick={() => setStatusFilter(filter.value)}
               className="whitespace-nowrap"
             >
+              {filter.value === "unread" && (
+                <span className="h-2 w-2 rounded-full bg-red-500 mr-1.5"></span>
+              )}
               {filter.label}
             </Button>
           ))}

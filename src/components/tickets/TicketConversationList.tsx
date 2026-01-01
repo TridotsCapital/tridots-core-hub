@@ -19,6 +19,7 @@ interface TicketConversationListProps {
     status?: TicketStatus | 'all';
     category?: TicketCategory | 'all';
     priority?: TicketPriority | 'all';
+    unread_only?: boolean;
   };
   onFiltersChange: (filters: any) => void;
   lastMessages?: Record<string, string>;
@@ -47,23 +48,35 @@ export function TicketConversationList({
   };
 
   const filteredTickets = useMemo(() => {
-    if (!search.trim()) return tickets;
-    const searchLower = search.toLowerCase();
-    return tickets.filter(t => 
-      t.subject.toLowerCase().includes(searchLower) ||
-      t.agency?.nome_fantasia?.toLowerCase().includes(searchLower) ||
-      t.agency?.razao_social?.toLowerCase().includes(searchLower)
-    );
-  }, [tickets, search]);
+    let result = tickets;
+    
+    // Filter by unread only
+    if (filters.unread_only && unreadIds?.chamados) {
+      result = result.filter(t => unreadIds.chamados.has(t.id));
+    }
+    
+    // Filter by search
+    if (search.trim()) {
+      const searchLower = search.toLowerCase();
+      result = result.filter(t => 
+        t.subject.toLowerCase().includes(searchLower) ||
+        t.agency?.nome_fantasia?.toLowerCase().includes(searchLower) ||
+        t.agency?.razao_social?.toLowerCase().includes(searchLower)
+      );
+    }
+    
+    return result;
+  }, [tickets, search, filters.unread_only, unreadIds]);
 
   const activeFiltersCount = [
     filters.status && filters.status !== 'all',
     filters.category && filters.category !== 'all',
     filters.priority && filters.priority !== 'all',
+    filters.unread_only,
   ].filter(Boolean).length;
 
   const clearFilters = () => {
-    onFiltersChange({ status: 'all', category: 'all', priority: 'all' });
+    onFiltersChange({ status: 'all', category: 'all', priority: 'all', unread_only: false });
   };
 
   if (isLoading) {
@@ -129,6 +142,30 @@ export function TicketConversationList({
                 </div>
                 
                 <div className="space-y-3">
+                  {/* Unread Filter */}
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Leitura</label>
+                    <div className="flex flex-wrap gap-1.5">
+                      <Button
+                        variant={!filters.unread_only ? "default" : "outline"}
+                        size="sm"
+                        className="h-7 text-xs"
+                        onClick={() => onFiltersChange({ ...filters, unread_only: false })}
+                      >
+                        Todos
+                      </Button>
+                      <Button
+                        variant={filters.unread_only ? "default" : "outline"}
+                        size="sm"
+                        className="h-7 text-xs"
+                        onClick={() => onFiltersChange({ ...filters, unread_only: true })}
+                      >
+                        <span className="h-2 w-2 rounded-full bg-red-500 mr-1.5"></span>
+                        Não lidos
+                      </Button>
+                    </div>
+                  </div>
+
                   <div>
                     <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Status</label>
                     <div className="flex flex-wrap gap-1.5">
@@ -212,6 +249,13 @@ export function TicketConversationList({
         {/* Active filters chips */}
         {activeFiltersCount > 0 && (
           <div className="flex flex-wrap gap-1.5">
+            {filters.unread_only && (
+              <span className="inline-flex items-center gap-1 bg-red-100 text-red-700 text-xs px-2 py-0.5 rounded-full">
+                <span className="h-1.5 w-1.5 rounded-full bg-red-500"></span>
+                Não lidos
+                <X className="h-3 w-3 cursor-pointer" onClick={() => onFiltersChange({ ...filters, unread_only: false })} />
+              </span>
+            )}
             {filters.status && filters.status !== 'all' && (
               <span className="inline-flex items-center gap-1 bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full">
                 {ticketStatusConfig[filters.status]?.label}

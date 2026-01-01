@@ -1,6 +1,7 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useChat, useSendMessage } from '@/hooks/useChat';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNotificationSound } from '@/hooks/useNotificationSound';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -22,9 +23,20 @@ const formatFileSize = (bytes: number | null) => {
 };
 
 export function ChatSection({ analysisId }: ChatSectionProps) {
-  const { data: messages, isLoading } = useChat(analysisId);
-  const sendMessage = useSendMessage();
   const { user } = useAuth();
+  const { playSound } = useNotificationSound();
+  
+  // Play sound when new message arrives from someone else
+  const handleNewMessage = useCallback((senderId: string) => {
+    if (senderId !== user?.id) {
+      playSound();
+    }
+  }, [user?.id, playSound]);
+
+  const { data: messages, isLoading } = useChat(analysisId, {
+    onNewMessage: handleNewMessage,
+  });
+  const sendMessage = useSendMessage();
   
   const [message, setMessage] = useState('');
   const [attachment, setAttachment] = useState<File | null>(null);

@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { 
   useTicket, 
@@ -10,6 +10,7 @@ import {
   useQuickReplies, 
   useAgencyStats 
 } from "@/hooks/useTickets";
+import { useNotificationSound } from "@/hooks/useNotificationSound";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -29,9 +30,19 @@ export function TicketChatArea({ ticketId, onClose }: TicketChatAreaProps) {
   const { user } = useAuth();
   const [isTyping, setIsTyping] = useState(false);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
+  const { playSound } = useNotificationSound();
+
+  // Play sound when new message arrives from someone else
+  const handleNewMessage = useCallback((senderId: string) => {
+    if (senderId !== user?.id) {
+      playSound();
+    }
+  }, [user?.id, playSound]);
 
   const { data: ticket, isLoading: ticketLoading } = useTicket(ticketId || undefined);
-  const { data: messages = [], isLoading: messagesLoading } = useTicketMessages(ticketId || undefined);
+  const { data: messages = [], isLoading: messagesLoading } = useTicketMessages(ticketId || undefined, {
+    onNewMessage: handleNewMessage,
+  });
   const { data: typingIndicators } = useTypingIndicators(ticketId || undefined);
   const { data: quickReplies } = useQuickReplies(ticket?.category);
   const { data: agencyStats } = useAgencyStats(ticket?.agency_id);

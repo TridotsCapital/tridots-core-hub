@@ -29,6 +29,7 @@ import { Plus, Search, FileSearch, Eye, LayoutGrid, List } from 'lucide-react';
 import { statusConfig, AnalysisStatus } from '@/types/database';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useUnreadItemIds } from '@/hooks/useUnreadItemIds';
 
 type ViewMode = 'kanban' | 'table';
 
@@ -38,6 +39,7 @@ export default function Analyses() {
   const [statusFilter, setStatusFilter] = useState<AnalysisStatus | 'all'>('all');
   const [agencyFilter, setAgencyFilter] = useState<string>('all');
   const [analystFilter, setAnalystFilter] = useState<string>('all');
+  const [unreadFilter, setUnreadFilter] = useState<'all' | 'unread'>('all');
   const [autoOpenAnalysisId, setAutoOpenAnalysisId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     return (localStorage.getItem('analyses-view-mode') as ViewMode) || 'kanban';
@@ -45,6 +47,7 @@ export default function Analyses() {
 
   const { data: agencies } = useAgencies();
   const { data: teamMembers } = useTeamMembers();
+  const { data: unreadIds } = useUnreadItemIds();
   const { data: analyses, isLoading } = useAnalyses({
     status: statusFilter !== 'all' ? statusFilter : undefined,
     agency_id: agencyFilter !== 'all' ? agencyFilter : undefined,
@@ -64,11 +67,18 @@ export default function Analyses() {
     localStorage.setItem('analyses-view-mode', viewMode);
   }, [viewMode]);
 
-  const filteredAnalyses = analyses?.filter(analysis => 
-    analysis.inquilino_nome.toLowerCase().includes(search.toLowerCase()) ||
-    analysis.inquilino_cpf.includes(search) ||
-    analysis.imovel_endereco.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredAnalyses = analyses?.filter(analysis => {
+    const matchesSearch = analysis.inquilino_nome.toLowerCase().includes(search.toLowerCase()) ||
+      analysis.inquilino_cpf.includes(search) ||
+      analysis.imovel_endereco.toLowerCase().includes(search.toLowerCase());
+    
+    // Filter by unread
+    if (unreadFilter === 'unread') {
+      return matchesSearch && unreadIds?.analises.has(analysis.id);
+    }
+    
+    return matchesSearch;
+  });
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -103,6 +113,21 @@ export default function Analyses() {
                 <SelectItem value="ativo">Ativo</SelectItem>
                 <SelectItem value="reprovada">Reprovada</SelectItem>
                 <SelectItem value="cancelada">Cancelada</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={unreadFilter} onValueChange={(v) => setUnreadFilter(v as 'all' | 'unread')}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Leitura" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="unread">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-red-500"></span>
+                    Não lidos
+                  </div>
+                </SelectItem>
               </SelectContent>
             </Select>
 
@@ -165,6 +190,7 @@ export default function Analyses() {
             filters={{
               agency_id: agencyFilter !== 'all' ? agencyFilter : undefined,
               analyst_id: analystFilter !== 'all' ? analystFilter : undefined,
+              unread_only: unreadFilter === 'unread',
             }}
             autoOpenAnalysisId={autoOpenAnalysisId}
             onAutoOpenHandled={() => setAutoOpenAnalysisId(null)}

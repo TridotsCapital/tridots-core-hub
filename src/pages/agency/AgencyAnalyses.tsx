@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { AgencyLayout } from "@/components/layout/AgencyLayout";
 import { AgencyKanbanBoard } from "@/components/agency/AgencyKanbanBoard";
@@ -17,6 +17,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Search, Plus, LayoutGrid, List } from "lucide-react";
 import { AnalysisStatus, statusConfig } from "@/types/database";
 import { useQueryClient } from "@tanstack/react-query";
+import { useUnreadItemIds } from "@/hooks/useUnreadItemIds";
 
 type ViewMode = "kanban" | "table";
 
@@ -31,7 +32,9 @@ export default function AgencyAnalyses() {
   });
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<AnalysisStatus | "all">("all");
+  const [unreadFilter, setUnreadFilter] = useState<"all" | "unread">("all");
   const [autoOpenAnalysisId, setAutoOpenAnalysisId] = useState<string | null>(null);
+  const { data: unreadIds } = useUnreadItemIds();
 
   const { data: analyses = [], isLoading, refetch } = useAgencyAnalyses({
     search: search || undefined,
@@ -63,17 +66,26 @@ export default function AgencyAnalyses() {
     refetch();
   };
 
-  // Map analyses to the format expected by AgencyContractList
-  const mappedAnalyses = analyses.map((a) => ({
-    id: a.id,
-    inquilino_nome: a.inquilino_nome,
-    inquilino_cpf: a.inquilino_cpf,
-    status: a.status,
-    valor_aluguel: a.valor_aluguel,
-    valor_total: a.valor_total,
-    created_at: a.created_at,
-    approved_at: a.approved_at,
-  }));
+  // Map analyses to the format expected by AgencyContractList, applying unread filter
+  const mappedAnalyses = useMemo(() => {
+    let filtered = analyses;
+    
+    // Filter by unread
+    if (unreadFilter === "unread" && unreadIds?.analises) {
+      filtered = analyses.filter(a => unreadIds.analises.has(a.id));
+    }
+    
+    return filtered.map((a) => ({
+      id: a.id,
+      inquilino_nome: a.inquilino_nome,
+      inquilino_cpf: a.inquilino_cpf,
+      status: a.status,
+      valor_aluguel: a.valor_aluguel,
+      valor_total: a.valor_total,
+      created_at: a.created_at,
+      approved_at: a.approved_at,
+    }));
+  }, [analyses, unreadFilter, unreadIds]);
 
   return (
     <AgencyLayout 
@@ -112,6 +124,25 @@ export default function AgencyAnalyses() {
                 ))}
               </SelectContent>
             </Select>
+
+            {/* Unread Filter */}
+            <Select
+              value={unreadFilter}
+              onValueChange={(value) => setUnreadFilter(value as "all" | "unread")}
+            >
+              <SelectTrigger className="w-full sm:w-[140px]">
+                <SelectValue placeholder="Leitura" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="unread">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-red-500"></span>
+                    Não lidos
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="flex gap-3 items-center w-full sm:w-auto justify-between sm:justify-end">
@@ -143,7 +174,10 @@ export default function AgencyAnalyses() {
         {/* Content */}
         {viewMode === "kanban" ? (
           <AgencyKanbanBoard 
-            analyses={analyses} 
+            analyses={unreadFilter === "unread" && unreadIds?.analises 
+              ? analyses.filter(a => unreadIds.analises.has(a.id))
+              : analyses
+            } 
             isLoading={isLoading} 
             autoOpenAnalysisId={autoOpenAnalysisId}
             onAutoOpenHandled={() => setAutoOpenAnalysisId(null)}

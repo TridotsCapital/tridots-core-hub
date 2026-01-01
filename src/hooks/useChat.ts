@@ -5,7 +5,11 @@ import type { ChatMessage } from '@/types/database';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 
-export function useChat(analysisId: string | undefined) {
+interface UseChatOptions {
+  onNewMessage?: (senderId: string) => void;
+}
+
+export function useChat(analysisId: string | undefined, options?: UseChatOptions) {
   const queryClient = useQueryClient();
 
   // Fetch messages
@@ -40,8 +44,12 @@ export function useChat(analysisId: string | undefined) {
           table: 'internal_chat',
           filter: `analysis_id=eq.${analysisId}`,
         },
-        () => {
+        (payload) => {
           queryClient.invalidateQueries({ queryKey: ['chat', analysisId] });
+          // Trigger callback with sender ID
+          if (payload.new && options?.onNewMessage) {
+            options.onNewMessage((payload.new as any).sender_id);
+          }
         }
       )
       .subscribe();
@@ -49,7 +57,7 @@ export function useChat(analysisId: string | undefined) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [analysisId, queryClient]);
+  }, [analysisId, queryClient, options?.onNewMessage]);
 
   return query;
 }
