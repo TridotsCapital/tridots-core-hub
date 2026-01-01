@@ -168,7 +168,11 @@ export function useTicket(ticketId: string | undefined) {
   });
 }
 
-export function useTicketMessages(ticketId: string | undefined) {
+interface UseTicketMessagesOptions {
+  onNewMessage?: (senderId: string) => void;
+}
+
+export function useTicketMessages(ticketId: string | undefined, options?: UseTicketMessagesOptions) {
   const queryClient = useQueryClient();
 
   const query = useQuery({
@@ -198,8 +202,12 @@ export function useTicketMessages(ticketId: string | undefined) {
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "ticket_messages", filter: `ticket_id=eq.${ticketId}` },
-        () => {
+        (payload) => {
           queryClient.invalidateQueries({ queryKey: ["ticket-messages", ticketId] });
+          // Trigger callback with sender ID
+          if (payload.new && options?.onNewMessage) {
+            options.onNewMessage((payload.new as any).sender_id);
+          }
         }
       )
       .subscribe();
@@ -207,7 +215,7 @@ export function useTicketMessages(ticketId: string | undefined) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [ticketId, queryClient]);
+  }, [ticketId, queryClient, options?.onNewMessage]);
 
   return query;
 }

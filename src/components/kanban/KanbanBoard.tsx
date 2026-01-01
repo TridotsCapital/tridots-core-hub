@@ -23,6 +23,7 @@ interface KanbanBoardProps {
   filters?: {
     agency_id?: string;
     analyst_id?: string;
+    unread_only?: boolean;
   };
   autoOpenAnalysisId?: string | null;
   onAutoOpenHandled?: () => void;
@@ -75,14 +76,19 @@ export function KanbanBoard({ filters, autoOpenAnalysisId, onAutoOpenHandled }: 
 
     if (!analyses) return grouped;
 
-    analyses.forEach((analysis) => {
+    // Filter by unread if needed
+    const filteredAnalyses = filters?.unread_only && unreadIds?.analises
+      ? analyses.filter(a => unreadIds.analises.has(a.id))
+      : analyses;
+
+    filteredAnalyses.forEach((analysis) => {
       if (grouped[analysis.status]) {
         grouped[analysis.status].push(analysis);
       }
     });
 
     return grouped;
-  }, [analyses]);
+  }, [analyses, filters?.unread_only, unreadIds]);
 
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
