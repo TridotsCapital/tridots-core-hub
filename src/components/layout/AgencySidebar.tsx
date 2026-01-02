@@ -9,11 +9,14 @@ import {
   Users,
   Play,
   AlertTriangle,
-  Shield
+  Shield,
+  DollarSign,
+  FolderOpen
 } from "lucide-react";
 import logoBlack from "@/assets/logo-tridots-black.webp";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAgencyUser } from "@/hooks/useAgencyUser";
 import { useAnalysisDraft } from "@/hooks/useAnalysisDraft";
 import { useClaimDraft } from "@/hooks/useClaimDraft";
 import { useNotificationCounts } from "@/hooks/useNotificationCounts";
@@ -50,18 +53,23 @@ const pathToSource: Record<string, 'chamados' | 'analises' | 'contratos' | 'sini
 
 const menuItems = [
   { title: "Dashboard", icon: LayoutDashboard, path: "/agency" },
+  { title: "Chamados", icon: HelpCircle, path: "/agency/support" },
   { title: "Minhas Análises", icon: FileSearch, path: "/agency/analyses" },
   { title: "Meus Contratos", icon: FileCheck, path: "/agency/contracts" },
   { title: "Sinistros", icon: AlertTriangle, path: "/agency/claims" },
+  { title: "Minhas Comissões", icon: DollarSign, path: "/agency/commissions" },
+  { title: "Drive Documentos", icon: FolderOpen, path: "/agency/documents" },
   { title: "Colaboradores", icon: Users, path: "/agency/collaborators" },
-  { title: "Suporte", icon: HelpCircle, path: "/agency/support" },
 ];
 
 export function AgencySidebar() {
   const navigate = useNavigate();
   const { profile, signOut } = useAuth();
+  const { data: agencyUser } = useAgencyUser();
   const { hasDraft: hasAnalysisDraft, getLastSavedTime } = useAnalysisDraft();
   const { hasDraft: hasClaimDraft } = useClaimDraft();
+  
+  const agencyName = agencyUser?.agency?.nome_fantasia || agencyUser?.agency?.razao_social || "Imobiliária";
   const { data: notificationCounts } = useNotificationCounts();
 
   const handleSignOut = async () => {
@@ -88,12 +96,7 @@ export function AgencySidebar() {
     <Sidebar className="border-r border-border/30 bg-white">
       <SidebarHeader className="border-b border-border/30 p-4 bg-gradient-to-br from-primary/5 to-transparent">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img src={logoBlack} alt="Tridots Capital" className="h-10 w-auto object-contain" />
-            <div className="flex flex-col">
-              <span className="text-[10px] font-semibold text-primary uppercase tracking-wider">Portal Imobiliária</span>
-            </div>
-          </div>
+          <img src={logoBlack} alt="Tridots Capital" className="h-10 w-auto object-contain" />
           <NotificationCenter isAgencyPortal={true} />
         </div>
       </SidebarHeader>
@@ -206,6 +209,10 @@ export function AgencySidebar() {
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+              <span className="text-[9px] font-semibold text-primary uppercase tracking-wider truncate">Portal {agencyName}</span>
+            </div>
             <p className="text-sm font-semibold text-foreground truncate">{profile?.full_name}</p>
             <p className="text-xs text-muted-foreground truncate">{profile?.email}</p>
           </div>
