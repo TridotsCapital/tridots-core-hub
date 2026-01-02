@@ -102,7 +102,7 @@ export function useTickets(filters?: TicketFilters) {
         .from("tickets")
         .select(`
           *,
-          agency:agencies(id, nome_fantasia, razao_social, responsavel_nome, responsavel_email, responsavel_telefone),
+          agency:agencies(id, nome_fantasia, razao_social, responsavel_nome, responsavel_email, responsavel_telefone, logo_url),
           creator:profiles!tickets_created_by_fkey(id, full_name, email, avatar_url),
           assignee:profiles!tickets_assigned_to_fkey(id, full_name, email, avatar_url),
           analysis:analyses(id, inquilino_nome, imovel_endereco, status)
@@ -161,7 +161,7 @@ export function useTicket(ticketId: string | undefined) {
         .from("tickets")
         .select(`
           *,
-          agency:agencies(id, nome_fantasia, razao_social, responsavel_nome, responsavel_email, responsavel_telefone),
+          agency:agencies(id, nome_fantasia, razao_social, responsavel_nome, responsavel_email, responsavel_telefone, logo_url),
           creator:profiles!tickets_created_by_fkey(id, full_name, email, avatar_url),
           assignee:profiles!tickets_assigned_to_fkey(id, full_name, email, avatar_url),
           analysis:analyses(id, inquilino_nome, imovel_endereco, status)

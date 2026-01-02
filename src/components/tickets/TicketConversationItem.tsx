@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Ticket, ticketStatusConfig, ticketPriorityConfig } from "@/types/tickets";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -58,6 +58,10 @@ export function TicketConversationItem({
       )}
       
       <Avatar className="h-12 w-12 shrink-0">
+        <AvatarImage 
+          src={ticket.agency?.logo_url || undefined} 
+          alt={agencyName}
+        />
         <AvatarFallback className="bg-primary/10 text-primary font-semibold">
           {initials}
         </AvatarFallback>
