@@ -238,13 +238,13 @@ export function AgencyLogoUpload({
             {imageSrc ? (
               <>
                 {/* Crop area */}
-                <div className="relative w-full max-w-sm overflow-hidden rounded-lg border bg-muted">
+                <div className="relative overflow-hidden rounded-lg border bg-muted flex justify-center">
                   <ReactCrop
                     crop={crop}
                     onChange={(_, percentCrop) => setCrop(percentCrop)}
                     aspect={1}
                     circularCrop
-                    className="max-h-72"
+                    className="flex justify-center"
                   >
                     <img
                       ref={imgRef}
@@ -254,16 +254,16 @@ export function AgencyLogoUpload({
                       style={{
                         transform: `scale(${zoom}) rotate(${rotation}deg)`,
                         transformOrigin: "center",
-                        maxHeight: "288px",
-                        width: "100%",
-                        objectFit: "contain",
+                        maxHeight: "320px",
+                        maxWidth: "100%",
+                        display: "block",
                       }}
                     />
                   </ReactCrop>
                 </div>
 
                 {/* Zoom control */}
-                <div className="flex items-center gap-3 w-full max-w-sm">
+                <div className="flex items-center gap-3 w-full">
                   <ZoomOut className="h-4 w-4 text-muted-foreground" />
                   <Slider
                     value={[zoom]}
