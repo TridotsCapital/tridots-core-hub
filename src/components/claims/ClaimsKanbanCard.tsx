@@ -54,7 +54,9 @@ export function ClaimsKanbanCard({ claim, onViewDetails, onOpenTicket }: ClaimsK
 
   // Calculate stagnation
   const lastChangeDate = claim.last_internal_status_change_at || claim.created_at;
-  const daysStagnant = differenceInDays(new Date(), new Date(lastChangeDate));
+  const parsedDate = lastChangeDate ? new Date(lastChangeDate) : null;
+  const isValidDate = parsedDate && !isNaN(parsedDate.getTime());
+  const daysStagnant = isValidDate ? differenceInDays(new Date(), parsedDate) : 0;
   
   const isHighValue = claim.total_claimed_value >= HIGH_VALUE_THRESHOLD;
   const isStagnantWarning = daysStagnant >= STAGNATION_WARNING_DAYS && daysStagnant < STAGNATION_CRITICAL_DAYS;
@@ -149,10 +151,9 @@ export function ClaimsKanbanCard({ claim, onViewDetails, onOpenTicket }: ClaimsK
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <Clock className="h-3 w-3" />
             <span>
-              Atualizado {formatDistanceToNow(new Date(lastChangeDate), { 
-                addSuffix: true, 
-                locale: ptBR 
-              })}
+              {isValidDate 
+                ? `Atualizado ${formatDistanceToNow(parsedDate, { addSuffix: true, locale: ptBR })}`
+                : 'Data não disponível'}
             </span>
           </div>
 
