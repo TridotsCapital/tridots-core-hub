@@ -5,3 +5,4 @@ export * from './ClaimManagementDrawer';
 export * from './ClaimNotesSection';
 export * from './ClaimDocsChecklist';
 export * from './ClaimStatusTransitionModal';
+export * from './InternalClaimTicketSheet';

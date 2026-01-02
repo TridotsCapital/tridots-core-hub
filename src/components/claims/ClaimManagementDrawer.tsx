@@ -19,10 +19,8 @@ import {
   DollarSign,
   FileText,
   History,
-  StickyNote,
   ExternalLink,
   MessageSquare,
-  FileCheck
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useClaimItems } from '@/hooks/useClaimItems';
@@ -30,6 +28,7 @@ import { useUpdateClaimStatus, useClaimDetail } from '@/hooks/useClaims';
 import { ClaimItemsSection, ClaimFilesSection, ClaimHistorySection } from '@/components/agency/claims';
 import { ClaimNotesSection } from './ClaimNotesSection';
 import { ClaimDocsChecklist } from './ClaimDocsChecklist';
+import { InternalClaimTicketSheet } from './InternalClaimTicketSheet';
 import { 
   Claim, 
   ClaimPublicStatus,
@@ -305,6 +304,13 @@ export function ClaimManagementDrawer({
             </div>
           </div>
         </ScrollArea>
+
+        {/* Internal Claim Ticket Sheet */}
+        <InternalClaimTicketSheet
+          open={ticketSheetOpen}
+          onOpenChange={setTicketSheetOpen}
+          claim={currentClaim}
+        />
       </SheetContent>
     </Sheet>
   );

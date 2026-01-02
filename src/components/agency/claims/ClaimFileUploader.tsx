@@ -19,7 +19,7 @@ interface ClaimFileUploaderProps {
   disabled?: boolean;
 }
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 const ALLOWED_TYPES = [
   'application/pdf',
   'application/msword',
@@ -55,7 +55,7 @@ export function ClaimFileUploader({ files, onChange, disabled }: ClaimFileUpload
 
   const validateFile = (file: File): string | null => {
     if (file.size > MAX_FILE_SIZE) {
-      return `${file.name}: Arquivo muito grande (máx. 10MB)`;
+      return `${file.name}: Arquivo muito grande (máx. 50MB)`;
     }
     if (!ALLOWED_TYPES.includes(file.type)) {
       return `${file.name}: Tipo de arquivo não permitido`;
@@ -174,7 +174,7 @@ export function ClaimFileUploader({ files, onChange, disabled }: ClaimFileUpload
             Arraste arquivos aqui ou clique para selecionar
           </p>
           <p className="text-xs text-muted-foreground">
-            PDF, DOC, XLS, JPG, PNG (máx. 10MB cada)
+            PDF, DOC, XLS, JPG, PNG (máx. 50MB cada)
           </p>
         </label>
       </div>

@@ -5,10 +5,11 @@ import { useTickets, useTicketNotifications } from "@/hooks/useTickets";
 import { TicketConversationList } from "@/components/tickets/TicketConversationList";
 import { TicketChatArea } from "@/components/tickets/TicketChatArea";
 import { TicketStatus, TicketCategory, TicketPriority } from "@/types/tickets";
-import { Bell, Plus, Search, X } from "lucide-react";
+import { Bell, Plus, Search, X, AlertTriangle, FileText, Link2Off } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useUnreadItemIds } from "@/hooks/useUnreadItemIds";
 
 const TicketCenter = () => {
@@ -18,6 +19,7 @@ const TicketCenter = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<TicketStatus | 'all' | 'unread'>('all');
   const [contractFilter, setContractFilter] = useState<string | null>(null);
+  const [linkFilter, setLinkFilter] = useState<'all' | 'claim' | 'contract' | 'none'>('all');
   const [filters, setFilters] = useState<{
     status?: TicketStatus | 'all';
     category?: TicketCategory | 'all';
@@ -71,12 +73,17 @@ const TicketCenter = () => {
     new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
   );
 
-  // Filter by search term and contract
+  // Filter by search term, contract, and link type
   const filteredTickets = sortedTickets.filter(ticket => {
     // Contract filter
     if (contractFilter && ticket.analysis_id !== contractFilter) {
       return false;
     }
+
+    // Link type filter (Sinistro/Contrato/Sem vínculo)
+    if (linkFilter === 'claim' && !ticket.claim_id) return false;
+    if (linkFilter === 'contract' && (!ticket.analysis_id || ticket.claim_id)) return false;
+    if (linkFilter === 'none' && (ticket.claim_id || ticket.analysis_id)) return false;
 
     if (!search.trim()) return true;
     const searchLower = search.toLowerCase();
@@ -179,6 +186,34 @@ const TicketCenter = () => {
               </Button>
             ))}
           </div>
+
+          {/* Link type filter */}
+          <Select value={linkFilter} onValueChange={(v) => setLinkFilter(v as any)}>
+            <SelectTrigger className="w-[150px] h-9">
+              <SelectValue placeholder="Vínculo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os vínculos</SelectItem>
+              <SelectItem value="claim">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+                  Sinistros
+                </div>
+              </SelectItem>
+              <SelectItem value="contract">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-3.5 w-3.5 text-blue-500" />
+                  Contratos
+                </div>
+              </SelectItem>
+              <SelectItem value="none">
+                <div className="flex items-center gap-2">
+                  <Link2Off className="h-3.5 w-3.5 text-muted-foreground" />
+                  Sem vínculo
+                </div>
+              </SelectItem>
+            </SelectContent>
+          </Select>
 
           <Button size="sm" className="ml-auto h-9">
             <Plus className="h-4 w-4 mr-2" />
