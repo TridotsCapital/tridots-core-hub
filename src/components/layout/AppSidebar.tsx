@@ -31,6 +31,7 @@ import {
   FileCheck,
   AlertTriangle,
 } from 'lucide-react';
+import logoWhite from "@/assets/logo-tridots-white.webp";
 
 // Map paths to notification sources
 const pathToSource: Record<string, 'chamados' | 'analises' | 'contratos' | 'sinistros'> = {
@@ -129,16 +130,10 @@ export function AppSidebar() {
       <SidebarHeader className="border-b border-sidebar-border p-4">
         <div className="flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-400 flex items-center justify-center overflow-hidden">
-              <Building2 className="w-6 h-6 text-amber-950" />
-            </div>
-            <div>
-              <h1 className="font-bold text-sidebar-foreground tracking-tight">TRIDOTS</h1>
-              <p className="text-xs text-sidebar-foreground/70 font-medium tracking-widest">CAPITAL</p>
-              <div className="flex items-center gap-1.5 mt-1">
-                <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                <span className="text-[10px] font-semibold text-amber-400 uppercase tracking-wider">Equipe Interna</span>
-              </div>
+            <img src={logoWhite} alt="Tridots Capital" className="h-10 w-auto object-contain" />
+            <div className="flex items-center gap-1.5">
+              <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+              <span className="text-[10px] font-semibold text-amber-400 uppercase tracking-wider">Equipe Interna</span>
             </div>
           </Link>
           <NotificationCenter isAgencyPortal={false} />

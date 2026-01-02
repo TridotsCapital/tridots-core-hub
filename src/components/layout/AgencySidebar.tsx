@@ -8,9 +8,10 @@ import {
   Plus,
   Users,
   Play,
-  Building2,
-  AlertTriangle
+  AlertTriangle,
+  Shield
 } from "lucide-react";
+import logoBlack from "@/assets/logo-tridots-black.webp";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAnalysisDraft } from "@/hooks/useAnalysisDraft";
@@ -88,12 +89,9 @@ export function AgencySidebar() {
       <SidebarHeader className="border-b border-border/30 p-4 bg-gradient-to-br from-primary/5 to-transparent">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-              <Building2 className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold text-foreground tracking-tight">Portal</h1>
-              <p className="text-xs text-primary font-semibold">Imobiliária Parceira</p>
+            <img src={logoBlack} alt="Tridots Capital" className="h-10 w-auto object-contain" />
+            <div className="flex flex-col">
+              <span className="text-[10px] font-semibold text-primary uppercase tracking-wider">Portal Imobiliária</span>
             </div>
           </div>
           <NotificationCenter isAgencyPortal={true} />
@@ -188,6 +186,14 @@ export function AgencySidebar() {
                 )}
               </Tooltip>
             </TooltipProvider>
+            <Button 
+              variant="outline"
+              className="w-full justify-start gap-2 border-amber-300 text-amber-700 hover:bg-amber-50 hover:text-amber-800 mt-2"
+              onClick={() => navigate("/agency/claims/new")}
+            >
+              <Shield className="h-4 w-4" />
+              Solicitar Garantia
+            </Button>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>

@@ -23,8 +23,6 @@ import {
   useCurrentAgencyId
 } from "@/hooks/useAgencyDashboard";
 import { AgencyPeriodFilter as PeriodFilterType } from "@/types/agency-portal";
-import { Button } from "@/components/ui/button";
-import { Plus, Shield } from "lucide-react";
 
 export default function AgencyDashboard() {
   const navigate = useNavigate();
@@ -64,22 +62,8 @@ export default function AgencyDashboard() {
           />
         )}
 
-        {/* Quick Actions */}
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex gap-3">
-            <Button onClick={() => navigate('/agency/analyses/new')} className="gap-2">
-              <Plus className="h-4 w-4" />
-              Nova Análise
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => navigate('/agency/claims/new')}
-              className="gap-2 border-amber-300 text-amber-700 hover:bg-amber-50 hover:text-amber-800"
-            >
-              <Shield className="h-4 w-4" />
-              Solicitar Garantia
-            </Button>
-          </div>
+        {/* Period Filter */}
+        <div className="flex justify-end">
           <AgencyPeriodFilter value={period} onChange={setPeriod} />
         </div>
 
