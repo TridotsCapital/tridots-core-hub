@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation, useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useTickets, useTicketNotifications } from "@/hooks/useTickets";
@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useUnreadItemIds } from "@/hooks/useUnreadItemIds";
+import { useNotificationSound } from "@/hooks/useNotificationSound";
 
 const TicketCenter = () => {
   const location = useLocation();
@@ -35,6 +36,8 @@ const TicketCenter = () => {
   const { data: tickets = [], isLoading } = useTickets(filters as any);
   const { data: notifications } = useTicketNotifications();
   const { data: unreadIds } = useUnreadItemIds();
+  const { playSound } = useNotificationSound();
+  const prevNotificationsLengthRef = useRef<number | null>(null);
 
   // Read contract filter from URL
   useEffect(() => {
@@ -104,17 +107,19 @@ const TicketCenter = () => {
     { value: 'resolvido', label: 'Resolvidos' },
   ];
 
-  // Sound notification for urgent tickets
+  // Sound notification for new messages - only when count increases
   useEffect(() => {
-    if (notifications && notifications.length > 0) {
-      const hasUrgent = notifications.some(n => n.type === 'new_message');
-      if (hasUrgent) {
-        const audio = new Audio('/notification.mp3');
-        audio.volume = 0.3;
-        audio.play().catch(() => {});
-      }
+    const currentLength = notifications?.length ?? 0;
+    
+    // Only play sound if count increased (new notification arrived)
+    if (prevNotificationsLengthRef.current !== null && 
+        currentLength > prevNotificationsLengthRef.current) {
+      console.log('[TicketCenter] New notification detected, playing sound');
+      playSound();
     }
-  }, [notifications?.length]);
+    
+    prevNotificationsLengthRef.current = currentLength;
+  }, [notifications?.length, playSound]);
 
   const unreadCount = notifications?.length || 0;
 

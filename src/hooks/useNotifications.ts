@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useEffect } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import type { Notification, NotificationSource } from '@/types/notifications';
 
 async function fetchNotifications(userId: string, source?: NotificationSource): Promise<Notification[]> {
@@ -23,9 +23,19 @@ async function fetchNotifications(userId: string, source?: NotificationSource): 
   return await response.json() as Notification[];
 }
 
-export function useNotifications(source?: NotificationSource) {
+interface UseNotificationsOptions {
+  onNewNotification?: () => void;
+}
+
+export function useNotifications(source?: NotificationSource, options?: UseNotificationsOptions) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const onNewNotificationRef = useRef(options?.onNewNotification);
+  
+  // Keep ref updated
+  useEffect(() => {
+    onNewNotificationRef.current = options?.onNewNotification;
+  }, [options?.onNewNotification]);
 
   const query = useQuery({
     queryKey: ['notifications', user?.id, source],
@@ -33,16 +43,39 @@ export function useNotifications(source?: NotificationSource) {
     enabled: !!user?.id,
   });
 
-  // Realtime subscription
+  // Realtime subscription - triggers sound on INSERT
   useEffect(() => {
     if (!user?.id) return;
+
+    console.log('[useNotifications] Setting up realtime subscription for user:', user.id);
 
     const channel = supabase
       .channel(`notifications-${user.id}`)
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          console.log('[useNotifications] New notification received via realtime:', payload);
+          queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
+          queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', user.id] });
+          queryClient.invalidateQueries({ queryKey: ['notification-counts', user.id] });
+          
+          // Trigger callback for new notification (e.g., play sound)
+          if (onNewNotificationRef.current) {
+            console.log('[useNotifications] Calling onNewNotification callback');
+            onNewNotificationRef.current();
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
           schema: 'public',
           table: 'notifications',
           filter: `user_id=eq.${user.id}`,
@@ -50,11 +83,29 @@ export function useNotifications(source?: NotificationSource) {
         () => {
           queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
           queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', user.id] });
+          queryClient.invalidateQueries({ queryKey: ['notification-counts', user.id] });
         }
       )
-      .subscribe();
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
+          queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', user.id] });
+          queryClient.invalidateQueries({ queryKey: ['notification-counts', user.id] });
+        }
+      )
+      .subscribe((status) => {
+        console.log('[useNotifications] Realtime subscription status:', status);
+      });
 
     return () => {
+      console.log('[useNotifications] Cleaning up realtime subscription');
       supabase.removeChannel(channel);
     };
   }, [user?.id, queryClient]);

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, Check, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,7 @@ import {
   useDeleteNotification 
 } from '@/hooks/useNotifications';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNotificationSound } from '@/hooks/useNotificationSound';
 import type { Notification, NotificationSource } from '@/types/notifications';
 
 interface NotificationCenterProps {
@@ -31,9 +32,17 @@ export function NotificationCenter({ isAgencyPortal = false }: NotificationCente
   const [activeTab, setActiveTab] = useState<'all' | NotificationSource>('all');
   const navigate = useNavigate();
   const { role } = useAuth();
+  const { playSound } = useNotificationSound();
+  
+  // Callback to play sound when new notification arrives
+  const handleNewNotification = useCallback(() => {
+    console.log('[NotificationCenter] New notification received, playing sound');
+    playSound();
+  }, [playSound]);
   
   const { data: notifications = [], isLoading } = useNotifications(
-    activeTab === 'all' ? undefined : activeTab
+    activeTab === 'all' ? undefined : activeTab,
+    { onNewNotification: handleNewNotification }
   );
   const { data: unreadCount = 0 } = useUnreadCount();
   const markAsRead = useMarkAsRead();
