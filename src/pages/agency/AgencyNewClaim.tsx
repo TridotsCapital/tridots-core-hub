@@ -1,30 +1,91 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AgencyLayout } from "@/components/layout/AgencyLayout";
-import { AgencyNewClaimForm } from "@/components/agency/claims/AgencyNewClaimForm";
 import { useAuth } from "@/contexts/AuthContext";
+import { useClaimDraft, DraftClaimItem, DraftClaimFile } from "@/hooks/useClaimDraft";
+import { useCreateClaim } from "@/hooks/useClaims";
+import { useCreateClaimItem } from "@/hooks/useClaimItems";
+import { useUploadClaimFile } from "@/hooks/useClaimFiles";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ArrowLeft, Loader2, Save, Send, Info, User, MapPin, DollarSign } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { ClaimDebtTable } from "@/components/agency/claims/ClaimDebtTable";
+import { ClaimFileUploader } from "@/components/agency/claims/ClaimFileUploader";
+import { ClaimChecklist } from "@/components/agency/claims/ClaimChecklist";
+
+interface Contract {
+  id: string;
+  inquilino_nome: string;
+  inquilino_cpf: string;
+  imovel_endereco: string;
+  imovel_cidade: string;
+  imovel_estado: string;
+  valor_aluguel: number;
+}
+
+const generateId = () => Math.random().toString(36).substr(2, 9);
+
+const createEmptyItem = (): DraftClaimItem => ({
+  id: generateId(),
+  category: 'aluguel',
+  description: '',
+  reference_period: '',
+  due_date: '',
+  amount: 0,
+});
+
+const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  }).format(value);
+};
 
 export default function AgencyNewClaim() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
+  const { toast } = useToast();
   
   const [agencyId, setAgencyId] = useState<string | null>(null);
-  const [contracts, setContracts] = useState<any[]>([]);
+  const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Pre-selected contract from URL param
+  // Draft state
+  const { draft, hasDraft, isSaving, saveDraft, clearDraft, getLastSavedTime } = useClaimDraft();
+  
+  // Form state
+  const [selectedContractId, setSelectedContractId] = useState<string>('');
+  const [observations, setObservations] = useState('');
+  const [items, setItems] = useState<DraftClaimItem[]>([createEmptyItem()]);
+  const [files, setFiles] = useState<DraftClaimFile[]>([]);
+  
+  // Mutations
+  const createClaim = useCreateClaim();
+  const createClaimItem = useCreateClaimItem();
+  const uploadClaimFile = useUploadClaimFile();
+  
   const preselectedContractId = searchParams.get('contract');
 
+  // Load agency data and contracts
   useEffect(() => {
     const fetchData = async () => {
       if (!user) return;
       
       try {
-        // Fetch agency ID
         const { data: agencyUser, error: agencyError } = await supabase
           .from('agency_users')
           .select('agency_id')
@@ -34,7 +95,6 @@ export default function AgencyNewClaim() {
         if (agencyError) throw agencyError;
         setAgencyId(agencyUser.agency_id);
 
-        // Fetch active contracts (analyses with status 'ativo')
         const { data: contractsData, error: contractsError } = await supabase
           .from('analyses')
           .select('id, inquilino_nome, inquilino_cpf, imovel_endereco, imovel_cidade, imovel_estado, valor_aluguel')
@@ -53,6 +113,128 @@ export default function AgencyNewClaim() {
 
     fetchData();
   }, [user]);
+
+  // Restore draft or preselected contract
+  useEffect(() => {
+    if (loading) return;
+    
+    if (hasDraft && draft) {
+      setSelectedContractId(draft.contractId || '');
+      setObservations(draft.observations || '');
+      setItems(draft.items.length > 0 ? draft.items : [createEmptyItem()]);
+      // Files can't be restored from localStorage
+    } else if (preselectedContractId) {
+      setSelectedContractId(preselectedContractId);
+    }
+  }, [loading, hasDraft, draft, preselectedContractId]);
+
+  // Auto-save draft
+  const handleSaveDraft = useCallback(() => {
+    saveDraft({
+      contractId: selectedContractId,
+      observations,
+      items,
+      files,
+    });
+  }, [selectedContractId, observations, items, files, saveDraft]);
+
+  useEffect(() => {
+    if (!loading && (selectedContractId || observations || items.length > 0)) {
+      handleSaveDraft();
+    }
+  }, [selectedContractId, observations, items, handleSaveDraft, loading]);
+
+  const selectedContract = contracts.find((c) => c.id === selectedContractId);
+  const totalValue = items.reduce((sum, item) => sum + (item.amount || 0), 0);
+
+  // Validation
+  const validateForm = () => {
+    if (!selectedContractId) {
+      toast({
+        title: 'Contrato obrigatório',
+        description: 'Selecione o contrato relacionado ao sinistro.',
+        variant: 'destructive',
+      });
+      return false;
+    }
+
+    const validItems = items.filter((i) => i.due_date && i.amount > 0);
+    if (validItems.length === 0) {
+      toast({
+        title: 'Itens obrigatórios',
+        description: 'Adicione pelo menos um item de débito com data e valor.',
+        variant: 'destructive',
+      });
+      return false;
+    }
+
+    if (files.length === 0) {
+      toast({
+        title: 'Arquivos obrigatórios',
+        description: 'Anexe pelo menos um arquivo comprobatório.',
+        variant: 'destructive',
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSubmit = async () => {
+    if (!validateForm() || !agencyId) return;
+
+    setIsSubmitting(true);
+
+    try {
+      // 1. Create claim
+      const claim = await createClaim.mutateAsync({
+        analysis_id: selectedContractId,
+        agency_id: agencyId,
+        observations: observations || undefined,
+      });
+
+      // 2. Create items
+      const validItems = items.filter((i) => i.due_date && i.amount > 0);
+      for (const item of validItems) {
+        await createClaimItem.mutateAsync({
+          claim_id: claim.id,
+          category: item.category,
+          description: item.description || undefined,
+          reference_period: item.reference_period,
+          due_date: item.due_date,
+          amount: item.amount,
+        });
+      }
+
+      // 3. Upload files
+      for (const draftFile of files) {
+        await uploadClaimFile.mutateAsync({
+          claimId: claim.id,
+          file: draftFile.file,
+          fileType: draftFile.file_type,
+        });
+      }
+
+      // Clear draft and navigate
+      clearDraft();
+      
+      toast({
+        title: 'Sinistro enviado!',
+        description: 'Sua solicitação de garantia foi enviada com sucesso.',
+      });
+
+      navigate(`/agency/claims/${claim.id}`);
+    } catch (error) {
+      console.error('Error submitting claim:', error);
+      toast({
+        title: 'Erro ao enviar',
+        description: 'Ocorreu um erro ao enviar o sinistro. Tente novamente.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -89,21 +271,201 @@ export default function AgencyNewClaim() {
 
   return (
     <AgencyLayout 
-      title="Novo Sinistro"
+      title="Solicitar Garantia"
       description="Preencha os dados do sinistro para solicitar a garantia"
       actions={
-        <Button variant="ghost" onClick={() => navigate('/agency/claims')}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Voltar
-        </Button>
+        <div className="flex items-center gap-3">
+          {isSaving ? (
+            <span className="text-sm text-muted-foreground flex items-center gap-2">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              Salvando...
+            </span>
+          ) : hasDraft && getLastSavedTime() ? (
+            <span className="text-sm text-muted-foreground">
+              Rascunho salvo às {getLastSavedTime()}
+            </span>
+          ) : null}
+          <Button variant="ghost" onClick={() => navigate('/agency/claims')}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Voltar
+          </Button>
+        </div>
       }
     >
-      <AgencyNewClaimForm 
-        agencyId={agencyId!}
-        contracts={contracts}
-        preselectedContractId={preselectedContractId}
-        onSuccess={(claimId) => navigate(`/agency/claims/${claimId}`)}
-      />
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Main Column */}
+        <div className="lg:col-span-3 space-y-6">
+          {/* Contract Selection */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Contrato</CardTitle>
+              <CardDescription>Selecione o contrato relacionado ao sinistro</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Select 
+                value={selectedContractId} 
+                onValueChange={setSelectedContractId}
+                disabled={isSubmitting}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Selecione um contrato..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {contracts.map((contract) => (
+                    <SelectItem key={contract.id} value={contract.id}>
+                      {contract.inquilino_nome} - {contract.imovel_endereco}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {selectedContract && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted/40 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <User className="h-4 w-4 text-muted-foreground mt-0.5" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Inquilino</p>
+                      <p className="text-sm font-medium">{selectedContract.inquilino_nome}</p>
+                      <p className="text-xs text-muted-foreground">{selectedContract.inquilino_cpf}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Imóvel</p>
+                      <p className="text-sm font-medium">{selectedContract.imovel_endereco}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {selectedContract.imovel_cidade} - {selectedContract.imovel_estado}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <DollarSign className="h-4 w-4 text-muted-foreground mt-0.5" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Aluguel</p>
+                      <p className="text-sm font-medium">
+                        {formatCurrency(selectedContract.valor_aluguel)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Debt Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Itens de Débito</CardTitle>
+              <CardDescription>
+                Adicione os valores em atraso. A data de vencimento deve ser no passado.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ClaimDebtTable
+                items={items}
+                onChange={setItems}
+                disabled={isSubmitting}
+              />
+            </CardContent>
+          </Card>
+
+          {/* File Upload */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Documentos</CardTitle>
+              <CardDescription>
+                Anexe os documentos comprobatórios (boletos, contratos, vistorias, etc.)
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ClaimFileUploader
+                files={files}
+                onChange={setFiles}
+                disabled={isSubmitting}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Observations */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Observações</CardTitle>
+              <CardDescription>Informações adicionais sobre o sinistro (opcional)</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Textarea
+                value={observations}
+                onChange={(e) => setObservations(e.target.value)}
+                placeholder="Descreva detalhes adicionais que possam ajudar na análise..."
+                rows={4}
+                disabled={isSubmitting}
+              />
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Sidebar */}
+        <div className="space-y-6">
+          {/* Checklist */}
+          <ClaimChecklist />
+
+          {/* Summary */}
+          <Card className="sticky top-6">
+            <CardHeader>
+              <CardTitle className="text-lg">Resumo</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Itens de débito</span>
+                  <span>{items.filter((i) => i.amount > 0).length}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Arquivos</span>
+                  <span>{files.length}</span>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <div className="flex justify-between items-center">
+                  <span className="font-medium">Total Geral</span>
+                  <span className="text-2xl font-bold text-primary">
+                    {formatCurrency(totalValue)}
+                  </span>
+                </div>
+              </div>
+
+              <Button
+                className="w-full gap-2"
+                size="lg"
+                onClick={handleSubmit}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Enviando...
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4" />
+                    Enviar Solicitação
+                  </>
+                )}
+              </Button>
+
+              <Alert>
+                <Info className="h-4 w-4" />
+                <AlertDescription className="text-xs">
+                  Após o envio, você poderá acompanhar o status e adicionar mais
+                  documentos se necessário.
+                </AlertDescription>
+              </Alert>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </AgencyLayout>
   );
 }

@@ -14,6 +14,7 @@ import {
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAnalysisDraft } from "@/hooks/useAnalysisDraft";
+import { useClaimDraft } from "@/hooks/useClaimDraft";
 import { useNotificationCounts } from "@/hooks/useNotificationCounts";
 import { NotificationCenter } from "@/components/notifications";
 import { Button } from "@/components/ui/button";
@@ -58,7 +59,8 @@ const menuItems = [
 export function AgencySidebar() {
   const navigate = useNavigate();
   const { profile, signOut } = useAuth();
-  const { hasDraft, getLastSavedTime } = useAnalysisDraft();
+  const { hasDraft: hasAnalysisDraft, getLastSavedTime } = useAnalysisDraft();
+  const { hasDraft: hasClaimDraft } = useClaimDraft();
   const { data: notificationCounts } = useNotificationCounts();
 
   const handleSignOut = async () => {
@@ -107,6 +109,7 @@ export function AgencySidebar() {
             <SidebarMenu>
               {menuItems.map((item) => {
                 const count = getNotificationCount(item.path);
+                const showDraftBadge = item.path === '/agency/claims' && hasClaimDraft;
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
@@ -120,14 +123,23 @@ export function AgencySidebar() {
                           <item.icon className="h-4 w-4" />
                           <span>{item.title}</span>
                         </div>
-                        {count > 0 && (
-                          <Badge 
-                            variant="destructive" 
-                            className="h-5 min-w-5 text-xs flex items-center justify-center p-0 px-1.5"
-                          >
-                            {count > 99 ? '99+' : count}
-                          </Badge>
-                        )}
+                        <div className="flex items-center gap-1">
+                          {showDraftBadge && (
+                            <Badge 
+                              className="h-5 min-w-5 text-xs flex items-center justify-center p-0 px-1.5 bg-orange-500"
+                            >
+                              !
+                            </Badge>
+                          )}
+                          {count > 0 && (
+                            <Badge 
+                              variant="destructive" 
+                              className="h-5 min-w-5 text-xs flex items-center justify-center p-0 px-1.5"
+                            >
+                              {count > 99 ? '99+' : count}
+                            </Badge>
+                          )}
+                        </div>
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -147,13 +159,13 @@ export function AgencySidebar() {
                 <TooltipTrigger asChild>
                   <Button 
                     className={`w-full justify-start gap-2 shadow-sm ${
-                      hasDraft 
+                      hasAnalysisDraft 
                         ? 'bg-amber-600 hover:bg-amber-700 text-white' 
                         : 'bg-primary hover:bg-primary/90 text-primary-foreground'
                     }`}
                     onClick={() => navigate("/agency/analyses/new")}
                   >
-                    {hasDraft ? (
+                    {hasAnalysisDraft ? (
                       <>
                         <Play className="h-4 w-4" />
                         Continuar Análise
@@ -169,7 +181,7 @@ export function AgencySidebar() {
                     )}
                   </Button>
                 </TooltipTrigger>
-                {hasDraft && (
+                {hasAnalysisDraft && (
                   <TooltipContent side="right">
                     <p>Última edição: {getLastSavedTime()}</p>
                   </TooltipContent>
