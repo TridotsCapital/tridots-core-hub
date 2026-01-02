@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   DndContext,
   DragEndEvent,
@@ -14,8 +15,7 @@ import { differenceInDays } from 'date-fns';
 import { ClaimsKanbanColumn } from './ClaimsKanbanColumn';
 import { ClaimsKanbanCard } from './ClaimsKanbanCard';
 import { ClaimStatusTransitionModal } from './ClaimStatusTransitionModal';
-import { ClaimManagementDrawer } from './ClaimManagementDrawer';
-import { ClaimTicketSheet } from '@/components/agency/claims/ClaimTicketSheet';
+import { InternalClaimTicketSheet } from './InternalClaimTicketSheet';
 import { useUpdateClaimStatus } from '@/hooks/useClaims';
 import { useCreateClaimNote } from '@/hooks/useClaimNotes';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -77,9 +77,9 @@ const isClaimStagnant = (claim: Claim & { last_internal_status_change_at?: strin
 };
 
 export function ClaimsKanban({ claims, isLoading, onRefresh }: ClaimsKanbanProps) {
+  const navigate = useNavigate();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [selectedClaim, setSelectedClaim] = useState<Claim | null>(null);
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const [ticketSheetOpen, setTicketSheetOpen] = useState(false);
   const [quickFilter, setQuickFilter] = useState<QuickFilter>('all');
   
@@ -217,8 +217,7 @@ export function ClaimsKanban({ claims, isLoading, onRefresh }: ClaimsKanbanProps
   };
 
   const handleViewDetails = (claim: Claim) => {
-    setSelectedClaim(claim);
-    setDrawerOpen(true);
+    navigate(`/claims/${claim.id}`);
   };
 
   const handleOpenTicket = (claim: Claim) => {
@@ -345,17 +344,9 @@ export function ClaimsKanban({ claims, isLoading, onRefresh }: ClaimsKanbanProps
         isPending={updateStatus.isPending}
       />
 
-      {/* Claim Management Drawer */}
-      <ClaimManagementDrawer
-        open={drawerOpen}
-        onOpenChange={setDrawerOpen}
-        claim={selectedClaim}
-        onRefresh={onRefresh}
-      />
-
       {/* Ticket Sheet */}
       {selectedClaim && (
-        <ClaimTicketSheet
+        <InternalClaimTicketSheet
           open={ticketSheetOpen}
           onOpenChange={setTicketSheetOpen}
           claim={selectedClaim}
