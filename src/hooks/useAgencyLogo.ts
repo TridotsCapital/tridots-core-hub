@@ -49,15 +49,18 @@ export function useUploadAgencyLogo() {
       // Add timestamp to bust cache
       const logoUrl = `${urlData.publicUrl}?t=${Date.now()}`;
 
-      // Update agency record
-      const { error: updateError } = await supabase
+      // Update agency record and verify it worked
+      const { data: updateData, error: updateError } = await supabase
         .from("agencies")
         .update({ logo_url: logoUrl })
-        .eq("id", agencyId);
+        .eq("id", agencyId)
+        .select("logo_url")
+        .single();
 
       if (updateError) throw updateError;
+      if (!updateData) throw new Error("Não foi possível atualizar a logo da imobiliária");
 
-      return logoUrl;
+      return updateData.logo_url;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["agency-user"] });
