@@ -106,10 +106,21 @@ export function ClaimDebtTable({ items, onChange, disabled }: ClaimDebtTableProp
   };
 
   const handleAmountChange = (id: string, value: string) => {
-    // Remove non-numeric characters except comma/period
-    const cleanValue = value.replace(/[^\d,]/g, '').replace(',', '.');
-    const numValue = parseFloat(cleanValue) || 0;
+    // Remove everything except digits and comma
+    // User types in Brazilian format: 1.234,56 or just 1234,56
+    const cleanValue = value.replace(/[^\d,]/g, '');
+    
+    // Replace comma with dot for parsing
+    const numericString = cleanValue.replace(',', '.');
+    const numValue = parseFloat(numericString) || 0;
     handleChange(id, 'amount', numValue);
+  };
+  
+  // Format display value for the input
+  const formatDisplayValue = (value: number): string => {
+    if (value === 0) return '';
+    // Format as Brazilian number (without R$)
+    return value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
   const formatCurrency = (value: number) => {
@@ -216,13 +227,16 @@ export function ClaimDebtTable({ items, onChange, disabled }: ClaimDebtTableProp
                   )}
                 </TableCell>
                 <TableCell className="p-2">
-                  <Input
-                    value={item.amount ? formatCurrency(item.amount).replace('R$', '').trim() : ''}
-                    onChange={(e) => handleAmountChange(item.id, e.target.value)}
-                    placeholder="0,00"
-                    className="h-9 text-right"
-                    disabled={disabled}
-                  />
+                  <div className="relative">
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">R$</span>
+                    <Input
+                      value={formatDisplayValue(item.amount)}
+                      onChange={(e) => handleAmountChange(item.id, e.target.value)}
+                      placeholder="0,00"
+                      className="h-9 text-right pl-8"
+                      disabled={disabled}
+                    />
+                  </div>
                 </TableCell>
                 <TableCell className="p-2">
                   <Button
