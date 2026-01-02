@@ -288,12 +288,12 @@ export default function AgencySupport() {
                         </div>
 
                         {/* Subject */}
-                        <h4 className="font-medium text-foreground truncate mb-2 pr-4">
+                        <h4 className="font-medium text-foreground line-clamp-2 break-words mb-2 pr-6">
                           {ticket.subject}
                         </h4>
 
                         {/* Footer: Time + Status */}
-                        <div className="flex items-center justify-between gap-2">
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 pr-6">
                           <span className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
                             <Clock className="h-3 w-3" />
                             {formatDistanceToNow(new Date(ticket.created_at), {
@@ -303,7 +303,7 @@ export default function AgencySupport() {
                           </span>
                           <Badge
                             variant="outline"
-                            className={cn("text-[10px] px-1.5 py-0 shrink-0 whitespace-nowrap", statusConfig[ticket.status as TicketStatus].className)}
+                            className={cn("text-[10px] px-1.5 py-0 shrink-0 ml-auto", statusConfig[ticket.status as TicketStatus].className)}
                           >
                             {statusConfig[ticket.status as TicketStatus].label}
                           </Badge>
