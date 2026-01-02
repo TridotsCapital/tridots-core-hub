@@ -30,8 +30,9 @@ interface ClaimsKanbanProps {
   onRefresh: () => void;
 }
 
-// Kanban columns based on internal_status (excluding aguardando_analise and encerrado for now)
+// Kanban columns based on internal_status (excluding encerrado for now)
 const KANBAN_COLUMNS: { status: ClaimInternalStatus; title: string }[] = [
+  { status: 'aguardando_analise', title: 'Aguardando Análise' },
   { status: 'cobranca_amigavel', title: 'Cobrança Amigável' },
   { status: 'notificacao_extrajudicial', title: 'Notificação Extrajudicial' },
   { status: 'acordo_realizado', title: 'Acordo Realizado' },
@@ -89,10 +90,9 @@ export function ClaimsKanban({ claims, isLoading, onRefresh }: ClaimsKanbanProps
     })
   );
 
-  // Filter claims to only show those in operational statuses
+  // Filter claims to only show those not closed or canceled
   const operationalClaims = useMemo(() => {
     return claims.filter(c => 
-      c.internal_status !== 'aguardando_analise' && 
       c.internal_status !== 'encerrado' &&
       !c.canceled_at
     );
