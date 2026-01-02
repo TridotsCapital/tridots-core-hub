@@ -71,9 +71,9 @@ export function TicketConversationItem({
           </span>
         </div>
 
-        <p className="text-sm font-medium truncate mt-0.5">{ticket.subject}</p>
+        <p className="text-sm font-medium line-clamp-2 break-words mt-0.5 pr-6">{ticket.subject}</p>
 
-        <p className="text-xs text-muted-foreground truncate mt-1">
+        <p className="text-xs text-muted-foreground line-clamp-2 break-words mt-1 pr-6">
           {lastMessage || ticket.description || 'Sem mensagens ainda'}
         </p>
 
