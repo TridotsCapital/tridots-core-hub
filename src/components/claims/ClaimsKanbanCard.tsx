@@ -126,7 +126,8 @@ export function ClaimsKanbanCard({ claim, onViewDetails, onOpenTicket }: ClaimsK
 
             <div className="flex items-center gap-1">
               {isHighValue && (
-                <Badge variant="secondary" className="bg-purple-100 text-purple-700 text-xs px-1.5">
+                <Badge variant="secondary" className="bg-purple-500 text-white text-xs px-1.5 animate-pulse shadow-sm">
+                  <DollarSign className="h-3 w-3 mr-0.5" />
                   Alto Valor
                 </Badge>
               )}

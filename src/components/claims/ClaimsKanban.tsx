@@ -10,6 +10,7 @@ import {
   useSensors,
 } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
+import { differenceInDays } from 'date-fns';
 import { ClaimsKanbanColumn } from './ClaimsKanbanColumn';
 import { ClaimsKanbanCard } from './ClaimsKanbanCard';
 import { ClaimStatusTransitionModal } from './ClaimStatusTransitionModal';
@@ -19,6 +20,9 @@ import { useUpdateClaimStatus } from '@/hooks/useClaims';
 import { useCreateClaimNote } from '@/hooks/useClaimNotes';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
+import { Clock, DollarSign, AlertTriangle, Filter } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import type { Claim, ClaimInternalStatus } from '@/types/claims';
 
 interface ClaimsKanbanProps {
@@ -29,6 +33,11 @@ interface ClaimsKanbanProps {
   isLoading?: boolean;
   onRefresh: () => void;
 }
+
+type QuickFilter = 'all' | 'aguardando' | 'alto_valor' | 'estagnados';
+
+const HIGH_VALUE_THRESHOLD = 10000;
+const STAGNATION_DAYS = 7;
 
 // Kanban columns based on internal_status (excluding encerrado for now)
 const KANBAN_COLUMNS: { status: ClaimInternalStatus; title: string }[] = [
@@ -59,11 +68,20 @@ const TRANSITION_WARNINGS: Partial<Record<ClaimInternalStatus, Partial<Record<Cl
   },
 };
 
+// Helper to check if claim is stagnant
+const isClaimStagnant = (claim: Claim & { last_internal_status_change_at?: string }) => {
+  const lastChangeDate = claim.last_internal_status_change_at || claim.created_at;
+  const parsedDate = lastChangeDate ? new Date(lastChangeDate) : null;
+  if (!parsedDate || isNaN(parsedDate.getTime())) return false;
+  return differenceInDays(new Date(), parsedDate) >= STAGNATION_DAYS;
+};
+
 export function ClaimsKanban({ claims, isLoading, onRefresh }: ClaimsKanbanProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [selectedClaim, setSelectedClaim] = useState<Claim | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [ticketSheetOpen, setTicketSheetOpen] = useState(false);
+  const [quickFilter, setQuickFilter] = useState<QuickFilter>('all');
   
   // Transition modal state
   const [transitionModal, setTransitionModal] = useState<{
@@ -98,8 +116,29 @@ export function ClaimsKanban({ claims, isLoading, onRefresh }: ClaimsKanbanProps
     );
   }, [claims]);
 
+  // Calculate filter counts
+  const filterCounts = useMemo(() => ({
+    aguardando: operationalClaims.filter(c => c.internal_status === 'aguardando_analise').length,
+    altoValor: operationalClaims.filter(c => c.total_claimed_value >= HIGH_VALUE_THRESHOLD).length,
+    estagnados: operationalClaims.filter(isClaimStagnant).length,
+  }), [operationalClaims]);
+
+  // Apply quick filter
+  const filteredClaims = useMemo(() => {
+    switch (quickFilter) {
+      case 'aguardando':
+        return operationalClaims.filter(c => c.internal_status === 'aguardando_analise');
+      case 'alto_valor':
+        return operationalClaims.filter(c => c.total_claimed_value >= HIGH_VALUE_THRESHOLD);
+      case 'estagnados':
+        return operationalClaims.filter(isClaimStagnant);
+      default:
+        return operationalClaims;
+    }
+  }, [operationalClaims, quickFilter]);
+
   const getClaimsByStatus = (status: ClaimInternalStatus) => {
-    return operationalClaims.filter((c) => c.internal_status === status);
+    return filteredClaims.filter((c) => c.internal_status === status);
   };
 
   const activeClaim = activeId 
@@ -206,6 +245,60 @@ export function ClaimsKanban({ claims, isLoading, onRefresh }: ClaimsKanbanProps
 
   return (
     <>
+      {/* Quick Filter Bar */}
+      <div className="flex items-center gap-2 mb-4 flex-wrap">
+        <Filter className="h-4 w-4 text-muted-foreground" />
+        <span className="text-sm text-muted-foreground mr-1">Filtro:</span>
+        
+        <Button
+          variant={quickFilter === 'all' ? 'default' : 'outline'}
+          size="sm"
+          className="h-7 text-xs"
+          onClick={() => setQuickFilter('all')}
+        >
+          Todos ({operationalClaims.length})
+        </Button>
+
+        <Button
+          variant={quickFilter === 'aguardando' ? 'default' : 'outline'}
+          size="sm"
+          className={cn(
+            'h-7 text-xs',
+            quickFilter !== 'aguardando' && 'border-blue-300 text-blue-700 hover:bg-blue-50'
+          )}
+          onClick={() => setQuickFilter('aguardando')}
+        >
+          <Clock className="h-3 w-3 mr-1" />
+          Aguardando ({filterCounts.aguardando})
+        </Button>
+
+        <Button
+          variant={quickFilter === 'alto_valor' ? 'default' : 'outline'}
+          size="sm"
+          className={cn(
+            'h-7 text-xs',
+            quickFilter !== 'alto_valor' && 'border-purple-300 text-purple-700 hover:bg-purple-50'
+          )}
+          onClick={() => setQuickFilter('alto_valor')}
+        >
+          <DollarSign className="h-3 w-3 mr-1" />
+          Alto Valor ({filterCounts.altoValor})
+        </Button>
+
+        <Button
+          variant={quickFilter === 'estagnados' ? 'default' : 'outline'}
+          size="sm"
+          className={cn(
+            'h-7 text-xs',
+            quickFilter !== 'estagnados' && 'border-amber-300 text-amber-700 hover:bg-amber-50'
+          )}
+          onClick={() => setQuickFilter('estagnados')}
+        >
+          <AlertTriangle className="h-3 w-3 mr-1" />
+          Estagnados ({filterCounts.estagnados})
+        </Button>
+      </div>
+
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}

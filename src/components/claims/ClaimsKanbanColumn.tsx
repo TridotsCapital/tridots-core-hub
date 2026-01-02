@@ -1,7 +1,9 @@
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { differenceInDays } from 'date-fns';
 import { ClaimsKanbanCard } from './ClaimsKanbanCard';
 import { Badge } from '@/components/ui/badge';
+import { DollarSign, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Claim, ClaimInternalStatus } from '@/types/claims';
 
@@ -16,8 +18,11 @@ interface ClaimsKanbanColumnProps {
   onOpenTicket: (claim: Claim) => void;
 }
 
+const HIGH_VALUE_THRESHOLD = 10000;
+const STAGNATION_DAYS = 7;
+
 const columnColors: Record<ClaimInternalStatus, string> = {
-  aguardando_analise: 'bg-muted/30 border-muted-foreground/20',
+  aguardando_analise: 'bg-blue-50 border-blue-200',
   cobranca_amigavel: 'bg-orange-50 border-orange-200',
   notificacao_extrajudicial: 'bg-red-50 border-red-200',
   acordo_realizado: 'bg-teal-50 border-teal-200',
@@ -26,7 +31,7 @@ const columnColors: Record<ClaimInternalStatus, string> = {
 };
 
 const headerColors: Record<ClaimInternalStatus, string> = {
-  aguardando_analise: 'bg-muted-foreground text-background',
+  aguardando_analise: 'bg-blue-500 text-white',
   cobranca_amigavel: 'bg-orange-500 text-white',
   notificacao_extrajudicial: 'bg-red-500 text-white',
   acordo_realizado: 'bg-teal-500 text-white',
@@ -55,6 +60,15 @@ export function ClaimsKanbanColumn({
     }).format(value);
   };
 
+  // Calculate high value and stagnant counts
+  const highValueCount = claims.filter(c => c.total_claimed_value >= HIGH_VALUE_THRESHOLD).length;
+  const stagnantCount = claims.filter(c => {
+    const lastChangeDate = c.last_internal_status_change_at || c.created_at;
+    const parsedDate = lastChangeDate ? new Date(lastChangeDate) : null;
+    if (!parsedDate || isNaN(parsedDate.getTime())) return false;
+    return differenceInDays(new Date(), parsedDate) >= STAGNATION_DAYS;
+  }).length;
+
   return (
     <div
       ref={setNodeRef}
@@ -79,6 +93,22 @@ export function ClaimsKanbanColumn({
           <p className="text-xs text-muted-foreground mt-1">
             Total: {formatCurrency(totalValue)}
           </p>
+        )}
+        {(highValueCount > 0 || stagnantCount > 0) && (
+          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+            {highValueCount > 0 && (
+              <span className="inline-flex items-center text-xs text-purple-600">
+                <DollarSign className="h-3 w-3 mr-0.5" />
+                {highValueCount} alto valor
+              </span>
+            )}
+            {stagnantCount > 0 && (
+              <span className="inline-flex items-center text-xs text-amber-600">
+                <AlertTriangle className="h-3 w-3 mr-0.5" />
+                {stagnantCount} estagnado{stagnantCount > 1 ? 's' : ''}
+              </span>
+            )}
+          </div>
         )}
       </div>
 
