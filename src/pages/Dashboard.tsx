@@ -17,14 +17,42 @@ import {
 import { statusConfig } from '@/types/database';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { Loader2 } from 'lucide-react';
 
 export default function Dashboard() {
-  const { role } = useAuth();
+  const { user, loading, role } = useAuth();
+
+  // Wait for auth to resolve before rendering anything
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  // Redirect to auth if not logged in
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
 
   // Redirect agency users to their portal
   if (role === 'agency_user') {
     return <Navigate to="/agency" replace />;
   }
+
+  // Wait for role to be determined before showing internal dashboard
+  if (!role) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground">Carregando permissões...</p>
+        </div>
+      </div>
+    );
+  }
+
   const { data: analyses, isLoading: loadingAnalyses } = useAnalyses();
   const { data: agencies, isLoading: loadingAgencies } = useAgencies();
   const { data: commissions, isLoading: loadingCommissions } = useCommissions();
