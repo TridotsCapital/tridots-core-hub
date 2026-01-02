@@ -77,27 +77,27 @@ export function TicketConversationItem({
           {lastMessage || ticket.description || 'Sem mensagens ainda'}
         </p>
 
-        <div className="flex items-center gap-2 mt-2">
-          <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0", statusConfig.color)}>
+        <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+          <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0 shrink-0 whitespace-nowrap", statusConfig.color)}>
             {statusConfig.label}
           </Badge>
-          <span className={cn("text-xs", priorityConfig.color)}>
+          <span className={cn("text-xs shrink-0", priorityConfig.color)}>
             {priorityConfig.icon}
           </span>
           {ticket.claim_id && (
-            <Badge variant="secondary" className="text-[10px] h-4 px-1.5 py-0 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+            <Badge variant="secondary" className="text-[10px] h-4 px-1.5 py-0 shrink-0 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
               <AlertTriangle className="h-2.5 w-2.5 mr-0.5" />
               Sinistro
             </Badge>
           )}
           {ticket.analysis_id && !ticket.claim_id && (
-            <Badge variant="secondary" className="text-[10px] h-4 px-1.5 py-0">
+            <Badge variant="secondary" className="text-[10px] h-4 px-1.5 py-0 shrink-0">
               <FileText className="h-2.5 w-2.5 mr-0.5" />
               Contrato
             </Badge>
           )}
           {unreadCount > 0 && (
-            <span className="ml-auto bg-primary text-primary-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+            <span className="ml-auto bg-primary text-primary-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center shrink-0">
               {unreadCount}
             </span>
           )}

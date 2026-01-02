@@ -268,33 +268,33 @@ export default function AgencySupport() {
                           </span>
                         )}
                         
-                        <div className="flex items-start justify-between gap-3 mb-2">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="text-xs font-mono text-muted-foreground">
-                                #{ticket.id.slice(0, 8).toUpperCase()}
-                              </span>
-                            <Badge
-                              variant="outline"
-                              className={cn("text-xs", categoryConfig[ticket.category as TicketCategory].className)}
-                            >
-                              {categoryConfig[ticket.category as TicketCategory].label}
+                        {/* Header row: ID + Category + Contract badge */}
+                        <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
+                          <span className="text-xs font-mono text-muted-foreground shrink-0">
+                            #{ticket.id.slice(0, 8).toUpperCase()}
+                          </span>
+                          <Badge
+                            variant="outline"
+                            className={cn("text-[10px] px-1.5 py-0 shrink-0", categoryConfig[ticket.category as TicketCategory].className)}
+                          >
+                            {categoryConfig[ticket.category as TicketCategory].label}
+                          </Badge>
+                          {ticket.analysis_id && (
+                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 shrink-0">
+                              <FileText className="h-2.5 w-2.5 mr-0.5" />
+                              Contrato
                             </Badge>
-                            {ticket.analysis_id && (
-                              <Badge variant="secondary" className="text-[10px]">
-                                <FileText className="h-3 w-3 mr-0.5" />
-                                Contrato
-                              </Badge>
-                            )}
-                          </div>
-                            <h4 className="font-medium text-foreground truncate">
-                              {ticket.subject}
-                            </h4>
-                          </div>
+                          )}
                         </div>
 
+                        {/* Subject */}
+                        <h4 className="font-medium text-foreground truncate mb-2 pr-4">
+                          {ticket.subject}
+                        </h4>
+
+                        {/* Footer: Time + Status */}
                         <div className="flex items-center justify-between gap-2">
-                          <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
                             <Clock className="h-3 w-3" />
                             {formatDistanceToNow(new Date(ticket.created_at), {
                               addSuffix: true,
@@ -303,7 +303,7 @@ export default function AgencySupport() {
                           </span>
                           <Badge
                             variant="outline"
-                            className={cn("text-xs", statusConfig[ticket.status as TicketStatus].className)}
+                            className={cn("text-[10px] px-1.5 py-0 shrink-0 whitespace-nowrap", statusConfig[ticket.status as TicketStatus].className)}
                           >
                             {statusConfig[ticket.status as TicketStatus].label}
                           </Badge>

@@ -187,45 +187,47 @@ export function AgencyTicketList({
                     </span>
                   )}
                   
-                  <div className="flex items-start justify-between gap-3 mb-2">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-mono text-muted-foreground">
-                        #{ticket.id.slice(0, 8).toUpperCase()}
-                      </span>
-                      <Badge
-                        variant="outline"
-                        className={cn("text-xs", categoryConfig[ticket.category].className)}
-                      >
-                        {categoryConfig[ticket.category].label}
-                      </Badge>
-                    </div>
-                    <h4 className="font-medium text-foreground truncate">
-                      {ticket.subject}
-                    </h4>
-                  </div>
-                  <Badge
-                    variant="outline"
-                    className={cn("shrink-0", statusConfig[ticket.status].className)}
-                  >
-                    {statusConfig[ticket.status].label}
-                  </Badge>
-                </div>
-
-                <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    {formatDistanceToNow(new Date(ticket.created_at), {
-                      addSuffix: true,
-                      locale: ptBR,
-                    })}
-                  </span>
-                  {ticket.status === "aguardando_cliente" && (
-                    <span className="text-orange-600 font-medium">
-                      Aguardando sua resposta
+                  {/* Header: ID + Category */}
+                  <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
+                    <span className="text-xs font-mono text-muted-foreground shrink-0">
+                      #{ticket.id.slice(0, 8).toUpperCase()}
                     </span>
-                  )}
-                </div>
+                    <Badge
+                      variant="outline"
+                      className={cn("text-[10px] px-1.5 py-0 shrink-0", categoryConfig[ticket.category].className)}
+                    >
+                      {categoryConfig[ticket.category].label}
+                    </Badge>
+                  </div>
+
+                  {/* Subject */}
+                  <h4 className="font-medium text-foreground truncate mb-2 pr-4">
+                    {ticket.subject}
+                  </h4>
+
+                  {/* Footer: Time + Status */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1 shrink-0">
+                        <Clock className="h-3 w-3" />
+                        {formatDistanceToNow(new Date(ticket.created_at), {
+                          addSuffix: true,
+                          locale: ptBR,
+                        })}
+                      </span>
+                      {ticket.status === "aguardando_cliente" && (
+                        <span className="text-orange-600 font-medium shrink-0">
+                          Aguardando resposta
+                        </span>
+                      )}
+                    </div>
+                    <Badge
+                      variant="outline"
+                      className={cn("text-[10px] px-1.5 py-0 shrink-0 whitespace-nowrap", statusConfig[ticket.status].className)}
+                    >
+                      {statusConfig[ticket.status].label}
+                    </Badge>
+                  </div>
               </button>
               );
             })
