@@ -7,6 +7,7 @@ import { useEffect } from "react";
 interface CreateTicketData {
   agency_id: string;
   analysis_id?: string;
+  claim_id?: string;
   subject: string;
   description?: string;
   category: TicketCategory;
@@ -27,6 +28,7 @@ export function useCreateTicket() {
         .insert({
           agency_id: data.agency_id,
           analysis_id: data.analysis_id || null,
+          claim_id: data.claim_id || null,
           created_by: user.id,
           subject: data.subject,
           description: data.description,
@@ -490,6 +492,33 @@ export function useTicketsByAnalysis(analysisId: string | undefined) {
       return data;
     },
     enabled: !!analysisId,
+  });
+}
+
+// Hook to fetch tickets for a specific claim
+export function useTicketsByClaimId(claimId: string | undefined) {
+  return useQuery({
+    queryKey: ["tickets-by-claim", claimId],
+    queryFn: async () => {
+      if (!claimId) return [];
+      const { data, error } = await supabase
+        .from("tickets")
+        .select(`
+          id, 
+          subject, 
+          status, 
+          priority,
+          category,
+          created_at, 
+          resolved_at,
+          agency:agencies(id, nome_fantasia, razao_social)
+        `)
+        .eq("claim_id", claimId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!claimId,
   });
 }
 

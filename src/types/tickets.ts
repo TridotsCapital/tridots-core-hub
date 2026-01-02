@@ -7,6 +7,7 @@ export interface Ticket {
   id: string;
   agency_id: string;
   analysis_id: string | null;
+  claim_id: string | null;
   created_by: string;
   assigned_to: string | null;
   subject: string;

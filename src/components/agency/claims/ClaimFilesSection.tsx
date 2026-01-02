@@ -127,7 +127,7 @@ export function ClaimFilesSection({ claimId, canEdit }: ClaimFilesSectionProps) 
                   Selecionar Arquivo
                 </Button>
                 <p className="text-xs text-muted-foreground mt-2">
-                  PDF, DOC, XLS, JPG, PNG (máx. 10MB)
+                  PDF, DOC, XLS, JPG, PNG (máx. 50MB)
                 </p>
               </div>
             ) : (
