@@ -8,9 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertTriangle, Search, Filter, Eye, Building2 } from "lucide-react";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { AlertTriangle, Search, Filter, Eye, Building2, LayoutGrid, List } from "lucide-react";
 import { useClaims } from "@/hooks/useClaims";
 import { useAgencies } from "@/hooks/useAgencies";
+import { ClaimsKanban } from "@/components/claims";
 import { 
   ClaimPublicStatus, 
   ClaimInternalStatus,
@@ -26,8 +28,18 @@ export default function Claims() {
   const [publicStatusFilter, setPublicStatusFilter] = useState<ClaimPublicStatus | "all">("all");
   const [internalStatusFilter, setInternalStatusFilter] = useState<ClaimInternalStatus | "all">("all");
   const [agencyFilter, setAgencyFilter] = useState<string>("all");
+  const [viewMode, setViewMode] = useState<"list" | "kanban">(() => {
+    return (localStorage.getItem("claims-view-mode") as "list" | "kanban") || "kanban";
+  });
 
-  const { data: claims, isLoading } = useClaims({
+  const handleViewModeChange = (value: string) => {
+    if (value === "list" || value === "kanban") {
+      setViewMode(value);
+      localStorage.setItem("claims-view-mode", value);
+    }
+  };
+
+  const { data: claims, isLoading, refetch } = useClaims({
     publicStatus: publicStatusFilter === "all" ? undefined : publicStatusFilter,
     internalStatus: internalStatusFilter === "all" ? undefined : internalStatusFilter,
     agencyId: agencyFilter === "all" ? undefined : agencyFilter,
@@ -68,6 +80,14 @@ export default function Claims() {
               </p>
             </div>
           </div>
+          <ToggleGroup type="single" value={viewMode} onValueChange={handleViewModeChange}>
+            <ToggleGroupItem value="kanban" aria-label="Kanban view">
+              <LayoutGrid className="h-4 w-4" />
+            </ToggleGroupItem>
+            <ToggleGroupItem value="list" aria-label="List view">
+              <List className="h-4 w-4" />
+            </ToggleGroupItem>
+          </ToggleGroup>
         </div>
 
         {/* Filters */}
@@ -134,83 +154,94 @@ export default function Claims() {
           </CardContent>
         </Card>
 
-        {/* Claims Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Sinistros</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="space-y-3">
-                {[...Array(5)].map((_, i) => (
-                  <Skeleton key={i} className="h-16 w-full" />
-                ))}
-              </div>
-            ) : filteredClaims?.length === 0 ? (
-              <div className="text-center py-12">
-                <AlertTriangle className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
-                <p className="text-muted-foreground">Nenhum sinistro encontrado</p>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Inquilino</TableHead>
-                    <TableHead>Imobiliária</TableHead>
-                    <TableHead>Valor</TableHead>
-                    <TableHead>Status Público</TableHead>
-                    <TableHead>Status Interno</TableHead>
-                    <TableHead>Data</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredClaims?.map((claim) => {
-                    const publicConfig = claimPublicStatusConfig[claim.public_status];
-                    const internalConfig = claimInternalStatusConfig[claim.internal_status];
+        {/* Kanban View */}
+        {viewMode === "kanban" && (
+          <ClaimsKanban 
+            claims={filteredClaims || []} 
+            isLoading={isLoading}
+            onRefresh={() => refetch()}
+          />
+        )}
 
-                    return (
-                      <TableRow key={claim.id} className="cursor-pointer hover:bg-muted/50">
-                        <TableCell className="font-medium">
-                          {claim.analysis?.inquilino_nome || "—"}
-                        </TableCell>
-                        <TableCell>
-                          {claim.agency?.nome_fantasia || claim.agency?.razao_social || "—"}
-                        </TableCell>
-                        <TableCell className="font-semibold text-amber-600">
-                          {formatCurrency(claim.total_claimed_value)}
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={`${publicConfig.bgColor} ${publicConfig.color}`}>
-                            {publicConfig.label}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className={`${internalConfig.bgColor} ${internalConfig.color}`}>
-                            {internalConfig.label}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {format(new Date(claim.created_at), "dd/MM/yyyy", { locale: ptBR })}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => navigate(`/claims/${claim.id}`)}
-                          >
-                            <Eye className="h-4 w-4 mr-1" />
-                            Ver
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+        {/* List View */}
+        {viewMode === "list" && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Sinistros</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="space-y-3">
+                  {[...Array(5)].map((_, i) => (
+                    <Skeleton key={i} className="h-16 w-full" />
+                  ))}
+                </div>
+              ) : filteredClaims?.length === 0 ? (
+                <div className="text-center py-12">
+                  <AlertTriangle className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
+                  <p className="text-muted-foreground">Nenhum sinistro encontrado</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Inquilino</TableHead>
+                      <TableHead>Imobiliária</TableHead>
+                      <TableHead>Valor</TableHead>
+                      <TableHead>Status Público</TableHead>
+                      <TableHead>Status Interno</TableHead>
+                      <TableHead>Data</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredClaims?.map((claim) => {
+                      const publicConfig = claimPublicStatusConfig[claim.public_status];
+                      const internalConfig = claimInternalStatusConfig[claim.internal_status];
+
+                      return (
+                        <TableRow key={claim.id} className="cursor-pointer hover:bg-muted/50">
+                          <TableCell className="font-medium">
+                            {claim.analysis?.inquilino_nome || "—"}
+                          </TableCell>
+                          <TableCell>
+                            {claim.agency?.nome_fantasia || claim.agency?.razao_social || "—"}
+                          </TableCell>
+                          <TableCell className="font-semibold text-amber-600">
+                            {formatCurrency(claim.total_claimed_value)}
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={`${publicConfig.bgColor} ${publicConfig.color}`}>
+                              {publicConfig.label}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className={`${internalConfig.bgColor} ${internalConfig.color}`}>
+                              {internalConfig.label}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {format(new Date(claim.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => navigate(`/claims/${claim.id}`)}
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              Ver
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
     </DashboardLayout>
   );

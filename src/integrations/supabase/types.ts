@@ -433,6 +433,48 @@ export type Database = {
           },
         ]
       }
+      claim_notes: {
+        Row: {
+          claim_id: string
+          content: string
+          created_at: string
+          created_by: string
+          id: string
+          note_type: string
+        }
+        Insert: {
+          claim_id: string
+          content: string
+          created_at?: string
+          created_by: string
+          id?: string
+          note_type?: string
+        }
+        Update: {
+          claim_id?: string
+          content?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          note_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claim_notes_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_notes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       claim_status_history: {
         Row: {
           changed_by: string
@@ -485,12 +527,15 @@ export type Database = {
         Row: {
           agency_id: string
           analysis_id: string
+          assigned_to: string | null
           canceled_at: string | null
           canceled_by: string | null
           created_at: string
           created_by: string
+          docs_checklist: Json | null
           id: string
           internal_status: Database["public"]["Enums"]["claim_internal_status"]
+          last_internal_status_change_at: string | null
           observations: string | null
           public_status: Database["public"]["Enums"]["claim_public_status"]
           total_claimed_value: number
@@ -499,12 +544,15 @@ export type Database = {
         Insert: {
           agency_id: string
           analysis_id: string
+          assigned_to?: string | null
           canceled_at?: string | null
           canceled_by?: string | null
           created_at?: string
           created_by: string
+          docs_checklist?: Json | null
           id?: string
           internal_status?: Database["public"]["Enums"]["claim_internal_status"]
+          last_internal_status_change_at?: string | null
           observations?: string | null
           public_status?: Database["public"]["Enums"]["claim_public_status"]
           total_claimed_value?: number
@@ -513,12 +561,15 @@ export type Database = {
         Update: {
           agency_id?: string
           analysis_id?: string
+          assigned_to?: string | null
           canceled_at?: string | null
           canceled_by?: string | null
           created_at?: string
           created_by?: string
+          docs_checklist?: Json | null
           id?: string
           internal_status?: Database["public"]["Enums"]["claim_internal_status"]
+          last_internal_status_change_at?: string | null
           observations?: string | null
           public_status?: Database["public"]["Enums"]["claim_public_status"]
           total_claimed_value?: number
@@ -537,6 +588,13 @@ export type Database = {
             columns: ["analysis_id"]
             isOneToOne: false
             referencedRelation: "analyses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claims_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
