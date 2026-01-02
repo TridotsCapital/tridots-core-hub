@@ -3,9 +3,11 @@ import { Navigate } from "react-router-dom";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AgencySidebar } from "./AgencySidebar";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSubdomain } from "@/contexts/SubdomainContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { PendingApprovalBanner } from "@/components/agency/PendingApprovalBanner";
+import { isCorrectPortalForRole, getPortalUrlForRole } from "@/lib/subdomain";
 
 interface AgencyLayoutProps {
   children: ReactNode;
@@ -25,6 +27,7 @@ export const useAgencyStatus = () => useContext(AgencyStatusContext);
 
 export function AgencyLayout({ children, title, description, actions }: AgencyLayoutProps) {
   const { user, loading, role } = useAuth();
+  const { portal, isProduction } = useSubdomain();
   const [agencyId, setAgencyId] = useState<string | null>(null);
   const [agencyName, setAgencyName] = useState<string | null>(null);
   const [isAgencyActive, setIsAgencyActive] = useState(true);
@@ -91,8 +94,24 @@ export function AgencyLayout({ children, title, description, actions }: AgencyLa
     return <Navigate to="/auth" replace />;
   }
 
-  // Redirect internal users to their portal
-  if (role === 'master' || role === 'analyst') {
+  // In production, check if user is on correct portal
+  if (isProduction && role && !isCorrectPortalForRole(portal, role)) {
+    const correctUrl = getPortalUrlForRole(role);
+    if (correctUrl) {
+      window.location.href = correctUrl;
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+            <p className="text-muted-foreground">Redirecionando para o portal correto...</p>
+          </div>
+        </div>
+      );
+    }
+  }
+
+  // Redirect internal users to their portal (dev environment)
+  if ((role === 'master' || role === 'analyst') && !isProduction) {
     return <Navigate to="/" replace />;
   }
 

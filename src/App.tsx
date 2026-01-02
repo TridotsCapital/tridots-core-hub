@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { SubdomainProvider, useSubdomain } from "@/contexts/SubdomainContext";
 import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
 import Agencies from "./pages/Agencies";
@@ -41,52 +42,115 @@ import ClaimDetail from "./pages/ClaimDetail";
 
 const queryClient = new QueryClient();
 
+/**
+ * Internal Portal Routes (app.tridotscapital.com)
+ * These are the routes for Tridots team members (master, analyst)
+ */
+function InternalRoutes() {
+  return (
+    <>
+      <Route path="/" element={<Dashboard />} />
+      <Route path="/auth" element={<Auth />} />
+      <Route path="/agencies" element={<Agencies />} />
+      <Route path="/agencies/new" element={<AgencyForm />} />
+      <Route path="/agencies/:id" element={<AgencyForm />} />
+      <Route path="/analyses" element={<Analyses />} />
+      <Route path="/analyses/new" element={<AnalysisForm />} />
+      <Route path="/analyses/:id" element={<AnalysisForm />} />
+      <Route path="/commissions" element={<Commissions />} />
+      <Route path="/financial" element={<FinancialDashboard />} />
+      <Route path="/documents" element={<DocumentCenter />} />
+      <Route path="/audit" element={<AuditViewer />} />
+      <Route path="/users" element={<UserManagement />} />
+      <Route path="/accept/:analysisId" element={<DigitalAcceptance />} />
+      <Route path="/tickets" element={<TicketCenter />} />
+      <Route path="/contracts" element={<Contracts />} />
+      <Route path="/contracts/:id" element={<ContractDetail />} />
+      <Route path="/claims" element={<Claims />} />
+      <Route path="/claims/:id" element={<ClaimDetail />} />
+    </>
+  );
+}
+
+/**
+ * Agency Portal Routes (portal.tridotscapital.com)
+ * These are the routes for agency users
+ * In production subdomain: served at root (/)
+ * In dev/preview: served at /agency/*
+ */
+function AgencyRoutes({ atRoot = false }: { atRoot?: boolean }) {
+  const prefix = atRoot ? "" : "/agency";
+  
+  return (
+    <>
+      <Route path={`${prefix}`} element={<AgencyDashboard />} />
+      <Route path={`${prefix}/analyses`} element={<AgencyAnalyses />} />
+      <Route path={`${prefix}/analyses/new`} element={<AgencyNewAnalysis />} />
+      <Route path={`${prefix}/contracts`} element={<AgencyContracts />} />
+      <Route path={`${prefix}/contracts/:id`} element={<AgencyContractDetail />} />
+      <Route path={`${prefix}/claims`} element={<AgencyClaims />} />
+      <Route path={`${prefix}/claims/new`} element={<AgencyNewClaim />} />
+      <Route path={`${prefix}/claims/:id`} element={<AgencyClaimDetail />} />
+      <Route path={`${prefix}/collaborators`} element={<AgencyCollaborators />} />
+      <Route path={`${prefix}/support`} element={<AgencySupport />} />
+    </>
+  );
+}
+
+/**
+ * Router component that renders routes based on the current subdomain
+ */
+function AppRoutes() {
+  const { isInternalPortal, isAgencyPortal, isUnknownPortal } = useSubdomain();
+
+  return (
+    <Routes>
+      {/* Production: Internal Portal (app.tridotscapital.com) */}
+      {isInternalPortal && (
+        <>
+          {InternalRoutes()}
+          <Route path="*" element={<NotFound />} />
+        </>
+      )}
+
+      {/* Production: Agency Portal (portal.tridotscapital.com) */}
+      {isAgencyPortal && (
+        <>
+          <Route path="/auth" element={<Auth />} />
+          {AgencyRoutes({ atRoot: true })}
+          <Route path="*" element={<NotFound />} />
+        </>
+      )}
+
+      {/* Development/Preview: Both portals available */}
+      {isUnknownPortal && (
+        <>
+          {/* Tridots Team Routes */}
+          {InternalRoutes()}
+          
+          {/* Agency Portal Routes (prefixed with /agency) */}
+          {AgencyRoutes({ atRoot: false })}
+          
+          <Route path="*" element={<NotFound />} />
+        </>
+      )}
+    </Routes>
+  );
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            {/* Tridots Team Routes */}
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/agencies" element={<Agencies />} />
-            <Route path="/agencies/new" element={<AgencyForm />} />
-            <Route path="/agencies/:id" element={<AgencyForm />} />
-            <Route path="/analyses" element={<Analyses />} />
-            <Route path="/analyses/new" element={<AnalysisForm />} />
-            <Route path="/analyses/:id" element={<AnalysisForm />} />
-            <Route path="/commissions" element={<Commissions />} />
-            <Route path="/financial" element={<FinancialDashboard />} />
-            <Route path="/documents" element={<DocumentCenter />} />
-            <Route path="/audit" element={<AuditViewer />} />
-            <Route path="/users" element={<UserManagement />} />
-            <Route path="/accept/:analysisId" element={<DigitalAcceptance />} />
-            <Route path="/tickets" element={<TicketCenter />} />
-            <Route path="/contracts" element={<Contracts />} />
-            <Route path="/contracts/:id" element={<ContractDetail />} />
-            <Route path="/claims" element={<Claims />} />
-            <Route path="/claims/:id" element={<ClaimDetail />} />
-            
-            {/* Agency Portal Routes */}
-            <Route path="/agency" element={<AgencyDashboard />} />
-            <Route path="/agency/analyses" element={<AgencyAnalyses />} />
-            <Route path="/agency/analyses/new" element={<AgencyNewAnalysis />} />
-            <Route path="/agency/contracts" element={<AgencyContracts />} />
-            <Route path="/agency/contracts/:id" element={<AgencyContractDetail />} />
-            <Route path="/agency/claims" element={<AgencyClaims />} />
-            <Route path="/agency/claims/new" element={<AgencyNewClaim />} />
-            <Route path="/agency/claims/:id" element={<AgencyClaimDetail />} />
-            <Route path="/agency/collaborators" element={<AgencyCollaborators />} />
-            <Route path="/agency/support" element={<AgencySupport />} />
-            
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
+    <SubdomainProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
+    </SubdomainProvider>
   </QueryClientProvider>
 );
 

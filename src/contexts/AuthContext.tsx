@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import type { Profile, AppRole } from '@/types/database';
+import { getPortalFromSubdomain, getDefaultRouteForPortal } from '@/lib/subdomain';
 
 interface AuthContextType {
   user: User | null;
@@ -144,9 +145,10 @@ export function useAuth() {
   return context;
 }
 
+/**
+ * Gets the default route for a given role, considering the current subdomain
+ */
 export function getDefaultRouteForRole(role: AppRole | null): string {
-  if (role === 'agency_user') {
-    return '/agency';
-  }
-  return '/';
+  const portal = getPortalFromSubdomain();
+  return getDefaultRouteForPortal(portal, role);
 }

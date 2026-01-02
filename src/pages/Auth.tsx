@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth, getDefaultRouteForRole } from '@/contexts/AuthContext';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useSubdomain } from '@/contexts/SubdomainContext';
+import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { LoginForm } from '@/components/auth/LoginForm';
@@ -9,21 +10,33 @@ import { TeamSignupForm } from '@/components/auth/TeamSignupForm';
 import { AgencySignupForm, AgencySignupData } from '@/components/auth/AgencySignupForm';
 import { supabase } from '@/integrations/supabase/client';
 import logoBlack from "@/assets/logo-tridots-black.webp";
+import { isCorrectPortalForRole, getPortalUrlForRole } from '@/lib/subdomain';
 
 export default function Auth() {
   const [loading, setLoading] = useState(false);
   const { signIn, signUp, user, role } = useAuth();
+  const { isInternalPortal, isAgencyPortal, isProduction } = useSubdomain();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   
-  const isTeamSignup = searchParams.get('team') === 'tridots';
+  // Team signup is only available on internal portal or via query param in dev
+  const isTeamSignup = searchParams.get('team') === 'tridots' && (isInternalPortal || !isProduction);
 
   // Redirect if already logged in
   useEffect(() => {
     if (user && role !== null) {
+      // In production, check if user is on correct portal
+      if (isProduction && !isCorrectPortalForRole(isInternalPortal ? 'internal' : 'agency', role)) {
+        const correctUrl = getPortalUrlForRole(role);
+        if (correctUrl) {
+          toast.error(`Você está no portal errado. Redirecionando...`);
+          window.location.href = correctUrl;
+          return;
+        }
+      }
       navigate(getDefaultRouteForRole(role));
     }
-  }, [user, role, navigate]);
+  }, [user, role, navigate, isProduction, isInternalPortal]);
 
   const handleLogin = async (email: string, password: string) => {
     setLoading(true);
@@ -122,6 +135,19 @@ export default function Auth() {
     setLoading(false);
   };
 
+  // Determine which signup options to show
+  const showAgencySignup = isAgencyPortal || (!isProduction && !isTeamSignup);
+  const showTeamSignup = isTeamSignup;
+  const showOnlyLogin = isInternalPortal && !isTeamSignup;
+
+  // Get description based on context
+  const getDescription = () => {
+    if (isTeamSignup) return 'Cadastro de Membro da Equipe';
+    if (isAgencyPortal) return 'Portal de Imobiliárias Parceiras';
+    if (isInternalPortal) return 'Portal Interno Tridots';
+    return 'Sistema de Gestão de Análises de Crédito';
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
       {/* Background with gradient */}
@@ -133,21 +159,21 @@ export default function Auth() {
       <div className="absolute top-20 left-20 w-72 h-72 bg-white/5 rounded-full blur-3xl" />
       <div className="absolute bottom-20 right-20 w-96 h-96 bg-white/5 rounded-full blur-3xl" />
       
-      <Card className={`w-full relative animate-scale-in glass-strong shadow-2xl ${isTeamSignup ? 'max-w-md' : 'max-w-lg'}`}>
+      <Card className={`w-full relative animate-scale-in glass-strong shadow-2xl ${showTeamSignup || showOnlyLogin ? 'max-w-md' : 'max-w-lg'}`}>
         <CardHeader className="text-center space-y-4 pb-2">
           <div className="mx-auto flex items-center justify-center">
             <img src={logoBlack} alt="Tridots Capital" className="h-16 w-auto object-contain" />
           </div>
           <CardDescription className="text-muted-foreground">
-            {isTeamSignup 
-              ? 'Cadastro de Membro da Equipe' 
-              : 'Sistema de Gestão de Análises de Crédito'
-            }
+            {getDescription()}
           </CardDescription>
         </CardHeader>
         
         <CardContent className="pt-4">
-          {isTeamSignup ? (
+          {showOnlyLogin ? (
+            // Internal portal without team param - login only
+            <LoginForm onSubmit={handleLogin} loading={loading} />
+          ) : showTeamSignup ? (
             // Team signup - simplified form
             <Tabs defaultValue="signup" className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-6">
@@ -163,8 +189,8 @@ export default function Auth() {
                 <TeamSignupForm onSubmit={handleTeamSignup} loading={loading} />
               </TabsContent>
             </Tabs>
-          ) : (
-            // Regular flow - agency signup
+          ) : showAgencySignup ? (
+            // Agency portal or dev - agency signup available
             <Tabs defaultValue="login" className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-6">
                 <TabsTrigger value="login" className="font-semibold">Entrar</TabsTrigger>
@@ -179,6 +205,9 @@ export default function Auth() {
                 <AgencySignupForm onSubmit={handleAgencySignup} loading={loading} />
               </TabsContent>
             </Tabs>
+          ) : (
+            // Fallback to login only
+            <LoginForm onSubmit={handleLogin} loading={loading} />
           )}
         </CardContent>
       </Card>

@@ -1,10 +1,12 @@
 import { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSubdomain } from '@/contexts/SubdomainContext';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from './AppSidebar';
 import { Separator } from '@/components/ui/separator';
 import { Building2 } from 'lucide-react';
+import { isCorrectPortalForRole, getPortalUrlForRole } from '@/lib/subdomain';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -14,6 +16,7 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children, title, description }: DashboardLayoutProps) {
   const { user, loading, role } = useAuth();
+  const { portal, isProduction } = useSubdomain();
 
   if (loading) {
     return (
@@ -33,8 +36,23 @@ export function DashboardLayout({ children, title, description }: DashboardLayou
     return <Navigate to="/auth" replace />;
   }
 
-  // Redirect agency users to their portal
-  if (role === 'agency_user') {
+  // In production, check if user is on correct portal
+  if (isProduction && role && !isCorrectPortalForRole(portal, role)) {
+    const correctUrl = getPortalUrlForRole(role);
+    if (correctUrl) {
+      window.location.href = correctUrl;
+      return (
+        <div className="min-h-screen flex items-center justify-center gradient-hero">
+          <div className="text-center text-white">
+            <p>Redirecionando para o portal correto...</p>
+          </div>
+        </div>
+      );
+    }
+  }
+
+  // Redirect agency users to their portal (dev environment)
+  if (role === 'agency_user' && !isProduction) {
     return <Navigate to="/agency" replace />;
   }
 
