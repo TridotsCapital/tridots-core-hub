@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Upload, Download, Trash2, Loader2, FileText, File } from "lucide-react";
+import { Upload, Download, Trash2, Loader2, FileText, File, Eye } from "lucide-react";
 import { useClaimFiles, useUploadClaimFile, useDeleteClaimFile, getClaimFileUrl } from "@/hooks/useClaimFiles";
 import { claimFileTypeList, claimFileTypeConfig } from "@/types/claims";
 import type { ClaimFileType } from "@/types/claims";
@@ -74,6 +74,13 @@ export function ClaimFilesSection({ claimId, canEdit }: ClaimFilesSectionProps) 
       link.href = url;
       link.download = fileName;
       link.click();
+    }
+  };
+
+  const handlePreview = async (filePath: string) => {
+    const url = await getClaimFileUrl(filePath);
+    if (url) {
+      window.open(url, '_blank');
     }
   };
 
@@ -221,7 +228,16 @@ export function ClaimFilesSection({ claimId, canEdit }: ClaimFilesSectionProps) 
                         <Button
                           variant="ghost"
                           size="icon"
+                          onClick={() => handlePreview(file.file_path)}
+                          title="Visualizar"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={() => handleDownload(file.file_path, file.file_name)}
+                          title="Download"
                         >
                           <Download className="h-4 w-4" />
                         </Button>

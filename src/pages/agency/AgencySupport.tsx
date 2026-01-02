@@ -221,9 +221,9 @@ export default function AgencySupport() {
         </div>
 
         {/* Two-column layout */}
-        <div className="flex-1 flex overflow-hidden rounded-lg border bg-card">
+        <div className="flex-1 flex overflow-hidden rounded-lg border bg-card min-h-0">
           {/* Left: Ticket List */}
-          <div className="w-[380px] border-r flex-shrink-0 overflow-hidden flex flex-col">
+          <div className="w-[380px] border-r flex-shrink-0 flex flex-col min-h-0 overflow-hidden">
             {ticketsLoading ? (
               <div className="p-4 space-y-3">
                 {[1, 2, 3].map((i) => (

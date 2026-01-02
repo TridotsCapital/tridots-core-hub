@@ -67,6 +67,12 @@ export function NotificationCenter({ isAgencyPortal = false }: NotificationCente
       } else {
         navigate('/contracts', { state: { contractId: notification.reference_id } });
       }
+    } else if (notification.source === 'sinistros') {
+      if (isAgencyPortal) {
+        navigate(`/agency/claims/${notification.reference_id}`);
+      } else {
+        navigate(`/claims/${notification.reference_id}`);
+      }
     }
   };
 

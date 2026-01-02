@@ -37,14 +37,22 @@ interface Contract {
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
-const createEmptyItem = (): DraftClaimItem => ({
+// All categories for pre-filling rows
+const allCategories: Array<DraftClaimItem['category']> = [
+  'aluguel', 'condominio', 'iptu', 'luz', 'agua', 'gas', 'danos', 'pintura', 'multa_contratual', 'outros'
+];
+
+const createEmptyItem = (category: DraftClaimItem['category'] = 'aluguel'): DraftClaimItem => ({
   id: generateId(),
-  category: 'aluguel',
+  category,
   description: '',
   reference_period: '',
   due_date: '',
   amount: 0,
 });
+
+const createInitialItems = (): DraftClaimItem[] => 
+  allCategories.map(cat => createEmptyItem(cat));
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('pt-BR', {
@@ -70,8 +78,15 @@ export default function AgencyNewClaim() {
   // Form state
   const [selectedContractId, setSelectedContractId] = useState<string>('');
   const [observations, setObservations] = useState('');
-  const [items, setItems] = useState<DraftClaimItem[]>([createEmptyItem()]);
+  const [items, setItems] = useState<DraftClaimItem[]>(createInitialItems());
   const [files, setFiles] = useState<DraftClaimFile[]>([]);
+  
+  // Validation errors for visual feedback
+  const [validationErrors, setValidationErrors] = useState<{
+    contract?: boolean;
+    items?: boolean;
+    files?: boolean;
+  }>({});
   
   // Mutations
   const createClaim = useCreateClaim();
@@ -121,7 +136,7 @@ export default function AgencyNewClaim() {
     if (hasDraft && draft) {
       setSelectedContractId(draft.contractId || '');
       setObservations(draft.observations || '');
-      setItems(draft.items.length > 0 ? draft.items : [createEmptyItem()]);
+      setItems(draft.items.length > 0 ? draft.items : createInitialItems());
       // Files can't be restored from localStorage
     } else if (preselectedContractId) {
       setSelectedContractId(preselectedContractId);
@@ -147,31 +162,34 @@ export default function AgencyNewClaim() {
   const selectedContract = contracts.find((c) => c.id === selectedContractId);
   const totalValue = items.reduce((sum, item) => sum + (item.amount || 0), 0);
 
-  // Validation
+  // Validation with visual feedback
   const validateForm = () => {
+    const errors: typeof validationErrors = {};
+    
     if (!selectedContractId) {
-      toast({
-        title: 'Contrato obrigatório',
-        description: 'Selecione o contrato relacionado ao sinistro.',
-        variant: 'destructive',
-      });
-      return false;
+      errors.contract = true;
     }
 
     const validItems = items.filter((i) => i.due_date && i.amount > 0);
     if (validItems.length === 0) {
-      toast({
-        title: 'Itens obrigatórios',
-        description: 'Adicione pelo menos um item de débito com data e valor.',
-        variant: 'destructive',
-      });
-      return false;
+      errors.items = true;
     }
 
     if (files.length === 0) {
+      errors.files = true;
+    }
+    
+    setValidationErrors(errors);
+    
+    if (Object.keys(errors).length > 0) {
+      const missingFields: string[] = [];
+      if (errors.contract) missingFields.push('contrato');
+      if (errors.items) missingFields.push('itens de débito');
+      if (errors.files) missingFields.push('arquivos');
+      
       toast({
-        title: 'Arquivos obrigatórios',
-        description: 'Anexe pelo menos um arquivo comprobatório.',
+        title: 'Campos obrigatórios',
+        description: `Preencha os campos destacados em vermelho: ${missingFields.join(', ')}.`,
         variant: 'destructive',
       });
       return false;
@@ -296,7 +314,7 @@ export default function AgencyNewClaim() {
         {/* Main Column */}
         <div className="lg:col-span-3 space-y-6">
           {/* Contract Selection */}
-          <Card>
+          <Card className={validationErrors.contract ? 'border-destructive' : ''}>
             <CardHeader>
               <CardTitle className="text-lg">Contrato</CardTitle>
               <CardDescription>Selecione o contrato relacionado ao sinistro</CardDescription>
@@ -304,10 +322,13 @@ export default function AgencyNewClaim() {
             <CardContent className="space-y-4">
               <Select 
                 value={selectedContractId} 
-                onValueChange={setSelectedContractId}
+                onValueChange={(value) => {
+                  setSelectedContractId(value);
+                  setValidationErrors(prev => ({ ...prev, contract: false }));
+                }}
                 disabled={isSubmitting}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger className={`w-full ${validationErrors.contract ? 'border-destructive' : ''}`}>
                   <SelectValue placeholder="Selecione um contrato..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -354,7 +375,7 @@ export default function AgencyNewClaim() {
           </Card>
 
           {/* Debt Table */}
-          <Card>
+          <Card className={validationErrors.items ? 'border-destructive' : ''}>
             <CardHeader>
               <CardTitle className="text-lg">Itens de Débito</CardTitle>
               <CardDescription>
@@ -364,14 +385,20 @@ export default function AgencyNewClaim() {
             <CardContent>
               <ClaimDebtTable
                 items={items}
-                onChange={setItems}
+                onChange={(newItems) => {
+                  setItems(newItems);
+                  const hasValidItem = newItems.some(i => i.due_date && i.amount > 0);
+                  if (hasValidItem) {
+                    setValidationErrors(prev => ({ ...prev, items: false }));
+                  }
+                }}
                 disabled={isSubmitting}
               />
             </CardContent>
           </Card>
 
           {/* File Upload */}
-          <Card>
+          <Card className={validationErrors.files ? 'border-destructive' : ''}>
             <CardHeader>
               <CardTitle className="text-lg">Documentos</CardTitle>
               <CardDescription>
@@ -381,7 +408,12 @@ export default function AgencyNewClaim() {
             <CardContent>
               <ClaimFileUploader
                 files={files}
-                onChange={setFiles}
+                onChange={(newFiles) => {
+                  setFiles(newFiles);
+                  if (newFiles.length > 0) {
+                    setValidationErrors(prev => ({ ...prev, files: false }));
+                  }
+                }}
                 disabled={isSubmitting}
               />
             </CardContent>
@@ -458,8 +490,8 @@ export default function AgencyNewClaim() {
               <Alert>
                 <Info className="h-4 w-4" />
                 <AlertDescription className="text-xs">
-                  Após o envio, você poderá acompanhar o status e adicionar mais
-                  documentos se necessário.
+                  Após o envio, vamos dar início às cobranças e retornaremos o mais breve possível. 
+                  Lembrando que nosso prazo para pagamento é de até 30 dias.
                 </AlertDescription>
               </Alert>
             </CardContent>

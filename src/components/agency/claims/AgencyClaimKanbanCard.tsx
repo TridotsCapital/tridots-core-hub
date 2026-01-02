@@ -8,6 +8,7 @@ import type { Claim } from '@/types/claims';
 
 interface AgencyClaimKanbanCardProps {
   claim: Claim;
+  onClick: () => void;
   onViewDetails: () => void;
   onOpenTicket: () => void;
 }
@@ -21,6 +22,7 @@ const formatCurrency = (value: number) => {
 
 export function AgencyClaimKanbanCard({
   claim,
+  onClick,
   onViewDetails,
   onOpenTicket,
 }: AgencyClaimKanbanCardProps) {
@@ -36,7 +38,7 @@ export function AgencyClaimKanbanCard({
   });
 
   return (
-    <Card className="hover:shadow-md transition-shadow cursor-pointer group">
+    <Card className="hover:shadow-md transition-shadow cursor-pointer group" onClick={onClick}>
       <CardContent className="p-3 space-y-3">
         {/* Header */}
         <div className="flex items-start justify-between gap-2">

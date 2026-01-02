@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTicket, useTicketMessages, useSendTicketMessage, useUpdateTicket, useTypingIndicators, useSetTypingIndicator, useQuickReplies, useAgencyStats } from "@/hooks/useTickets";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ticketCategoryConfig, ticketStatusConfig, ticketPriorityConfig, TicketStatus } from "@/types/tickets";
-import { X, Send, Zap, Building2, Phone, Mail, FileText, DollarSign, Clock, User, ChevronDown } from "lucide-react";
+import { X, Send, Zap, Building2, Phone, Mail, FileText, DollarSign, Clock, User, ChevronDown, AlertTriangle } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -23,6 +24,7 @@ interface TicketDetailProps {
 }
 
 export function TicketDetail({ ticketId, onClose }: TicketDetailProps) {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [message, setMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -159,6 +161,26 @@ export function TicketDetail({ ticketId, onClose }: TicketDetailProps) {
                 <Badge variant="outline" className={statusConfig.color}>
                   {statusConfig.label}
                 </Badge>
+                {/* Show Sinistro badge if linked to claim, otherwise Contrato if linked */}
+                {ticket.claim_id ? (
+                  <Badge 
+                    variant="secondary" 
+                    className="bg-amber-100 text-amber-700 cursor-pointer hover:bg-amber-200"
+                    onClick={() => navigate(`/claims/${ticket.claim_id}`)}
+                  >
+                    <AlertTriangle className="h-3 w-3 mr-1" />
+                    Sinistro
+                  </Badge>
+                ) : ticket.analysis_id && (
+                  <Badge 
+                    variant="secondary" 
+                    className="cursor-pointer hover:bg-muted"
+                    onClick={() => navigate(`/contracts/${ticket.analysis_id}`)}
+                  >
+                    <FileText className="h-3 w-3 mr-1" />
+                    Contrato
+                  </Badge>
+                )}
                 <span className="text-xs text-muted-foreground">
                   Criado {formatDistanceToNow(new Date(ticket.created_at), { addSuffix: true, locale: ptBR })}
                 </span>

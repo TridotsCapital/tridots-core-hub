@@ -120,7 +120,7 @@ const TicketCenter = () => {
 
   return (
     <DashboardLayout>
-      <div className="h-[calc(100vh-4rem)] flex flex-col">
+      <div className="h-[calc(100vh-4rem)] flex flex-col min-h-0 overflow-hidden">
         {/* Header with title */}
         <div className="flex items-center justify-between px-4 py-3 border-b bg-card">
           <div>
@@ -222,9 +222,9 @@ const TicketCenter = () => {
         </div>
 
         {/* Main content - WhatsApp style layout */}
-        <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 flex overflow-hidden min-h-0">
           {/* Left: Conversation List */}
-          <div className="w-[380px] border-r flex-shrink-0">
+          <div className="w-[380px] border-r flex-shrink-0 flex flex-col min-h-0 overflow-hidden">
             <TicketConversationList
               tickets={filteredTickets}
               isLoading={isLoading}

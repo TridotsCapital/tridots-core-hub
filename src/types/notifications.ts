@@ -5,7 +5,7 @@ export type NotificationType =
   | 'analysis_status'
   | 'contract_status';
 
-export type NotificationSource = 'chamados' | 'analises' | 'contratos';
+export type NotificationSource = 'chamados' | 'analises' | 'contratos' | 'sinistros';
 
 export interface NotificationMetadata {
   sender_name?: string;
