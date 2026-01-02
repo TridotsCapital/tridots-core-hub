@@ -30,6 +30,7 @@ export interface Ticket {
     responsavel_nome: string;
     responsavel_email: string | null;
     responsavel_telefone: string | null;
+    logo_url: string | null;
   };
   creator?: {
     id: string;

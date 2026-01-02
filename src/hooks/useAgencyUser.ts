@@ -25,6 +25,7 @@ interface AgencyUserData {
     cidade: string | null;
     estado: string | null;
     cep: string | null;
+    logo_url: string | null;
     created_at: string;
     updated_at: string;
   } | null;

@@ -41,7 +41,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { AgencyLogoUpload } from "@/components/agency/AgencyLogoUpload";
 
 // Map paths to notification sources
 const pathToSource: Record<string, 'chamados' | 'analises' | 'contratos' | 'sinistros'> = {
@@ -203,11 +204,20 @@ export function AgencySidebar() {
 
       <SidebarFooter className="border-t border-border/30 p-4 bg-muted/20">
         <div className="flex items-center gap-3">
-          <Avatar className="h-9 w-9 ring-2 ring-primary/20">
-            <AvatarFallback className="bg-primary text-primary-foreground text-sm font-semibold">
-              {profile?.full_name ? getInitials(profile.full_name) : "U"}
-            </AvatarFallback>
-          </Avatar>
+          {agencyUser?.agency ? (
+            <AgencyLogoUpload
+              agencyId={agencyUser.agency.id}
+              currentLogoUrl={agencyUser.agency.logo_url}
+              agencyName={agencyName}
+              size="sm"
+            />
+          ) : (
+            <Avatar className="h-10 w-10 ring-2 ring-primary/20">
+              <AvatarFallback className="bg-primary text-primary-foreground text-sm font-semibold">
+                {profile?.full_name ? getInitials(profile.full_name) : "U"}
+              </AvatarFallback>
+            </Avatar>
+          )}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 mb-0.5">
               <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />

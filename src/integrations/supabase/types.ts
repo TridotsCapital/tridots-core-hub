@@ -25,6 +25,7 @@ export type Database = {
           endereco: string | null
           estado: string | null
           id: string
+          logo_url: string | null
           nome_fantasia: string | null
           percentual_comissao_recorrente: number
           percentual_comissao_setup: number
@@ -45,6 +46,7 @@ export type Database = {
           endereco?: string | null
           estado?: string | null
           id?: string
+          logo_url?: string | null
           nome_fantasia?: string | null
           percentual_comissao_recorrente?: number
           percentual_comissao_setup?: number
@@ -65,6 +67,7 @@ export type Database = {
           endereco?: string | null
           estado?: string | null
           id?: string
+          logo_url?: string | null
           nome_fantasia?: string | null
           percentual_comissao_recorrente?: number
           percentual_comissao_setup?: number
