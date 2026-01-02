@@ -129,12 +129,8 @@ export function AppSidebar() {
     <Sidebar className="border-r border-sidebar-border bg-sidebar">
       <SidebarHeader className="border-b border-sidebar-border p-4">
         <div className="flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3">
+          <Link to="/">
             <img src={logoWhite} alt="Tridots Capital" className="h-10 w-auto object-contain" />
-            <div className="flex items-center gap-1.5">
-              <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-              <span className="text-[10px] font-semibold text-amber-400 uppercase tracking-wider">Equipe Interna</span>
-            </div>
           </Link>
           <NotificationCenter isAgencyPortal={false} />
         </div>
@@ -188,6 +184,10 @@ export function AppSidebar() {
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+              <span className="text-[9px] font-semibold text-amber-400 uppercase tracking-wider">Equipe Interna</span>
+            </div>
             <p className="text-sm font-semibold text-sidebar-foreground truncate">
               {profile?.full_name || 'Usuário'}
             </p>
