@@ -15,9 +15,16 @@ import {
   ArrowUpRight
 } from 'lucide-react';
 import { statusConfig } from '@/types/database';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Dashboard() {
+  const { role } = useAuth();
+
+  // Redirect agency users to their portal
+  if (role === 'agency_user') {
+    return <Navigate to="/agency" replace />;
+  }
   const { data: analyses, isLoading: loadingAnalyses } = useAnalyses();
   const { data: agencies, isLoading: loadingAgencies } = useAgencies();
   const { data: commissions, isLoading: loadingCommissions } = useCommissions();

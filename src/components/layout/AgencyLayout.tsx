@@ -1,5 +1,5 @@
 import { ReactNode, useEffect, useState, createContext, useContext } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AgencySidebar } from "./AgencySidebar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -24,7 +24,6 @@ const AgencyStatusContext = createContext<AgencyStatusContextType>({ isAgencyAct
 export const useAgencyStatus = () => useContext(AgencyStatusContext);
 
 export function AgencyLayout({ children, title, description, actions }: AgencyLayoutProps) {
-  const navigate = useNavigate();
   const { user, loading, role } = useAuth();
   const [agencyId, setAgencyId] = useState<string | null>(null);
   const [agencyName, setAgencyName] = useState<string | null>(null);
@@ -89,14 +88,17 @@ export function AgencyLayout({ children, title, description, actions }: AgencyLa
 
   // Redirect if not authenticated
   if (!user) {
-    navigate("/auth");
-    return null;
+    return <Navigate to="/auth" replace />;
   }
 
-  // Redirect if not an agency user
+  // Redirect internal users to their portal
+  if (role === 'master' || role === 'analyst') {
+    return <Navigate to="/" replace />;
+  }
+
+  // Block access for invalid roles (only agency_user allowed)
   if (role !== 'agency_user') {
-    navigate("/");
-    return null;
+    return <Navigate to="/auth" replace />;
   }
 
   // Show error if no agency linked

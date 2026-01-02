@@ -33,7 +33,14 @@ export function DashboardLayout({ children, title, description }: DashboardLayou
     return <Navigate to="/auth" replace />;
   }
 
-  if (!role) {
+  // Redirect agency users to their portal
+  if (role === 'agency_user') {
+    return <Navigate to="/agency" replace />;
+  }
+
+  // Block access for roles that are not master or analyst
+  const allowedRoles = ['master', 'analyst'];
+  if (!role || !allowedRoles.includes(role)) {
     return (
       <div className="min-h-screen flex items-center justify-center gradient-hero p-4">
         <div className="text-center max-w-md bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20">
