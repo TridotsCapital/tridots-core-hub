@@ -8,7 +8,7 @@ import { LoginForm } from '@/components/auth/LoginForm';
 import { TeamSignupForm } from '@/components/auth/TeamSignupForm';
 import { AgencySignupForm, AgencySignupData } from '@/components/auth/AgencySignupForm';
 import { supabase } from '@/integrations/supabase/client';
-import { Building2 } from 'lucide-react';
+import logoBlack from "@/assets/logo-tridots-black.webp";
 
 export default function Auth() {
   const [loading, setLoading] = useState(false);
@@ -135,18 +135,15 @@ export default function Auth() {
       
       <Card className={`w-full relative animate-scale-in glass-strong shadow-2xl ${isTeamSignup ? 'max-w-md' : 'max-w-lg'}`}>
         <CardHeader className="text-center space-y-4 pb-2">
-          <div className="mx-auto w-20 h-20 rounded-2xl bg-white flex items-center justify-center shadow-lg shadow-primary/30">
-            <Building2 className="w-10 h-10 text-primary" />
+          <div className="mx-auto flex items-center justify-center">
+            <img src={logoBlack} alt="Tridots Capital" className="h-16 w-auto object-contain" />
           </div>
-          <div>
-            <CardTitle className="text-2xl font-bold tracking-tight">TRIDOTS CAPITAL</CardTitle>
-            <CardDescription className="text-muted-foreground mt-2">
-              {isTeamSignup 
-                ? 'Cadastro de Membro da Equipe' 
-                : 'Sistema de Gestão de Análises de Crédito'
-              }
-            </CardDescription>
-          </div>
+          <CardDescription className="text-muted-foreground">
+            {isTeamSignup 
+              ? 'Cadastro de Membro da Equipe' 
+              : 'Sistema de Gestão de Análises de Crédito'
+            }
+          </CardDescription>
         </CardHeader>
         
         <CardContent className="pt-4">
