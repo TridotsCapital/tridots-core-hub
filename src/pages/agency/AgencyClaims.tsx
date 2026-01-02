@@ -2,11 +2,15 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AgencyLayout } from "@/components/layout/AgencyLayout";
 import { AgencyClaimList } from "@/components/agency/claims/AgencyClaimList";
+import { AgencyClaimsKanban } from "@/components/agency/claims/AgencyClaimsKanban";
 import { useAuth } from "@/contexts/AuthContext";
 import { useClaims } from "@/hooks/useClaims";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Plus, Loader2 } from "lucide-react";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Plus, Loader2, List, LayoutGrid } from "lucide-react";
+
+type ViewMode = 'list' | 'kanban';
 
 export default function AgencyClaims() {
   const navigate = useNavigate();
@@ -15,6 +19,12 @@ export default function AgencyClaims() {
   const [agencyId, setAgencyId] = useState<string | null>(null);
   const [loadingAgency, setLoadingAgency] = useState(true);
   const [autoOpenClaimId, setAutoOpenClaimId] = useState<string | null>(null);
+  
+  // View mode with localStorage persistence
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    const saved = localStorage.getItem('tridots_claims_view_mode');
+    return (saved as ViewMode) || 'kanban';
+  });
 
   // Auto-open claim from notification
   useEffect(() => {
@@ -53,6 +63,13 @@ export default function AgencyClaims() {
     agencyId ? { agencyId } : undefined
   );
 
+  const handleViewModeChange = (value: string) => {
+    if (value) {
+      setViewMode(value as ViewMode);
+      localStorage.setItem('tridots_claims_view_mode', value);
+    }
+  };
+
   if (loadingAgency) {
     return (
       <AgencyLayout 
@@ -71,19 +88,41 @@ export default function AgencyClaims() {
       title="Sinistros" 
       description="Gerencie suas solicitações de garantia"
       actions={
-        <Button onClick={() => navigate('/agency/claims/new')}>
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Sinistro
-        </Button>
+        <div className="flex items-center gap-3">
+          <ToggleGroup 
+            type="single" 
+            value={viewMode} 
+            onValueChange={handleViewModeChange}
+            className="bg-muted rounded-lg p-1"
+          >
+            <ToggleGroupItem value="kanban" aria-label="Kanban view" className="h-8 px-3">
+              <LayoutGrid className="h-4 w-4" />
+            </ToggleGroupItem>
+            <ToggleGroupItem value="list" aria-label="List view" className="h-8 px-3">
+              <List className="h-4 w-4" />
+            </ToggleGroupItem>
+          </ToggleGroup>
+          <Button onClick={() => navigate('/agency/claims/new')}>
+            <Plus className="h-4 w-4 mr-2" />
+            Novo Sinistro
+          </Button>
+        </div>
       }
     >
-      <AgencyClaimList 
-        claims={claims || []} 
-        isLoading={isLoading}
-        onRefresh={refetch}
-        autoOpenClaimId={autoOpenClaimId}
-        onAutoOpenHandled={() => setAutoOpenClaimId(null)}
-      />
+      {viewMode === 'kanban' ? (
+        <AgencyClaimsKanban 
+          claims={claims || []} 
+          onRefresh={refetch}
+        />
+      ) : (
+        <AgencyClaimList 
+          claims={claims || []} 
+          isLoading={isLoading}
+          onRefresh={refetch}
+          autoOpenClaimId={autoOpenClaimId}
+          onAutoOpenHandled={() => setAutoOpenClaimId(null)}
+        />
+      )}
     </AgencyLayout>
   );
 }

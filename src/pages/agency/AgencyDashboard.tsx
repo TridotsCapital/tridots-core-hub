@@ -9,7 +9,9 @@ import {
   AgencyPeriodFilter,
   DraftBanner
 } from "@/components/agency";
+import { ClaimDraftBanner } from "@/components/agency/claims/ClaimDraftBanner";
 import { useAnalysisDraft } from "@/hooks/useAnalysisDraft";
+import { useClaimDraft } from "@/hooks/useClaimDraft";
 import {
   useAgencyDashboard, 
   useAgencyRanking, 
@@ -25,7 +27,8 @@ export default function AgencyDashboard() {
   const [period, setPeriod] = useState<PeriodFilterType>('year');
   
   const { data: agencyId } = useCurrentAgencyId();
-  const { hasDraft, getLastSavedTime, clearDraft } = useAnalysisDraft();
+  const { hasDraft: hasAnalysisDraft, getLastSavedTime: getAnalysisDraftTime, clearDraft: clearAnalysisDraft } = useAnalysisDraft();
+  const { hasDraft: hasClaimDraft, getLastSavedTime: getClaimDraftTime, clearDraft: clearClaimDraft } = useClaimDraft();
   const { data: dashboardData, isLoading: loadingDashboard } = useAgencyDashboard(agencyId, period);
   const { data: ranking, isLoading: loadingRanking } = useAgencyRanking(agencyId);
   const { data: projection, isLoading: loadingProjection } = useAgencyProjection(agencyId);
@@ -41,11 +44,19 @@ export default function AgencyDashboard() {
       description="Acompanhe sua performance e ganhos com a Tridots Capital"
     >
       <div className="space-y-6">
-        {/* Draft Banner */}
-        {hasDraft && (
+        {/* Analysis Draft Banner */}
+        {hasAnalysisDraft && (
           <DraftBanner 
-            lastSavedTime={getLastSavedTime()} 
-            onDiscard={clearDraft} 
+            lastSavedTime={getAnalysisDraftTime()} 
+            onDiscard={clearAnalysisDraft} 
+          />
+        )}
+
+        {/* Claim Draft Banner */}
+        {hasClaimDraft && (
+          <ClaimDraftBanner 
+            lastSavedTime={getClaimDraftTime()} 
+            onDiscard={clearClaimDraft} 
           />
         )}
 
