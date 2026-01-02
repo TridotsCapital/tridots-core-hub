@@ -41,12 +41,13 @@ export function useUploadAgencyLogo() {
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
+      // Get public URL with cache busting
       const { data: urlData } = supabase.storage
         .from("agency-logos")
         .getPublicUrl(filePath);
 
-      const logoUrl = urlData.publicUrl;
+      // Add timestamp to bust cache
+      const logoUrl = `${urlData.publicUrl}?t=${Date.now()}`;
 
       // Update agency record
       const { error: updateError } = await supabase
