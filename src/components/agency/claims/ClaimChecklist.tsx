@@ -102,7 +102,9 @@ export function ClaimChecklist() {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Info className="h-3 w-3 text-muted-foreground/50 cursor-help" />
+                      <button type="button" className="inline-flex">
+                        <Info className="h-3 w-3 text-muted-foreground/50 cursor-help" />
+                      </button>
                     </TooltipTrigger>
                     <TooltipContent side="right" className="max-w-[200px]">
                       <p className="text-xs">{item.description}</p>
