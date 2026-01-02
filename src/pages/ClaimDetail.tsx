@@ -26,7 +26,8 @@ import {
   claimPublicStatusConfig,
   claimInternalStatusConfig 
 } from "@/types/claims";
-import { ClaimItemsSection, ClaimFilesSection, ClaimHistorySection, ClaimTicketSheet } from "@/components/agency/claims";
+import { ClaimItemsSection, ClaimFilesSection, ClaimHistorySection } from "@/components/agency/claims";
+import { InternalClaimTicketSheet } from "@/components/claims";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
@@ -315,7 +316,7 @@ export default function ClaimDetail() {
       </div>
 
       {/* Ticket Sheet */}
-      <ClaimTicketSheet
+      <InternalClaimTicketSheet
         open={ticketSheetOpen}
         onOpenChange={setTicketSheetOpen}
         claim={claim}
