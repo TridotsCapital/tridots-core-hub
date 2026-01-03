@@ -56,14 +56,12 @@ export function NpsModal({
   };
 
   const handleClose = () => {
-    if (allCompleted) {
-      onOpenChange(false);
-      // Reset state
-      setCurrentIndex(0);
-      setRating(null);
-      setComment("");
-      setSubmittedCount(0);
-    }
+    onOpenChange(false);
+    // Reset state
+    setCurrentIndex(0);
+    setRating(null);
+    setComment("");
+    setSubmittedCount(0);
   };
 
   // Show success state when all completed
@@ -91,12 +89,8 @@ export function NpsModal({
   if (!currentSurvey) return null;
 
   return (
-    <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent
-        className="sm:max-w-[560px]"
-        onPointerDownOutside={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e) => e.preventDefault()}
-      >
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-[560px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Star className="h-5 w-5 text-primary" />

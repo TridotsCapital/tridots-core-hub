@@ -2,11 +2,13 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useChat, useSendMessage } from '@/hooks/useChat';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNotificationSound } from '@/hooks/useNotificationSound';
+import { useNps } from '@/contexts/NpsContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, Paperclip, Loader2, File } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Send, Paperclip, Loader2, File, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -25,6 +27,7 @@ const formatFileSize = (bytes: number | null) => {
 export function ChatSection({ analysisId }: ChatSectionProps) {
   const { user } = useAuth();
   const { playSound } = useNotificationSound();
+  const { hasPendingNps, showNpsModal } = useNps();
   
   // Play sound when new message arrives from someone else
   const handleNewMessage = useCallback((senderId: string) => {
@@ -51,6 +54,11 @@ export function ChatSection({ analysisId }: ChatSectionProps) {
   }, [messages]);
 
   const handleSend = () => {
+    if (hasPendingNps) {
+      showNpsModal();
+      return;
+    }
+    
     if (!message.trim() && !attachment) return;
 
     sendMessage.mutate({
@@ -155,56 +163,73 @@ export function ChatSection({ analysisId }: ChatSectionProps) {
 
       {/* Input area */}
       <div className="border-t p-4">
-        {attachment && (
-          <div className="flex items-center gap-2 mb-2 p-2 bg-muted rounded-lg">
-            <File className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm truncate flex-1">{attachment.name}</span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setAttachment(null)}
-              className="h-6 px-2"
-            >
-              Remover
-            </Button>
-          </div>
-        )}
-
-        <div className="flex gap-2">
-          <input
-            ref={fileInputRef}
-            type="file"
-            onChange={handleFileSelect}
-            className="hidden"
-          />
-          
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <Paperclip className="h-4 w-4" />
-          </Button>
-
-          <Input
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Digite sua mensagem..."
-            className="flex-1"
-          />
-
-          <Button
-            onClick={handleSend}
-            disabled={sendMessage.isPending || (!message.trim() && !attachment)}
-          >
-            {sendMessage.isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Send className="h-4 w-4" />
+        {hasPendingNps ? (
+          <Alert className="bg-amber-50 border-amber-200">
+            <AlertTriangle className="h-4 w-4 text-amber-600" />
+            <AlertDescription className="text-amber-800">
+              Você possui chamados pendentes de avaliação.{" "}
+              <button 
+                onClick={showNpsModal} 
+                className="font-medium underline hover:no-underline"
+              >
+                Avaliar agora
+              </button>
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <>
+            {attachment && (
+              <div className="flex items-center gap-2 mb-2 p-2 bg-muted rounded-lg">
+                <File className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm truncate flex-1">{attachment.name}</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setAttachment(null)}
+                  className="h-6 px-2"
+                >
+                  Remover
+                </Button>
+              </div>
             )}
-          </Button>
-        </div>
+
+            <div className="flex gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+              
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Paperclip className="h-4 w-4" />
+              </Button>
+
+              <Input
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Digite sua mensagem..."
+                className="flex-1"
+              />
+
+              <Button
+                onClick={handleSend}
+                disabled={sendMessage.isPending || (!message.trim() && !attachment)}
+              >
+                {sendMessage.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

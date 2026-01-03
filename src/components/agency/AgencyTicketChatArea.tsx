@@ -17,6 +17,7 @@ import {
 } from "@/hooks/useTickets";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotificationSound } from "@/hooks/useNotificationSound";
+import { useNps } from "@/contexts/NpsContext";
 import { TicketStatus, TicketCategory } from "@/types/tickets";
 import { CloseTicketDialog } from "./CloseTicketDialog";
 import { cn } from "@/lib/utils";
@@ -75,6 +76,7 @@ export function AgencyTicketChatArea({ ticketId }: AgencyTicketChatAreaProps) {
   const [isClosing, setIsClosing] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { playSound } = useNotificationSound();
+  const { openModalAfterClose } = useNps();
 
   const handleNewMessage = useCallback((senderId: string) => {
     if (senderId !== user?.id) {
@@ -112,6 +114,8 @@ export function AgencyTicketChatArea({ ticketId }: AgencyTicketChatAreaProps) {
         },
       });
       setShowCloseDialog(false);
+      // Trigger NPS modal after ticket is closed
+      await openModalAfterClose();
     } finally {
       setIsClosing(false);
     }

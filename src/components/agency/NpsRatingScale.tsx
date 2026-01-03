@@ -48,9 +48,9 @@ export function NpsRatingScale({ value, onChange, disabled }: NpsRatingScaleProp
         ))}
       </div>
       <div className="flex justify-between text-xs">
-        <span className="text-red-500 font-medium">Detratores (0-6)</span>
-        <span className="text-yellow-600 font-medium">Neutros (7-8)</span>
-        <span className="text-emerald-500 font-medium">Promotores (9-10)</span>
+        <span className="text-red-500 font-medium">Péssimo / Ruim (0-6)</span>
+        <span className="text-yellow-600 font-medium">Nada demais / Aceitável (7-8)</span>
+        <span className="text-emerald-500 font-medium">Muito eficiente / Excelente (9-10)</span>
       </div>
     </div>
   );

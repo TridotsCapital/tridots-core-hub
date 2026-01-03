@@ -12,7 +12,8 @@ interface NpsContextType {
   isLoading: boolean;
   hasPendingNps: boolean;
   showNpsModal: () => void;
-  refreshPendingSurveys: () => void;
+  refreshPendingSurveys: () => Promise<void>;
+  openModalAfterClose: () => Promise<void>;
 }
 
 const NpsContext = createContext<NpsContextType | undefined>(undefined);
@@ -110,8 +111,17 @@ export function NpsProvider({ children, agencyId }: NpsProviderProps) {
     setModalOpen(true);
   }, []);
 
-  const refreshPendingSurveys = useCallback(() => {
-    refetch();
+  const refreshPendingSurveys = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
+
+  // Trigger modal after ticket close - waits for survey to be created
+  const openModalAfterClose = useCallback(async () => {
+    await refetch();
+    // Small delay to ensure trigger has created the survey
+    setTimeout(() => {
+      setModalOpen(true);
+    }, 300);
   }, [refetch]);
 
   const handleSubmitSurvey = async (surveyId: string, rating: number, comment?: string) => {
@@ -146,6 +156,7 @@ export function NpsProvider({ children, agencyId }: NpsProviderProps) {
         hasPendingNps,
         showNpsModal,
         refreshPendingSurveys,
+        openModalAfterClose,
       }}
     >
       {children}
