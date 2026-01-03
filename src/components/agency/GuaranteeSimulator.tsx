@@ -32,7 +32,9 @@ export function GuaranteeSimulator({ onStartAnalysis, initialValues }: Guarantee
     initialValues?.iptu ? formatCurrencyInput((initialValues.iptu * 100).toString()) : ''
   );
   const [taxaGarantia, setTaxaGarantia] = useState(initialValues?.taxaGarantia || 8);
-  const [setupFee, setSetupFee] = useState(initialValues?.setupFee || 100);
+  const [setupFee, setSetupFee] = useState<number | null>(
+    initialValues?.setupFee !== undefined ? initialValues.setupFee : null
+  );
 
   const aluguel = parseCurrencyInput(aluguelInput);
   const condominio = parseCurrencyInput(condominioInput);
@@ -52,6 +54,7 @@ export function GuaranteeSimulator({ onStartAnalysis, initialValues }: Guarantee
   };
 
   const handleStartAnalysis = () => {
+    if (setupFee === null) return;
     onStartAnalysis({
       aluguel,
       condominio,
@@ -61,7 +64,7 @@ export function GuaranteeSimulator({ onStartAnalysis, initialValues }: Guarantee
     });
   };
 
-  const isValid = aluguel > 0;
+  const isValid = aluguel > 0 && setupFee !== null;
 
   return (
     <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-background">
@@ -152,8 +155,11 @@ export function GuaranteeSimulator({ onStartAnalysis, initialValues }: Guarantee
 
         {/* Setup Fee Select */}
         <div className="space-y-2">
-          <Label htmlFor="setupFee">Taxa de Setup</Label>
-          <Select value={setupFee.toString()} onValueChange={(v) => setSetupFee(Number(v))}>
+          <Label htmlFor="setupFee">Taxa de Setup *</Label>
+          <Select 
+            value={setupFee !== null ? setupFee.toString() : undefined} 
+            onValueChange={(v) => setSetupFee(Number(v))}
+          >
             <SelectTrigger id="setupFee">
               <SelectValue placeholder="Selecione o valor" />
             </SelectTrigger>
@@ -189,10 +195,12 @@ export function GuaranteeSimulator({ onStartAnalysis, initialValues }: Guarantee
                 <span>Custo Mensal Total</span>
                 <span className="text-primary">{formatCurrency(custoMensalTotal)}</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Setup Fee (único)</span>
-                <span>{formatCurrency(setupFee)}</span>
-              </div>
+              {setupFee !== null && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Setup Fee (único)</span>
+                  <span>{formatCurrency(setupFee)}</span>
+                </div>
+              )}
             </div>
           </div>
         )}
