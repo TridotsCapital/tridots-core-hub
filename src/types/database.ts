@@ -225,6 +225,9 @@ export const contractStatusConfig: Record<ContractStatus, { label: string; class
   encerrado: { label: 'Encerrado', class: 'status-reprovada' },
 };
 
+// Document validation status type
+export type DocumentValidationStatus = 'pendente' | 'enviado' | 'aprovado' | 'rejeitado';
+
 // Contract interface
 export interface Contract {
   id: string;
@@ -234,12 +237,18 @@ export interface Contract {
   doc_contrato_locacao_path: string | null;
   doc_contrato_locacao_name: string | null;
   doc_contrato_locacao_uploaded_at: string | null;
+  doc_contrato_locacao_status: DocumentValidationStatus;
+  doc_contrato_locacao_feedback: string | null;
   doc_vistoria_inicial_path: string | null;
   doc_vistoria_inicial_name: string | null;
   doc_vistoria_inicial_uploaded_at: string | null;
+  doc_vistoria_inicial_status: DocumentValidationStatus;
+  doc_vistoria_inicial_feedback: string | null;
   doc_seguro_incendio_path: string | null;
   doc_seguro_incendio_name: string | null;
   doc_seguro_incendio_uploaded_at: string | null;
+  doc_seguro_incendio_status: DocumentValidationStatus;
+  doc_seguro_incendio_feedback: string | null;
   activated_at: string | null;
   activated_by: string | null;
   canceled_at: string | null;
@@ -252,6 +261,28 @@ export interface Contract {
   analysis?: Analysis;
   agency?: Agency;
 }
+
+// Rejection reason categories
+export type RejectionCategory = 'renda_insuficiente' | 'restricoes_cadastrais' | 'documentacao' | 'outros';
+
+export const rejectionCategories: Record<RejectionCategory, { label: string; description: string }> = {
+  renda_insuficiente: { 
+    label: 'Renda insuficiente', 
+    description: 'Renda não atende aos critérios mínimos' 
+  },
+  restricoes_cadastrais: { 
+    label: 'Restrições cadastrais', 
+    description: 'SPC, Serasa, processos judiciais ou pendências' 
+  },
+  documentacao: { 
+    label: 'Documentação', 
+    description: 'Documentos incompletos, inválidos ou inconsistentes' 
+  },
+  outros: { 
+    label: 'Outros', 
+    description: 'Motivo não listado acima' 
+  },
+};
 
 // Analysis timeline event type
 export interface AnalysisTimelineEvent {

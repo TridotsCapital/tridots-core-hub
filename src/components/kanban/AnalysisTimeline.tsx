@@ -5,26 +5,171 @@ import {
   XCircle, 
   Clock, 
   FileSearch,
-  Ban
+  Ban,
+  CirclePlus,
+  ArrowRight,
+  Percent,
+  Link,
+  Timer,
+  CheckCircle,
+  Camera,
+  CreditCard,
+  AlertCircle,
+  FileText,
+  Upload,
+  PlayCircle,
+  UserCheck,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { useAnalysisTimeline, getEventConfig } from '@/hooks/useAnalysisTimeline';
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface AnalysisTimelineProps {
   analysis: Analysis;
 }
 
-interface TimelineEvent {
-  date: string;
-  title: string;
-  description?: string;
-  icon: React.ElementType;
-  color: string;
-}
+// Icon mapping
+const iconMap: Record<string, React.ElementType> = {
+  CirclePlus,
+  ArrowRight,
+  Percent,
+  Link,
+  Timer,
+  CheckCircle,
+  Camera,
+  CreditCard,
+  AlertCircle,
+  FileText,
+  Upload,
+  XCircle,
+  PlayCircle,
+  UserCheck,
+  CheckCircle2,
+  Ban,
+  Circle,
+  Clock,
+  FileSearch,
+};
 
 export function AnalysisTimeline({ analysis }: AnalysisTimelineProps) {
-  const events: TimelineEvent[] = [
+  const { data: timelineEvents, isLoading } = useAnalysisTimeline(analysis.id);
+  const [expandedEvents, setExpandedEvents] = useState<Set<string>>(new Set());
+
+  const toggleExpand = (eventId: string) => {
+    setExpandedEvents(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(eventId)) {
+        newSet.delete(eventId);
+      } else {
+        newSet.add(eventId);
+      }
+      return newSet;
+    });
+  };
+
+  // If we have real timeline data, use it
+  if (!isLoading && timelineEvents && timelineEvents.length > 0) {
+    return (
+      <div className="relative">
+        {timelineEvents.map((event, index) => {
+          const config = getEventConfig(event.event_type);
+          const IconComponent = iconMap[config.iconName] || Circle;
+          const isLast = index === timelineEvents.length - 1;
+          const isExpanded = expandedEvents.has(event.id);
+          const hasMetadata = event.metadata && Object.keys(event.metadata).length > 0;
+
+          return (
+            <div key={event.id} className="flex gap-4">
+              {/* Line and icon */}
+              <div className="flex flex-col items-center">
+                <div className={cn(
+                  'flex h-8 w-8 items-center justify-center rounded-full',
+                  config.bgColor
+                )}>
+                  <IconComponent className={cn('h-4 w-4', config.color)} />
+                </div>
+                {!isLast && (
+                  <div className="w-px h-full bg-border min-h-[40px]" />
+                )}
+              </div>
+
+              {/* Content */}
+              <div className="pb-6 flex-1">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="font-medium text-sm">{event.description}</p>
+                    {event.creator && (
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        por {event.creator.full_name}
+                      </p>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {format(new Date(event.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                    </p>
+                  </div>
+                  {hasMetadata && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2"
+                      onClick={() => toggleExpand(event.id)}
+                    >
+                      {isExpanded ? (
+                        <ChevronUp className="h-3 w-3" />
+                      ) : (
+                        <ChevronDown className="h-3 w-3" />
+                      )}
+                    </Button>
+                  )}
+                </div>
+                
+                {/* Expanded metadata */}
+                {isExpanded && hasMetadata && (
+                  <div className="mt-2 rounded-md bg-muted/50 p-2 text-xs">
+                    <pre className="whitespace-pre-wrap break-all">
+                      {JSON.stringify(event.metadata, null, 2)}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="flex gap-4">
+            <Skeleton className="h-8 w-8 rounded-full" />
+            <div className="space-y-2 flex-1">
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-3 w-1/4" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // Fallback: Generate timeline from analysis data (legacy behavior)
+  const events: Array<{
+    date: string;
+    title: string;
+    description?: string;
+    icon: React.ElementType;
+    color: string;
+  }> = [
     {
       date: analysis.created_at,
       title: 'Análise Criada',
@@ -59,7 +204,7 @@ export function AnalysisTimeline({ analysis }: AnalysisTimelineProps) {
     events.push({
       date: analysis.rejected_at,
       title: 'Reprovada',
-      description: 'Análise reprovada',
+      description: analysis.rejection_reason || 'Análise reprovada',
       icon: XCircle,
       color: 'text-destructive bg-destructive/10',
     });

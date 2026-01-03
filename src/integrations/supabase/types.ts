@@ -815,14 +815,20 @@ export type Database = {
           canceled_by: string | null
           cancellation_reason: string | null
           created_at: string
+          doc_contrato_locacao_feedback: string | null
           doc_contrato_locacao_name: string | null
           doc_contrato_locacao_path: string | null
+          doc_contrato_locacao_status: string | null
           doc_contrato_locacao_uploaded_at: string | null
+          doc_seguro_incendio_feedback: string | null
           doc_seguro_incendio_name: string | null
           doc_seguro_incendio_path: string | null
+          doc_seguro_incendio_status: string | null
           doc_seguro_incendio_uploaded_at: string | null
+          doc_vistoria_inicial_feedback: string | null
           doc_vistoria_inicial_name: string | null
           doc_vistoria_inicial_path: string | null
+          doc_vistoria_inicial_status: string | null
           doc_vistoria_inicial_uploaded_at: string | null
           id: string
           status: Database["public"]["Enums"]["contract_status"]
@@ -837,14 +843,20 @@ export type Database = {
           canceled_by?: string | null
           cancellation_reason?: string | null
           created_at?: string
+          doc_contrato_locacao_feedback?: string | null
           doc_contrato_locacao_name?: string | null
           doc_contrato_locacao_path?: string | null
+          doc_contrato_locacao_status?: string | null
           doc_contrato_locacao_uploaded_at?: string | null
+          doc_seguro_incendio_feedback?: string | null
           doc_seguro_incendio_name?: string | null
           doc_seguro_incendio_path?: string | null
+          doc_seguro_incendio_status?: string | null
           doc_seguro_incendio_uploaded_at?: string | null
+          doc_vistoria_inicial_feedback?: string | null
           doc_vistoria_inicial_name?: string | null
           doc_vistoria_inicial_path?: string | null
+          doc_vistoria_inicial_status?: string | null
           doc_vistoria_inicial_uploaded_at?: string | null
           id?: string
           status?: Database["public"]["Enums"]["contract_status"]
@@ -859,14 +871,20 @@ export type Database = {
           canceled_by?: string | null
           cancellation_reason?: string | null
           created_at?: string
+          doc_contrato_locacao_feedback?: string | null
           doc_contrato_locacao_name?: string | null
           doc_contrato_locacao_path?: string | null
+          doc_contrato_locacao_status?: string | null
           doc_contrato_locacao_uploaded_at?: string | null
+          doc_seguro_incendio_feedback?: string | null
           doc_seguro_incendio_name?: string | null
           doc_seguro_incendio_path?: string | null
+          doc_seguro_incendio_status?: string | null
           doc_seguro_incendio_uploaded_at?: string | null
+          doc_vistoria_inicial_feedback?: string | null
           doc_vistoria_inicial_name?: string | null
           doc_vistoria_inicial_path?: string | null
+          doc_vistoria_inicial_status?: string | null
           doc_vistoria_inicial_uploaded_at?: string | null
           id?: string
           status?: Database["public"]["Enums"]["contract_status"]
