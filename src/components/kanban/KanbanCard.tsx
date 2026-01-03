@@ -1,3 +1,4 @@
+import { forwardRef } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Analysis } from '@/types/database';
@@ -41,46 +42,57 @@ const getUrgencyLevel = (createdAt: string): 'low' | 'medium' | 'high' => {
   return 'high';
 };
 
-export function KanbanCard({ analysis, onClick, isDragging, hasUnread = false }: KanbanCardProps) {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
-    id: analysis.id,
-  });
+export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
+  function KanbanCard({ analysis, onClick, isDragging, hasUnread = false }, forwardedRef) {
+    const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
+      id: analysis.id,
+    });
 
-  const assignAnalyst = useAssignAnalyst();
-  const { data: teamMembers } = useTeamMembers();
+    const assignAnalyst = useAssignAnalyst();
+    const { data: teamMembers } = useTeamMembers();
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+    };
 
-  const urgencyLevel = getUrgencyLevel(analysis.created_at);
-  const urgencyClass = getUrgencyClass(analysis.created_at);
+    const urgencyLevel = getUrgencyLevel(analysis.created_at);
+    const urgencyClass = getUrgencyClass(analysis.created_at);
 
-  const handleAssignAnalyst = (analystId: string) => {
-    assignAnalyst.mutate({ analysisId: analysis.id, analystId });
-  };
+    const handleAssignAnalyst = (analystId: string) => {
+      assignAnalyst.mutate({ analysisId: analysis.id, analystId });
+    };
 
-  const handleSendNotification = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    // TODO: Implement notification sending
-    console.log('Send notification for analysis:', analysis.id);
-  };
+    const handleSendNotification = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      // TODO: Implement notification sending
+      console.log('Send notification for analysis:', analysis.id);
+    };
 
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className={cn(
-        'kanban-card relative',
-        urgencyClass,
-        isDragging && 'opacity-50',
-        hasUnread && 'ring-2 ring-red-500 ring-offset-1'
-      )}
-      onClick={onClick}
-    >
+    // Combine refs
+    const handleRef = (node: HTMLDivElement | null) => {
+      setNodeRef(node);
+      if (typeof forwardedRef === 'function') {
+        forwardedRef(node);
+      } else if (forwardedRef) {
+        forwardedRef.current = node;
+      }
+    };
+
+    return (
+      <div
+        ref={handleRef}
+        style={style}
+        {...attributes}
+        {...listeners}
+        className={cn(
+          'kanban-card relative',
+          urgencyClass,
+          isDragging && 'opacity-50',
+          hasUnread && 'ring-2 ring-red-500 ring-offset-1'
+        )}
+        onClick={onClick}
+      >
       {/* Unread indicator */}
       {hasUnread && (
         <span className="absolute -top-1 -right-1 flex h-3 w-3 z-10">
@@ -194,5 +206,6 @@ export function KanbanCard({ analysis, onClick, isDragging, hasUnread = false }:
         )}
       </div>
     </div>
-  );
-}
+    );
+  }
+);

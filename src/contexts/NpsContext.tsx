@@ -18,10 +18,21 @@ interface NpsContextType {
 
 const NpsContext = createContext<NpsContextType | undefined>(undefined);
 
+// Default values for when NPS is not available (e.g., internal portal)
+const defaultNpsContext: NpsContextType = {
+  pendingSurveys: [],
+  isLoading: false,
+  hasPendingNps: false,
+  showNpsModal: () => {},
+  refreshPendingSurveys: async () => {},
+  openModalAfterClose: async () => {},
+};
+
 export function useNps() {
   const context = useContext(NpsContext);
+  // Return default values if not within NpsProvider (e.g., internal portal)
   if (!context) {
-    throw new Error("useNps must be used within an NpsProvider");
+    return defaultNpsContext;
   }
   return context;
 }

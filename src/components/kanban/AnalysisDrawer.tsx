@@ -16,6 +16,8 @@ import { DocumentSection } from './DocumentSection';
 import { ChatSection } from './ChatSection';
 import { StartAnalysisModal } from './StartAnalysisModal';
 import { RejectionModal } from './RejectionModal';
+import { ApprovalModal } from './ApprovalModal';
+import { useMoveAnalysis } from '@/hooks/useAnalysesKanban';
 import { 
   Building2, 
   User, 
@@ -65,6 +67,8 @@ const InfoRow = ({ label, value, icon: Icon }: { label: string; value: string | 
 export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerProps) {
   const [startModalOpen, setStartModalOpen] = useState(false);
   const [rejectionModalOpen, setRejectionModalOpen] = useState(false);
+  const [approvalModalOpen, setApprovalModalOpen] = useState(false);
+  const moveAnalysis = useMoveAnalysis();
 
   if (!analysis) return null;
 
@@ -75,7 +79,7 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
   return (
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent className="w-full sm:max-w-2xl p-0">
+        <SheetContent className="w-full sm:max-w-2xl p-0 flex flex-col h-full">
           <SheetHeader className="p-6 pb-4 border-b">
             <div className="flex items-start justify-between">
               <div>
@@ -108,6 +112,7 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
                   <Button 
                     variant="default"
                     className="flex-1 bg-success hover:bg-success/90"
+                    onClick={() => setApprovalModalOpen(true)}
                   >
                     <CheckCircle className="h-4 w-4 mr-2" />
                     Aprovar
@@ -127,8 +132,8 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
             )}
           </SheetHeader>
 
-          <Tabs defaultValue="resumo" className="flex flex-col h-[calc(100vh-120px)]">
-            <TabsList className="w-full justify-start rounded-none border-b bg-transparent px-6 h-12">
+          <Tabs defaultValue="resumo" className="flex flex-col flex-1 overflow-hidden">
+            <TabsList className="w-full justify-start rounded-none border-b bg-transparent px-6 h-12 shrink-0">
               <TabsTrigger value="resumo" className="gap-1.5">
                 <Clock className="h-4 w-4" />
                 Resumo
@@ -381,6 +386,20 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
         analysisId={analysis.id}
         tenantName={analysis.inquilino_nome}
         onSuccess={() => onOpenChange(false)}
+      />
+      <ApprovalModal
+        analysis={analysis}
+        open={approvalModalOpen}
+        onOpenChange={setApprovalModalOpen}
+        onConfirm={(additionalData) => {
+          moveAnalysis.mutate({
+            id: analysis.id,
+            newStatus: 'aguardando_pagamento',
+            additionalData,
+          });
+          setApprovalModalOpen(false);
+          onOpenChange(false);
+        }}
       />
     </>
   );
