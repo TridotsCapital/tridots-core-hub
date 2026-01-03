@@ -158,6 +158,7 @@ export const PROPERTY_TYPES = [
 
 // Setup fee options
 export const SETUP_FEE_OPTIONS = [
+  { value: 0, label: 'R$ 0,00 (Isento)' },
   { value: 50, label: 'R$ 50,00' },
   { value: 100, label: 'R$ 100,00' },
   { value: 120, label: 'R$ 120,00' },
