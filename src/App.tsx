@@ -22,6 +22,10 @@ import Contracts from "./pages/Contracts";
 import ContractDetail from "./pages/ContractDetail";
 import NotFound from "./pages/NotFound";
 
+// Public Pages (no auth required)
+import TenantAcceptance from "./pages/TenantAcceptance";
+import AcceptanceSuccess from "./pages/AcceptanceSuccess";
+
 // Agency Portal Pages
 import { 
   AgencyDashboard, 
@@ -98,6 +102,18 @@ function AgencyRoutes({ atRoot = false }: { atRoot?: boolean }) {
 }
 
 /**
+ * Public Routes (available on all domains without auth)
+ */
+function PublicRoutes() {
+  return (
+    <>
+      <Route path="/aceite/:token" element={<TenantAcceptance />} />
+      <Route path="/aceite/:token/sucesso" element={<AcceptanceSuccess />} />
+    </>
+  );
+}
+
+/**
  * Router component that renders routes based on the current subdomain
  */
 function AppRoutes() {
@@ -105,6 +121,9 @@ function AppRoutes() {
 
   return (
     <Routes>
+      {/* Public routes - available everywhere */}
+      {PublicRoutes()}
+
       {/* Production: Internal Portal (app.tridotscapital.com) */}
       {isInternalPortal && (
         <>

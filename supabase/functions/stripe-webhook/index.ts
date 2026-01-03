@@ -7,7 +7,6 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -24,7 +23,6 @@ serve(async (req) => {
       );
     }
 
-    // Get the signature from headers
     const signature = req.headers.get("stripe-signature");
     if (!signature) {
       console.error("Missing stripe-signature header");
@@ -34,93 +32,106 @@ serve(async (req) => {
       );
     }
 
-    // Get the raw body
     const body = await req.text();
-    
-    // TODO: Verify the webhook signature with Stripe
-    // For now, we'll parse the event directly
-    // In production, use stripe.webhooks.constructEvent(body, signature, stripeWebhookSecret)
-    
     const event = JSON.parse(body);
     console.log(`Received Stripe event: ${event.type}`);
 
-    // Initialize Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Handle different event types
     switch (event.type) {
-      case "payment_intent.succeeded": {
-        const paymentIntent = event.data.object;
-        console.log(`PaymentIntent succeeded: ${paymentIntent.id}`);
+      case "checkout.session.completed": {
+        const session = event.data.object;
+        console.log(`Checkout session completed: ${session.id}`);
         
-        // Extract analysis_id from metadata if present
-        const analysisId = paymentIntent.metadata?.analysis_id;
+        const analysisId = session.metadata?.analysis_id;
         
         if (analysisId) {
-          // Update analysis status to active
-          const { error: analysisError } = await supabase
+          // Mark token as used
+          await supabase
             .from("analyses")
-            .update({ status: "ativo" })
+            .update({ 
+              acceptance_token_used_at: new Date().toISOString(),
+              stripe_subscription_id: session.subscription,
+              payment_confirmed_at: new Date().toISOString(),
+              status: "aprovada"
+            })
             .eq("id", analysisId);
           
-          if (analysisError) {
-            console.error("Error updating analysis:", analysisError);
-          } else {
-            console.log(`Analysis ${analysisId} marked as active`);
-          }
+          console.log(`Analysis ${analysisId} payment confirmed, status changed to aprovada`);
 
-          // Update pending commissions for this analysis to "paga"
-          // Only update commissions for the current month (setup) 
-          // Recurring commissions will be marked as paid through monthly cycles
-          const { error: commissionError } = await supabase
-            .from("commissions")
-            .update({ 
-              status: "paga",
-              data_pagamento: new Date().toISOString()
-            })
-            .eq("analysis_id", analysisId)
-            .eq("type", "setup")
-            .eq("status", "pendente");
+          // Log timeline event
+          await supabase.rpc("log_analysis_timeline_event", {
+            _analysis_id: analysisId,
+            _event_type: "payment_completed",
+            _description: "Pagamento confirmado via Stripe",
+            _metadata: { 
+              checkout_session_id: session.id,
+              subscription_id: session.subscription,
+            },
+          });
+
+          // Create contract
+          const { data: contractId, error: contractError } = await supabase
+            .rpc("create_contract_from_analysis", { _analysis_id: analysisId });
           
-          if (commissionError) {
-            console.error("Error updating commissions:", commissionError);
+          if (contractError) {
+            console.error("Error creating contract:", contractError);
           } else {
-            console.log(`Setup commission for analysis ${analysisId} marked as paid`);
+            console.log(`Contract created: ${contractId}`);
           }
-        }
-        break;
-      }
 
-      case "payment_intent.payment_failed": {
-        const paymentIntent = event.data.object;
-        console.log(`PaymentIntent failed: ${paymentIntent.id}`);
-        
-        const analysisId = paymentIntent.metadata?.analysis_id;
-        if (analysisId) {
-          // Log the failure but don't change status - keep in "aguardando_pagamento"
-          console.log(`Payment failed for analysis ${analysisId}`);
-        }
-        break;
-      }
+          // Create setup commission if applicable
+          const { data: analysis } = await supabase
+            .from("analyses")
+            .select("*, agency:agencies(*)")
+            .eq("id", analysisId)
+            .single();
 
-      case "charge.refunded": {
-        const charge = event.data.object;
-        console.log(`Charge refunded: ${charge.id}`);
-        
-        // Note: Based on business rules, we don't reverse commissions after release
-        // This is just logging the event
-        console.log("Refund received - no commission reversal per business rules");
+          if (analysis && analysis.setup_fee > 0 && !analysis.setup_fee_exempt) {
+            const setupCommissionValue = analysis.setup_fee * (analysis.agency.percentual_comissao_setup / 100);
+            
+            await supabase.from("commissions").insert({
+              analysis_id: analysisId,
+              agency_id: analysis.agency_id,
+              type: "setup",
+              status: "pendente",
+              valor: setupCommissionValue,
+              observacoes: "Comissão de setup gerada automaticamente",
+            });
+            console.log(`Setup commission created: ${setupCommissionValue}`);
+          }
+
+          // Create first recurring commission
+          if (analysis) {
+            const valorTotal = analysis.valor_total || analysis.valor_aluguel;
+            const garantiaMensal = (valorTotal * analysis.taxa_garantia_percentual / 100) / 12;
+            const recurringCommissionValue = garantiaMensal * (analysis.agency.percentual_comissao_recorrente / 100);
+            
+            const now = new Date();
+            await supabase.from("commissions").insert({
+              analysis_id: analysisId,
+              agency_id: analysis.agency_id,
+              type: "recorrente",
+              status: "pendente",
+              valor: recurringCommissionValue,
+              mes_referencia: now.getMonth() + 1,
+              ano_referencia: now.getFullYear(),
+              observacoes: "Primeira comissão recorrente",
+            });
+            console.log(`First recurring commission created: ${recurringCommissionValue}`);
+          }
+
+          // TODO: Send notification emails to agency and internal team
+        }
         break;
       }
 
       case "invoice.paid": {
-        // For subscription-based recurring payments
         const invoice = event.data.object;
         console.log(`Invoice paid: ${invoice.id}`);
         
-        // Extract analysis_id from metadata or subscription
         const analysisId = invoice.metadata?.analysis_id || 
                           invoice.subscription_details?.metadata?.analysis_id;
         
@@ -129,64 +140,132 @@ serve(async (req) => {
           const month = now.getMonth() + 1;
           const year = now.getFullYear();
           
-          // Mark recurring commission for this month as paid
-          const { error } = await supabase
+          // Check if commission already exists for this month
+          const { data: existingCommission } = await supabase
             .from("commissions")
-            .update({ 
-              status: "paga",
-              data_pagamento: new Date().toISOString()
-            })
+            .select("id")
             .eq("analysis_id", analysisId)
             .eq("type", "recorrente")
             .eq("mes_referencia", month)
             .eq("ano_referencia", year)
-            .eq("status", "pendente");
-          
-          if (error) {
-            console.error("Error updating recurring commission:", error);
-          } else {
+            .single();
+
+          if (existingCommission) {
+            // Mark as paid
+            await supabase
+              .from("commissions")
+              .update({ 
+                status: "paga",
+                data_pagamento: new Date().toISOString()
+              })
+              .eq("id", existingCommission.id);
+            
             console.log(`Recurring commission for ${month}/${year} marked as paid`);
+          } else {
+            // Create and mark as paid (for subsequent months)
+            const { data: analysis } = await supabase
+              .from("analyses")
+              .select("*, agency:agencies(*)")
+              .eq("id", analysisId)
+              .single();
+
+            if (analysis) {
+              const valorTotal = analysis.valor_total || analysis.valor_aluguel;
+              const garantiaMensal = (valorTotal * analysis.taxa_garantia_percentual / 100) / 12;
+              const recurringCommissionValue = garantiaMensal * (analysis.agency.percentual_comissao_recorrente / 100);
+              
+              await supabase.from("commissions").insert({
+                analysis_id: analysisId,
+                agency_id: analysis.agency_id,
+                type: "recorrente",
+                status: "paga",
+                valor: recurringCommissionValue,
+                mes_referencia: month,
+                ano_referencia: year,
+                data_pagamento: new Date().toISOString(),
+              });
+              console.log(`Recurring commission created and paid: ${recurringCommissionValue}`);
+            }
           }
         }
         break;
       }
 
+      case "invoice.payment_failed": {
+        const invoice = event.data.object;
+        console.log(`Invoice payment failed: ${invoice.id}`);
+        
+        const analysisId = invoice.metadata?.analysis_id || 
+                          invoice.subscription_details?.metadata?.analysis_id;
+        
+        if (analysisId) {
+          // Increment retry count
+          const { data: analysis } = await supabase
+            .from("analyses")
+            .select("payment_retry_count")
+            .eq("id", analysisId)
+            .single();
+
+          const retryCount = (analysis?.payment_retry_count || 0) + 1;
+          
+          await supabase
+            .from("analyses")
+            .update({ 
+              payment_failed_at: new Date().toISOString(),
+              payment_retry_count: retryCount,
+            })
+            .eq("id", analysisId);
+
+          // Log timeline event
+          await supabase.rpc("log_analysis_timeline_event", {
+            _analysis_id: analysisId,
+            _event_type: "payment_failed",
+            _description: `Falha no pagamento (tentativa ${retryCount}/3)`,
+            _metadata: { invoice_id: invoice.id, attempt: retryCount },
+          });
+
+          console.log(`Payment failed for analysis ${analysisId} (attempt ${retryCount})`);
+
+          // TODO: Send urgent notification if retry_count >= 3
+        }
+        break;
+      }
+
       case "customer.subscription.deleted": {
-        // Contract termination - cancel future commissions
         const subscription = event.data.object;
         console.log(`Subscription cancelled: ${subscription.id}`);
         
         const analysisId = subscription.metadata?.analysis_id;
         
         if (analysisId) {
-          // Cancel all future pending commissions (not already paid)
-          const { error } = await supabase
+          // Cancel future pending commissions
+          await supabase
             .from("commissions")
             .update({ 
               status: "cancelada",
-              observacoes: "Cancelada automaticamente - contrato encerrado"
+              observacoes: "Cancelada automaticamente - assinatura encerrada"
             })
             .eq("analysis_id", analysisId)
             .eq("status", "pendente");
           
-          if (error) {
-            console.error("Error cancelling future commissions:", error);
-          } else {
-            console.log(`Future commissions for analysis ${analysisId} cancelled`);
-          }
+          console.log(`Future commissions for analysis ${analysisId} cancelled`);
 
-          // Update analysis status
-          const { error: analysisError } = await supabase
-            .from("analyses")
+          // Update contract status if exists
+          await supabase
+            .from("contracts")
             .update({ 
-              status: "cancelada",
-              canceled_at: new Date().toISOString()
+              status: "encerrado",
+              canceled_at: new Date().toISOString(),
             })
-            .eq("id", analysisId);
-          
-          if (analysisError) {
-            console.error("Error updating analysis status:", analysisError);
-          }
+            .eq("analysis_id", analysisId);
+
+          // Log timeline event
+          await supabase.rpc("log_analysis_timeline_event", {
+            _analysis_id: analysisId,
+            _event_type: "subscription_cancelled",
+            _description: "Assinatura cancelada - contrato encerrado",
+            _metadata: { subscription_id: subscription.id },
+          });
         }
         break;
       }

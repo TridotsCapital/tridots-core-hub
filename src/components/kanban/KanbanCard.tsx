@@ -147,6 +147,25 @@ export function KanbanCard({ analysis, onClick, isDragging, hasUnread = false }:
         <span className="text-xs text-muted-foreground">/mês</span>
       </div>
 
+      {/* Status badges for aguardando_pagamento */}
+      {analysis.status === 'aguardando_pagamento' && (
+        <div className="flex flex-wrap gap-1 mb-2">
+          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5 bg-success/20 text-success border-success/30">
+            Aprovada
+          </Badge>
+          {analysis.rate_adjusted_by_tridots && (
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5 bg-warning/20 text-warning border-warning/30">
+              Taxa Reajustada
+            </Badge>
+          )}
+          {analysis.acceptance_token_expires_at && new Date(analysis.acceptance_token_expires_at) < new Date() && !analysis.acceptance_token_used_at && (
+            <Badge variant="destructive" className="text-[10px] px-1.5 py-0 h-5">
+              Link Expirado
+            </Badge>
+          )}
+        </div>
+      )}
+
       {/* Footer with time and urgency indicator */}
       <div className="flex items-center justify-between pt-2 border-t border-border/50">
         <div className="flex items-center gap-1 text-xs text-muted-foreground">

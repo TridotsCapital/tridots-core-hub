@@ -18,6 +18,7 @@ import { useAnalysesKanban, useMoveAnalysis } from '@/hooks/useAnalysesKanban';
 import { Analysis, AnalysisStatus, kanbanColumns, statusConfig } from '@/types/database';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useUnreadItemIds, useMarkItemAsRead } from '@/hooks/useUnreadItemIds';
+import { toast } from 'sonner';
 
 interface KanbanBoardProps {
   filters?: {
@@ -110,8 +111,20 @@ export function KanbanBoard({ filters, autoOpenAnalysisId, onAutoOpenHandled }: 
 
     if (!analysis || analysis.status === newStatus) return;
 
-    // Check if moving to approval status - show approval modal
+    // Prevent moving from reprovada (final status)
+    if (analysis.status === 'reprovada') {
+      toast.error('Análises reprovadas não podem ser movidas');
+      return;
+    }
+
+    // Prevent moving to aprovada directly - it happens after payment
     if (newStatus === 'aprovada') {
+      toast.error('Análises só podem ser aprovadas após confirmação de pagamento');
+      return;
+    }
+
+    // Check if moving to aguardando_pagamento - show approval modal
+    if (newStatus === 'aguardando_pagamento') {
       setPendingMove({ analysis, newStatus });
       setApprovalModalOpen(true);
       return;
