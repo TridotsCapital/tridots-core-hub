@@ -10,7 +10,6 @@ import {
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import {
   Sheet,
   SheetContent,
@@ -33,14 +32,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import type { Database } from '@/integrations/supabase/types';
 
-type AnalysisStatus = Database['public']['Enums']['analysis_status'];
+type ContractStatus = Database['public']['Enums']['contract_status'];
 
 interface ContractActionsProps {
   contract: {
     id: string;
-    inquilino_nome: string;
-    status: AnalysisStatus;
+    status: ContractStatus;
     agency_id: string;
+    analysis_id: string;
   };
   onEdit?: () => void;
 }
@@ -68,7 +67,7 @@ export function ContractActions({ contract, onEdit }: ContractActionsProps) {
       const { data, error } = await supabase
         .from('commissions')
         .select('*')
-        .eq('analysis_id', contract.id)
+        .eq('analysis_id', contract.analysis_id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -90,11 +89,11 @@ export function ContractActions({ contract, onEdit }: ContractActionsProps) {
     setLoading(true);
     try {
       const { error } = await supabase
-        .from('analyses')
+        .from('contracts')
         .update({
-          status: 'cancelada' as AnalysisStatus,
+          status: 'cancelado' as ContractStatus,
           canceled_at: new Date().toISOString(),
-          observacoes: `[CANCELADO] ${cancelReason}\n\n${contract.id}`,
+          cancellation_reason: cancelReason,
         })
         .eq('id', contract.id);
 
@@ -121,11 +120,11 @@ export function ContractActions({ contract, onEdit }: ContractActionsProps) {
 
     setLoading(true);
     try {
-      // For now, we'll add the pendency as an observation
+      // Add pendency as observation in related analysis
       const { data: current, error: fetchError } = await supabase
         .from('analyses')
         .select('observacoes')
-        .eq('id', contract.id)
+        .eq('id', contract.analysis_id)
         .single();
 
       if (fetchError) throw fetchError;
@@ -135,7 +134,7 @@ export function ContractActions({ contract, onEdit }: ContractActionsProps) {
       const { error } = await supabase
         .from('analyses')
         .update({ observacoes: newObservacoes })
-        .eq('id', contract.id);
+        .eq('id', contract.analysis_id);
 
       if (error) throw error;
 
@@ -152,7 +151,7 @@ export function ContractActions({ contract, onEdit }: ContractActionsProps) {
   };
 
   const isActive = contract.status === 'ativo';
-  const canCancel = ['ativo', 'aprovada', 'aguardando_pagamento'].includes(contract.status);
+  const canCancel = ['ativo', 'documentacao_pendente'].includes(contract.status);
 
   return (
     <>
@@ -318,7 +317,7 @@ export function ContractActions({ contract, onEdit }: ContractActionsProps) {
           <DialogHeader>
             <DialogTitle className="text-destructive">Cancelar Contrato</DialogTitle>
             <DialogDescription>
-              Esta ação é irreversível. O contrato de {contract.inquilino_nome} será cancelado.
+              Esta ação é irreversível. O contrato será cancelado.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">

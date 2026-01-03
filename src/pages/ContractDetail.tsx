@@ -23,6 +23,7 @@ import {
   MessageSquare,
   Eye,
   ExternalLink,
+  FileCheck,
 } from 'lucide-react';
 import { useContract } from '@/hooks/useContracts';
 import { useTicketCountByAnalysis, useTicketsByAnalysis } from '@/hooks/useTickets';
@@ -34,23 +35,20 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Database } from '@/integrations/supabase/types';
 
-type AnalysisStatus = Database['public']['Enums']['analysis_status'];
+type ContractStatus = Database['public']['Enums']['contract_status'];
 
-const STATUS_CONFIG: Record<AnalysisStatus, { label: string; color: string; icon: any }> = {
-  pendente: { label: 'Pendente', color: 'bg-amber-100 text-amber-800 border-amber-200', icon: Clock },
-  em_analise: { label: 'Em Análise', color: 'bg-blue-100 text-blue-800 border-blue-200', icon: Clock },
-  aprovada: { label: 'Aprovada', color: 'bg-emerald-100 text-emerald-800 border-emerald-200', icon: CheckCircle },
-  reprovada: { label: 'Reprovada', color: 'bg-red-100 text-red-800 border-red-200', icon: XCircle },
-  cancelada: { label: 'Cancelada', color: 'bg-gray-100 text-gray-800 border-gray-200', icon: XCircle },
-  aguardando_pagamento: { label: 'Aguardando Pagamento', color: 'bg-orange-100 text-orange-800 border-orange-200', icon: CreditCard },
+const STATUS_CONFIG: Record<ContractStatus, { label: string; color: string; icon: React.ComponentType<{ className?: string }> }> = {
+  documentacao_pendente: { label: 'Doc. Pendente', color: 'bg-amber-100 text-amber-800 border-amber-200', icon: FileCheck },
   ativo: { label: 'Ativo', color: 'bg-green-100 text-green-800 border-green-200', icon: CheckCircle },
+  cancelado: { label: 'Cancelado', color: 'bg-red-100 text-red-800 border-red-200', icon: XCircle },
+  encerrado: { label: 'Encerrado', color: 'bg-gray-100 text-gray-800 border-gray-200', icon: Clock },
 };
 
 interface TimelineEvent {
   date: string;
   title: string;
   description: string;
-  icon: any;
+  icon: React.ComponentType<{ className?: string }>;
   iconColor: string;
   type?: 'contract' | 'ticket';
   ticketId?: string;
@@ -65,8 +63,9 @@ export default function ContractDetail() {
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
 
   const { data: contract, isLoading } = useContract(id);
-  const { data: ticketCount = 0 } = useTicketCountByAnalysis(id);
-  const { data: tickets = [] } = useTicketsByAnalysis(id);
+  const analysisId = contract?.analysis_id;
+  const { data: ticketCount = 0 } = useTicketCountByAnalysis(analysisId);
+  const { data: tickets = [] } = useTicketsByAnalysis(analysisId);
 
   if (isLoading) {
     return (
@@ -79,7 +78,7 @@ export default function ContractDetail() {
     );
   }
 
-  if (!contract) {
+  if (!contract || !contract.analysis) {
     return (
       <DashboardLayout title="Contrato não encontrado">
         <div className="text-center py-12">
@@ -92,40 +91,30 @@ export default function ContractDetail() {
     );
   }
 
-  const statusConfig = STATUS_CONFIG[contract.status as AnalysisStatus];
+  const { analysis } = contract;
+  const statusConfig = STATUS_CONFIG[contract.status];
   const StatusIcon = statusConfig.icon;
-  const propertyType = PROPERTY_TYPES.find(t => t.value === contract.imovel_tipo)?.label || contract.imovel_tipo;
+  const propertyType = PROPERTY_TYPES.find(t => t.value === analysis.imovel_tipo)?.label || analysis.imovel_tipo;
 
   // Build timeline events
   const timelineEvents: TimelineEvent[] = [
     {
       date: contract.created_at,
-      title: 'Análise Solicitada',
-      description: 'Solicitação de análise de crédito enviada',
+      title: 'Contrato Criado',
+      description: 'Contrato criado após confirmação de pagamento',
       icon: FileText,
       iconColor: 'text-blue-500',
       type: 'contract',
     },
   ];
 
-  if (contract.approved_at) {
+  if (contract.activated_at) {
     timelineEvents.push({
-      date: contract.approved_at,
-      title: 'Análise Aprovada',
-      description: 'Crédito aprovado pela equipe Tridots',
+      date: contract.activated_at,
+      title: 'Contrato Ativado',
+      description: 'Documentação aprovada, garantia ativada',
       icon: CheckCircle,
       iconColor: 'text-green-500',
-      type: 'contract',
-    });
-  }
-
-  if (contract.rejected_at) {
-    timelineEvents.push({
-      date: contract.rejected_at,
-      title: 'Análise Reprovada',
-      description: 'Crédito não aprovado',
-      icon: XCircle,
-      iconColor: 'text-red-500',
       type: 'contract',
     });
   }
@@ -134,31 +123,20 @@ export default function ContractDetail() {
     timelineEvents.push({
       date: contract.canceled_at,
       title: 'Contrato Cancelado',
-      description: 'Contrato cancelado',
+      description: contract.cancellation_reason || 'Contrato cancelado',
       icon: XCircle,
-      iconColor: 'text-gray-500',
+      iconColor: 'text-red-500',
       type: 'contract',
     });
   }
 
-  if (contract.status === 'aguardando_pagamento') {
+  if (contract.status === 'documentacao_pendente') {
     timelineEvents.push({
-      date: contract.approved_at || contract.created_at,
-      title: 'Aguardando Pagamento',
-      description: `Setup Fee: ${formatCurrency(contract.setup_fee)}`,
-      icon: CreditCard,
-      iconColor: 'text-orange-500',
-      type: 'contract',
-    });
-  }
-
-  if (contract.status === 'ativo') {
-    timelineEvents.push({
-      date: contract.updated_at,
-      title: 'Contrato Ativo',
-      description: 'Pagamento confirmado, garantia ativada',
-      icon: CheckCircle,
-      iconColor: 'text-green-600',
+      date: contract.created_at,
+      title: 'Aguardando Documentação',
+      description: 'Documentos pendentes para ativação',
+      icon: FileCheck,
+      iconColor: 'text-amber-500',
       type: 'contract',
     });
   }
@@ -191,13 +169,13 @@ export default function ContractDetail() {
 
   timelineEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-  const totalEncargos = contract.valor_aluguel + (contract.valor_condominio || 0) + (contract.valor_iptu || 0);
-  const taxaMensal = totalEncargos * (contract.taxa_garantia_percentual / 100);
+  const totalEncargos = (analysis.valor_aluguel || 0) + (analysis.valor_condominio || 0) + (analysis.valor_iptu || 0);
+  const taxaMensal = totalEncargos * ((analysis.taxa_garantia_percentual || 0) / 100);
 
   return (
     <DashboardLayout
       title={`Contrato #${contract.id.slice(0, 8).toUpperCase()}`}
-      description={contract.inquilino_nome}
+      description={analysis.inquilino_nome}
     >
       <div className="space-y-6 animate-fade-in">
         {/* Header */}
@@ -216,7 +194,7 @@ export default function ContractDetail() {
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => navigate(`/tickets?contract=${contract.id}`)}
+                onClick={() => navigate(`/tickets?contract=${contract.analysis_id}`)}
               >
                 <Eye className="h-4 w-4 mr-2" />
                 Ver Chamados ({ticketCount})
@@ -243,11 +221,11 @@ export default function ContractDetail() {
         <ContractTicketSheet
           open={ticketSheetOpen}
           onOpenChange={setTicketSheetOpen}
-          analysisId={contract.id}
+          analysisId={contract.analysis_id}
           agencyId={contract.agency_id}
           contractRef={contract.id.slice(0, 8).toUpperCase()}
-          agencyName={contract.agency?.nome_fantasia || contract.agency?.razao_social}
-          tenantName={contract.inquilino_nome}
+          agencyName={analysis.agency?.nome_fantasia || analysis.agency?.razao_social}
+          tenantName={analysis.inquilino_nome}
         />
 
         {/* Quick Actions */}
@@ -257,8 +235,13 @@ export default function ContractDetail() {
           </CardHeader>
           <CardContent>
             <ContractActions
-              contract={contract}
-              onEdit={() => navigate(`/analyses/${contract.id}`)}
+              contract={{
+                id: contract.id,
+                status: contract.status,
+                agency_id: contract.agency_id,
+                analysis_id: contract.analysis_id,
+              }}
+              onEdit={() => navigate(`/analyses/${contract.analysis_id}`)}
             />
           </CardContent>
         </Card>
@@ -284,12 +267,12 @@ export default function ContractDetail() {
                 <div>
                   <span className="text-muted-foreground">Nome:</span>
                   <p className="font-medium">
-                    {contract.agency?.nome_fantasia || contract.agency?.razao_social || '-'}
+                    {analysis.agency?.nome_fantasia || analysis.agency?.razao_social || '-'}
                   </p>
                 </div>
                 <div>
                   <span className="text-muted-foreground">% Comissão Recorrente:</span>
-                  <p className="font-medium">{contract.agency?.percentual_comissao_recorrente || 0}%</p>
+                  <p className="font-medium">{analysis.agency?.percentual_comissao_recorrente || 0}%</p>
                 </div>
               </CardContent>
             </Card>
@@ -306,19 +289,19 @@ export default function ContractDetail() {
                 <div>
                   <span className="text-muted-foreground">Endereço:</span>
                   <p className="font-medium">
-                    {contract.imovel_endereco}, {contract.imovel_numero}
-                    {contract.imovel_complemento && ` - ${contract.imovel_complemento}`}
+                    {analysis.imovel_endereco}, {analysis.imovel_numero}
+                    {analysis.imovel_complemento && ` - ${analysis.imovel_complemento}`}
                   </p>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Localização:</span>
                   <p className="font-medium">
-                    {contract.imovel_bairro}, {contract.imovel_cidade} - {contract.imovel_estado}
+                    {analysis.imovel_bairro}, {analysis.imovel_cidade} - {analysis.imovel_estado}
                   </p>
                 </div>
                 <div>
                   <span className="text-muted-foreground">CEP:</span>
-                  <p className="font-medium">{contract.imovel_cep}</p>
+                  <p className="font-medium">{analysis.imovel_cep}</p>
                 </div>
                 {propertyType && (
                   <div>
@@ -340,39 +323,39 @@ export default function ContractDetail() {
               <CardContent className="grid gap-4 md:grid-cols-2 text-sm">
                 <div>
                   <span className="text-muted-foreground">Nome:</span>
-                  <p className="font-medium">{contract.inquilino_nome}</p>
+                  <p className="font-medium">{analysis.inquilino_nome}</p>
                 </div>
                 <div>
                   <span className="text-muted-foreground">CPF:</span>
-                  <p className="font-medium">{contract.inquilino_cpf}</p>
+                  <p className="font-medium">{analysis.inquilino_cpf}</p>
                 </div>
-                {contract.inquilino_email && (
+                {analysis.inquilino_email && (
                   <div>
                     <span className="text-muted-foreground">E-mail:</span>
-                    <p className="font-medium">{contract.inquilino_email}</p>
+                    <p className="font-medium">{analysis.inquilino_email}</p>
                   </div>
                 )}
-                {contract.inquilino_telefone && (
+                {analysis.inquilino_telefone && (
                   <div>
                     <span className="text-muted-foreground">Telefone:</span>
-                    <p className="font-medium">{contract.inquilino_telefone}</p>
+                    <p className="font-medium">{analysis.inquilino_telefone}</p>
                   </div>
                 )}
-                {contract.inquilino_profissao && (
+                {analysis.inquilino_profissao && (
                   <div>
                     <span className="text-muted-foreground">Profissão:</span>
-                    <p className="font-medium">{contract.inquilino_profissao}</p>
+                    <p className="font-medium">{analysis.inquilino_profissao}</p>
                   </div>
                 )}
                 <div>
                   <span className="text-muted-foreground">Renda Mensal:</span>
-                  <p className="font-medium">{formatCurrency(contract.inquilino_renda_mensal || 0)}</p>
+                  <p className="font-medium">{formatCurrency(analysis.inquilino_renda_mensal || 0)}</p>
                 </div>
               </CardContent>
             </Card>
 
             {/* Spouse Info */}
-            {contract.conjuge_nome && (
+            {analysis.conjuge_nome && (
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base flex items-center gap-2">
@@ -383,36 +366,36 @@ export default function ContractDetail() {
                 <CardContent className="grid gap-4 md:grid-cols-2 text-sm">
                   <div>
                     <span className="text-muted-foreground">Nome:</span>
-                    <p className="font-medium">{contract.conjuge_nome}</p>
+                    <p className="font-medium">{analysis.conjuge_nome}</p>
                   </div>
-                  {contract.conjuge_cpf && (
+                  {analysis.conjuge_cpf && (
                     <div>
                       <span className="text-muted-foreground">CPF:</span>
-                      <p className="font-medium">{contract.conjuge_cpf}</p>
+                      <p className="font-medium">{analysis.conjuge_cpf}</p>
                     </div>
                   )}
-                  {contract.conjuge_profissao && (
+                  {analysis.conjuge_profissao && (
                     <div>
                       <span className="text-muted-foreground">Profissão:</span>
-                      <p className="font-medium">{contract.conjuge_profissao}</p>
+                      <p className="font-medium">{analysis.conjuge_profissao}</p>
                     </div>
                   )}
                   <div>
                     <span className="text-muted-foreground">Renda Mensal:</span>
-                    <p className="font-medium">{formatCurrency(contract.conjuge_renda_mensal || 0)}</p>
+                    <p className="font-medium">{formatCurrency(analysis.conjuge_renda_mensal || 0)}</p>
                   </div>
                 </CardContent>
               </Card>
             )}
 
             {/* Observations */}
-            {contract.observacoes && (
+            {analysis.observacoes && (
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base">Observações</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm whitespace-pre-wrap">{contract.observacoes}</p>
+                  <p className="text-sm whitespace-pre-wrap">{analysis.observacoes}</p>
                 </CardContent>
               </Card>
             )}
@@ -485,15 +468,15 @@ export default function ContractDetail() {
                 <div className="grid gap-3 md:grid-cols-3">
                   <div>
                     <span className="text-muted-foreground">Aluguel:</span>
-                    <p className="font-medium">{formatCurrency(contract.valor_aluguel)}</p>
+                    <p className="font-medium">{formatCurrency(analysis.valor_aluguel || 0)}</p>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Condomínio:</span>
-                    <p className="font-medium">{formatCurrency(contract.valor_condominio || 0)}</p>
+                    <p className="font-medium">{formatCurrency(analysis.valor_condominio || 0)}</p>
                   </div>
                   <div>
                     <span className="text-muted-foreground">IPTU:</span>
-                    <p className="font-medium">{formatCurrency(contract.valor_iptu || 0)}</p>
+                    <p className="font-medium">{formatCurrency(analysis.valor_iptu || 0)}</p>
                   </div>
                 </div>
                 
@@ -505,7 +488,7 @@ export default function ContractDetail() {
                     <p className="font-medium">{formatCurrency(totalEncargos)}</p>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Taxa Garantia ({contract.taxa_garantia_percentual}%):</span>
+                    <span className="text-muted-foreground">Taxa Garantia ({analysis.taxa_garantia_percentual}%):</span>
                     <p className="font-medium">{formatCurrency(taxaMensal)}</p>
                   </div>
                 </div>
@@ -519,7 +502,7 @@ export default function ContractDetail() {
                   </div>
                   <div>
                     <span className="text-muted-foreground">Setup Fee:</span>
-                    <p className="font-semibold">{formatCurrency(contract.setup_fee)}</p>
+                    <p className="font-semibold">{formatCurrency(analysis.setup_fee || 0)}</p>
                   </div>
                 </div>
 
@@ -529,18 +512,18 @@ export default function ContractDetail() {
                   <div>
                     <span className="text-muted-foreground">Comissão Imobiliária (Recorrente):</span>
                     <p className="font-medium">
-                      {formatCurrency(taxaMensal * ((contract.agency?.percentual_comissao_recorrente || 0) / 100))}
+                      {formatCurrency(taxaMensal * ((analysis.agency?.percentual_comissao_recorrente || 0) / 100))}
                       <span className="text-xs text-muted-foreground ml-1">
-                        ({contract.agency?.percentual_comissao_recorrente || 0}%)
+                        ({analysis.agency?.percentual_comissao_recorrente || 0}%)
                       </span>
                     </p>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Comissão Imobiliária (Setup):</span>
                     <p className="font-medium">
-                      {formatCurrency(contract.setup_fee * ((contract.agency?.percentual_comissao_setup || 0) / 100))}
+                      {formatCurrency((analysis.setup_fee || 0) * ((analysis.agency?.percentual_comissao_setup || 0) / 100))}
                       <span className="text-xs text-muted-foreground ml-1">
-                        ({contract.agency?.percentual_comissao_setup || 0}%)
+                        ({analysis.agency?.percentual_comissao_setup || 0}%)
                       </span>
                     </p>
                   </div>

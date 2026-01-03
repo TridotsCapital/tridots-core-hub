@@ -23,8 +23,16 @@ import {
   MapPin,
   Briefcase,
   DollarSign,
-  Lock
+  Lock,
+  Link,
+  Copy,
+  CheckCircle2,
+  AlertTriangle,
+  Timer,
 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -54,10 +62,45 @@ const InfoRow = ({ label, value, icon: Icon }: { label: string; value: string | 
   </div>
 );
 
+// Helper to calculate acceptance link status
+const getAcceptanceStatus = (analysis: Analysis) => {
+  if (!analysis.acceptance_token) return null;
+  
+  if (analysis.acceptance_token_used_at) {
+    return { status: 'used' as const, label: 'Aceite realizado', variant: 'default' as const };
+  }
+  
+  const expiresAt = new Date(analysis.acceptance_token_expires_at!);
+  const now = new Date();
+  
+  if (now > expiresAt) {
+    return { status: 'expired' as const, label: 'Link expirado', variant: 'destructive' as const };
+  }
+  
+  const diffMs = expiresAt.getTime() - now.getTime();
+  const hours = Math.floor(diffMs / (1000 * 60 * 60));
+  const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+  
+  return { 
+    status: 'active' as const, 
+    label: `Expira em ${hours}h ${minutes}min`,
+    variant: 'secondary' as const,
+  };
+};
+
 export function AgencyAnalysisDrawer({ analysis, open, onOpenChange }: AgencyAnalysisDrawerProps) {
   if (!analysis) return null;
 
   const isChatDisabled = analysis.status === 'ativo' || analysis.status === 'cancelada';
+  const acceptanceStatus = getAcceptanceStatus(analysis);
+  const acceptanceUrl = analysis.acceptance_token 
+    ? `${window.location.origin}/aceite/${analysis.acceptance_token}` 
+    : '';
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(acceptanceUrl);
+    toast.success('Link copiado para a área de transferência!');
+  };
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -107,6 +150,46 @@ export function AgencyAnalysisDrawer({ analysis, open, onOpenChange }: AgencyAna
             {/* Resumo Tab */}
             <TabsContent value="resumo" className="m-0 p-6">
               <div className="space-y-6">
+                {/* Acceptance Link Section - only for aguardando_pagamento */}
+                {analysis.status === 'aguardando_pagamento' && analysis.acceptance_token && (
+                  <div className="rounded-lg border border-primary/30 bg-primary/5 p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <Link className="h-4 w-4 text-primary" />
+                        <span className="font-medium text-sm">Link de Aceite do Inquilino</span>
+                      </div>
+                      <Badge variant={acceptanceStatus?.variant || 'secondary'}>
+                        {acceptanceStatus?.status === 'used' && <CheckCircle2 className="h-3 w-3 mr-1" />}
+                        {acceptanceStatus?.status === 'expired' && <AlertTriangle className="h-3 w-3 mr-1" />}
+                        {acceptanceStatus?.status === 'active' && <Timer className="h-3 w-3 mr-1" />}
+                        {acceptanceStatus?.label}
+                      </Badge>
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <Input 
+                        value={acceptanceUrl}
+                        readOnly 
+                        className="text-xs font-mono"
+                      />
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={handleCopyLink}
+                        disabled={acceptanceStatus?.status === 'expired'}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    
+                    {acceptanceStatus?.status === 'expired' && (
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Este link expirou. Solicite um novo link à equipe Tridots pelo chat.
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 {/* Quick stats */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="rounded-lg bg-muted/50 p-4">
