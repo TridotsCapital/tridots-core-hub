@@ -11,7 +11,8 @@ import {
   AlertTriangle,
   Shield,
   DollarSign,
-  FolderOpen
+  FolderOpen,
+  Star
 } from "lucide-react";
 import logoBlack from "@/assets/logo-tridots-black.webp";
 import { NavLink } from "@/components/NavLink";
@@ -20,6 +21,7 @@ import { useAgencyUser } from "@/hooks/useAgencyUser";
 import { useAnalysisDraft } from "@/hooks/useAnalysisDraft";
 import { useClaimDraft } from "@/hooks/useClaimDraft";
 import { useNotificationCounts } from "@/hooks/useNotificationCounts";
+import { useNps } from "@/contexts/NpsContext";
 import { NotificationCenter } from "@/components/notifications";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -69,6 +71,7 @@ export function AgencySidebar() {
   const { data: agencyUser } = useAgencyUser();
   const { hasDraft: hasAnalysisDraft, getLastSavedTime } = useAnalysisDraft();
   const { hasDraft: hasClaimDraft } = useClaimDraft();
+  const { pendingSurveys, hasPendingNps, showNpsModal } = useNps();
   
   const agencyName = agencyUser?.agency?.nome_fantasia || agencyUser?.agency?.razao_social || "Imobiliária";
   const { data: notificationCounts } = useNotificationCounts();
@@ -198,6 +201,20 @@ export function AgencySidebar() {
               <Shield className="h-4 w-4" />
               Solicitar Garantia
             </Button>
+            
+            {hasPendingNps && (
+              <Button 
+                variant="outline"
+                className="w-full justify-start gap-2 border-amber-400 bg-amber-50 text-amber-800 hover:bg-amber-100 mt-2"
+                onClick={showNpsModal}
+              >
+                <Star className="h-4 w-4" />
+                Avaliar Chamados
+                <Badge className="ml-auto bg-amber-500 text-white hover:bg-amber-500">
+                  {pendingSurveys.length}
+                </Badge>
+              </Button>
+            )}
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>

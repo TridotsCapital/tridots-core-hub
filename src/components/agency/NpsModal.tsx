@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2, Star, MessageSquare, CheckCircle } from "lucide-react";
 import { NpsRatingScale } from "./NpsRatingScale";
 import type { PendingSurvey } from "@/hooks/useNpsSurveys";
@@ -32,40 +31,49 @@ export function NpsModal({
   onSubmit,
   isSubmitting,
 }: NpsModalProps) {
-  const [currentIndex, setCurrentIndex] = useState(0);
   const [rating, setRating] = useState<number | null>(null);
   const [comment, setComment] = useState("");
-  const [submittedCount, setSubmittedCount] = useState(0);
+  const [submittedIds, setSubmittedIds] = useState<string[]>([]);
 
-  const currentSurvey = surveys[currentIndex];
-  const isLastSurvey = currentIndex >= surveys.length - 1;
-  const allCompleted = submittedCount >= surveys.length;
+  // Filter out already submitted surveys to get pending ones
+  const pendingSurveys = surveys.filter(s => !submittedIds.includes(s.id));
+  const currentSurvey = pendingSurveys[0];
+  const isLastSurvey = pendingSurveys.length <= 1;
+  
+  // Show success only if we actually submitted something AND no more pending
+  const showSuccess = submittedIds.length > 0 && pendingSurveys.length === 0;
+
+  // Reset state when modal opens or surveys change
+  useEffect(() => {
+    if (open) {
+      setSubmittedIds([]);
+      setRating(null);
+      setComment("");
+    }
+  }, [open]);
 
   const handleSubmit = async () => {
     if (rating === null || !currentSurvey) return;
 
     await onSubmit(currentSurvey.id, rating, comment || undefined);
-    setSubmittedCount((prev) => prev + 1);
-
-    if (!isLastSurvey) {
-      // Move to next survey
-      setCurrentIndex((prev) => prev + 1);
-      setRating(null);
-      setComment("");
-    }
+    
+    // Track submitted ID locally for seamless transition
+    setSubmittedIds(prev => [...prev, currentSurvey.id]);
+    
+    // Reset form for next survey
+    setRating(null);
+    setComment("");
   };
 
   const handleClose = () => {
     onOpenChange(false);
-    // Reset state
-    setCurrentIndex(0);
+    setSubmittedIds([]);
     setRating(null);
     setComment("");
-    setSubmittedCount(0);
   };
 
-  // Show success state when all completed
-  if (allCompleted && surveys.length > 0) {
+  // Show success state only after actual submissions
+  if (showSuccess) {
     return (
       <Dialog open={open} onOpenChange={handleClose}>
         <DialogContent className="sm:max-w-[480px]">
@@ -112,18 +120,22 @@ export function NpsModal({
           {/* Survey counter */}
           {surveys.length > 1 && (
             <div className="flex items-center justify-center gap-2">
-              {surveys.map((_, idx) => (
-                <div
-                  key={idx}
-                  className={`h-2 w-8 rounded-full transition-colors ${
-                    idx < submittedCount
-                      ? "bg-emerald-500"
-                      : idx === currentIndex
-                      ? "bg-primary"
-                      : "bg-muted"
-                  }`}
-                />
-              ))}
+              {surveys.map((s, idx) => {
+                const isSubmitted = submittedIds.includes(s.id);
+                const isCurrent = s.id === currentSurvey?.id;
+                return (
+                  <div
+                    key={s.id}
+                    className={`h-2 w-8 rounded-full transition-colors ${
+                      isSubmitted
+                        ? "bg-emerald-500"
+                        : isCurrent
+                        ? "bg-primary"
+                        : "bg-muted"
+                    }`}
+                  />
+                );
+              })}
             </div>
           )}
 
