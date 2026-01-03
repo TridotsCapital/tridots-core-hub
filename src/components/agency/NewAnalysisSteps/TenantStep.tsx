@@ -47,6 +47,22 @@ export function TenantStep({ form }: TenantStepProps) {
     }
   };
 
+  const handleBirthDateChange = (value: string) => {
+    form.setValue('inquilinoDataNascimento', value);
+    
+    if (value) {
+      const birthDate = new Date(value);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      if (birthDate > today) {
+        form.setError('inquilinoDataNascimento', { message: 'Data de nascimento não pode ser maior que a data atual' });
+      } else {
+        form.clearErrors('inquilinoDataNascimento');
+      }
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2 text-lg font-medium">
@@ -113,7 +129,12 @@ export function TenantStep({ form }: TenantStepProps) {
           <FormItem>
             <FormLabel>Data de Nascimento *</FormLabel>
             <FormControl>
-              <Input {...field} type="date" />
+              <Input 
+                {...field} 
+                type="date" 
+                max={new Date().toISOString().split('T')[0]}
+                onChange={(e) => handleBirthDateChange(e.target.value)}
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
