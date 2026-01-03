@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -6,9 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useCreateTicket } from "@/hooks/useTickets";
 import { TicketCategory, TicketPriority, ticketCategoryConfig, ticketPriorityConfig } from "@/types/tickets";
-import { CheckCircle, Loader2, Send } from "lucide-react";
+import { useNps } from "@/contexts/NpsContext";
+import { CheckCircle, Loader2, Send, AlertCircle } from "lucide-react";
 
 interface ContractTicketSheetProps {
   open: boolean;
@@ -29,6 +31,7 @@ export function ContractTicketSheet({
 }: ContractTicketSheetProps) {
   const navigate = useNavigate();
   const createTicket = useCreateTicket();
+  const { hasPendingNps, showNpsModal } = useNps();
   const [showSuccess, setShowSuccess] = useState(false);
   
   const [subject, setSubject] = useState("");
@@ -36,6 +39,13 @@ export function ContractTicketSheet({
   const [priority, setPriority] = useState<TicketPriority>("media");
   const [description, setDescription] = useState("");
 
+  // If has pending NPS and sheet opens, show NPS modal instead
+  useEffect(() => {
+    if (open && hasPendingNps) {
+      onOpenChange(false);
+      showNpsModal();
+    }
+  }, [open, hasPendingNps, showNpsModal, onOpenChange]);
   const handleSubmit = async () => {
     await createTicket.mutateAsync({
       agency_id: agencyId,

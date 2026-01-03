@@ -4,6 +4,7 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/s
 import { AgencySidebar } from "./AgencySidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubdomain } from "@/contexts/SubdomainContext";
+import { NpsProvider } from "@/contexts/NpsContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { PendingApprovalBanner } from "@/components/agency/PendingApprovalBanner";
@@ -137,35 +138,37 @@ export function AgencyLayout({ children, title, description, actions }: AgencyLa
 
   return (
     <AgencyStatusContext.Provider value={{ isAgencyActive }}>
-      <SidebarProvider>
-        <div className="min-h-screen flex w-full bg-background">
-          <AgencySidebar />
-          <SidebarInset className="flex-1">
-            <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-4 border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-6">
-              <SidebarTrigger className="-ml-2" />
-              <div className="flex-1">
-                <h1 className="text-lg font-semibold">{title}</h1>
-                {description && (
-                  <p className="text-sm text-muted-foreground">{description}</p>
-                )}
-              </div>
-              {actions && <div className="flex items-center gap-2">{actions}</div>}
-              {agencyName && (
-                <div className="text-right">
-                  <p className="text-sm font-medium">{agencyName}</p>
-                  <p className="text-xs text-muted-foreground">Imobiliária Parceira</p>
+      <NpsProvider agencyId={agencyId}>
+        <SidebarProvider>
+          <div className="min-h-screen flex w-full bg-background">
+            <AgencySidebar />
+            <SidebarInset className="flex-1">
+              <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-4 border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-6">
+                <SidebarTrigger className="-ml-2" />
+                <div className="flex-1">
+                  <h1 className="text-lg font-semibold">{title}</h1>
+                  {description && (
+                    <p className="text-sm text-muted-foreground">{description}</p>
+                  )}
                 </div>
-              )}
-            </header>
-            <main className="flex-1 p-6">
-              {!isAgencyActive && (
-                <PendingApprovalBanner className="mb-6" />
-              )}
-              {children}
-            </main>
-          </SidebarInset>
-        </div>
-      </SidebarProvider>
+                {actions && <div className="flex items-center gap-2">{actions}</div>}
+                {agencyName && (
+                  <div className="text-right">
+                    <p className="text-sm font-medium">{agencyName}</p>
+                    <p className="text-xs text-muted-foreground">Imobiliária Parceira</p>
+                  </div>
+                )}
+              </header>
+              <main className="flex-1 p-6">
+                {!isAgencyActive && (
+                  <PendingApprovalBanner className="mb-6" />
+                )}
+                {children}
+              </main>
+            </SidebarInset>
+          </div>
+        </SidebarProvider>
+      </NpsProvider>
     </AgencyStatusContext.Provider>
   );
 }

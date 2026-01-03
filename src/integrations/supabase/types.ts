@@ -855,6 +855,71 @@ export type Database = {
         }
         Relationships: []
       }
+      satisfaction_surveys: {
+        Row: {
+          agency_id: string
+          analyst_id: string | null
+          comment: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          rating: number | null
+          ticket_id: string
+          updated_at: string
+        }
+        Insert: {
+          agency_id: string
+          analyst_id?: string | null
+          comment?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          rating?: number | null
+          ticket_id: string
+          updated_at?: string
+        }
+        Update: {
+          agency_id?: string
+          analyst_id?: string | null
+          comment?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          rating?: number | null
+          ticket_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "satisfaction_surveys_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "satisfaction_surveys_analyst_id_fkey"
+            columns: ["analyst_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "satisfaction_surveys_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "satisfaction_surveys_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: true
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       term_templates: {
         Row: {
           created_at: string
@@ -899,6 +964,48 @@ export type Database = {
           version?: number
         }
         Relationships: []
+      }
+      ticket_analyst_history: {
+        Row: {
+          analyst_id: string
+          assigned_at: string
+          created_at: string
+          id: string
+          removed_at: string | null
+          ticket_id: string
+        }
+        Insert: {
+          analyst_id: string
+          assigned_at?: string
+          created_at?: string
+          id?: string
+          removed_at?: string | null
+          ticket_id: string
+        }
+        Update: {
+          analyst_id?: string
+          assigned_at?: string
+          created_at?: string
+          id?: string
+          removed_at?: string | null
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_analyst_history_analyst_id_fkey"
+            columns: ["analyst_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_analyst_history_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ticket_messages: {
         Row: {
@@ -1077,6 +1184,8 @@ export type Database = {
           assigned_to: string | null
           category: Database["public"]["Enums"]["ticket_category"]
           claim_id: string | null
+          closed_by: string | null
+          closed_by_type: string | null
           created_at: string
           created_by: string
           description: string | null
@@ -1097,6 +1206,8 @@ export type Database = {
           assigned_to?: string | null
           category?: Database["public"]["Enums"]["ticket_category"]
           claim_id?: string | null
+          closed_by?: string | null
+          closed_by_type?: string | null
           created_at?: string
           created_by: string
           description?: string | null
@@ -1117,6 +1228,8 @@ export type Database = {
           assigned_to?: string | null
           category?: Database["public"]["Enums"]["ticket_category"]
           claim_id?: string | null
+          closed_by?: string | null
+          closed_by_type?: string | null
           created_at?: string
           created_by?: string
           description?: string | null
@@ -1158,6 +1271,13 @@ export type Database = {
             columns: ["claim_id"]
             isOneToOne: false
             referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_closed_by_fkey"
+            columns: ["closed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {

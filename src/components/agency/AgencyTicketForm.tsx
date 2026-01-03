@@ -29,10 +29,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2, AlertCircle } from "lucide-react";
 import { useCreateTicket } from "@/hooks/useTickets";
 import { TicketCategory, TicketPriority } from "@/types/tickets";
 import { useAgencyStatus } from "@/components/layout/AgencyLayout";
+import { useNps } from "@/contexts/NpsContext";
 
 const formSchema = z.object({
   subject: z.string().min(5, "O assunto deve ter no mínimo 5 caracteres"),
@@ -64,7 +65,7 @@ export function AgencyTicketForm({ agencyId }: AgencyTicketFormProps) {
   const [open, setOpen] = useState(false);
   const createTicket = useCreateTicket();
   const { isAgencyActive } = useAgencyStatus();
-
+  const { hasPendingNps, showNpsModal } = useNps();
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -100,6 +101,22 @@ export function AgencyTicketForm({ agencyId }: AgencyTicketFormProps) {
         </TooltipTrigger>
         <TooltipContent>
           <p>Disponível após aprovação do cadastro</p>
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  if (hasPendingNps) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button className="gap-2" variant="outline" onClick={showNpsModal}>
+            <AlertCircle className="h-4 w-4 text-amber-500" />
+            Novo Chamado
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Avalie seus chamados anteriores para abrir novos</p>
         </TooltipContent>
       </Tooltip>
     );

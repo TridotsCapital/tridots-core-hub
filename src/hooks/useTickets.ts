@@ -281,7 +281,9 @@ export function useUpdateTicket() {
     },
     onSuccess: (_, { ticketId }) => {
       queryClient.invalidateQueries({ queryKey: ["tickets"] });
+      queryClient.invalidateQueries({ queryKey: ["agency-tickets"] });
       queryClient.invalidateQueries({ queryKey: ["ticket", ticketId] });
+      queryClient.invalidateQueries({ queryKey: ["pending-nps-surveys"] });
       toast({
         title: "Ticket atualizado",
         description: "As alterações foram salvas com sucesso.",

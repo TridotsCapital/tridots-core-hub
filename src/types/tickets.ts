@@ -20,6 +20,8 @@ export interface Ticket {
   satisfaction_rating: number | null;
   satisfaction_comment: string | null;
   escalated_at: string | null;
+  closed_by: string | null;
+  closed_by_type: 'agency' | 'internal' | null;
   created_at: string;
   updated_at: string;
   // Joined data
