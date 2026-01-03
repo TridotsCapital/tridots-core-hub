@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Analysis, statusConfig } from '@/types/database';
 import {
   Sheet,
@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Input } from '@/components/ui/input';
 import { AnalysisTimeline } from './AnalysisTimeline';
 import { DocumentSection } from './DocumentSection';
 import { ChatSection } from './ChatSection';
@@ -18,6 +19,9 @@ import { StartAnalysisModal } from './StartAnalysisModal';
 import { RejectionModal } from './RejectionModal';
 import { ApprovalModal } from './ApprovalModal';
 import { useMoveAnalysis } from '@/hooks/useAnalysesKanban';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { 
   Building2, 
   User, 
@@ -34,6 +38,9 @@ import {
   XCircle,
   CheckCircle,
   Percent,
+  Link,
+  Copy,
+  RefreshCw,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -68,7 +75,65 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
   const [startModalOpen, setStartModalOpen] = useState(false);
   const [rejectionModalOpen, setRejectionModalOpen] = useState(false);
   const [approvalModalOpen, setApprovalModalOpen] = useState(false);
+  const [regeneratingLink, setRegeneratingLink] = useState(false);
   const moveAnalysis = useMoveAnalysis();
+  const queryClient = useQueryClient();
+
+  // Calculate acceptance link status
+  const acceptanceStatus = useMemo(() => {
+    if (!analysis?.acceptance_token) return null;
+    
+    if (analysis.acceptance_token_used_at) {
+      return { status: 'used' as const, label: 'Aceite realizado' };
+    }
+    
+    if (!analysis.acceptance_token_expires_at) return null;
+    
+    const expiresAt = new Date(analysis.acceptance_token_expires_at);
+    const now = new Date();
+    
+    if (now > expiresAt) {
+      return { status: 'expired' as const, label: 'Link expirado' };
+    }
+    
+    const diffMs = expiresAt.getTime() - now.getTime();
+    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+    
+    return { 
+      status: 'active' as const, 
+      label: `Expira em ${hours}h ${minutes}min`,
+      expiresAt
+    };
+  }, [analysis?.acceptance_token, analysis?.acceptance_token_expires_at, analysis?.acceptance_token_used_at]);
+
+  const handleRegenerateLink = async () => {
+    if (!analysis) return;
+    
+    setRegeneratingLink(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-acceptance-link', {
+        body: { analysisId: analysis.id }
+      });
+      
+      if (error) throw error;
+      
+      queryClient.invalidateQueries({ queryKey: ['analyses-kanban'] });
+      toast.success('Novo link gerado com sucesso!');
+    } catch (error) {
+      console.error('Error regenerating link:', error);
+      toast.error('Erro ao regenerar link');
+    } finally {
+      setRegeneratingLink(false);
+    }
+  };
+
+  const handleCopyLink = () => {
+    if (!analysis?.acceptance_token) return;
+    const link = `${window.location.origin}/aceite/${analysis.acceptance_token}`;
+    navigator.clipboard.writeText(link);
+    toast.success('Link copiado!');
+  };
 
   if (!analysis) return null;
 
@@ -187,6 +252,48 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
                         Taxa original: {analysis.original_taxa_garantia_percentual}% → 
                         Nova taxa: {analysis.taxa_garantia_percentual}%
                       </p>
+                    </div>
+                  )}
+
+                  {/* Acceptance Link Section */}
+                  {analysis.status === 'aguardando_pagamento' && analysis.acceptance_token && (
+                    <div className="rounded-lg border border-primary/30 bg-primary/5 p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <Link className="h-4 w-4 text-primary" />
+                          <span className="font-medium">Link de Aceite</span>
+                        </div>
+                        <Badge variant={acceptanceStatus?.status === 'active' ? 'default' : acceptanceStatus?.status === 'used' ? 'secondary' : 'destructive'}>
+                          {acceptanceStatus?.label}
+                        </Badge>
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        <Input 
+                          value={`${window.location.origin}/aceite/${analysis.acceptance_token}`}
+                          readOnly 
+                          className="text-xs font-mono"
+                        />
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={handleCopyLink}
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      
+                      {acceptanceStatus?.status === 'expired' && (
+                        <Button 
+                          size="sm" 
+                          className="mt-3 w-full"
+                          onClick={handleRegenerateLink}
+                          disabled={regeneratingLink}
+                        >
+                          <RefreshCw className={`h-4 w-4 mr-2 ${regeneratingLink ? 'animate-spin' : ''}`} />
+                          {regeneratingLink ? 'Gerando...' : 'Regenerar Link'}
+                        </Button>
+                      )}
                     </div>
                   )}
 

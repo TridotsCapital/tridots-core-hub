@@ -57,6 +57,97 @@ const iconMap: Record<string, React.ElementType> = {
   FileSearch,
 };
 
+// Format metadata based on event type
+const formatMetadata = (eventType: string, metadata: Record<string, unknown>): { label: string; value: string }[] => {
+  const entries: { label: string; value: string }[] = [];
+  
+  switch (eventType) {
+    case 'rate_adjusted':
+      if (metadata.original_rate !== undefined) entries.push({ 
+        label: 'Taxa Original', 
+        value: `${metadata.original_rate}%` 
+      });
+      if (metadata.new_rate !== undefined) entries.push({ 
+        label: 'Nova Taxa', 
+        value: `${metadata.new_rate}%` 
+      });
+      break;
+      
+    case 'acceptance_link_generated':
+      if (metadata.expires_at) entries.push({ 
+        label: 'Expira em', 
+        value: format(new Date(metadata.expires_at as string), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
+      });
+      break;
+      
+    case 'analysis_started':
+    case 'analyst_assigned':
+      if (metadata.analyst_name) entries.push({ 
+        label: 'Analista', 
+        value: metadata.analyst_name as string 
+      });
+      break;
+      
+    case 'status_changed':
+      if (metadata.old_status) entries.push({ 
+        label: 'Status Anterior', 
+        value: formatStatus(metadata.old_status as string) 
+      });
+      if (metadata.new_status) entries.push({ 
+        label: 'Novo Status', 
+        value: formatStatus(metadata.new_status as string) 
+      });
+      break;
+      
+    case 'payment_completed':
+      if (metadata.checkout_session_id) entries.push({ 
+        label: 'Sessão Stripe', 
+        value: (metadata.checkout_session_id as string).slice(0, 20) + '...' 
+      });
+      break;
+
+    case 'payment_failed':
+      if (metadata.attempt) entries.push({ 
+        label: 'Tentativa', 
+        value: `${metadata.attempt}/3` 
+      });
+      break;
+
+    case 'contract_created':
+      if (metadata.contract_id) entries.push({ 
+        label: 'ID do Contrato', 
+        value: (metadata.contract_id as string).slice(0, 8) + '...' 
+      });
+      break;
+      
+    default:
+      // Fallback: show formatted key-value
+      Object.entries(metadata).forEach(([key, value]) => {
+        if (value !== null && value !== undefined) {
+          const formattedKey = key.replace(/_/g, ' ')
+            .replace(/\b\w/g, l => l.toUpperCase());
+          entries.push({ label: formattedKey, value: String(value) });
+        }
+      });
+  }
+  
+  return entries;
+};
+
+// Helper to format status names
+const formatStatus = (status: string): string => {
+  const statusMap: Record<string, string> = {
+    'pendente': 'Pendente',
+    'em_analise': 'Em Análise',
+    'aprovada': 'Aprovada',
+    'reprovada': 'Reprovada',
+    'cancelada': 'Cancelada',
+    'aguardando_pagamento': 'Aguardando Pagamento',
+    'ativo': 'Ativo',
+  };
+  return statusMap[status] || status;
+};
+
 export function AnalysisTimeline({ analysis }: AnalysisTimelineProps) {
   const { data: timelineEvents, isLoading } = useAnalysisTimeline(analysis.id);
   const [expandedEvents, setExpandedEvents] = useState<Set<string>>(new Set());
@@ -131,10 +222,13 @@ export function AnalysisTimeline({ analysis }: AnalysisTimelineProps) {
                 
                 {/* Expanded metadata */}
                 {isExpanded && hasMetadata && (
-                  <div className="mt-2 rounded-md bg-muted/50 p-2 text-xs">
-                    <pre className="whitespace-pre-wrap break-all">
-                      {JSON.stringify(event.metadata, null, 2)}
-                    </pre>
+                  <div className="mt-2 rounded-md bg-muted/50 p-3 space-y-1.5">
+                    {formatMetadata(event.event_type, event.metadata as Record<string, unknown>).map((item, i) => (
+                      <div key={i} className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">{item.label}</span>
+                        <span className="font-medium">{item.value}</span>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
