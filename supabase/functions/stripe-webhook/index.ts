@@ -72,14 +72,24 @@ serve(async (req) => {
             },
           });
 
-          // Create contract
-          const { data: contractId, error: contractError } = await supabase
-            .rpc("create_contract_from_analysis", { _analysis_id: analysisId });
-          
-          if (contractError) {
-            console.error("Error creating contract:", contractError);
+          // Create contract (check for existing first to prevent duplicates)
+          const { data: existingContract } = await supabase
+            .from("contracts")
+            .select("id")
+            .eq("analysis_id", analysisId)
+            .maybeSingle();
+
+          if (!existingContract) {
+            const { data: contractId, error: contractError } = await supabase
+              .rpc("create_contract_from_analysis", { _analysis_id: analysisId });
+            
+            if (contractError) {
+              console.error("Error creating contract:", contractError);
+            } else {
+              console.log(`Contract created: ${contractId}`);
+            }
           } else {
-            console.log(`Contract created: ${contractId}`);
+            console.log(`Contract already exists for analysis ${analysisId}, skipping creation`);
           }
 
           // Create setup commission if applicable
