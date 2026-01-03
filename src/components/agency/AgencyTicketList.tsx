@@ -19,6 +19,7 @@ interface Ticket {
   created_at: string;
   updated_at: string;
   first_response_at: string | null;
+  closed_by_type: 'agency' | 'internal' | null;
 }
 
 interface AgencyTicketListProps {
@@ -166,6 +167,8 @@ export function AgencyTicketList({
           ) : (
             filteredTickets.map((ticket) => {
               const hasUnread = unreadIds?.chamados.has(ticket.id) ?? false;
+              const closedByAgency = ticket.closed_by_type === 'agency';
+              const isResolved = ticket.status === 'resolvido';
               return (
                 <button
                   key={ticket.id}
@@ -198,6 +201,14 @@ export function AgencyTicketList({
                     >
                       {categoryConfig[ticket.category].label}
                     </Badge>
+                    {isResolved && closedByAgency && (
+                      <Badge
+                        variant="secondary"
+                        className="text-[10px] px-1.5 py-0 shrink-0 bg-amber-100 text-amber-700 border-amber-200"
+                      >
+                        Encerrado por você
+                      </Badge>
+                    )}
                   </div>
 
                   {/* Subject */}

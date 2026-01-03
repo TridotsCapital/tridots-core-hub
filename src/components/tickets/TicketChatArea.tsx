@@ -93,10 +93,12 @@ export function TicketChatArea({ ticketId, onClose }: TicketChatAreaProps) {
   };
 
   const handleStatusChange = (status: TicketStatus) => {
-    if (!ticketId) return;
+    if (!ticketId || !user) return;
     const updates: any = { status };
     if (status === 'resolvido') {
       updates.resolved_at = new Date().toISOString();
+      updates.closed_by = user.id;
+      updates.closed_by_type = 'internal';
     }
     updateTicket.mutate({ ticketId, updates });
   };
@@ -154,6 +156,14 @@ export function TicketChatArea({ ticketId, onClose }: TicketChatAreaProps) {
                 >
                   <FileText className="h-3 w-3 mr-1" />
                   Contrato
+                </Badge>
+              )}
+              {ticket.status === 'resolvido' && ticket.closed_by_type === 'agency' && (
+                <Badge 
+                  variant="secondary" 
+                  className="text-[10px] h-5 bg-amber-100 text-amber-700 border-amber-200"
+                >
+                  Encerrado pela Imobiliária
                 </Badge>
               )}
             </div>

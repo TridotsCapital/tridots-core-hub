@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Send, Loader2, Clock, CheckCircle, AlertCircle, MessageSquare, FileText } from "lucide-react";
+import { Send, Loader2, Clock, CheckCircle, AlertCircle, MessageSquare, FileText, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,6 +18,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotificationSound } from "@/hooks/useNotificationSound";
 import { TicketStatus, TicketCategory } from "@/types/tickets";
+import { CloseTicketDialog } from "./CloseTicketDialog";
 import { cn } from "@/lib/utils";
 
 interface AgencyTicketChatAreaProps {
@@ -70,6 +71,8 @@ export function AgencyTicketChatArea({ ticketId }: AgencyTicketChatAreaProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [message, setMessage] = useState("");
+  const [showCloseDialog, setShowCloseDialog] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { playSound } = useNotificationSound();
 
@@ -93,6 +96,26 @@ export function AgencyTicketChatArea({ ticketId }: AgencyTicketChatAreaProps) {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  const handleCloseTicket = async () => {
+    if (!ticketId || !user) return;
+    
+    setIsClosing(true);
+    try {
+      await updateTicket.mutateAsync({
+        ticketId,
+        updates: {
+          status: "resolvido" as TicketStatus,
+          resolved_at: new Date().toISOString(),
+          closed_by: user.id,
+          closed_by_type: "agency",
+        },
+      });
+      setShowCloseDialog(false);
+    } finally {
+      setIsClosing(false);
+    }
+  };
 
   const handleSendMessage = async () => {
     if (!message.trim() || !ticketId || !user) return;
@@ -150,6 +173,7 @@ export function AgencyTicketChatArea({ ticketId }: AgencyTicketChatAreaProps) {
   }
 
   const isResolved = ticket.status === "resolvido";
+  const closedByAgency = (ticket as any).closed_by_type === "agency";
 
   return (
     <div className="flex-1 flex flex-col h-full bg-background">
@@ -179,12 +203,31 @@ export function AgencyTicketChatArea({ ticketId }: AgencyTicketChatAreaProps) {
             {ticket.subject}
           </h2>
         </div>
-        <Badge
-          variant="outline"
-          className={cn("shrink-0 ml-2", statusConfig[ticket.status as TicketStatus].className)}
-        >
-          {statusConfig[ticket.status as TicketStatus].label}
-        </Badge>
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Close ticket button (only if not resolved) */}
+          {!isResolved && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowCloseDialog(true)}
+              className="text-xs"
+            >
+              <XCircle className="h-3.5 w-3.5 mr-1" />
+              Encerrar
+            </Button>
+          )}
+          <Badge
+            variant="outline"
+            className={cn("shrink-0", statusConfig[ticket.status as TicketStatus].className)}
+          >
+            {statusConfig[ticket.status as TicketStatus].label}
+          </Badge>
+          {isResolved && closedByAgency && (
+            <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-700 border-amber-200">
+              Encerrado por você
+            </Badge>
+          )}
+        </div>
       </div>
 
       {/* Messages */}
@@ -308,6 +351,15 @@ export function AgencyTicketChatArea({ ticketId }: AgencyTicketChatAreaProps) {
           </div>
         )}
       </div>
+
+      {/* Close Ticket Dialog */}
+      <CloseTicketDialog
+        open={showCloseDialog}
+        onOpenChange={setShowCloseDialog}
+        onConfirm={handleCloseTicket}
+        isLoading={isClosing}
+        ticketSubject={ticket.subject}
+      />
     </div>
   );
 }

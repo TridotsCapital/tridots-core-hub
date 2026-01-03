@@ -31,6 +31,7 @@ import { Loader2, FileWarning } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useNps } from "@/contexts/NpsContext";
 import type { Claim } from "@/types/claims";
 
 const formSchema = z.object({
@@ -50,7 +51,16 @@ interface ClaimTicketSheetProps {
 export function ClaimTicketSheet({ open, onOpenChange, claim }: ClaimTicketSheetProps) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { hasPendingNps, showNpsModal } = useNps();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // If has pending NPS and sheet opens, show NPS modal instead
+  useEffect(() => {
+    if (open && hasPendingNps) {
+      onOpenChange(false);
+      showNpsModal();
+    }
+  }, [open, hasPendingNps, showNpsModal, onOpenChange]);
   const [agencyId, setAgencyId] = useState<string | null>(null);
 
   const form = useForm<FormValues>({

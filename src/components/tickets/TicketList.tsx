@@ -87,6 +87,11 @@ export function TicketList({ tickets, isLoading, selectedTicketId, onSelectTicke
                   <Badge variant="outline" className={statusConfig.color}>
                     {statusConfig.label}
                   </Badge>
+                  {ticket.status === 'resolvido' && ticket.closed_by_type === 'agency' && (
+                    <Badge variant="secondary" className="bg-amber-100 text-amber-700 border-amber-200">
+                      Encerrado pela Imobiliária
+                    </Badge>
+                  )}
                 </div>
               </div>
 
