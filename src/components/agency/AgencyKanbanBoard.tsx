@@ -54,6 +54,16 @@ export function AgencyKanbanBoard({ analyses, isLoading, autoOpenAnalysisId, onA
     }
   }, [autoOpenAnalysisId, analyses, onAutoOpenHandled]);
 
+  // Keep selectedAnalysis in sync with latest data from analyses array
+  useEffect(() => {
+    if (selectedAnalysis && analyses) {
+      const updated = analyses.find(a => a.id === selectedAnalysis.id);
+      if (updated && JSON.stringify(updated) !== JSON.stringify(selectedAnalysis)) {
+        setSelectedAnalysis(updated);
+      }
+    }
+  }, [analyses, selectedAnalysis]);
+
   const handleCardClick = (analysis: Analysis) => {
     // Mark as read when opening
     if (unreadIds?.analises.has(analysis.id)) {

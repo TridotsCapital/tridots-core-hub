@@ -55,6 +55,16 @@ export function KanbanBoard({ filters, autoOpenAnalysisId, onAutoOpenHandled }: 
     }
   }, [autoOpenAnalysisId, analyses, onAutoOpenHandled]);
 
+  // Keep selectedAnalysis in sync with latest data from analyses array
+  useEffect(() => {
+    if (selectedAnalysis && analyses) {
+      const updated = analyses.find(a => a.id === selectedAnalysis.id);
+      if (updated && JSON.stringify(updated) !== JSON.stringify(selectedAnalysis)) {
+        setSelectedAnalysis(updated);
+      }
+    }
+  }, [analyses, selectedAnalysis]);
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {

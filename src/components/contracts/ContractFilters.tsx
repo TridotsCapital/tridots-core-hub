@@ -23,12 +23,13 @@ import { useAgencies } from '@/hooks/useAgencies';
 import type { ContractFilters as ContractFiltersType } from '@/hooks/useContracts';
 import type { Database } from '@/integrations/supabase/types';
 
-type AnalysisStatus = Database['public']['Enums']['analysis_status'];
+type ContractStatus = Database['public']['Enums']['contract_status'];
 
-const STATUS_OPTIONS: { value: AnalysisStatus; label: string }[] = [
-  { value: 'aprovada', label: 'Aprovada' },
-  { value: 'aguardando_pagamento', label: 'Aguardando Pagamento' },
+const STATUS_OPTIONS: { value: ContractStatus; label: string }[] = [
+  { value: 'documentacao_pendente', label: 'Doc. Pendente' },
   { value: 'ativo', label: 'Ativo' },
+  { value: 'cancelado', label: 'Cancelado' },
+  { value: 'encerrado', label: 'Encerrado' },
 ];
 
 const STATES = [
@@ -53,7 +54,7 @@ export function ContractFilters({ filters, onFiltersChange, onSearch }: Props) {
     onSearch(searchTerm);
   };
 
-  const handleStatusChange = (status: AnalysisStatus) => {
+  const handleStatusChange = (status: ContractStatus) => {
     const currentStatuses = filters.status || [];
     const newStatuses = currentStatuses.includes(status)
       ? currentStatuses.filter(s => s !== status)
@@ -161,7 +162,7 @@ export function ContractFilters({ filters, onFiltersChange, onSearch }: Props) {
 
           {/* Period Filter */}
           <div className="space-y-2">
-            <Label>Período (Aprovação)</Label>
+            <Label>Período (Criação)</Label>
             <div className="flex gap-2">
               <Popover>
                 <PopoverTrigger asChild>

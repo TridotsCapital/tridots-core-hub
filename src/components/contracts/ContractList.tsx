@@ -33,28 +33,28 @@ import { ptBR } from 'date-fns/locale';
 import { formatCurrency } from '@/lib/validators';
 import type { Database } from '@/integrations/supabase/types';
 
-type AnalysisStatus = Database['public']['Enums']['analysis_status'];
+type ContractStatus = Database['public']['Enums']['contract_status'];
 
-const STATUS_CONFIG: Record<AnalysisStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
-  pendente: { label: 'Pendente', variant: 'secondary' },
-  em_analise: { label: 'Em Análise', variant: 'secondary' },
-  aprovada: { label: 'Aprovada', variant: 'default' },
-  reprovada: { label: 'Reprovada', variant: 'destructive' },
-  cancelada: { label: 'Cancelada', variant: 'outline' },
-  aguardando_pagamento: { label: 'Aguardando Pagamento', variant: 'secondary' },
+const STATUS_CONFIG: Record<ContractStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
+  documentacao_pendente: { label: 'Doc. Pendente', variant: 'secondary' },
   ativo: { label: 'Ativo', variant: 'default' },
+  cancelado: { label: 'Cancelado', variant: 'destructive' },
+  encerrado: { label: 'Encerrado', variant: 'outline' },
 };
 
 interface Contract {
   id: string;
-  inquilino_nome: string;
-  inquilino_cpf: string;
-  imovel_cidade: string;
-  imovel_estado: string;
-  valor_aluguel: number;
-  status: AnalysisStatus;
+  status: ContractStatus;
   created_at: string;
-  approved_at: string | null;
+  analysis: {
+    id: string;
+    inquilino_nome: string;
+    inquilino_cpf: string;
+    imovel_cidade: string;
+    imovel_estado: string;
+    valor_aluguel: number;
+    approved_at: string | null;
+  } | null;
   agency: {
     id: string;
     razao_social: string;
@@ -93,15 +93,17 @@ export function ContractList({ contracts, isLoading, onRenew, onFlagPendency, on
       .filter(c => selectedIds.length === 0 || selectedIds.includes(c.id))
       .map(c => ({
         Código: c.id.slice(0, 8).toUpperCase(),
-        Inquilino: c.inquilino_nome,
-        CPF: c.inquilino_cpf,
+        Inquilino: c.analysis?.inquilino_nome || '-',
+        CPF: c.analysis?.inquilino_cpf || '-',
         Imobiliária: c.agency?.nome_fantasia || c.agency?.razao_social || '-',
-        Cidade: c.imovel_cidade,
-        Estado: c.imovel_estado,
-        Aluguel: c.valor_aluguel,
-        Status: STATUS_CONFIG[c.status].label,
-        'Data Aprovação': c.approved_at ? format(new Date(c.approved_at), 'dd/MM/yyyy') : '-',
+        Cidade: c.analysis?.imovel_cidade || '-',
+        Estado: c.analysis?.imovel_estado || '-',
+        Aluguel: c.analysis?.valor_aluguel || 0,
+        Status: STATUS_CONFIG[c.status]?.label || c.status,
+        'Data Criação': format(new Date(c.created_at), 'dd/MM/yyyy'),
       }));
+
+    if (data.length === 0) return;
 
     const csv = [
       Object.keys(data[0]).join(','),
@@ -130,7 +132,7 @@ export function ContractList({ contracts, isLoading, onRenew, onFlagPendency, on
       <div className="text-center py-12">
         <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
         <h3 className="font-medium text-lg">Nenhum contrato encontrado</h3>
-        <p className="text-muted-foreground">Ajuste os filtros para ver resultados</p>
+        <p className="text-muted-foreground">Contratos são criados após confirmação de pagamento</p>
       </div>
     );
   }
@@ -166,7 +168,7 @@ export function ContractList({ contracts, isLoading, onRenew, onFlagPendency, on
               <TableHead>Localização</TableHead>
               <TableHead>Aluguel</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Aprovação</TableHead>
+              <TableHead>Criação</TableHead>
               <TableHead className="w-12"></TableHead>
             </TableRow>
           </TableHeader>
@@ -190,27 +192,24 @@ export function ContractList({ contracts, isLoading, onRenew, onFlagPendency, on
                   </TableCell>
                   <TableCell>
                     <div>
-                      <p className="font-medium">{contract.inquilino_nome}</p>
-                      <p className="text-xs text-muted-foreground">{contract.inquilino_cpf}</p>
+                      <p className="font-medium">{contract.analysis?.inquilino_nome || '-'}</p>
+                      <p className="text-xs text-muted-foreground">{contract.analysis?.inquilino_cpf || '-'}</p>
                     </div>
                   </TableCell>
                   <TableCell>
                     {contract.agency?.nome_fantasia || contract.agency?.razao_social || '-'}
                   </TableCell>
                   <TableCell>
-                    {contract.imovel_cidade}, {contract.imovel_estado}
+                    {contract.analysis?.imovel_cidade}, {contract.analysis?.imovel_estado}
                   </TableCell>
                   <TableCell className="font-medium">
-                    {formatCurrency(contract.valor_aluguel)}
+                    {contract.analysis?.valor_aluguel ? formatCurrency(contract.analysis.valor_aluguel) : '-'}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={status.variant}>{status.label}</Badge>
+                    <Badge variant={status?.variant || 'secondary'}>{status?.label || contract.status}</Badge>
                   </TableCell>
                   <TableCell>
-                    {contract.approved_at 
-                      ? format(new Date(contract.approved_at), 'dd/MM/yyyy', { locale: ptBR })
-                      : '-'
-                    }
+                    {format(new Date(contract.created_at), 'dd/MM/yyyy', { locale: ptBR })}
                   </TableCell>
                   <TableCell onClick={e => e.stopPropagation()}>
                     <DropdownMenu>

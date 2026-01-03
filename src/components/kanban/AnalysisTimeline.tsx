@@ -121,12 +121,31 @@ const formatMetadata = (eventType: string, metadata: Record<string, unknown>): {
       break;
       
     default:
-      // Fallback: show formatted key-value
+      // Fallback: show formatted key-value with proper handling for objects/arrays
       Object.entries(metadata).forEach(([key, value]) => {
         if (value !== null && value !== undefined) {
           const formattedKey = key.replace(/_/g, ' ')
             .replace(/\b\w/g, l => l.toUpperCase());
-          entries.push({ label: formattedKey, value: String(value) });
+          
+          let formattedValue: string;
+          if (typeof value === 'object') {
+            // Handle objects and arrays - show compact JSON
+            formattedValue = JSON.stringify(value);
+            if (formattedValue.length > 50) {
+              formattedValue = formattedValue.slice(0, 47) + '...';
+            }
+          } else if (typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}T/)) {
+            // Handle ISO date strings
+            try {
+              formattedValue = format(new Date(value), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+            } catch {
+              formattedValue = String(value);
+            }
+          } else {
+            formattedValue = String(value);
+          }
+          
+          entries.push({ label: formattedKey, value: formattedValue });
         }
       });
   }
