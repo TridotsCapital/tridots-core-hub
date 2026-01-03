@@ -110,6 +110,35 @@ export interface Analysis {
   rejected_at: string | null;
   canceled_at: string | null;
   
+  // New fields for tenant journey
+  rate_adjusted_by_tridots: boolean;
+  original_taxa_garantia_percentual: number | null;
+  acceptance_token: string | null;
+  acceptance_token_expires_at: string | null;
+  acceptance_token_used_at: string | null;
+  payer_name: string | null;
+  payer_cpf: string | null;
+  payer_email: string | null;
+  payer_phone: string | null;
+  payer_address: string | null;
+  payer_number: string | null;
+  payer_complement: string | null;
+  payer_neighborhood: string | null;
+  payer_city: string | null;
+  payer_state: string | null;
+  payer_cep: string | null;
+  payer_is_tenant: boolean;
+  identity_photo_path: string | null;
+  terms_accepted_at: string | null;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  stripe_checkout_session_id: string | null;
+  payment_confirmed_at: string | null;
+  payment_failed_at: string | null;
+  payment_retry_count: number;
+  rejection_reason: string | null;
+  setup_fee_exempt: boolean;
+  
   // Joined data
   agency?: Agency;
   analyst?: Profile;
@@ -176,14 +205,67 @@ export const statusConfig: Record<AnalysisStatus, { label: string; class: string
   ativo: { label: 'Ativo', class: 'status-ativo' },
 };
 
-// Kanban column order
+// Kanban column order - Updated for new flow
+// Removed 'ativo' - after payment, analysis goes to 'aprovada' and creates a contract
 export const kanbanColumns: AnalysisStatus[] = [
   'pendente',
   'em_analise',
-  'aprovada',
   'aguardando_pagamento',
-  'ativo',
+  'aprovada',
+  'reprovada',
 ];
+
+// Contract status type
+export type ContractStatus = 'documentacao_pendente' | 'ativo' | 'cancelado' | 'encerrado';
+
+export const contractStatusConfig: Record<ContractStatus, { label: string; class: string }> = {
+  documentacao_pendente: { label: 'Documentação Pendente', class: 'status-pendente' },
+  ativo: { label: 'Ativo', class: 'status-ativo' },
+  cancelado: { label: 'Cancelado', class: 'status-cancelada' },
+  encerrado: { label: 'Encerrado', class: 'status-reprovada' },
+};
+
+// Contract interface
+export interface Contract {
+  id: string;
+  analysis_id: string;
+  agency_id: string;
+  status: ContractStatus;
+  doc_contrato_locacao_path: string | null;
+  doc_contrato_locacao_name: string | null;
+  doc_contrato_locacao_uploaded_at: string | null;
+  doc_vistoria_inicial_path: string | null;
+  doc_vistoria_inicial_name: string | null;
+  doc_vistoria_inicial_uploaded_at: string | null;
+  doc_seguro_incendio_path: string | null;
+  doc_seguro_incendio_name: string | null;
+  doc_seguro_incendio_uploaded_at: string | null;
+  activated_at: string | null;
+  activated_by: string | null;
+  canceled_at: string | null;
+  canceled_by: string | null;
+  cancellation_reason: string | null;
+  created_at: string;
+  updated_at: string;
+  
+  // Joined data
+  analysis?: Analysis;
+  agency?: Agency;
+}
+
+// Analysis timeline event type
+export interface AnalysisTimelineEvent {
+  id: string;
+  analysis_id: string;
+  event_type: string;
+  description: string;
+  metadata: Record<string, unknown>;
+  created_by: string | null;
+  created_at: string;
+  
+  // Joined data
+  creator?: Profile;
+}
 
 // Analysis document type
 export interface AnalysisDocument {

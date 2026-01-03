@@ -117,6 +117,9 @@ export type Database = {
       }
       analyses: {
         Row: {
+          acceptance_token: string | null
+          acceptance_token_expires_at: string | null
+          acceptance_token_used_at: string | null
           agency_id: string
           analyst_id: string | null
           approved_at: string | null
@@ -130,6 +133,7 @@ export type Database = {
           conjuge_rg: string | null
           created_at: string
           id: string
+          identity_photo_path: string | null
           imovel_bairro: string | null
           imovel_cep: string | null
           imovel_cidade: string
@@ -150,10 +154,33 @@ export type Database = {
           inquilino_rg: string | null
           inquilino_telefone: string | null
           observacoes: string | null
+          original_taxa_garantia_percentual: number | null
+          payer_address: string | null
+          payer_cep: string | null
+          payer_city: string | null
+          payer_complement: string | null
+          payer_cpf: string | null
+          payer_email: string | null
+          payer_is_tenant: boolean | null
+          payer_name: string | null
+          payer_neighborhood: string | null
+          payer_number: string | null
+          payer_phone: string | null
+          payer_state: string | null
+          payment_confirmed_at: string | null
+          payment_failed_at: string | null
+          payment_retry_count: number | null
+          rate_adjusted_by_tridots: boolean | null
           rejected_at: string | null
+          rejection_reason: string | null
           setup_fee: number
+          setup_fee_exempt: boolean | null
           status: Database["public"]["Enums"]["analysis_status"]
+          stripe_checkout_session_id: string | null
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
           taxa_garantia_percentual: number
+          terms_accepted_at: string | null
           updated_at: string
           valor_aluguel: number
           valor_condominio: number | null
@@ -162,6 +189,9 @@ export type Database = {
           valor_total: number | null
         }
         Insert: {
+          acceptance_token?: string | null
+          acceptance_token_expires_at?: string | null
+          acceptance_token_used_at?: string | null
           agency_id: string
           analyst_id?: string | null
           approved_at?: string | null
@@ -175,6 +205,7 @@ export type Database = {
           conjuge_rg?: string | null
           created_at?: string
           id?: string
+          identity_photo_path?: string | null
           imovel_bairro?: string | null
           imovel_cep?: string | null
           imovel_cidade: string
@@ -195,10 +226,33 @@ export type Database = {
           inquilino_rg?: string | null
           inquilino_telefone?: string | null
           observacoes?: string | null
+          original_taxa_garantia_percentual?: number | null
+          payer_address?: string | null
+          payer_cep?: string | null
+          payer_city?: string | null
+          payer_complement?: string | null
+          payer_cpf?: string | null
+          payer_email?: string | null
+          payer_is_tenant?: boolean | null
+          payer_name?: string | null
+          payer_neighborhood?: string | null
+          payer_number?: string | null
+          payer_phone?: string | null
+          payer_state?: string | null
+          payment_confirmed_at?: string | null
+          payment_failed_at?: string | null
+          payment_retry_count?: number | null
+          rate_adjusted_by_tridots?: boolean | null
           rejected_at?: string | null
+          rejection_reason?: string | null
           setup_fee?: number
+          setup_fee_exempt?: boolean | null
           status?: Database["public"]["Enums"]["analysis_status"]
+          stripe_checkout_session_id?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
           taxa_garantia_percentual?: number
+          terms_accepted_at?: string | null
           updated_at?: string
           valor_aluguel: number
           valor_condominio?: number | null
@@ -207,6 +261,9 @@ export type Database = {
           valor_total?: number | null
         }
         Update: {
+          acceptance_token?: string | null
+          acceptance_token_expires_at?: string | null
+          acceptance_token_used_at?: string | null
           agency_id?: string
           analyst_id?: string | null
           approved_at?: string | null
@@ -220,6 +277,7 @@ export type Database = {
           conjuge_rg?: string | null
           created_at?: string
           id?: string
+          identity_photo_path?: string | null
           imovel_bairro?: string | null
           imovel_cep?: string | null
           imovel_cidade?: string
@@ -240,10 +298,33 @@ export type Database = {
           inquilino_rg?: string | null
           inquilino_telefone?: string | null
           observacoes?: string | null
+          original_taxa_garantia_percentual?: number | null
+          payer_address?: string | null
+          payer_cep?: string | null
+          payer_city?: string | null
+          payer_complement?: string | null
+          payer_cpf?: string | null
+          payer_email?: string | null
+          payer_is_tenant?: boolean | null
+          payer_name?: string | null
+          payer_neighborhood?: string | null
+          payer_number?: string | null
+          payer_phone?: string | null
+          payer_state?: string | null
+          payment_confirmed_at?: string | null
+          payment_failed_at?: string | null
+          payment_retry_count?: number | null
+          rate_adjusted_by_tridots?: boolean | null
           rejected_at?: string | null
+          rejection_reason?: string | null
           setup_fee?: number
+          setup_fee_exempt?: boolean | null
           status?: Database["public"]["Enums"]["analysis_status"]
+          stripe_checkout_session_id?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
           taxa_garantia_percentual?: number
+          terms_accepted_at?: string | null
           updated_at?: string
           valor_aluguel?: number
           valor_condominio?: number | null
@@ -298,6 +379,51 @@ export type Database = {
             columns: ["analysis_id"]
             isOneToOne: false
             referencedRelation: "analyses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      analysis_timeline: {
+        Row: {
+          analysis_id: string
+          created_at: string
+          created_by: string | null
+          description: string
+          event_type: string
+          id: string
+          metadata: Json | null
+        }
+        Insert: {
+          analysis_id: string
+          created_at?: string
+          created_by?: string | null
+          description: string
+          event_type: string
+          id?: string
+          metadata?: Json | null
+        }
+        Update: {
+          analysis_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analysis_timeline_analysis_id_fkey"
+            columns: ["analysis_id"]
+            isOneToOne: false
+            referencedRelation: "analyses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "analysis_timeline_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -675,6 +801,104 @@ export type Database = {
             columns: ["analysis_id"]
             isOneToOne: false
             referencedRelation: "analyses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contracts: {
+        Row: {
+          activated_at: string | null
+          activated_by: string | null
+          agency_id: string
+          analysis_id: string
+          canceled_at: string | null
+          canceled_by: string | null
+          cancellation_reason: string | null
+          created_at: string
+          doc_contrato_locacao_name: string | null
+          doc_contrato_locacao_path: string | null
+          doc_contrato_locacao_uploaded_at: string | null
+          doc_seguro_incendio_name: string | null
+          doc_seguro_incendio_path: string | null
+          doc_seguro_incendio_uploaded_at: string | null
+          doc_vistoria_inicial_name: string | null
+          doc_vistoria_inicial_path: string | null
+          doc_vistoria_inicial_uploaded_at: string | null
+          id: string
+          status: Database["public"]["Enums"]["contract_status"]
+          updated_at: string
+        }
+        Insert: {
+          activated_at?: string | null
+          activated_by?: string | null
+          agency_id: string
+          analysis_id: string
+          canceled_at?: string | null
+          canceled_by?: string | null
+          cancellation_reason?: string | null
+          created_at?: string
+          doc_contrato_locacao_name?: string | null
+          doc_contrato_locacao_path?: string | null
+          doc_contrato_locacao_uploaded_at?: string | null
+          doc_seguro_incendio_name?: string | null
+          doc_seguro_incendio_path?: string | null
+          doc_seguro_incendio_uploaded_at?: string | null
+          doc_vistoria_inicial_name?: string | null
+          doc_vistoria_inicial_path?: string | null
+          doc_vistoria_inicial_uploaded_at?: string | null
+          id?: string
+          status?: Database["public"]["Enums"]["contract_status"]
+          updated_at?: string
+        }
+        Update: {
+          activated_at?: string | null
+          activated_by?: string | null
+          agency_id?: string
+          analysis_id?: string
+          canceled_at?: string | null
+          canceled_by?: string | null
+          cancellation_reason?: string | null
+          created_at?: string
+          doc_contrato_locacao_name?: string | null
+          doc_contrato_locacao_path?: string | null
+          doc_contrato_locacao_uploaded_at?: string | null
+          doc_seguro_incendio_name?: string | null
+          doc_seguro_incendio_path?: string | null
+          doc_seguro_incendio_uploaded_at?: string | null
+          doc_vistoria_inicial_name?: string | null
+          doc_vistoria_inicial_path?: string | null
+          doc_vistoria_inicial_uploaded_at?: string | null
+          id?: string
+          status?: Database["public"]["Enums"]["contract_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contracts_activated_by_fkey"
+            columns: ["activated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_analysis_id_fkey"
+            columns: ["analysis_id"]
+            isOneToOne: true
+            referencedRelation: "analyses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_canceled_by_fkey"
+            columns: ["canceled_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1316,6 +1540,10 @@ export type Database = {
     }
     Functions: {
       cleanup_stale_typing_indicators: { Args: never; Returns: undefined }
+      create_contract_from_analysis: {
+        Args: { _analysis_id: string }
+        Returns: string
+      }
       get_agency_approval_rate: {
         Args: { _agency_id: string }
         Returns: {
@@ -1361,6 +1589,16 @@ export type Database = {
       }
       is_agency_user: { Args: { _user_id: string }; Returns: boolean }
       is_master: { Args: { _user_id: string }; Returns: boolean }
+      log_analysis_timeline_event: {
+        Args: {
+          _analysis_id: string
+          _created_by?: string
+          _description: string
+          _event_type: string
+          _metadata?: Json
+        }
+        Returns: string
+      }
     }
     Enums: {
       analysis_status:
@@ -1406,6 +1644,11 @@ export type Database = {
         | "finalizado"
       commission_status: "pendente" | "paga" | "cancelada" | "estornada"
       commission_type: "setup" | "recorrente"
+      contract_status:
+        | "documentacao_pendente"
+        | "ativo"
+        | "cancelado"
+        | "encerrado"
       notification_type:
         | "new_message"
         | "status_change"
@@ -1593,6 +1836,12 @@ export const Constants = {
       ],
       commission_status: ["pendente", "paga", "cancelada", "estornada"],
       commission_type: ["setup", "recorrente"],
+      contract_status: [
+        "documentacao_pendente",
+        "ativo",
+        "cancelado",
+        "encerrado",
+      ],
       notification_type: [
         "new_message",
         "status_change",
