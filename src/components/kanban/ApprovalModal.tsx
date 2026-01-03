@@ -99,8 +99,8 @@ export function ApprovalModal({ analysis, open, onOpenChange, onConfirm }: Appro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col">
+        <DialogHeader className="shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <CheckCircle className="h-5 w-5 text-success" />
             Aprovar Análise
@@ -110,7 +110,7 @@ export function ApprovalModal({ analysis, open, onOpenChange, onConfirm }: Appro
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="space-y-4 py-4 overflow-y-auto flex-1 min-h-0">
           {/* Analysis summary */}
           <div className="rounded-lg bg-muted/50 p-4 space-y-2">
             <div className="flex justify-between text-sm">
@@ -207,7 +207,7 @@ export function ApprovalModal({ analysis, open, onOpenChange, onConfirm }: Appro
           </div>
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0">
+        <DialogFooter className="gap-2 sm:gap-0 shrink-0 pt-4 border-t">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
