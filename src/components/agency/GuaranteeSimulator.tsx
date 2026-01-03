@@ -64,7 +64,7 @@ export function GuaranteeSimulator({ onStartAnalysis, initialValues }: Guarantee
     });
   };
 
-  const isValid = aluguel > 0 && setupFee !== null;
+  const isValid = aluguel > 0 && iptu > 0 && setupFee !== null;
 
   return (
     <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-background">
@@ -117,7 +117,7 @@ export function GuaranteeSimulator({ onStartAnalysis, initialValues }: Guarantee
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="iptu">IPTU Mensal</Label>
+            <Label htmlFor="iptu">IPTU Mensal *</Label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
                 R$
