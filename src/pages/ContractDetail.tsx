@@ -28,12 +28,14 @@ import {
 import { useContract } from '@/hooks/useContracts';
 import { useTicketCountByAnalysis, useTicketsByAnalysis } from '@/hooks/useTickets';
 import { ContractActions } from '@/components/contracts';
+import { ContractDocumentsSection } from '@/components/contracts/ContractDocumentsSection';
 import { ContractTicketSheet } from '@/components/contracts/ContractTicketSheet';
 import { TicketDetailSheet } from '@/components/tickets/TicketDetailSheet';
 import { formatCurrency, PROPERTY_TYPES } from '@/lib/validators';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Database } from '@/integrations/supabase/types';
+import { useQueryClient } from '@tanstack/react-query';
 
 type ContractStatus = Database['public']['Enums']['contract_status'];
 
@@ -57,12 +59,13 @@ interface TimelineEvent {
 export default function ContractDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'overview');
   const [ticketSheetOpen, setTicketSheetOpen] = useState(false);
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
 
-  const { data: contract, isLoading } = useContract(id);
+  const { data: contract, isLoading, refetch } = useContract(id);
   const analysisId = contract?.analysis_id;
   const { data: ticketCount = 0 } = useTicketCountByAnalysis(analysisId);
   const { data: tickets = [] } = useTicketsByAnalysis(analysisId);
@@ -250,6 +253,7 @@ export default function ContractDetail() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
             <TabsTrigger value="overview">Visão Geral</TabsTrigger>
+            <TabsTrigger value="docs">Docs</TabsTrigger>
             <TabsTrigger value="timeline">Timeline</TabsTrigger>
             <TabsTrigger value="financial">Financeiro</TabsTrigger>
           </TabsList>
@@ -399,6 +403,35 @@ export default function ContractDetail() {
                 </CardContent>
               </Card>
             )}
+          </TabsContent>
+
+          <TabsContent value="docs" className="mt-6">
+            <ContractDocumentsSection
+              contract={{
+                id: contract.id,
+                status: contract.status,
+                analysis_id: contract.analysis_id,
+                doc_contrato_locacao_path: contract.doc_contrato_locacao_path,
+                doc_contrato_locacao_name: contract.doc_contrato_locacao_name,
+                doc_contrato_locacao_status: contract.doc_contrato_locacao_status,
+                doc_contrato_locacao_feedback: contract.doc_contrato_locacao_feedback,
+                doc_contrato_locacao_uploaded_at: contract.doc_contrato_locacao_uploaded_at,
+                doc_vistoria_inicial_path: contract.doc_vistoria_inicial_path,
+                doc_vistoria_inicial_name: contract.doc_vistoria_inicial_name,
+                doc_vistoria_inicial_status: contract.doc_vistoria_inicial_status,
+                doc_vistoria_inicial_feedback: contract.doc_vistoria_inicial_feedback,
+                doc_vistoria_inicial_uploaded_at: contract.doc_vistoria_inicial_uploaded_at,
+                doc_seguro_incendio_path: contract.doc_seguro_incendio_path,
+                doc_seguro_incendio_name: contract.doc_seguro_incendio_name,
+                doc_seguro_incendio_status: contract.doc_seguro_incendio_status,
+                doc_seguro_incendio_feedback: contract.doc_seguro_incendio_feedback,
+                doc_seguro_incendio_uploaded_at: contract.doc_seguro_incendio_uploaded_at,
+              }}
+              identityPhotoPath={analysis.identity_photo_path}
+              tenantName={analysis.inquilino_nome}
+              isAgencyView={false}
+              onUpdate={() => refetch()}
+            />
           </TabsContent>
 
           <TabsContent value="timeline" className="mt-6">

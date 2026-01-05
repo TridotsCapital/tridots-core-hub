@@ -5,20 +5,28 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Home, User, Users, DollarSign, Calendar, CheckCircle, Clock, XCircle, CreditCard, FileText, Loader2, MessageSquare, Eye, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Home, User, Users, DollarSign, Calendar, CheckCircle, Clock, XCircle, CreditCard, FileText, Loader2, MessageSquare, Eye, ExternalLink, FileCheck } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency, PROPERTY_TYPES } from '@/lib/validators';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { AgencyDocumentCenter } from './AgencyDocumentCenter';
+import { ContractDocumentsSection } from '@/components/contracts/ContractDocumentsSection';
 import { ContractTicketSheet } from './ContractTicketSheet';
 import { AgencyTicketDetail } from './AgencyTicketDetail';
 import { useTicketCountByAnalysis, useTicketsByAnalysis } from '@/hooks/useTickets';
 import type { Database } from '@/integrations/supabase/types';
 
+type ContractStatus = Database['public']['Enums']['contract_status'];
 type AnalysisStatus = Database['public']['Enums']['analysis_status'];
 
-const STATUS_CONFIG: Record<AnalysisStatus, { label: string; color: string; icon: any }> = {
+const CONTRACT_STATUS_CONFIG: Record<ContractStatus, { label: string; color: string; icon: any }> = {
+  documentacao_pendente: { label: 'Doc. Pendente', color: 'bg-amber-100 text-amber-800 border-amber-200', icon: FileCheck },
+  ativo: { label: 'Ativo', color: 'bg-green-100 text-green-800 border-green-200', icon: CheckCircle },
+  cancelado: { label: 'Cancelado', color: 'bg-red-100 text-red-800 border-red-200', icon: XCircle },
+  encerrado: { label: 'Encerrado', color: 'bg-gray-100 text-gray-800 border-gray-200', icon: Clock },
+};
+
+const ANALYSIS_STATUS_CONFIG: Record<AnalysisStatus, { label: string; color: string; icon: any }> = {
   pendente: { label: 'Pendente', color: 'bg-amber-100 text-amber-800 border-amber-200', icon: Clock },
   em_analise: { label: 'Em Análise', color: 'bg-blue-100 text-blue-800 border-blue-200', icon: Clock },
   aprovada: { label: 'Aprovada', color: 'bg-emerald-100 text-emerald-800 border-emerald-200', icon: CheckCircle },
@@ -26,13 +34,6 @@ const STATUS_CONFIG: Record<AnalysisStatus, { label: string; color: string; icon
   cancelada: { label: 'Cancelada', color: 'bg-gray-100 text-gray-800 border-gray-200', icon: XCircle },
   aguardando_pagamento: { label: 'Aguardando Pagamento', color: 'bg-orange-100 text-orange-800 border-orange-200', icon: CreditCard },
   ativo: { label: 'Ativo', color: 'bg-green-100 text-green-800 border-green-200', icon: CheckCircle },
-};
-
-const TICKET_STATUS_LABELS: Record<string, string> = {
-  aberto: 'Aberto',
-  em_atendimento: 'Em Atendimento',
-  aguardando_cliente: 'Aguardando Resposta',
-  resolvido: 'Resolvido',
 };
 
 interface TimelineEvent {
@@ -50,6 +51,7 @@ export function AgencyContractDetail() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [analysis, setAnalysis] = useState<any>(null);
+  const [contract, setContract] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'overview');
   const [ticketSheetOpen, setTicketSheetOpen] = useState(false);
@@ -58,27 +60,37 @@ export function AgencyContractDetail() {
   const { data: ticketCount = 0 } = useTicketCountByAnalysis(id);
   const { data: tickets = [] } = useTicketsByAnalysis(id);
 
+  const fetchData = async () => {
+    if (!id) return;
+    
+    try {
+      // Fetch analysis
+      const { data: analysisData, error: analysisError } = await supabase
+        .from('analyses')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (analysisError) throw analysisError;
+      setAnalysis(analysisData);
+
+      // Fetch contract if exists
+      const { data: contractData } = await supabase
+        .from('contracts')
+        .select('*')
+        .eq('analysis_id', id)
+        .maybeSingle();
+
+      setContract(contractData);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchAnalysis = async () => {
-      if (!id) return;
-      
-      try {
-        const { data, error } = await supabase
-          .from('analyses')
-          .select('*')
-          .eq('id', id)
-          .single();
-
-        if (error) throw error;
-        setAnalysis(data);
-      } catch (error) {
-        console.error('Error fetching analysis:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAnalysis();
+    fetchData();
   }, [id]);
 
   if (loading) {
@@ -92,7 +104,7 @@ export function AgencyContractDetail() {
   if (!analysis) {
     return (
       <div className="text-center py-12">
-        <p className="text-muted-foreground">Contrato não encontrado</p>
+        <p className="text-muted-foreground">Análise não encontrada</p>
         <Button variant="outline" className="mt-4" onClick={() => navigate('/agency/contracts')}>
           Voltar para lista
         </Button>
@@ -100,7 +112,11 @@ export function AgencyContractDetail() {
     );
   }
 
-  const statusConfig = STATUS_CONFIG[analysis.status as AnalysisStatus];
+  // Determine which status to show
+  const hasContract = !!contract;
+  const statusConfig = hasContract 
+    ? CONTRACT_STATUS_CONFIG[contract.status as ContractStatus]
+    : ANALYSIS_STATUS_CONFIG[analysis.status as AnalysisStatus];
   const StatusIcon = statusConfig.icon;
   const propertyType = PROPERTY_TYPES.find(t => t.value === analysis.imovel_tipo)?.label || analysis.imovel_tipo;
 
@@ -149,22 +165,22 @@ export function AgencyContractDetail() {
     });
   }
 
-  if (analysis.status === 'aguardando_pagamento') {
+  if (contract?.created_at) {
     timelineEvents.push({
-      date: analysis.approved_at || analysis.created_at,
-      title: 'Aguardando Pagamento',
-      description: `Setup Fee: ${formatCurrency(analysis.setup_fee)}`,
-      icon: CreditCard,
-      iconColor: 'text-orange-500',
+      date: contract.created_at,
+      title: 'Contrato Criado',
+      description: 'Pagamento confirmado, contrato gerado',
+      icon: FileCheck,
+      iconColor: 'text-blue-600',
       type: 'contract',
     });
   }
 
-  if (analysis.status === 'ativo') {
+  if (contract?.activated_at) {
     timelineEvents.push({
-      date: analysis.updated_at,
-      title: 'Contrato Ativo',
-      description: 'Pagamento confirmado, garantia ativada',
+      date: contract.activated_at,
+      title: 'Contrato Ativado',
+      description: 'Documentação aprovada, garantia ativa',
       icon: CheckCircle,
       iconColor: 'text-green-600',
       type: 'contract',
@@ -202,6 +218,9 @@ export function AgencyContractDetail() {
   const totalEncargos = analysis.valor_aluguel + (analysis.valor_condominio || 0) + (analysis.valor_iptu || 0);
   const taxaMensal = totalEncargos * (analysis.taxa_garantia_percentual / 100);
 
+  // Show documents tab only if contract exists
+  const showDocsTab = hasContract;
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -211,7 +230,9 @@ export function AgencyContractDetail() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-xl font-bold">Contrato #{analysis.id.slice(0, 8).toUpperCase()}</h1>
+            <h1 className="text-xl font-bold">
+              {hasContract ? 'Contrato' : 'Análise'} #{(contract?.id || analysis.id).slice(0, 8).toUpperCase()}
+            </h1>
             <p className="text-sm text-muted-foreground">{analysis.inquilino_nome}</p>
           </div>
         </div>
@@ -241,7 +262,6 @@ export function AgencyContractDetail() {
         </div>
       </div>
 
-      {/* Ticket Sheet */}
       {/* Ticket Detail Sheet */}
       <AgencyTicketDetail
         ticketId={selectedTicketId}
@@ -253,7 +273,7 @@ export function AgencyContractDetail() {
         onOpenChange={setTicketSheetOpen}
         analysisId={analysis.id}
         agencyId={analysis.agency_id}
-        contractRef={analysis.id.slice(0, 8).toUpperCase()}
+        contractRef={(contract?.id || analysis.id).slice(0, 8).toUpperCase()}
         tenantName={analysis.inquilino_nome}
       />
 
@@ -262,7 +282,7 @@ export function AgencyContractDetail() {
         <TabsList>
           <TabsTrigger value="overview">Visão Geral</TabsTrigger>
           <TabsTrigger value="timeline">Timeline</TabsTrigger>
-          <TabsTrigger value="documents">Documentos</TabsTrigger>
+          {showDocsTab && <TabsTrigger value="documents">Documentos</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6 mt-6">
@@ -423,7 +443,9 @@ export function AgencyContractDetail() {
                 </div>
                 <div>
                   <span className="text-muted-foreground">Setup Fee:</span>
-                  <p className="font-semibold">{formatCurrency(analysis.setup_fee)}</p>
+                  <p className="font-semibold">
+                    {analysis.setup_fee_exempt ? 'ISENTO' : formatCurrency(analysis.setup_fee)}
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -486,9 +508,36 @@ export function AgencyContractDetail() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="documents" className="mt-6">
-          <AgencyDocumentCenter analysisId={analysis.id} analysisStatus={analysis.status} />
-        </TabsContent>
+        {showDocsTab && contract && (
+          <TabsContent value="documents" className="mt-6">
+            <ContractDocumentsSection
+              contract={{
+                id: contract.id,
+                status: contract.status,
+                analysis_id: contract.analysis_id,
+                doc_contrato_locacao_path: contract.doc_contrato_locacao_path,
+                doc_contrato_locacao_name: contract.doc_contrato_locacao_name,
+                doc_contrato_locacao_status: contract.doc_contrato_locacao_status,
+                doc_contrato_locacao_feedback: contract.doc_contrato_locacao_feedback,
+                doc_contrato_locacao_uploaded_at: contract.doc_contrato_locacao_uploaded_at,
+                doc_vistoria_inicial_path: contract.doc_vistoria_inicial_path,
+                doc_vistoria_inicial_name: contract.doc_vistoria_inicial_name,
+                doc_vistoria_inicial_status: contract.doc_vistoria_inicial_status,
+                doc_vistoria_inicial_feedback: contract.doc_vistoria_inicial_feedback,
+                doc_vistoria_inicial_uploaded_at: contract.doc_vistoria_inicial_uploaded_at,
+                doc_seguro_incendio_path: contract.doc_seguro_incendio_path,
+                doc_seguro_incendio_name: contract.doc_seguro_incendio_name,
+                doc_seguro_incendio_status: contract.doc_seguro_incendio_status,
+                doc_seguro_incendio_feedback: contract.doc_seguro_incendio_feedback,
+                doc_seguro_incendio_uploaded_at: contract.doc_seguro_incendio_uploaded_at,
+              }}
+              identityPhotoPath={analysis.identity_photo_path}
+              tenantName={analysis.inquilino_nome}
+              isAgencyView={true}
+              onUpdate={() => fetchData()}
+            />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
