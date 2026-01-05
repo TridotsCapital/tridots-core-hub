@@ -12,6 +12,16 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { AnalysisTimeline } from './AnalysisTimeline';
 import { DocumentSection } from './DocumentSection';
 import { ChatSection } from './ChatSection';
@@ -41,6 +51,10 @@ import {
   Link,
   Copy,
   RefreshCw,
+  AlertTriangle,
+  Receipt,
+  Loader2,
+  Eye,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -61,6 +75,11 @@ const formatDate = (date: string | null) => {
   return format(new Date(date), "dd/MM/yyyy", { locale: ptBR });
 };
 
+const formatDateTime = (date: string | null) => {
+  if (!date) return '-';
+  return format(new Date(date), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+};
+
 const InfoRow = ({ label, value, icon: Icon }: { label: string; value: string | null; icon?: React.ElementType }) => (
   <div className="flex items-start gap-3 py-2">
     {Icon && <Icon className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />}
@@ -76,6 +95,10 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
   const [rejectionModalOpen, setRejectionModalOpen] = useState(false);
   const [approvalModalOpen, setApprovalModalOpen] = useState(false);
   const [regeneratingLink, setRegeneratingLink] = useState(false);
+  const [validationModalOpen, setValidationModalOpen] = useState(false);
+  const [rejectionDialogOpen, setRejectionDialogOpen] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [isValidating, setIsValidating] = useState(false);
   const moveAnalysis = useMoveAnalysis();
   const queryClient = useQueryClient();
 
@@ -107,13 +130,30 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
     };
   }, [analysis?.acceptance_token, analysis?.acceptance_token_expires_at, analysis?.acceptance_token_used_at]);
 
+  // Check if payments are pending validation
+  const paymentsPendingValidation = useMemo(() => {
+    if (!analysis) return false;
+    if (analysis.status !== 'aguardando_pagamento') return false;
+    
+    // Has guarantee payment confirmed
+    const hasGuaranteeConfirmed = !!analysis.guarantee_payment_confirmed_at;
+    // Setup is either exempt or confirmed
+    const setupOk = analysis.setup_fee_exempt || !!analysis.setup_payment_confirmed_at;
+    
+    return hasGuaranteeConfirmed && setupOk && !analysis.payments_validated_at && !analysis.payments_rejected_at;
+  }, [analysis]);
+
   const handleRegenerateLink = async () => {
     if (!analysis) return;
     
     setRegeneratingLink(true);
     try {
       const { data, error } = await supabase.functions.invoke('generate-acceptance-link', {
-        body: { analysisId: analysis.id }
+        body: { 
+          analysisId: analysis.id,
+          setupPaymentLink: analysis.setup_payment_link,
+          guaranteePaymentLink: analysis.guarantee_payment_link,
+        }
       });
       
       if (error) throw error;
@@ -133,6 +173,79 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
     const link = `${window.location.origin}/aceite/${analysis.acceptance_token}`;
     navigator.clipboard.writeText(link);
     toast.success('Link copiado!');
+  };
+
+  const handleValidatePayments = async () => {
+    if (!analysis) return;
+    
+    setIsValidating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('validate-payments', {
+        body: { 
+          analysisId: analysis.id,
+          action: 'validate',
+        }
+      });
+      
+      if (error) throw error;
+      
+      queryClient.invalidateQueries({ queryKey: ['analyses-kanban'] });
+      toast.success('Pagamentos validados! Contrato criado com sucesso.');
+      setValidationModalOpen(false);
+      onOpenChange(false);
+    } catch (error: any) {
+      console.error('Error validating payments:', error);
+      toast.error(error.message || 'Erro ao validar pagamentos');
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
+  const handleRejectPayments = async () => {
+    if (!analysis || !rejectionReason.trim()) {
+      toast.error('Informe o motivo da rejeição');
+      return;
+    }
+    
+    setIsValidating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('validate-payments', {
+        body: { 
+          analysisId: analysis.id,
+          action: 'reject',
+          rejectionReason: rejectionReason.trim(),
+        }
+      });
+      
+      if (error) throw error;
+      
+      queryClient.invalidateQueries({ queryKey: ['analyses-kanban'] });
+      toast.success('Pagamentos rejeitados. A imobiliária foi notificada.');
+      setRejectionDialogOpen(false);
+      setRejectionReason('');
+    } catch (error: any) {
+      console.error('Error rejecting payments:', error);
+      toast.error(error.message || 'Erro ao rejeitar pagamentos');
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
+  const openReceiptUrl = async (path: string | null) => {
+    if (!path) return;
+    
+    try {
+      const { data } = await supabase.storage
+        .from('identity-verification')
+        .createSignedUrl(path, 60 * 5); // 5 minutes
+      
+      if (data?.signedUrl) {
+        window.open(data.signedUrl, '_blank');
+      }
+    } catch (error) {
+      console.error('Error getting receipt URL:', error);
+      toast.error('Erro ao abrir comprovante');
+    }
   };
 
   if (!analysis) return null;
@@ -229,6 +342,92 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
               {/* Resumo Tab */}
               <TabsContent value="resumo" className="m-0 p-6">
                 <div className="space-y-6">
+                  {/* Payment Validation Section */}
+                  {paymentsPendingValidation && (
+                    <div className="rounded-lg border-2 border-warning bg-warning/10 p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <AlertTriangle className="h-5 w-5 text-warning" />
+                        <span className="font-semibold text-warning">Pagamentos Aguardando Validação</span>
+                      </div>
+                      
+                      <div className="space-y-2 mb-4">
+                        {!analysis.setup_fee_exempt && (
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="flex items-center gap-2">
+                              <Receipt className="h-4 w-4" />
+                              Taxa Setup
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="secondary" className="bg-success/20 text-success">
+                                Confirmado em {formatDateTime(analysis.setup_payment_confirmed_at)}
+                              </Badge>
+                              {analysis.setup_payment_receipt_path && (
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost"
+                                  onClick={() => openReceiptUrl(analysis.setup_payment_receipt_path)}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="flex items-center gap-2">
+                            <Receipt className="h-4 w-4" />
+                            Garantia
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary" className="bg-success/20 text-success">
+                              Confirmado em {formatDateTime(analysis.guarantee_payment_confirmed_at)}
+                            </Badge>
+                            {analysis.guarantee_payment_receipt_path && (
+                              <Button 
+                                size="sm" 
+                                variant="ghost"
+                                onClick={() => openReceiptUrl(analysis.guarantee_payment_receipt_path)}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        <Button 
+                          className="flex-1 bg-success hover:bg-success/90"
+                          onClick={() => setValidationModalOpen(true)}
+                        >
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          Validar Pagamentos
+                        </Button>
+                        <Button 
+                          variant="destructive"
+                          onClick={() => setRejectionDialogOpen(true)}
+                        >
+                          <XCircle className="h-4 w-4 mr-2" />
+                          Rejeitar
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Payment Rejected Banner */}
+                  {analysis.payments_rejected_at && (
+                    <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <XCircle className="h-4 w-4 text-destructive" />
+                        <span className="font-medium text-destructive">Pagamentos Rejeitados</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        Rejeitado em {formatDateTime(analysis.payments_rejected_at)}
+                      </p>
+                      <p className="text-sm">{analysis.payments_rejection_reason}</p>
+                    </div>
+                  )}
+
                   {/* Quick stats */}
                   <div className="grid grid-cols-2 gap-4">
                     <div className="rounded-lg bg-muted/50 p-4">
@@ -508,6 +707,102 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
           onOpenChange(false);
         }}
       />
+
+      {/* Validation Confirmation Modal */}
+      <Dialog open={validationModalOpen} onOpenChange={setValidationModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-success" />
+              Validar Pagamentos
+            </DialogTitle>
+            <DialogDescription>
+              Ao confirmar, os pagamentos serão validados e um contrato será criado automaticamente com status "Documentação Pendente".
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="rounded-lg bg-muted/50 p-4 space-y-2">
+            <p className="text-sm font-medium">O que acontecerá:</p>
+            <ul className="text-sm text-muted-foreground space-y-1">
+              <li>• Análise será movida para "Aprovada"</li>
+              <li>• Contrato será criado automaticamente</li>
+              <li>• Imobiliária será notificada para enviar documentos</li>
+            </ul>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setValidationModalOpen(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              className="bg-success hover:bg-success/90"
+              onClick={handleValidatePayments}
+              disabled={isValidating}
+            >
+              {isValidating ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Validando...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Confirmar Validação
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Rejection Dialog */}
+      <Dialog open={rejectionDialogOpen} onOpenChange={setRejectionDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <XCircle className="h-5 w-5 text-destructive" />
+              Rejeitar Pagamentos
+            </DialogTitle>
+            <DialogDescription>
+              Informe o motivo da rejeição. A imobiliária será notificada.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-2">
+            <Label htmlFor="rejectionReason">Motivo da Rejeição *</Label>
+            <Textarea
+              id="rejectionReason"
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              placeholder="Ex: Comprovante ilegível, pagamento não identificado..."
+              rows={3}
+            />
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRejectionDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={handleRejectPayments}
+              disabled={isValidating || !rejectionReason.trim()}
+            >
+              {isValidating ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Rejeitando...
+                </>
+              ) : (
+                <>
+                  <XCircle className="h-4 w-4 mr-2" />
+                  Rejeitar Pagamentos
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
