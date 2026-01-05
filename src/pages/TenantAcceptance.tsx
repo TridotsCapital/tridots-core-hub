@@ -155,9 +155,10 @@ export default function TenantAcceptance() {
   
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Calculate total steps based on setup_fee_exempt
-  const totalSteps = analysis?.setup_fee_exempt ? 3 : 4;
-  const stepNames = analysis?.setup_fee_exempt 
+  // Calculate total steps based on setup_fee_exempt or setup_fee = 0
+  const isSetupExempt = analysis?.setup_fee_exempt || (analysis?.setup_fee || 0) <= 0;
+  const totalSteps = isSetupExempt ? 3 : 4;
+  const stepNames = isSetupExempt 
     ? ['Termos e Condições', 'Confirmação', 'Pagamento Garantia']
     : ['Termos e Condições', 'Confirmação', 'Pagamento Setup', 'Pagamento Garantia'];
 
@@ -207,12 +208,12 @@ export default function TenantAcceptance() {
         if (data.analysis.guarantee_payment_confirmed_at) {
           // Already completed - redirect to success
           navigate(`/aceite/${token}/sucesso`);
-        } else if (data.analysis.setup_payment_confirmed_at && !data.analysis.setup_fee_exempt) {
+        } else if (data.analysis.setup_payment_confirmed_at && !data.analysis.setup_fee_exempt && (data.analysis.setup_fee || 0) > 0) {
           // Setup paid, go to guarantee (step 4)
           setCurrentStep(4);
         } else if (data.analysis.payer_name) {
           // Payer confirmed, go to setup (step 3) or guarantee if exempt
-          setCurrentStep(data.analysis.setup_fee_exempt ? 3 : 3);
+          setCurrentStep((data.analysis.setup_fee_exempt || (data.analysis.setup_fee || 0) <= 0) ? 3 : 3);
         } else if (data.analysis.terms_accepted_at) {
           // Terms accepted, go to payer (step 2)
           setCurrentStep(2);
@@ -923,29 +924,38 @@ export default function TenantAcceptance() {
                 </div>
               </div>
 
-              <Button 
-                className="w-full" 
-                onClick={handleStep2Submit}
-                disabled={isProcessing}
-              >
-                {isProcessing ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Salvando...
-                  </>
-                ) : (
-                  <>
-                    Confirmar Dados
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </>
-                )}
-              </Button>
+              <div className="flex gap-3">
+                <Button 
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setCurrentStep(1)}
+                >
+                  Voltar
+                </Button>
+                <Button 
+                  className="flex-1" 
+                  onClick={handleStep2Submit}
+                  disabled={isProcessing}
+                >
+                  {isProcessing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Salvando...
+                    </>
+                  ) : (
+                    <>
+                      Confirmar Dados
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </>
+                  )}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         )}
 
         {/* Step 3: Setup Payment (conditional) OR Setup Exempt Message */}
-        {currentStep === 3 && analysis?.setup_fee_exempt && (
+        {currentStep === 3 && isSetupExempt && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-success">
@@ -966,19 +976,27 @@ export default function TenantAcceptance() {
                 </p>
               </div>
 
-              <Button 
-                className="w-full" 
-                size="lg"
-                onClick={() => setCurrentStep(4)}
-              >
-                Continuar
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
+              <div className="flex gap-3">
+                <Button 
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setCurrentStep(2)}
+                >
+                  Voltar
+                </Button>
+                <Button 
+                  className="flex-1" 
+                  onClick={() => setCurrentStep(4)}
+                >
+                  Continuar
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </div>
             </CardContent>
           </Card>
         )}
 
-        {currentStep === 3 && !analysis?.setup_fee_exempt && (
+        {currentStep === 3 && !isSetupExempt && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -1058,29 +1076,38 @@ export default function TenantAcceptance() {
                 Após realizar o pagamento, marque a confirmação acima para prosseguir.
               </p>
 
-              <Button 
-                className="w-full" 
-                onClick={handleSetupPaymentSubmit}
-                disabled={!setupPaymentConfirmed || isProcessing}
-              >
-                {isProcessing ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Confirmando...
-                  </>
-                ) : (
-                  <>
-                    Continuar
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </>
-                )}
-              </Button>
+              <div className="flex gap-3">
+                <Button 
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setCurrentStep(2)}
+                >
+                  Voltar
+                </Button>
+                <Button 
+                  className="flex-1" 
+                  onClick={handleSetupPaymentSubmit}
+                  disabled={!setupPaymentConfirmed || isProcessing}
+                >
+                  {isProcessing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Confirmando...
+                    </>
+                  ) : (
+                    <>
+                      Continuar
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </>
+                  )}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         )}
 
         {/* Step 3 or 4: Guarantee Payment */}
-        {((currentStep === 3 && analysis?.setup_fee_exempt) || currentStep === 4) && (
+        {((currentStep === 3 && isSetupExempt) || currentStep === 4) && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -1163,24 +1190,33 @@ export default function TenantAcceptance() {
                 Após realizar o pagamento, marque a confirmação acima para finalizar.
               </p>
 
-              <Button 
-                className="w-full" 
-                size="lg"
-                onClick={handleGuaranteePaymentSubmit}
-                disabled={!guaranteePaymentConfirmed || isProcessing}
-              >
-                {isProcessing ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Finalizando...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Finalizar
-                  </>
-                )}
-              </Button>
+              <div className="flex gap-3">
+                <Button 
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setCurrentStep(isSetupExempt ? 2 : 3)}
+                >
+                  Voltar
+                </Button>
+                <Button 
+                  className="flex-1" 
+                  size="lg"
+                  onClick={handleGuaranteePaymentSubmit}
+                  disabled={!guaranteePaymentConfirmed || isProcessing}
+                >
+                  {isProcessing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Finalizando...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Finalizar
+                    </>
+                  )}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         )}
