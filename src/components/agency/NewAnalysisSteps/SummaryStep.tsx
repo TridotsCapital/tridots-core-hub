@@ -235,29 +235,28 @@ export function SummaryStep({ form }: SummaryStepProps) {
         name="confirmacao"
         render={({ field }) => (
           <FormItem>
-            <div 
-              className="rounded-lg border p-4 cursor-pointer hover:bg-muted/50 transition-colors"
-              onClick={() => field.onChange(!field.value)}
+            <label 
+              htmlFor="confirmacao-checkbox"
+              className="rounded-lg border p-4 cursor-pointer hover:bg-muted/50 transition-colors flex items-start gap-3"
             >
-              <div className="flex items-start gap-3">
-                <FormControl>
-                  <Checkbox
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                    className="mt-1"
-                  />
-                </FormControl>
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">
-                    Confirmo que os dados informados estão corretos
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Ao enviar esta análise, você declara que as informações são verdadeiras e autoriza 
-                    a Tridots a realizar a análise de crédito do inquilino.
-                  </p>
-                </div>
+              <FormControl>
+                <Checkbox
+                  id="confirmacao-checkbox"
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                  className="mt-1"
+                />
+              </FormControl>
+              <div className="space-y-1">
+                <p className="text-sm font-medium">
+                  Confirmo que os dados informados estão corretos
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Ao enviar esta análise, você declara que as informações são verdadeiras e autoriza 
+                  a Tridots a realizar a análise de crédito do inquilino.
+                </p>
               </div>
-            </div>
+            </label>
             <FormMessage />
           </FormItem>
         )}
