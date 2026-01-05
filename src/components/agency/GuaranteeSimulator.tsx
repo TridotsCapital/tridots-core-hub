@@ -31,7 +31,7 @@ export function GuaranteeSimulator({ onStartAnalysis, initialValues }: Guarantee
   const [iptuInput, setIptuInput] = useState(
     initialValues?.iptu ? formatCurrencyInput((initialValues.iptu * 100).toString()) : ''
   );
-  const [taxaGarantia, setTaxaGarantia] = useState(initialValues?.taxaGarantia || 8);
+  const [taxaGarantia, setTaxaGarantia] = useState(initialValues?.taxaGarantia || 10);
   const [setupFee, setSetupFee] = useState<number | null>(
     initialValues?.setupFee !== undefined ? initialValues.setupFee : null
   );
