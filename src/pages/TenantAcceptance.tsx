@@ -1,12 +1,11 @@
-import { useState, useEffect } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { 
   CheckCircle, 
@@ -18,7 +17,10 @@ import {
   Loader2,
   Building2,
   FileCheck,
-  ArrowRight
+  ArrowRight,
+  Camera,
+  ExternalLink,
+  Receipt
 } from 'lucide-react';
 import logoTridots from '@/assets/logo-tridots-black.webp';
 
@@ -26,22 +28,35 @@ interface AnalysisData {
   id: string;
   inquilino_nome: string;
   inquilino_cpf: string;
+  inquilino_rg: string | null;
+  inquilino_data_nascimento: string | null;
   inquilino_email: string | null;
   inquilino_telefone: string | null;
+  inquilino_profissao: string | null;
+  inquilino_empresa: string | null;
+  inquilino_renda_mensal: number | null;
   imovel_endereco: string;
   imovel_numero: string | null;
+  imovel_complemento: string | null;
+  imovel_bairro: string | null;
   imovel_cidade: string;
   imovel_estado: string;
   imovel_cep: string | null;
   valor_total: number;
+  valor_aluguel: number;
   taxa_garantia_percentual: number;
   setup_fee: number;
   setup_fee_exempt: boolean;
   garantia_mensal: number;
+  garantia_anual: number;
   primeira_parcela: number;
   terms_accepted_at: string | null;
   payer_name: string | null;
   payer_cpf: string | null;
+  setup_payment_link: string | null;
+  guarantee_payment_link: string | null;
+  setup_payment_confirmed_at: string | null;
+  guarantee_payment_confirmed_at: string | null;
 }
 
 interface AgencyData {
@@ -82,15 +97,14 @@ const formatCEP = (value: string) => {
 
 export default function TenantAcceptance() {
   const { token } = useParams<{ token: string }>();
-  const [searchParams] = useSearchParams();
-  const canceled = searchParams.get('canceled') === 'true';
+  const navigate = useNavigate();
 
   const [status, setStatus] = useState<TokenStatus>('loading');
   const [analysis, setAnalysis] = useState<AnalysisData | null>(null);
   const [agency, setAgency] = useState<AgencyData | null>(null);
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
   
-  // Step state
+  // Step state - dynamic based on setup_fee_exempt
   const [currentStep, setCurrentStep] = useState(1);
   
   // Step 1: Terms & Identity
@@ -98,6 +112,9 @@ export default function TenantAcceptance() {
   const [identityFile, setIdentityFile] = useState<File | null>(null);
   const [identityPreview, setIdentityPreview] = useState<string | null>(null);
   const [isUploadingIdentity, setIsUploadingIdentity] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [stream, setStream] = useState<MediaStream | null>(null);
   
   // Step 2: Payer data
   const [payerIsTenant, setPayerIsTenant] = useState(true);
@@ -114,9 +131,35 @@ export default function TenantAcceptance() {
     state: '',
     cep: '',
   });
+  const [originalPayerData, setOriginalPayerData] = useState({
+    name: '',
+    cpf: '',
+    email: '',
+    phone: '',
+    address: '',
+    number: '',
+    complement: '',
+    neighborhood: '',
+    city: '',
+    state: '',
+    cep: '',
+  });
   
-  // Step 3: Payment
+  // Step 3: Setup payment (conditional)
+  const [setupPaymentConfirmed, setSetupPaymentConfirmed] = useState(false);
+  const [setupReceiptFile, setSetupReceiptFile] = useState<File | null>(null);
+  
+  // Step 4: Guarantee payment
+  const [guaranteePaymentConfirmed, setGuaranteePaymentConfirmed] = useState(false);
+  const [guaranteeReceiptFile, setGuaranteeReceiptFile] = useState<File | null>(null);
+  
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Calculate total steps based on setup_fee_exempt
+  const totalSteps = analysis?.setup_fee_exempt ? 3 : 4;
+  const stepNames = analysis?.setup_fee_exempt 
+    ? ['Termos e Condições', 'Confirmação', 'Pagamento Garantia']
+    : ['Termos e Condições', 'Confirmação', 'Pagamento Setup', 'Pagamento Garantia'];
 
   // Validate token on mount
   useEffect(() => {
@@ -144,27 +187,35 @@ export default function TenantAcceptance() {
         setStatus('valid');
 
         // Pre-fill payer data with tenant data
-        setPayerData({
+        const initialPayerData = {
           name: data.analysis.inquilino_nome || '',
           cpf: data.analysis.inquilino_cpf || '',
           email: data.analysis.inquilino_email || '',
           phone: data.analysis.inquilino_telefone || '',
           address: data.analysis.imovel_endereco || '',
           number: data.analysis.imovel_numero || '',
-          complement: '',
-          neighborhood: '',
+          complement: data.analysis.imovel_complemento || '',
+          neighborhood: data.analysis.imovel_bairro || '',
           city: data.analysis.imovel_cidade || '',
           state: data.analysis.imovel_estado || '',
           cep: data.analysis.imovel_cep || '',
-        });
+        };
+        setPayerData(initialPayerData);
+        setOriginalPayerData(initialPayerData);
 
-        // If terms already accepted, skip to step 2 or 3
-        if (data.analysis.terms_accepted_at) {
-          if (data.analysis.payer_name) {
-            setCurrentStep(3);
-          } else {
-            setCurrentStep(2);
-          }
+        // Determine starting step based on progress
+        if (data.analysis.guarantee_payment_confirmed_at) {
+          // Already completed - redirect to success
+          navigate(`/aceite/${token}/sucesso`);
+        } else if (data.analysis.setup_payment_confirmed_at && !data.analysis.setup_fee_exempt) {
+          // Setup paid, go to guarantee (step 4)
+          setCurrentStep(4);
+        } else if (data.analysis.payer_name) {
+          // Payer confirmed, go to setup (step 3) or guarantee if exempt
+          setCurrentStep(data.analysis.setup_fee_exempt ? 3 : 3);
+        } else if (data.analysis.terms_accepted_at) {
+          // Terms accepted, go to payer (step 2)
+          setCurrentStep(2);
         }
       } catch (error) {
         console.error('Error validating token:', error);
@@ -173,14 +224,65 @@ export default function TenantAcceptance() {
     }
 
     validateToken();
-  }, [token]);
+  }, [token, navigate]);
 
-  // Show canceled message
+  // Cleanup camera on unmount
   useEffect(() => {
-    if (canceled) {
-      toast.error('Pagamento cancelado. Você pode tentar novamente.');
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [stream]);
+
+  const openCamera = async () => {
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'user' } 
+      });
+      setStream(mediaStream);
+      setIsCameraOpen(true);
+      
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = mediaStream;
+        }
+      }, 100);
+    } catch (error) {
+      console.error('Error accessing camera:', error);
+      toast.error('Não foi possível acessar a câmera. Tente enviar uma foto.');
     }
-  }, [canceled]);
+  };
+
+  const capturePhoto = () => {
+    if (!videoRef.current) return;
+    
+    const canvas = document.createElement('canvas');
+    canvas.width = videoRef.current.videoWidth;
+    canvas.height = videoRef.current.videoHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    ctx.drawImage(videoRef.current, 0, 0);
+    
+    canvas.toBlob((blob) => {
+      if (blob) {
+        const file = new File([blob], `selfie-${Date.now()}.jpg`, { type: 'image/jpeg' });
+        setIdentityFile(file);
+        setIdentityPreview(URL.createObjectURL(file));
+      }
+    }, 'image/jpeg', 0.8);
+    
+    closeCamera();
+  };
+
+  const closeCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+    setIsCameraOpen(false);
+  };
 
   const handleIdentityUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -219,12 +321,18 @@ export default function TenantAcceptance() {
 
       if (uploadError) throw uploadError;
 
-      // Move to step 2
+      // Submit terms step
+      const { error } = await supabase.functions.invoke('submit-acceptance', {
+        body: {
+          token,
+          step: 'terms',
+          identityPhotoPath: filePath,
+        }
+      });
+
+      if (error) throw error;
+
       setCurrentStep(2);
-      
-      // Save progress (identity photo path will be saved in step 2)
-      localStorage.setItem(`acceptance_${token}_identityPath`, filePath);
-      
       toast.success('Documento enviado com sucesso!');
     } catch (error) {
       console.error('Error uploading identity:', error);
@@ -253,12 +361,10 @@ export default function TenantAcceptance() {
     setIsProcessing(true);
 
     try {
-      const identityPath = localStorage.getItem(`acceptance_${token}_identityPath`);
-      
       const { error } = await supabase.functions.invoke('submit-acceptance', {
         body: {
           token,
-          identityPhotoPath: identityPath,
+          step: 'payer',
           payerData: {
             ...payerData,
             isTenant: payerIsTenant,
@@ -268,31 +374,107 @@ export default function TenantAcceptance() {
 
       if (error) throw error;
 
+      // Go to step 3 (setup or guarantee depending on exemption)
       setCurrentStep(3);
       toast.success('Dados confirmados com sucesso!');
     } catch (error) {
-      console.error('Error submitting acceptance:', error);
+      console.error('Error submitting payer data:', error);
       toast.error('Erro ao salvar dados. Tente novamente.');
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const handlePayment = async () => {
+  const handleSetupPaymentSubmit = async () => {
+    if (!setupPaymentConfirmed) {
+      toast.error('Confirme que realizou o pagamento.');
+      return;
+    }
+
     setIsProcessing(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke('create-checkout-session', {
-        body: { token }
+      let receiptPath = null;
+      
+      if (setupReceiptFile) {
+        const fileExt = setupReceiptFile.name.split('.').pop();
+        const filePath = `${analysis?.id}/setup-receipt-${Date.now()}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('identity-verification')
+          .upload(filePath, setupReceiptFile);
+          
+        if (!uploadError) {
+          receiptPath = filePath;
+        }
+      }
+
+      const { error } = await supabase.functions.invoke('submit-acceptance', {
+        body: {
+          token,
+          step: 'setup_payment',
+          paymentConfirmation: {
+            type: 'setup',
+            receiptPath,
+          }
+        }
       });
 
       if (error) throw error;
 
-      // Redirect to Stripe Checkout
-      window.location.href = data.checkoutUrl;
+      setCurrentStep(4);
+      toast.success('Pagamento da taxa setup confirmado!');
     } catch (error) {
-      console.error('Error creating checkout:', error);
-      toast.error('Erro ao iniciar pagamento. Tente novamente.');
+      console.error('Error confirming setup payment:', error);
+      toast.error('Erro ao confirmar pagamento. Tente novamente.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleGuaranteePaymentSubmit = async () => {
+    if (!guaranteePaymentConfirmed) {
+      toast.error('Confirme que realizou o pagamento.');
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      let receiptPath = null;
+      
+      if (guaranteeReceiptFile) {
+        const fileExt = guaranteeReceiptFile.name.split('.').pop();
+        const filePath = `${analysis?.id}/guarantee-receipt-${Date.now()}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('identity-verification')
+          .upload(filePath, guaranteeReceiptFile);
+          
+        if (!uploadError) {
+          receiptPath = filePath;
+        }
+      }
+
+      const { error } = await supabase.functions.invoke('submit-acceptance', {
+        body: {
+          token,
+          step: 'guarantee_payment',
+          paymentConfirmation: {
+            type: 'guarantee',
+            receiptPath,
+          }
+        }
+      });
+
+      if (error) throw error;
+
+      // Navigate to success page
+      navigate(`/aceite/${token}/sucesso`);
+    } catch (error) {
+      console.error('Error confirming guarantee payment:', error);
+      toast.error('Erro ao confirmar pagamento. Tente novamente.');
+    } finally {
       setIsProcessing(false);
     }
   };
@@ -336,7 +518,7 @@ export default function TenantAcceptance() {
                 <CheckCircle className="h-16 w-16 text-success mx-auto mb-4" />
                 <CardTitle>Link Já Utilizado</CardTitle>
                 <CardDescription>
-                  Este link já foi utilizado. Se você ainda não completou o pagamento, entre em contato com sua imobiliária.
+                  Este link já foi utilizado. Se você ainda não completou o processo, entre em contato com sua imobiliária.
                 </CardDescription>
               </>
             )}
@@ -384,22 +566,27 @@ export default function TenantAcceptance() {
         </div>
 
         {/* Stepper */}
-        <div className="flex items-center justify-center gap-2 mb-8">
-          {[1, 2, 3].map((step) => (
-            <div key={step} className="flex items-center">
-              <div className={`
-                w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold
-                ${currentStep > step ? 'bg-success text-white' : 
-                  currentStep === step ? 'bg-primary text-white' : 
-                  'bg-muted text-muted-foreground'}
-              `}>
-                {currentStep > step ? <CheckCircle className="h-5 w-5" /> : step}
+        <div className="mb-8">
+          <div className="flex items-center justify-center gap-2">
+            {Array.from({ length: totalSteps }, (_, i) => i + 1).map((step) => (
+              <div key={step} className="flex items-center">
+                <div className={`
+                  w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold
+                  ${currentStep > step ? 'bg-success text-white' : 
+                    currentStep === step ? 'bg-primary text-white' : 
+                    'bg-muted text-muted-foreground'}
+                `}>
+                  {currentStep > step ? <CheckCircle className="h-5 w-5" /> : step}
+                </div>
+                {step < totalSteps && (
+                  <div className={`w-12 h-1 mx-1 ${currentStep > step ? 'bg-success' : 'bg-muted'}`} />
+                )}
               </div>
-              {step < 3 && (
-                <div className={`w-16 h-1 mx-2 ${currentStep > step ? 'bg-success' : 'bg-muted'}`} />
-              )}
-            </div>
-          ))}
+            ))}
+          </div>
+          <div className="flex justify-center mt-2">
+            <span className="text-sm text-muted-foreground">{stepNames[currentStep - 1]}</span>
+          </div>
         </div>
 
         {/* Step 1: Terms & Identity */}
@@ -408,15 +595,16 @@ export default function TenantAcceptance() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileCheck className="h-5 w-5 text-primary" />
-                Verificação de Identidade
+                Termos e Condições
               </CardTitle>
               <CardDescription>
                 Aceite os termos e envie uma foto segurando seu documento
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Property summary */}
-              <div className="rounded-lg bg-muted/50 p-4 space-y-2">
+              {/* Values summary */}
+              <div className="rounded-lg bg-muted/50 p-4 space-y-3">
+                <h4 className="font-semibold text-sm">Resumo dos Valores</h4>
                 <div className="flex items-start gap-2">
                   <Building2 className="h-4 w-4 mt-0.5 text-muted-foreground" />
                   <div>
@@ -426,9 +614,30 @@ export default function TenantAcceptance() {
                     </p>
                   </div>
                 </div>
-                <div className="flex justify-between text-sm pt-2 border-t">
-                  <span className="text-muted-foreground">Garantia Mensal</span>
-                  <span className="font-bold text-primary">{formatCurrency(analysis?.garantia_mensal || 0)}</span>
+                
+                <div className="border-t pt-3 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Valor Mensal do Imóvel</span>
+                    <span className="font-medium">{formatCurrency(analysis?.valor_total || 0)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Taxa de Garantia ({analysis?.taxa_garantia_percentual}% a.a.)</span>
+                    <span>{formatCurrency(analysis?.garantia_anual || 0)}/ano</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Garantia Mensal</span>
+                    <span>{formatCurrency(analysis?.garantia_mensal || 0)}/mês</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Taxa Setup</span>
+                    <span className={analysis?.setup_fee_exempt ? 'text-success font-medium' : ''}>
+                      {analysis?.setup_fee_exempt ? 'ISENTA' : formatCurrency(analysis?.setup_fee || 0)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-base font-semibold pt-2 border-t">
+                    <span>Total 1ª Parcela</span>
+                    <span className="text-primary">{formatCurrency(analysis?.primeira_parcela || 0)}</span>
+                  </div>
                 </div>
               </div>
 
@@ -440,7 +649,7 @@ export default function TenantAcceptance() {
                   <br />
                   <p>A garantia cobre eventuais inadimplências durante o período do contrato de locação, conforme estabelecido nas cláusulas contratuais.</p>
                   <br />
-                  <p>O valor da garantia será cobrado mensalmente através do cartão de crédito informado.</p>
+                  <p>O valor da garantia será cobrado conforme os links de pagamento fornecidos.</p>
                 </div>
 
                 <div className="flex items-start space-x-3">
@@ -455,48 +664,77 @@ export default function TenantAcceptance() {
                 </div>
               </div>
 
-              {/* Identity upload */}
+              {/* Identity upload/camera */}
               <div className="space-y-3">
                 <Label>Foto segurando RG ou CNH</Label>
                 <p className="text-xs text-muted-foreground">
-                  Tire uma foto em ambiente claro, segurando seu documento de forma legível.
+                  Tire uma selfie em ambiente claro, segurando seu documento de forma legível.
                 </p>
                 
-                <div className="border-2 border-dashed rounded-lg p-6 text-center">
-                  {identityPreview ? (
-                    <div className="space-y-3">
-                      <img 
-                        src={identityPreview} 
-                        alt="Preview" 
-                        className="max-h-48 mx-auto rounded-lg" 
-                      />
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => {
-                          setIdentityFile(null);
-                          setIdentityPreview(null);
-                        }}
-                      >
-                        Trocar foto
+                {isCameraOpen ? (
+                  <div className="space-y-3">
+                    <video 
+                      ref={videoRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      className="w-full rounded-lg bg-black"
+                    />
+                    <div className="flex gap-2">
+                      <Button onClick={capturePhoto} className="flex-1">
+                        <Camera className="h-4 w-4 mr-2" />
+                        Capturar
+                      </Button>
+                      <Button variant="outline" onClick={closeCamera}>
+                        Cancelar
                       </Button>
                     </div>
-                  ) : (
-                    <label className="cursor-pointer">
-                      <Upload className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
-                      <p className="text-sm text-muted-foreground">
-                        Clique para enviar ou arraste o arquivo
-                      </p>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        capture="user"
-                        className="hidden"
-                        onChange={handleIdentityUpload}
-                      />
-                    </label>
-                  )}
-                </div>
+                  </div>
+                ) : (
+                  <div className="border-2 border-dashed rounded-lg p-6 text-center">
+                    {identityPreview ? (
+                      <div className="space-y-3">
+                        <img 
+                          src={identityPreview} 
+                          alt="Preview" 
+                          className="max-h-48 mx-auto rounded-lg" 
+                        />
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            setIdentityFile(null);
+                            setIdentityPreview(null);
+                          }}
+                        >
+                          Trocar foto
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <Button onClick={openCamera} variant="default">
+                          <Camera className="h-4 w-4 mr-2" />
+                          Tirar Foto
+                        </Button>
+                        <p className="text-sm text-muted-foreground">ou</p>
+                        <label className="cursor-pointer">
+                          <Button variant="outline" size="sm" asChild>
+                            <span>
+                              <Upload className="h-4 w-4 mr-2" />
+                              Enviar Arquivo
+                            </span>
+                          </Button>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handleIdentityUpload}
+                          />
+                        </label>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <Button 
@@ -526,10 +764,10 @@ export default function TenantAcceptance() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <User className="h-5 w-5 text-primary" />
-                Dados do Pagador
+                Confirmação de Dados
               </CardTitle>
               <CardDescription>
-                Confirme os dados para emissão da nota fiscal
+                Confirme os dados do pagador para emissão da nota fiscal
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -537,32 +775,22 @@ export default function TenantAcceptance() {
               <div className="flex items-start space-x-3 p-4 rounded-lg bg-muted/50">
                 <Checkbox 
                   id="payerIsTenant" 
-                  checked={payerIsTenant}
+                  checked={!payerIsTenant}
                   onCheckedChange={(checked) => {
-                    setPayerIsTenant(checked as boolean);
-                    if (checked && analysis) {
-                      setPayerData({
-                        name: analysis.inquilino_nome || '',
-                        cpf: analysis.inquilino_cpf || '',
-                        email: analysis.inquilino_email || '',
-                        phone: analysis.inquilino_telefone || '',
-                        address: analysis.imovel_endereco || '',
-                        number: analysis.imovel_numero || '',
-                        complement: '',
-                        neighborhood: '',
-                        city: analysis.imovel_cidade || '',
-                        state: analysis.imovel_estado || '',
-                        cep: analysis.imovel_cep || '',
-                      });
+                    const isDifferentPayer = checked as boolean;
+                    setPayerIsTenant(!isDifferentPayer);
+                    if (!isDifferentPayer) {
+                      // Restore original tenant data
+                      setPayerData(originalPayerData);
                     }
                   }}
                 />
                 <div>
                   <label htmlFor="payerIsTenant" className="text-sm font-medium cursor-pointer">
-                    Eu sou o responsável pelo pagamento
+                    Os dados do pagador são diferentes do contratante
                   </label>
                   <p className="text-xs text-muted-foreground">
-                    Desmarque se outra pessoa fará o pagamento
+                    Marque se outra pessoa fará o pagamento
                   </p>
                 </div>
               </div>
@@ -701,71 +929,207 @@ export default function TenantAcceptance() {
           </Card>
         )}
 
-        {/* Step 3: Payment */}
-        {currentStep === 3 && (
+        {/* Step 3: Setup Payment (conditional) */}
+        {currentStep === 3 && !analysis?.setup_fee_exempt && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5 text-primary" />
-                Resumo e Pagamento
+                <Receipt className="h-5 w-5 text-primary" />
+                Pagamento da Taxa Setup
               </CardTitle>
               <CardDescription>
-                Revise os valores e prossiga para o pagamento
+                Realize o pagamento da taxa de setup e confirme abaixo
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Values summary */}
-              <div className="rounded-lg border p-4 space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Taxa Setup</span>
-                  <span className={analysis?.setup_fee_exempt ? 'text-success font-medium' : ''}>
-                    {analysis?.setup_fee_exempt ? 'ISENTA' : formatCurrency(analysis?.setup_fee || 0)}
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Garantia Mensal</span>
-                  <span>{formatCurrency(analysis?.garantia_mensal || 0)}</span>
-                </div>
-                <div className="flex justify-between text-sm pt-3 border-t">
-                  <span className="font-semibold">1ª Parcela</span>
-                  <span className="font-bold text-xl text-primary">
-                    {formatCurrency(analysis?.primeira_parcela || 0)}
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>Parcelas 2 a 12</span>
-                  <span>{formatCurrency(analysis?.garantia_mensal || 0)}/mês</span>
+              {/* Value */}
+              <div className="rounded-lg bg-primary/10 border border-primary/30 p-6 text-center">
+                <p className="text-sm text-muted-foreground mb-1">Valor da Taxa Setup</p>
+                <p className="text-3xl font-bold text-primary">{formatCurrency(analysis?.setup_fee || 0)}</p>
+              </div>
+
+              {/* Payment link */}
+              {analysis?.setup_payment_link && (
+                <Button 
+                  className="w-full" 
+                  size="lg"
+                  variant="outline"
+                  onClick={() => window.open(analysis.setup_payment_link!, '_blank')}
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Abrir Link de Pagamento
+                </Button>
+              )}
+
+              {/* Confirmation checkbox */}
+              <div className="flex items-start space-x-3 p-4 rounded-lg border">
+                <Checkbox 
+                  id="setupConfirm" 
+                  checked={setupPaymentConfirmed}
+                  onCheckedChange={(checked) => setSetupPaymentConfirmed(checked as boolean)}
+                />
+                <label htmlFor="setupConfirm" className="text-sm leading-tight cursor-pointer font-medium">
+                  Confirmo que realizei o pagamento da taxa setup
+                </label>
+              </div>
+
+              {/* Optional receipt upload */}
+              <div className="space-y-2">
+                <Label className="text-sm text-muted-foreground">Comprovante (opcional)</Label>
+                <div className="border-2 border-dashed rounded-lg p-4">
+                  {setupReceiptFile ? (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">{setupReceiptFile.name}</span>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => setSetupReceiptFile(null)}
+                      >
+                        Remover
+                      </Button>
+                    </div>
+                  ) : (
+                    <label className="cursor-pointer flex flex-col items-center gap-2">
+                      <Upload className="h-6 w-6 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Anexar comprovante</span>
+                      <input
+                        type="file"
+                        accept="image/*,.pdf"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) setSetupReceiptFile(file);
+                        }}
+                      />
+                    </label>
+                  )}
                 </div>
               </div>
 
-              {/* Payer summary */}
-              <div className="rounded-lg bg-muted/50 p-4">
-                <p className="text-sm font-medium mb-2">Dados do Pagador</p>
-                <p className="text-sm text-muted-foreground">{payerData.name || analysis?.payer_name}</p>
-                <p className="text-sm text-muted-foreground">{payerData.cpf || analysis?.payer_cpf}</p>
-              </div>
-
-              <div className="rounded-lg border border-primary/30 bg-primary/5 p-4">
-                <p className="text-sm text-primary">
-                  Você será redirecionado para a página segura do Stripe para completar o pagamento.
-                </p>
-              </div>
+              <p className="text-xs text-muted-foreground text-center">
+                Após realizar o pagamento, marque a confirmação acima para prosseguir.
+              </p>
 
               <Button 
                 className="w-full" 
-                size="lg"
-                onClick={handlePayment}
-                disabled={isProcessing}
+                onClick={handleSetupPaymentSubmit}
+                disabled={!setupPaymentConfirmed || isProcessing}
               >
                 {isProcessing ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Redirecionando...
+                    Confirmando...
                   </>
                 ) : (
                   <>
-                    <CreditCard className="h-4 w-4 mr-2" />
-                    Ir para Pagamento
+                    Continuar
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Step 3 or 4: Guarantee Payment */}
+        {((currentStep === 3 && analysis?.setup_fee_exempt) || currentStep === 4) && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5 text-primary" />
+                Pagamento da Garantia
+              </CardTitle>
+              <CardDescription>
+                Realize o pagamento da garantia locatícia
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Value */}
+              <div className="rounded-lg bg-primary/10 border border-primary/30 p-6 text-center">
+                <p className="text-sm text-muted-foreground mb-1">Valor da Garantia Anual</p>
+                <p className="text-3xl font-bold text-primary">{formatCurrency(analysis?.garantia_anual || 0)}</p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  12x de {formatCurrency(analysis?.garantia_mensal || 0)}
+                </p>
+              </div>
+
+              {/* Payment link */}
+              {analysis?.guarantee_payment_link && (
+                <Button 
+                  className="w-full" 
+                  size="lg"
+                  variant="outline"
+                  onClick={() => window.open(analysis.guarantee_payment_link!, '_blank')}
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Abrir Link de Pagamento
+                </Button>
+              )}
+
+              {/* Confirmation checkbox */}
+              <div className="flex items-start space-x-3 p-4 rounded-lg border">
+                <Checkbox 
+                  id="guaranteeConfirm" 
+                  checked={guaranteePaymentConfirmed}
+                  onCheckedChange={(checked) => setGuaranteePaymentConfirmed(checked as boolean)}
+                />
+                <label htmlFor="guaranteeConfirm" className="text-sm leading-tight cursor-pointer font-medium">
+                  Confirmo que realizei o pagamento da garantia
+                </label>
+              </div>
+
+              {/* Optional receipt upload */}
+              <div className="space-y-2">
+                <Label className="text-sm text-muted-foreground">Comprovante (opcional)</Label>
+                <div className="border-2 border-dashed rounded-lg p-4">
+                  {guaranteeReceiptFile ? (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">{guaranteeReceiptFile.name}</span>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => setGuaranteeReceiptFile(null)}
+                      >
+                        Remover
+                      </Button>
+                    </div>
+                  ) : (
+                    <label className="cursor-pointer flex flex-col items-center gap-2">
+                      <Upload className="h-6 w-6 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Anexar comprovante</span>
+                      <input
+                        type="file"
+                        accept="image/*,.pdf"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) setGuaranteeReceiptFile(file);
+                        }}
+                      />
+                    </label>
+                  )}
+                </div>
+              </div>
+
+              <p className="text-xs text-muted-foreground text-center">
+                Após realizar o pagamento, marque a confirmação acima para finalizar.
+              </p>
+
+              <Button 
+                className="w-full" 
+                size="lg"
+                onClick={handleGuaranteePaymentSubmit}
+                disabled={!guaranteePaymentConfirmed || isProcessing}
+              >
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Finalizando...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Finalizar
                   </>
                 )}
               </Button>

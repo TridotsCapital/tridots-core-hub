@@ -13,8 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
-import { Switch } from '@/components/ui/switch';
-import { CheckCircle, Link as LinkIcon, Loader2, AlertTriangle, Percent } from 'lucide-react';
+import { CheckCircle, Link as LinkIcon, Loader2, AlertTriangle, Percent, ExternalLink, Home, Receipt } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -34,6 +33,10 @@ export function ApprovalModal({ analysis, open, onOpenChange, onConfirm }: Appro
   const [taxaGarantia, setTaxaGarantia] = useState(analysis?.taxa_garantia_percentual || 8);
   const [observacoes, setObservacoes] = useState('');
   const [isRateAdjusted, setIsRateAdjusted] = useState(false);
+  
+  // Payment links
+  const [setupPaymentLink, setSetupPaymentLink] = useState('');
+  const [guaranteePaymentLink, setGuaranteePaymentLink] = useState('');
 
   // Reset state when analysis changes
   useEffect(() => {
@@ -41,6 +44,8 @@ export function ApprovalModal({ analysis, open, onOpenChange, onConfirm }: Appro
       setTaxaGarantia(analysis.taxa_garantia_percentual);
       setIsRateAdjusted(false);
       setObservacoes('');
+      setSetupPaymentLink('');
+      setGuaranteePaymentLink('');
     }
   }, [analysis?.id]);
 
@@ -51,15 +56,32 @@ export function ApprovalModal({ analysis, open, onOpenChange, onConfirm }: Appro
     }
   }, [taxaGarantia, analysis?.taxa_garantia_percentual]);
 
+  const isSetupRequired = !analysis?.setup_fee_exempt;
+  
+  const isFormValid = () => {
+    if (isSetupRequired && !setupPaymentLink.trim()) return false;
+    if (!guaranteePaymentLink.trim()) return false;
+    return true;
+  };
+
   const handleConfirm = async () => {
     if (!analysis) return;
+    
+    if (!isFormValid()) {
+      toast.error('Preencha os links de pagamento obrigatórios.');
+      return;
+    }
     
     setIsGenerating(true);
 
     try {
-      // Generate acceptance token via edge function
+      // Generate acceptance token via edge function with payment links
       const { data, error } = await supabase.functions.invoke('generate-acceptance-link', {
-        body: { analysisId: analysis.id }
+        body: { 
+          analysisId: analysis.id,
+          setupPaymentLink: isSetupRequired ? setupPaymentLink : null,
+          guaranteePaymentLink,
+        }
       });
 
       if (error) throw error;
@@ -69,6 +91,8 @@ export function ApprovalModal({ analysis, open, onOpenChange, onConfirm }: Appro
         observacoes: observacoes || undefined,
         acceptance_token: data.token,
         acceptance_token_expires_at: data.expiresAt,
+        setup_payment_link: isSetupRequired ? setupPaymentLink : null,
+        guarantee_payment_link: guaranteePaymentLink,
       };
 
       // If rate was adjusted, save original and mark as adjusted
@@ -86,6 +110,8 @@ export function ApprovalModal({ analysis, open, onOpenChange, onConfirm }: Appro
     } finally {
       setIsGenerating(false);
       setObservacoes('');
+      setSetupPaymentLink('');
+      setGuaranteePaymentLink('');
     }
   };
 
@@ -93,9 +119,9 @@ export function ApprovalModal({ analysis, open, onOpenChange, onConfirm }: Appro
 
   // Calculate values
   const valorTotal = analysis.valor_total || analysis.valor_aluguel;
-  const garantiaMensal = (valorTotal * taxaGarantia / 100) / 12;
+  const garantiaAnual = valorTotal * taxaGarantia / 100;
+  const garantiaMensal = garantiaAnual / 12;
   const setupFee = analysis.setup_fee_exempt ? 0 : analysis.setup_fee;
-  const primeiraParcela = setupFee + garantiaMensal;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -106,7 +132,7 @@ export function ApprovalModal({ analysis, open, onOpenChange, onConfirm }: Appro
             Aprovar Análise
           </DialogTitle>
           <DialogDescription>
-            Confirme os dados e ajuste a taxa se necessário. Um link de aceite será gerado automaticamente.
+            Confirme os dados, insira os links de pagamento e ajuste a taxa se necessário.
           </DialogDescription>
         </DialogHeader>
 
@@ -121,9 +147,40 @@ export function ApprovalModal({ analysis, open, onOpenChange, onConfirm }: Appro
               <span className="text-muted-foreground">Imobiliária</span>
               <span className="font-medium">{analysis.agency?.razao_social}</span>
             </div>
+          </div>
+
+          {/* Values summary - clearer presentation */}
+          <div className="rounded-lg border p-4 space-y-3">
+            <h4 className="text-sm font-semibold flex items-center gap-2">
+              <Home className="h-4 w-4" />
+              Resumo dos Valores
+            </h4>
+            
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Valor Total Mensal</span>
+              <span className="text-muted-foreground">Valor Mensal do Imóvel</span>
               <span className="font-bold text-primary">{formatCurrency(valorTotal)}</span>
+            </div>
+            
+            <div className="flex justify-between text-sm border-t pt-2">
+              <span className="text-muted-foreground">Taxa de Garantia ({taxaGarantia}% a.a.)</span>
+              <span>{formatCurrency(garantiaAnual)}/ano</span>
+            </div>
+            
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Garantia Mensal</span>
+              <span>{formatCurrency(garantiaMensal)}/mês</span>
+            </div>
+            
+            <div className="flex justify-between text-sm border-t pt-2">
+              <span className="text-muted-foreground">Taxa Setup</span>
+              <span className={analysis.setup_fee_exempt ? 'text-success font-medium' : ''}>
+                {analysis.setup_fee_exempt ? 'ISENTA' : formatCurrency(setupFee)}
+              </span>
+            </div>
+            
+            <div className="flex justify-between text-base pt-2 border-t bg-primary/5 -mx-4 px-4 py-2 rounded-b-lg -mb-4">
+              <span className="font-semibold">Total a Pagar (1º mês)</span>
+              <span className="font-bold text-primary text-lg">{formatCurrency(setupFee + garantiaMensal)}</span>
             </div>
           </div>
 
@@ -163,26 +220,47 @@ export function ApprovalModal({ analysis, open, onOpenChange, onConfirm }: Appro
             )}
           </div>
 
-          {/* Values preview */}
-          <div className="rounded-lg border p-4 space-y-2">
-            <h4 className="text-sm font-semibold mb-3">Prévia dos Valores</h4>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Taxa Setup</span>
-              <span className={analysis.setup_fee_exempt ? 'text-success' : ''}>
-                {analysis.setup_fee_exempt ? 'ISENTA' : formatCurrency(setupFee)}
-              </span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Garantia Mensal</span>
-              <span>{formatCurrency(garantiaMensal)}</span>
-            </div>
-            <div className="flex justify-between text-sm pt-2 border-t">
-              <span className="font-medium">1ª Parcela</span>
-              <span className="font-bold text-primary">{formatCurrency(primeiraParcela)}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Parcelas 2-12</span>
-              <span>{formatCurrency(garantiaMensal)}/mês</span>
+          {/* Payment Links */}
+          <div className="space-y-4 p-4 rounded-lg border border-primary/30 bg-primary/5">
+            <h4 className="text-sm font-semibold flex items-center gap-2">
+              <ExternalLink className="h-4 w-4 text-primary" />
+              Links de Pagamento
+            </h4>
+            
+            {isSetupRequired && (
+              <div className="space-y-2">
+                <Label htmlFor="setupLink" className="flex items-center gap-2">
+                  <Receipt className="h-4 w-4" />
+                  Link Pagamento Taxa Setup *
+                </Label>
+                <Input
+                  id="setupLink"
+                  value={setupPaymentLink}
+                  onChange={(e) => setSetupPaymentLink(e.target.value)}
+                  placeholder="https://..."
+                  className="font-mono text-sm"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Valor: {formatCurrency(setupFee)}
+                </p>
+              </div>
+            )}
+            
+            <div className="space-y-2">
+              <Label htmlFor="guaranteeLink" className="flex items-center gap-2">
+                <Receipt className="h-4 w-4" />
+                Link Pagamento Garantia *
+              </Label>
+              <Input
+                id="guaranteeLink"
+                value={guaranteePaymentLink}
+                onChange={(e) => setGuaranteePaymentLink(e.target.value)}
+                placeholder="https://..."
+                className="font-mono text-sm"
+              />
+              <p className="text-xs text-muted-foreground">
+                Valor: {formatCurrency(garantiaAnual)} (12x de {formatCurrency(garantiaMensal)})
+              </p>
             </div>
           </div>
 
@@ -198,9 +276,9 @@ export function ApprovalModal({ analysis, open, onOpenChange, onConfirm }: Appro
             />
           </div>
 
-          {/* Payment link preview */}
-          <div className="rounded-lg border border-dashed border-primary/30 bg-primary/5 p-4">
-            <div className="flex items-center gap-2 text-sm text-primary">
+          {/* Info */}
+          <div className="rounded-lg border border-dashed border-muted-foreground/30 p-4">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <LinkIcon className="h-4 w-4" />
               <span>Link de aceite será gerado e enviado automaticamente (válido por 72h)</span>
             </div>
@@ -211,7 +289,7 @@ export function ApprovalModal({ analysis, open, onOpenChange, onConfirm }: Appro
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button onClick={handleConfirm} disabled={isGenerating}>
+          <Button onClick={handleConfirm} disabled={isGenerating || !isFormValid()}>
             {isGenerating ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />

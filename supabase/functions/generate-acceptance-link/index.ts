@@ -8,6 +8,8 @@ const corsHeaders = {
 
 interface GenerateLinkRequest {
   analysisId: string;
+  setupPaymentLink?: string | null;
+  guaranteePaymentLink?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -20,11 +22,13 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { analysisId }: GenerateLinkRequest = await req.json();
+    const { analysisId, setupPaymentLink, guaranteePaymentLink }: GenerateLinkRequest = await req.json();
 
     if (!analysisId) {
       throw new Error("analysisId is required");
     }
+
+    console.log("Generating acceptance link:", { analysisId, hasSetupLink: !!setupPaymentLink, hasGuaranteeLink: !!guaranteePaymentLink });
 
     // Verify analysis exists and is in correct status
     const { data: analysis, error: fetchError } = await supabase
@@ -42,17 +46,37 @@ const handler = async (req: Request): Promise<Response> => {
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 72); // 72 hours expiration
 
-    // Update analysis with token
+    // Update analysis with token and payment links
+    const updateData: Record<string, unknown> = {
+      acceptance_token: token,
+      acceptance_token_expires_at: expiresAt.toISOString(),
+      acceptance_token_used_at: null, // Reset if regenerating
+      // Reset payment confirmations when regenerating
+      setup_payment_confirmed_at: null,
+      setup_payment_receipt_path: null,
+      guarantee_payment_confirmed_at: null,
+      guarantee_payment_receipt_path: null,
+      payments_validated_at: null,
+      payments_validated_by: null,
+      payments_rejected_at: null,
+      payments_rejection_reason: null,
+    };
+
+    // Add payment links if provided
+    if (setupPaymentLink !== undefined) {
+      updateData.setup_payment_link = setupPaymentLink;
+    }
+    if (guaranteePaymentLink !== undefined) {
+      updateData.guarantee_payment_link = guaranteePaymentLink;
+    }
+
     const { error: updateError } = await supabase
       .from("analyses")
-      .update({
-        acceptance_token: token,
-        acceptance_token_expires_at: expiresAt.toISOString(),
-        acceptance_token_used_at: null, // Reset if regenerating
-      })
+      .update(updateData)
       .eq("id", analysisId);
 
     if (updateError) {
+      console.error("Error updating analysis:", updateError);
       throw updateError;
     }
 
@@ -61,7 +85,11 @@ const handler = async (req: Request): Promise<Response> => {
       _analysis_id: analysisId,
       _event_type: "acceptance_link_generated",
       _description: "Link de aceite gerado com validade de 72 horas",
-      _metadata: { expires_at: expiresAt.toISOString() },
+      _metadata: { 
+        expires_at: expiresAt.toISOString(),
+        has_setup_link: !!setupPaymentLink,
+        has_guarantee_link: !!guaranteePaymentLink,
+      },
     });
 
     // Build acceptance URL

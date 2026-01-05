@@ -132,6 +132,9 @@ export type Database = {
           conjuge_renda_mensal: number | null
           conjuge_rg: string | null
           created_at: string
+          guarantee_payment_confirmed_at: string | null
+          guarantee_payment_link: string | null
+          guarantee_payment_receipt_path: string | null
           id: string
           identity_photo_path: string | null
           imovel_bairro: string | null
@@ -170,11 +173,18 @@ export type Database = {
           payment_confirmed_at: string | null
           payment_failed_at: string | null
           payment_retry_count: number | null
+          payments_rejected_at: string | null
+          payments_rejection_reason: string | null
+          payments_validated_at: string | null
+          payments_validated_by: string | null
           rate_adjusted_by_tridots: boolean | null
           rejected_at: string | null
           rejection_reason: string | null
           setup_fee: number
           setup_fee_exempt: boolean | null
+          setup_payment_confirmed_at: string | null
+          setup_payment_link: string | null
+          setup_payment_receipt_path: string | null
           status: Database["public"]["Enums"]["analysis_status"]
           stripe_checkout_session_id: string | null
           stripe_customer_id: string | null
@@ -204,6 +214,9 @@ export type Database = {
           conjuge_renda_mensal?: number | null
           conjuge_rg?: string | null
           created_at?: string
+          guarantee_payment_confirmed_at?: string | null
+          guarantee_payment_link?: string | null
+          guarantee_payment_receipt_path?: string | null
           id?: string
           identity_photo_path?: string | null
           imovel_bairro?: string | null
@@ -242,11 +255,18 @@ export type Database = {
           payment_confirmed_at?: string | null
           payment_failed_at?: string | null
           payment_retry_count?: number | null
+          payments_rejected_at?: string | null
+          payments_rejection_reason?: string | null
+          payments_validated_at?: string | null
+          payments_validated_by?: string | null
           rate_adjusted_by_tridots?: boolean | null
           rejected_at?: string | null
           rejection_reason?: string | null
           setup_fee?: number
           setup_fee_exempt?: boolean | null
+          setup_payment_confirmed_at?: string | null
+          setup_payment_link?: string | null
+          setup_payment_receipt_path?: string | null
           status?: Database["public"]["Enums"]["analysis_status"]
           stripe_checkout_session_id?: string | null
           stripe_customer_id?: string | null
@@ -276,6 +296,9 @@ export type Database = {
           conjuge_renda_mensal?: number | null
           conjuge_rg?: string | null
           created_at?: string
+          guarantee_payment_confirmed_at?: string | null
+          guarantee_payment_link?: string | null
+          guarantee_payment_receipt_path?: string | null
           id?: string
           identity_photo_path?: string | null
           imovel_bairro?: string | null
@@ -314,11 +337,18 @@ export type Database = {
           payment_confirmed_at?: string | null
           payment_failed_at?: string | null
           payment_retry_count?: number | null
+          payments_rejected_at?: string | null
+          payments_rejection_reason?: string | null
+          payments_validated_at?: string | null
+          payments_validated_by?: string | null
           rate_adjusted_by_tridots?: boolean | null
           rejected_at?: string | null
           rejection_reason?: string | null
           setup_fee?: number
           setup_fee_exempt?: boolean | null
+          setup_payment_confirmed_at?: string | null
+          setup_payment_link?: string | null
+          setup_payment_receipt_path?: string | null
           status?: Database["public"]["Enums"]["analysis_status"]
           stripe_checkout_session_id?: string | null
           stripe_customer_id?: string | null
@@ -338,6 +368,13 @@ export type Database = {
             columns: ["agency_id"]
             isOneToOne: false
             referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "analyses_payments_validated_by_fkey"
+            columns: ["payments_validated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]

@@ -139,6 +139,18 @@ export interface Analysis {
   rejection_reason: string | null;
   setup_fee_exempt: boolean;
   
+  // Manual payment flow fields
+  setup_payment_link: string | null;
+  guarantee_payment_link: string | null;
+  setup_payment_confirmed_at: string | null;
+  setup_payment_receipt_path: string | null;
+  guarantee_payment_confirmed_at: string | null;
+  guarantee_payment_receipt_path: string | null;
+  payments_validated_at: string | null;
+  payments_validated_by: string | null;
+  payments_rejected_at: string | null;
+  payments_rejection_reason: string | null;
+  
   // Joined data
   agency?: Agency;
   analyst?: Profile;
