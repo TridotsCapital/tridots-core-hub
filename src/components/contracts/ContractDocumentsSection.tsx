@@ -7,7 +7,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { 
-  Download, 
   FileText, 
   Upload, 
   Loader2, 
@@ -101,12 +100,13 @@ export function ContractDocumentsSection({
 }: ContractDocumentsSectionProps) {
   const { user } = useAuth();
   const [uploading, setUploading] = useState<DocType | null>(null);
-  const [downloading, setDownloading] = useState<string | null>(null);
+  const [viewing, setViewing] = useState<string | null>(null);
   const [reviewModal, setReviewModal] = useState<{ type: DocType; action: 'approve' | 'reject' } | null>(null);
   const [feedback, setFeedback] = useState('');
   const [processing, setProcessing] = useState(false);
   const [identityPhotoUrl, setIdentityPhotoUrl] = useState<string | null>(null);
   const [photoModalOpen, setPhotoModalOpen] = useState(false);
+  const [activateModalOpen, setActivateModalOpen] = useState(false);
 
   // Fetch identity photo URL
   useEffect(() => {
@@ -194,27 +194,22 @@ export function ContractDocumentsSection({
     }
   };
 
-  const handleDownload = async (filePath: string, fileName: string) => {
-    setDownloading(filePath);
+  const handleView = async (filePath: string) => {
+    setViewing(filePath);
     try {
       const { data, error } = await supabase.storage
         .from('contract-documents')
-        .download(filePath);
+        .createSignedUrl(filePath, 3600);
 
       if (error) throw error;
 
-      const url = URL.createObjectURL(data);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      if (data?.signedUrl) {
+        window.open(data.signedUrl, '_blank');
+      }
     } catch (error: any) {
-      toast.error('Erro ao baixar arquivo');
+      toast.error('Erro ao abrir documento');
     } finally {
-      setDownloading(null);
+      setViewing(null);
     }
   };
 
@@ -382,20 +377,20 @@ export function ContractDocumentsSection({
                 )}
 
                 <div className="flex items-center gap-2 flex-wrap">
-                  {/* Download button (if document exists) */}
-                  {docPath && docName && (
+                  {/* View button (if document exists) */}
+                  {docPath && (
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleDownload(docPath, docName)}
-                      disabled={downloading === docPath}
+                      onClick={() => handleView(docPath)}
+                      disabled={viewing === docPath}
                     >
-                      {downloading === docPath ? (
+                      {viewing === docPath ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
                         <>
-                          <Download className="h-4 w-4 mr-2" />
-                          Baixar
+                          <Eye className="h-4 w-4 mr-2" />
+                          Visualizar
                         </>
                       )}
                     </Button>
@@ -477,21 +472,44 @@ export function ContractDocumentsSection({
                 </div>
               </div>
               <Button 
-                onClick={handleActivateContract}
-                disabled={processing}
+                onClick={() => setActivateModalOpen(true)}
                 className="bg-green-600 hover:bg-green-700"
               >
-                {processing ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                )}
+                <CheckCircle className="h-4 w-4 mr-2" />
                 Ativar Contrato
               </Button>
             </div>
           </CardContent>
         </Card>
       )}
+
+      {/* Activate Contract Confirmation Modal */}
+      <Dialog open={activateModalOpen} onOpenChange={setActivateModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar Ativação do Contrato</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja ativar este contrato? Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setActivateModalOpen(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={() => {
+                setActivateModalOpen(false);
+                handleActivateContract();
+              }}
+              disabled={processing}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {processing && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Ativar Contrato
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Review Modal */}
       <Dialog open={!!reviewModal} onOpenChange={() => setReviewModal(null)}>

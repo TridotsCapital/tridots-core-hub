@@ -11,7 +11,7 @@ interface FinancialStepProps {
 }
 
 export function FinancialStep({ form }: FinancialStepProps) {
-  const taxaGarantia = form.watch('taxaGarantiaPercentual') || 8;
+  const taxaGarantia = form.watch('taxaGarantiaPercentual') || 10;
   const setupFee = form.watch('setupFee') || 100;
   const valorAluguel = form.watch('valorAluguel') || 0;
   const valorCondominio = form.watch('valorCondominio') || 0;
@@ -42,16 +42,16 @@ export function FinancialStep({ form }: FinancialStepProps) {
             <FormItem>
               <FormControl>
                 <Slider
-                  value={[field.value || 8]}
+                  value={[field.value || 10]}
                   onValueChange={([value]) => field.onChange(value)}
-                  min={5}
+                  min={10}
                   max={15}
                   step={0.5}
                   className="w-full"
                 />
               </FormControl>
               <div className="flex justify-between text-xs text-muted-foreground">
-                <span>5%</span>
+                <span>10%</span>
                 <span>15%</span>
               </div>
               <FormMessage />
