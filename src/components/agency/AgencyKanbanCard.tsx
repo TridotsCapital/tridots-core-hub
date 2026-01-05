@@ -61,10 +61,10 @@ export function AgencyKanbanCard({ analysis, onClick, hasUnread = false }: Agenc
         </div>
       </div>
 
-      {/* Value */}
+      {/* Value - Total */}
       <div className="mb-3">
         <span className="text-lg font-bold text-foreground">
-          {formatCurrency(analysis.valor_aluguel)}
+          {formatCurrency(analysis.valor_total || (analysis.valor_aluguel + (analysis.valor_condominio || 0) + (analysis.valor_iptu || 0)))}
         </span>
         <span className="text-xs text-muted-foreground">/mês</span>
       </div>

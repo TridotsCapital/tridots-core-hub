@@ -117,7 +117,7 @@ export function NotificationCenter({ isAgencyPortal = false }: NotificationCente
       </PopoverTrigger>
       
       <PopoverContent 
-        className="w-[400px] p-0" 
+        className="w-[420px] p-0" 
         align="end"
         sideOffset={8}
       >

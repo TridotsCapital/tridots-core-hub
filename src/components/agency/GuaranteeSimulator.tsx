@@ -142,13 +142,13 @@ export function GuaranteeSimulator({ onStartAnalysis, initialValues }: Guarantee
           <Slider
             value={[taxaGarantia]}
             onValueChange={([value]) => setTaxaGarantia(value)}
-            min={5}
+            min={10}
             max={15}
             step={0.5}
             className="w-full"
           />
           <div className="flex justify-between text-xs text-muted-foreground">
-            <span>5%</span>
+            <span>10%</span>
             <span>15%</span>
           </div>
         </div>

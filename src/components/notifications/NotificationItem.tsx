@@ -81,13 +81,13 @@ export function NotificationItem({ notification, onRead, onDelete, onClick }: No
               </span>
             </div>
             <p className={cn(
-              "text-sm font-medium truncate",
+              "text-sm font-medium whitespace-normal break-words",
               isUnread ? "text-foreground" : "text-muted-foreground"
             )}>
               {notification.title}
             </p>
             {notification.message && (
-              <p className="text-xs text-muted-foreground truncate mt-0.5">
+              <p className="text-xs text-muted-foreground whitespace-normal break-words mt-0.5">
                 {notification.metadata?.sender_name && (
                   <span className="font-medium">{notification.metadata.sender_name}: </span>
                 )}
@@ -95,12 +95,12 @@ export function NotificationItem({ notification, onRead, onDelete, onClick }: No
               </p>
             )}
             {notification.metadata?.ticket_subject && (
-              <p className="text-xs text-muted-foreground/70 truncate mt-0.5">
+              <p className="text-xs text-muted-foreground/70 whitespace-normal break-words mt-0.5">
                 {notification.metadata.ticket_subject}
               </p>
             )}
             {notification.metadata?.tenant_name && (
-              <p className="text-xs text-muted-foreground/70 truncate mt-0.5">
+              <p className="text-xs text-muted-foreground/70 whitespace-normal break-words mt-0.5">
                 Inquilino: {notification.metadata.tenant_name}
               </p>
             )}

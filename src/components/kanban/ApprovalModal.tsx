@@ -194,17 +194,17 @@ export function ApprovalModal({ analysis, open, onOpenChange, onConfirm }: Appro
               <span className="text-2xl font-bold text-primary">{taxaGarantia}%</span>
             </div>
             
-            <Slider
+          <Slider
               value={[taxaGarantia]}
               onValueChange={([value]) => setTaxaGarantia(value)}
-              min={5}
+              min={10}
               max={15}
               step={0.5}
               className="py-2"
             />
             
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>5%</span>
+          <div className="flex justify-between text-xs text-muted-foreground">
+              <span>10%</span>
               <span>Original: {analysis.taxa_garantia_percentual}%</span>
               <span>15%</span>
             </div>
