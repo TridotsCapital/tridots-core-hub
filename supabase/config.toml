@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.create-checkout-session]
 verify_jwt = false
+
+[functions.validate-payments]
+verify_jwt = false
