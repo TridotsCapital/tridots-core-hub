@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useDocuments, useUploadDocument, useDeleteDocument, useDownloadDocument } from '@/hooks/useDocuments';
 import { Button } from '@/components/ui/button';
 import { 
@@ -9,15 +9,21 @@ import {
   Loader2,
   File,
   FileImage,
-  FileSpreadsheet
+  FileSpreadsheet,
+  User,
+  Maximize2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface DocumentSectionProps {
   analysisId: string;
+  identityPhotoPath?: string | null;
+  tenantName?: string;
 }
 
 const formatFileSize = (bytes: number) => {
@@ -33,7 +39,7 @@ const getFileIcon = (fileType: string | null) => {
   return FileText;
 };
 
-export function DocumentSection({ analysisId }: DocumentSectionProps) {
+export function DocumentSection({ analysisId, identityPhotoPath, tenantName }: DocumentSectionProps) {
   const { data: documents, isLoading } = useDocuments(analysisId);
   const uploadDocument = useUploadDocument();
   const deleteDocument = useDeleteDocument();
@@ -42,6 +48,36 @@ export function DocumentSection({ analysisId }: DocumentSectionProps) {
   
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Identity photo state
+  const [identityPhotoUrl, setIdentityPhotoUrl] = useState<string | null>(null);
+  const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
+  const [isLoadingPhoto, setIsLoadingPhoto] = useState(false);
+  
+  const photoFileName = tenantName 
+    ? `Validação Termo aceite - ${analysisId.slice(0, 8).toUpperCase()} - ${tenantName}`
+    : `Validação Termo aceite - ${analysisId.slice(0, 8).toUpperCase()}`;
+
+  // Load identity photo
+  useEffect(() => {
+    const loadPhoto = async () => {
+      if (!identityPhotoPath) return;
+      setIsLoadingPhoto(true);
+      try {
+        const { data } = await supabase.storage
+          .from('identity-verification')
+          .createSignedUrl(identityPhotoPath, 60 * 60);
+        if (data?.signedUrl) {
+          setIdentityPhotoUrl(data.signedUrl);
+        }
+      } catch (error) {
+        console.error('Error loading identity photo:', error);
+      } finally {
+        setIsLoadingPhoto(false);
+      }
+    };
+    loadPhoto();
+  }, [identityPhotoPath]);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -93,6 +129,51 @@ export function DocumentSection({ analysisId }: DocumentSectionProps) {
 
   return (
     <div className="space-y-4">
+      {/* Identity Photo Section */}
+      {identityPhotoPath && (
+        <div className="rounded-lg border bg-card p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <User className="h-4 w-4 text-primary" />
+            <span className="text-sm font-medium">Foto de Validação do Aceite</span>
+          </div>
+          
+          <div className="flex items-start gap-4">
+            <div className="relative w-32 h-40 rounded-lg overflow-hidden bg-muted shrink-0">
+              {isLoadingPhoto ? (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : identityPhotoUrl ? (
+                <img 
+                  src={identityPhotoUrl} 
+                  alt="Foto de validação" 
+                  className="w-full h-full object-cover cursor-pointer"
+                  onClick={() => setIsPhotoModalOpen(true)}
+                />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <User className="h-8 w-8 text-muted-foreground/30" />
+                </div>
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-muted-foreground mb-2 truncate" title={photoFileName}>
+                {photoFileName}
+              </p>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setIsPhotoModalOpen(true)}
+                disabled={!identityPhotoUrl}
+              >
+                <Maximize2 className="h-4 w-4 mr-1" />
+                Visualizar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Upload area */}
       <div
         onDragOver={handleDragOver}
@@ -186,6 +267,23 @@ export function DocumentSection({ analysisId }: DocumentSectionProps) {
           })
         )}
       </div>
+      {/* Identity Photo Modal */}
+      <Dialog open={isPhotoModalOpen} onOpenChange={setIsPhotoModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{photoFileName}</DialogTitle>
+          </DialogHeader>
+          <div className="flex justify-center">
+            {identityPhotoUrl && (
+              <img 
+                src={identityPhotoUrl} 
+                alt="Foto de validação em tamanho completo" 
+                className="max-h-[70vh] object-contain rounded-lg"
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

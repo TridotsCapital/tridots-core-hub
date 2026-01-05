@@ -116,7 +116,7 @@ export default function TenantAcceptance() {
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
   
-  // Step 2: Payer data
+  // Step 2: Payer data - Default: payerIsTenant=true means using tenant data (checkbox CHECKED)
   const [payerIsTenant, setPayerIsTenant] = useState(true);
   const [payerData, setPayerData] = useState({
     name: '',
@@ -771,26 +771,41 @@ export default function TenantAcceptance() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Payer toggle */}
+              {/* Payer toggle - Checked = tenant is payer (frozen fields), Unchecked = different payer (empty editable fields) */}
               <div className="flex items-start space-x-3 p-4 rounded-lg bg-muted/50">
                 <Checkbox 
                   id="payerIsTenant" 
-                  checked={!payerIsTenant}
+                  checked={payerIsTenant}
                   onCheckedChange={(checked) => {
-                    const isDifferentPayer = checked as boolean;
-                    setPayerIsTenant(!isDifferentPayer);
-                    if (!isDifferentPayer) {
-                      // Restore original tenant data
+                    const isTenantPayer = checked as boolean;
+                    setPayerIsTenant(isTenantPayer);
+                    if (isTenantPayer) {
+                      // Restore original tenant data and freeze
                       setPayerData(originalPayerData);
+                    } else {
+                      // Clear fields for different payer
+                      setPayerData({
+                        name: '',
+                        cpf: '',
+                        email: '',
+                        phone: '',
+                        address: '',
+                        number: '',
+                        complement: '',
+                        neighborhood: '',
+                        city: '',
+                        state: '',
+                        cep: '',
+                      });
                     }
                   }}
                 />
                 <div>
                   <label htmlFor="payerIsTenant" className="text-sm font-medium cursor-pointer">
-                    Os dados do pagador são diferentes do contratante
+                    Os dados do pagador são os mesmos do inquilino
                   </label>
                   <p className="text-xs text-muted-foreground">
-                    Marque se outra pessoa fará o pagamento
+                    Desmarque se outra pessoa fará o pagamento
                   </p>
                 </div>
               </div>
@@ -929,7 +944,40 @@ export default function TenantAcceptance() {
           </Card>
         )}
 
-        {/* Step 3: Setup Payment (conditional) */}
+        {/* Step 3: Setup Payment (conditional) OR Setup Exempt Message */}
+        {currentStep === 3 && analysis?.setup_fee_exempt && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-success">
+                <CheckCircle className="h-5 w-5" />
+                Taxa Setup Isenta!
+              </CardTitle>
+              <CardDescription>
+                Parabéns! Você foi isento da taxa de setup.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="rounded-lg bg-success/10 border border-success/30 p-6 text-center">
+                <CheckCircle className="h-12 w-12 text-success mx-auto mb-3" />
+                <p className="text-lg font-medium">Isenção Concedida</p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  A taxa de setup foi isenta pela imobiliária parceira.
+                  Continue para o próximo passo.
+                </p>
+              </div>
+
+              <Button 
+                className="w-full" 
+                size="lg"
+                onClick={() => setCurrentStep(4)}
+              >
+                Continuar
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
         {currentStep === 3 && !analysis?.setup_fee_exempt && (
           <Card>
             <CardHeader>

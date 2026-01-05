@@ -145,6 +145,11 @@ export function NewAnalysisForm({ agencyId }: NewAnalysisFormProps) {
     setShowSimulator(false);
   };
 
+  // Scroll to top when step changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentStep]);
+
   const handleNext = async () => {
     const stepFields: Record<number, (keyof FormData)[]> = {
       0: ['imovelCep', 'imovelEndereco', 'imovelNumero', 'imovelBairro', 'imovelCidade', 'imovelEstado', 'valorAluguel'],

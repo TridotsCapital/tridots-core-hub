@@ -24,10 +24,10 @@ import {
 } from '@/components/ui/dialog';
 import { AnalysisTimeline } from './AnalysisTimeline';
 import { DocumentSection } from './DocumentSection';
-import { ChatSection } from './ChatSection';
 import { StartAnalysisModal } from './StartAnalysisModal';
 import { RejectionModal } from './RejectionModal';
 import { ApprovalModal } from './ApprovalModal';
+import { AnalysisTicketSection } from './AnalysisTicketSection';
 import { useMoveAnalysis } from '@/hooks/useAnalysesKanban';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
@@ -334,7 +334,7 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
               </TabsTrigger>
               <TabsTrigger value="chat" className="gap-1.5">
                 <MessageSquare className="h-4 w-4" />
-                Chat
+                Chamados
               </TabsTrigger>
             </TabsList>
 
@@ -666,12 +666,21 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
 
               {/* Documentos Tab */}
               <TabsContent value="documentos" className="m-0 p-6">
-                <DocumentSection analysisId={analysis.id} />
+                <DocumentSection 
+                  analysisId={analysis.id} 
+                  identityPhotoPath={analysis.identity_photo_path}
+                  tenantName={analysis.inquilino_nome}
+                />
               </TabsContent>
 
-              {/* Chat Tab */}
+              {/* Chamados Tab */}
               <TabsContent value="chat" className="m-0 h-full">
-                <ChatSection analysisId={analysis.id} />
+                <AnalysisTicketSection 
+                  analysisId={analysis.id}
+                  agencyId={analysis.agency_id}
+                  tenantName={analysis.inquilino_nome}
+                  isAgencyPortal={false}
+                />
               </TabsContent>
             </ScrollArea>
           </Tabs>

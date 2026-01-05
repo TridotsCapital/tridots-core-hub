@@ -230,33 +230,38 @@ export function SummaryStep({ form }: SummaryStepProps) {
       </Card>
 
       {/* Confirmation Checkbox */}
-      <div className="rounded-lg border p-4">
-        <FormField
-          control={form.control}
-          name="confirmacao"
-          render={({ field }) => (
-            <FormItem className="flex items-start gap-3">
-              <FormControl>
-                <Checkbox
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                  className="mt-1"
-                />
-              </FormControl>
-              <div className="space-y-1">
-                <p className="text-sm font-medium">
-                  Confirmo que os dados informados estão corretos
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Ao enviar esta análise, você declara que as informações são verdadeiras e autoriza 
-                  a Tridots a realizar a análise de crédito do inquilino.
-                </p>
+      <FormField
+        control={form.control}
+        name="confirmacao"
+        render={({ field }) => (
+          <FormItem>
+            <div 
+              className="rounded-lg border p-4 cursor-pointer hover:bg-muted/50 transition-colors"
+              onClick={() => field.onChange(!field.value)}
+            >
+              <div className="flex items-start gap-3">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    className="mt-1"
+                  />
+                </FormControl>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">
+                    Confirmo que os dados informados estão corretos
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Ao enviar esta análise, você declara que as informações são verdadeiras e autoriza 
+                    a Tridots a realizar a análise de crédito do inquilino.
+                  </p>
+                </div>
               </div>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      </div>
+            </div>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
     </div>
   );
 }

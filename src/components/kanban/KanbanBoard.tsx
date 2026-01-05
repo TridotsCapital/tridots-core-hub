@@ -14,6 +14,7 @@ import { KanbanCard } from './KanbanCard';
 import { AnalysisDrawer } from './AnalysisDrawer';
 import { ApprovalModal } from './ApprovalModal';
 import { StatusChangeConfirmation } from './StatusChangeConfirmation';
+import { StartAnalysisModal } from './StartAnalysisModal';
 import { useAnalysesKanban, useMoveAnalysis } from '@/hooks/useAnalysesKanban';
 import { Analysis, AnalysisStatus, kanbanColumns, statusConfig } from '@/types/database';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -42,6 +43,8 @@ export function KanbanBoard({ filters, autoOpenAnalysisId, onAutoOpenHandled }: 
   const [approvalModalOpen, setApprovalModalOpen] = useState(false);
   const [pendingMove, setPendingMove] = useState<{ analysis: Analysis; newStatus: AnalysisStatus } | null>(null);
   const [confirmationOpen, setConfirmationOpen] = useState(false);
+  const [startModalOpen, setStartModalOpen] = useState(false);
+  const [pendingStartAnalysis, setPendingStartAnalysis] = useState<Analysis | null>(null);
 
   // Auto-open analysis from notification
   useEffect(() => {
@@ -133,6 +136,13 @@ export function KanbanBoard({ filters, autoOpenAnalysisId, onAutoOpenHandled }: 
       return;
     }
 
+    // If moving from PENDENTE to EM_ANALISE, show StartAnalysisModal
+    if (analysis.status === 'pendente' && newStatus === 'em_analise') {
+      setPendingStartAnalysis(analysis);
+      setStartModalOpen(true);
+      return;
+    }
+
     // Check if moving to aguardando_pagamento - show approval modal
     if (newStatus === 'aguardando_pagamento') {
       setPendingMove({ analysis, newStatus });
@@ -149,6 +159,16 @@ export function KanbanBoard({ filters, autoOpenAnalysisId, onAutoOpenHandled }: 
 
     // Direct move for non-critical status changes
     moveAnalysis.mutate({ id: analysisId, newStatus });
+  };
+
+  const handleStartAnalysisSuccess = () => {
+    setPendingStartAnalysis(null);
+    setStartModalOpen(false);
+  };
+
+  const handleStartAnalysisCancel = () => {
+    setPendingStartAnalysis(null);
+    setStartModalOpen(false);
   };
 
   const handleApprovalConfirm = (additionalData?: Record<string, unknown>) => {
@@ -249,6 +269,17 @@ export function KanbanBoard({ filters, autoOpenAnalysisId, onAutoOpenHandled }: 
         open={confirmationOpen}
         onOpenChange={setConfirmationOpen}
         onConfirm={handleConfirmationConfirm}
+      />
+
+      <StartAnalysisModal
+        open={startModalOpen}
+        onOpenChange={(open) => {
+          if (!open) handleStartAnalysisCancel();
+          setStartModalOpen(open);
+        }}
+        analysisId={pendingStartAnalysis?.id || ''}
+        tenantName={pendingStartAnalysis?.inquilino_nome || ''}
+        onSuccess={handleStartAnalysisSuccess}
       />
     </>
   );

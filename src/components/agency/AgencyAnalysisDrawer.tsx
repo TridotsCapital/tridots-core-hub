@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AnalysisTimeline } from '@/components/kanban/AnalysisTimeline';
 import { DocumentSection } from '@/components/kanban/DocumentSection';
-import { ChatSection } from '@/components/kanban/ChatSection';
+import { AnalysisTicketSection } from '@/components/kanban/AnalysisTicketSection';
 import { 
   User, 
   Home, 
@@ -23,7 +23,6 @@ import {
   MapPin,
   Briefcase,
   DollarSign,
-  Lock,
   Link,
   Copy,
   CheckCircle2,
@@ -91,7 +90,6 @@ const getAcceptanceStatus = (analysis: Analysis) => {
 export function AgencyAnalysisDrawer({ analysis, open, onOpenChange }: AgencyAnalysisDrawerProps) {
   if (!analysis) return null;
 
-  const isChatDisabled = analysis.status === 'ativo' || analysis.status === 'cancelada';
   const acceptanceStatus = getAcceptanceStatus(analysis);
   const acceptanceUrl = analysis.acceptance_token 
     ? `${window.location.origin}/aceite/${analysis.acceptance_token}` 
@@ -142,7 +140,7 @@ export function AgencyAnalysisDrawer({ analysis, open, onOpenChange }: AgencyAna
             </TabsTrigger>
             <TabsTrigger value="chat" className="gap-1.5">
               <MessageSquare className="h-4 w-4" />
-              Chat
+              Chamados
             </TabsTrigger>
           </TabsList>
 
@@ -310,22 +308,21 @@ export function AgencyAnalysisDrawer({ analysis, open, onOpenChange }: AgencyAna
 
             {/* Documentos Tab */}
             <TabsContent value="documentos" className="m-0 p-6">
-              <DocumentSection analysisId={analysis.id} />
+              <DocumentSection 
+                analysisId={analysis.id}
+                identityPhotoPath={analysis.identity_photo_path}
+                tenantName={analysis.inquilino_nome}
+              />
             </TabsContent>
 
-            {/* Chat Tab */}
+            {/* Chamados Tab */}
             <TabsContent value="chat" className="m-0 h-full">
-              {isChatDisabled ? (
-                <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
-                  <Lock className="h-8 w-8 mb-3" />
-                  <p className="text-sm font-medium">Chat encerrado</p>
-                  <p className="text-xs text-center mt-1 max-w-xs">
-                    O chat é encerrado para análises finalizadas (ativo ou cancelada).
-                  </p>
-                </div>
-              ) : (
-                <ChatSection analysisId={analysis.id} />
-              )}
+              <AnalysisTicketSection 
+                analysisId={analysis.id}
+                agencyId={analysis.agency_id}
+                tenantName={analysis.inquilino_nome}
+                isAgencyPortal={true}
+              />
             </TabsContent>
           </ScrollArea>
         </Tabs>
