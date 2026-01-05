@@ -88,7 +88,7 @@ export function PropertyStep({ form }: PropertyStepProps) {
           name="imovelTipo"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Tipo do Imóvel</FormLabel>
+              <FormLabel>Tipo do Imóvel *</FormLabel>
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger>

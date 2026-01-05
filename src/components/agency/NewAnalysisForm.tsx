@@ -26,7 +26,7 @@ const formSchema = z.object({
   imovelBairro: z.string().min(2, 'Bairro obrigatório'),
   imovelCidade: z.string().min(2, 'Cidade obrigatória'),
   imovelEstado: z.string().length(2, 'Estado obrigatório'),
-  imovelTipo: z.string().optional(),
+  imovelTipo: z.string().min(1, 'Tipo do imóvel é obrigatório'),
   valorAluguel: z.number().min(1, 'Valor do aluguel obrigatório'),
   valorAluguelDisplay: z.string().optional(),
   valorCondominio: z.number().default(0),
