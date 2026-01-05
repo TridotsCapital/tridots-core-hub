@@ -27,6 +27,7 @@ import {
   CreditCard,
   FileText,
   Download,
+  FileCheck,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -46,6 +47,9 @@ interface Contract {
   id: string;
   status: ContractStatus;
   created_at: string;
+  doc_contrato_locacao_status?: string | null;
+  doc_vistoria_inicial_status?: string | null;
+  doc_seguro_incendio_status?: string | null;
   analysis: {
     id: string;
     inquilino_nome: string;
@@ -175,10 +179,15 @@ export function ContractList({ contracts, isLoading, onRenew, onFlagPendency, on
           <TableBody>
             {contracts.map(contract => {
               const status = STATUS_CONFIG[contract.status];
+              // Check if any document is pending validation (status = 'enviado')
+              const hasPendingDocs = 
+                contract.doc_contrato_locacao_status === 'enviado' ||
+                contract.doc_vistoria_inicial_status === 'enviado' ||
+                contract.doc_seguro_incendio_status === 'enviado';
               return (
                 <TableRow 
                   key={contract.id}
-                  className="cursor-pointer hover:bg-muted/50"
+                  className={`cursor-pointer hover:bg-muted/50 ${hasPendingDocs ? 'bg-amber-50/50 dark:bg-amber-950/20' : ''}`}
                   onClick={() => navigate(`/contracts/${contract.id}`)}
                 >
                   <TableCell onClick={e => e.stopPropagation()}>
@@ -188,7 +197,15 @@ export function ContractList({ contracts, isLoading, onRenew, onFlagPendency, on
                     />
                   </TableCell>
                   <TableCell className="font-mono font-medium">
-                    #{contract.id.slice(0, 8).toUpperCase()}
+                    <div className="flex items-center gap-2">
+                      #{contract.id.slice(0, 8).toUpperCase()}
+                      {hasPendingDocs && (
+                        <span className="flex h-2 w-2 relative" title="Documentos pendentes de validação">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                        </span>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <div>
