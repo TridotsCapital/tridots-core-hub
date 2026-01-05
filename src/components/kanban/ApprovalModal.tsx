@@ -56,7 +56,7 @@ export function ApprovalModal({ analysis, open, onOpenChange, onConfirm }: Appro
     }
   }, [taxaGarantia, analysis?.taxa_garantia_percentual]);
 
-  const isSetupRequired = !analysis?.setup_fee_exempt;
+  const isSetupRequired = !analysis?.setup_fee_exempt && (analysis?.setup_fee || 0) > 0;
   
   const isFormValid = () => {
     if (isSetupRequired && !setupPaymentLink.trim()) return false;

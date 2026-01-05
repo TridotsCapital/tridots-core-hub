@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { AgencyLayout } from "@/components/layout/AgencyLayout";
 import { AgencyKanbanBoard } from "@/components/agency/AgencyKanbanBoard";
-import { AgencyContractList } from "@/components/agency/AgencyContractList";
+import { AgencyAnalysisList } from "@/components/agency/AgencyAnalysisList";
 import { useAgencyAnalyses } from "@/hooks/useAgencyAnalyses";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -183,7 +183,7 @@ export default function AgencyAnalyses() {
             onAutoOpenHandled={() => setAutoOpenAnalysisId(null)}
           />
         ) : (
-          <AgencyContractList 
+          <AgencyAnalysisList 
             analyses={mappedAnalyses} 
             isLoading={isLoading} 
             onRefresh={handleRefresh} 

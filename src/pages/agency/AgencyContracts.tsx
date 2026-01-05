@@ -10,7 +10,7 @@ export default function AgencyContracts() {
   const location = useLocation();
   const { user } = useAuth();
   const [agencyId, setAgencyId] = useState<string | null>(null);
-  const [analyses, setAnalyses] = useState<any[]>([]);
+  const [contracts, setContracts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [autoOpenContractId, setAutoOpenContractId] = useState<string | null>(null);
 
@@ -38,15 +38,28 @@ export default function AgencyContracts() {
       if (agencyError) throw agencyError;
       setAgencyId(agencyUser.agency_id);
 
-      // Then fetch analyses for this agency
-      const { data: analysesData, error: analysesError } = await supabase
-        .from('analyses')
-        .select('id, inquilino_nome, inquilino_cpf, status, valor_aluguel, valor_total, created_at, approved_at')
+      // Fetch CONTRACTS (not analyses) for this agency
+      const { data: contractsData, error: contractsError } = await supabase
+        .from('contracts')
+        .select(`
+          id, 
+          status, 
+          created_at, 
+          activated_at,
+          analysis:analyses(
+            id,
+            inquilino_nome,
+            inquilino_cpf,
+            valor_aluguel,
+            valor_total,
+            identity_photo_path
+          )
+        `)
         .eq('agency_id', agencyUser.agency_id)
         .order('created_at', { ascending: false });
 
-      if (analysesError) throw analysesError;
-      setAnalyses(analysesData || []);
+      if (contractsError) throw contractsError;
+      setContracts(contractsData || []);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -62,7 +75,7 @@ export default function AgencyContracts() {
     return (
       <AgencyLayout 
         title="Meus Contratos" 
-        description="Gerencie suas análises e contratos de garantia"
+        description="Gerencie seus contratos de garantia ativos"
       >
         <div className="flex items-center justify-center h-[400px]">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -74,10 +87,10 @@ export default function AgencyContracts() {
   return (
     <AgencyLayout 
       title="Meus Contratos" 
-      description="Gerencie suas análises e contratos de garantia"
+      description="Gerencie seus contratos de garantia ativos"
     >
       <AgencyContractList 
-        analyses={analyses} 
+        contracts={contracts} 
         isLoading={loading}
         onRefresh={fetchData}
         autoOpenContractId={autoOpenContractId}

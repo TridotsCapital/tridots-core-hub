@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -6,81 +6,105 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, MoreHorizontal, Eye, MessageSquare, FileText, Loader2, FileSearch, CheckCircle, Clock, XCircle, FileCheck } from 'lucide-react';
+import { Search, MoreHorizontal, Eye, MessageSquare, FileText, XCircle, Loader2, FileSearch } from 'lucide-react';
 import { formatCurrency } from '@/lib/validators';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import type { Database } from '@/integrations/supabase/types';
 import { useUnreadItemIds, useMarkItemAsRead } from '@/hooks/useUnreadItemIds';
 import { cn } from '@/lib/utils';
-import type { Database } from '@/integrations/supabase/types';
 
-type ContractStatus = Database['public']['Enums']['contract_status'];
+type AnalysisStatus = Database['public']['Enums']['analysis_status'];
 
-interface Contract {
+interface Analysis {
   id: string;
-  status: ContractStatus;
+  inquilino_nome: string;
+  inquilino_cpf: string;
+  status: AnalysisStatus;
+  valor_aluguel: number;
+  valor_total: number | null;
   created_at: string;
-  activated_at: string | null;
-  analysis: {
-    id: string;
-    inquilino_nome: string;
-    inquilino_cpf: string;
-    valor_aluguel: number;
-    valor_total: number | null;
-    identity_photo_path: string | null;
-  } | null;
+  approved_at: string | null;
 }
 
-interface AgencyContractListProps {
-  contracts: Contract[];
+interface AgencyAnalysisListProps {
+  analyses: Analysis[];
   isLoading: boolean;
   onRefresh: () => void;
-  autoOpenContractId?: string | null;
-  onAutoOpenHandled?: () => void;
 }
 
-const STATUS_CONFIG: Record<ContractStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: any }> = {
-  documentacao_pendente: { label: 'Doc. Pendente', variant: 'outline', icon: FileCheck },
-  ativo: { label: 'Ativo', variant: 'default', icon: CheckCircle },
-  cancelado: { label: 'Cancelado', variant: 'destructive', icon: XCircle },
-  encerrado: { label: 'Encerrado', variant: 'secondary', icon: Clock },
+const STATUS_CONFIG: Record<AnalysisStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
+  pendente: { label: 'Pendente', variant: 'secondary' },
+  em_analise: { label: 'Em Análise', variant: 'outline' },
+  aprovada: { label: 'Aprovada', variant: 'default' },
+  reprovada: { label: 'Reprovada', variant: 'destructive' },
+  cancelada: { label: 'Cancelada', variant: 'destructive' },
+  aguardando_pagamento: { label: 'Aguardando Pgto', variant: 'outline' },
+  ativo: { label: 'Ativo', variant: 'default' },
 };
 
-export function AgencyContractList({ contracts, isLoading, onRefresh, autoOpenContractId, onAutoOpenHandled }: AgencyContractListProps) {
+export function AgencyAnalysisList({ analyses, isLoading, onRefresh }: AgencyAnalysisListProps) {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const { data: unreadIds } = useUnreadItemIds();
   const markAsRead = useMarkItemAsRead();
 
-  // Auto-open contract from notification
-  useEffect(() => {
-    if (autoOpenContractId && contracts.length > 0) {
-      const contract = contracts.find(c => c.id === autoOpenContractId || c.analysis?.id === autoOpenContractId);
-      if (contract) {
-        navigate(`/agency/contracts/${contract.analysis?.id || contract.id}`);
-        onAutoOpenHandled?.();
-      }
-    }
-  }, [autoOpenContractId, contracts, navigate, onAutoOpenHandled]);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [selectedAnalysis, setSelectedAnalysis] = useState<Analysis | null>(null);
+  const [isCanceling, setIsCanceling] = useState(false);
 
-  // Filter contracts
-  const filteredContracts = contracts.filter(contract => {
-    if (!contract.analysis) return false;
-    
+  // Filter analyses
+  const filteredAnalyses = analyses.filter(analysis => {
     const matchesSearch = 
-      contract.analysis.inquilino_nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      contract.analysis.inquilino_cpf.includes(searchTerm.replace(/\D/g, ''));
+      analysis.inquilino_nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      analysis.inquilino_cpf.includes(searchTerm.replace(/\D/g, ''));
     
-    const matchesStatus = statusFilter === 'all' || contract.status === statusFilter;
+    const matchesStatus = statusFilter === 'all' || analysis.status === statusFilter;
     
     return matchesSearch && matchesStatus;
   });
 
+  const handleCancelClick = (analysis: Analysis) => {
+    setSelectedAnalysis(analysis);
+    setCancelDialogOpen(true);
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!selectedAnalysis) return;
+    
+    setIsCanceling(true);
+    try {
+      const { error } = await supabase
+        .from('analyses')
+        .update({ 
+          status: 'cancelada',
+          canceled_at: new Date().toISOString()
+        })
+        .eq('id', selectedAnalysis.id);
+
+      if (error) throw error;
+
+      toast.success('Análise cancelada com sucesso');
+      setCancelDialogOpen(false);
+      onRefresh();
+    } catch (error: any) {
+      toast.error('Erro ao cancelar análise: ' + error.message);
+    } finally {
+      setIsCanceling(false);
+    }
+  };
+
+  const canCancel = (status: AnalysisStatus) => {
+    return status === 'pendente' || status === 'em_analise';
+  };
+
   const formatCpf = (cpf: string) => {
     const cleaned = cpf.replace(/\D/g, '');
-    if (cleaned.length !== 11) return cpf;
     return `${cleaned.slice(0, 3)}.${cleaned.slice(3, 6)}.${cleaned.slice(6, 9)}-${cleaned.slice(9)}`;
   };
 
@@ -119,7 +143,7 @@ export function AgencyContractList({ contracts, isLoading, onRefresh, autoOpenCo
         <CardHeader className="pb-3">
           <CardTitle className="text-lg flex items-center gap-2">
             <FileSearch className="h-5 w-5" />
-            Contratos ({filteredContracts.length})
+            Análises ({filteredAnalyses.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -127,15 +151,13 @@ export function AgencyContractList({ contracts, isLoading, onRefresh, autoOpenCo
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
-          ) : filteredContracts.length === 0 ? (
+          ) : filteredAnalyses.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <FileSearch className="h-12 w-12 mx-auto mb-3 opacity-30" />
-              <p>Nenhum contrato encontrado</p>
+              <p>Nenhuma análise encontrada</p>
               {searchTerm || statusFilter !== 'all' ? (
                 <p className="text-sm">Tente ajustar os filtros</p>
-              ) : (
-                <p className="text-sm">Contratos serão criados após aprovação e pagamento das análises</p>
-              )}
+              ) : null}
             </div>
           ) : (
             <div className="rounded-md border overflow-hidden">
@@ -151,22 +173,20 @@ export function AgencyContractList({ contracts, isLoading, onRefresh, autoOpenCo
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredContracts.map((contract) => {
-                    const statusConfig = STATUS_CONFIG[contract.status];
-                    const StatusIcon = statusConfig.icon;
-                    const analysisId = contract.analysis?.id;
-                    const hasUnread = analysisId ? (unreadIds?.contratos.has(analysisId) ?? false) : false;
+                  {filteredAnalyses.map((analysis) => {
+                    const statusConfig = STATUS_CONFIG[analysis.status];
+                    const hasUnread = unreadIds?.analises.has(analysis.id) ?? false;
 
                     const handleRowClick = () => {
-                      if (hasUnread && analysisId) {
-                        markAsRead(analysisId, 'contratos');
+                      if (hasUnread) {
+                        markAsRead(analysis.id, 'analises');
                       }
-                      navigate(`/agency/contracts/${analysisId}`);
+                      navigate(`/agency/contracts/${analysis.id}`);
                     };
 
                     return (
                       <TableRow 
-                        key={contract.id} 
+                        key={analysis.id} 
                         className={cn(
                           "hover:bg-muted/30 cursor-pointer relative",
                           hasUnread && "bg-red-50/50 dark:bg-red-950/20"
@@ -177,27 +197,26 @@ export function AgencyContractList({ contracts, isLoading, onRefresh, autoOpenCo
                           {hasUnread && (
                             <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-red-500 rounded-r"></span>
                           )}
-                          #{contract.id.slice(0, 8).toUpperCase()}
+                          #{analysis.id.slice(0, 8).toUpperCase()}
                         </TableCell>
                         <TableCell>
                           <div>
-                            <p className="font-medium">{contract.analysis?.inquilino_nome}</p>
+                            <p className="font-medium">{analysis.inquilino_nome}</p>
                             <p className="text-xs text-muted-foreground">
-                              {formatCpf(contract.analysis?.inquilino_cpf || '')}
+                              {formatCpf(analysis.inquilino_cpf)}
                             </p>
                           </div>
                         </TableCell>
                         <TableCell>
                           <Badge variant={statusConfig.variant} className="text-xs">
-                            <StatusIcon className="h-3 w-3 mr-1" />
                             {statusConfig.label}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right font-medium">
-                          {formatCurrency(contract.analysis?.valor_aluguel || 0)}
+                          {formatCurrency(analysis.valor_aluguel)}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {format(new Date(contract.created_at), 'dd/MM/yyyy', { locale: ptBR })}
+                          {format(new Date(analysis.created_at), 'dd/MM/yyyy', { locale: ptBR })}
                         </TableCell>
                         <TableCell className="text-right">
                           <DropdownMenu>
@@ -210,7 +229,7 @@ export function AgencyContractList({ contracts, isLoading, onRefresh, autoOpenCo
                               <DropdownMenuItem 
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  navigate(`/agency/contracts/${analysisId}`);
+                                  navigate(`/agency/contracts/${analysis.id}`);
                                 }}
                               >
                                 <Eye className="mr-2 h-4 w-4" />
@@ -221,8 +240,8 @@ export function AgencyContractList({ contracts, isLoading, onRefresh, autoOpenCo
                                   e.stopPropagation();
                                   navigate('/agency/support', { 
                                     state: { 
-                                      prefillSubject: `Dúvida sobre contrato #${contract.id.slice(0, 8).toUpperCase()}`,
-                                      analysisId: analysisId
+                                      prefillSubject: `Dúvida sobre análise #${analysis.id.slice(0, 8).toUpperCase()}`,
+                                      analysisId: analysis.id
                                     } 
                                   });
                                 }}
@@ -233,12 +252,24 @@ export function AgencyContractList({ contracts, isLoading, onRefresh, autoOpenCo
                               <DropdownMenuItem 
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  navigate(`/agency/contracts/${analysisId}?tab=documents`);
+                                  navigate(`/agency/contracts/${analysis.id}?tab=documents`);
                                 }}
                               >
                                 <FileText className="mr-2 h-4 w-4" />
                                 Documentos
                               </DropdownMenuItem>
+                              {canCancel(analysis.status) && (
+                                <DropdownMenuItem 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleCancelClick(analysis);
+                                  }}
+                                  className="text-destructive focus:text-destructive"
+                                >
+                                  <XCircle className="mr-2 h-4 w-4" />
+                                  Cancelar Análise
+                                </DropdownMenuItem>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
@@ -251,6 +282,33 @@ export function AgencyContractList({ contracts, isLoading, onRefresh, autoOpenCo
           )}
         </CardContent>
       </Card>
+
+      {/* Cancel Confirmation Dialog */}
+      <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Cancelar Análise</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja cancelar a análise de{' '}
+              <strong>{selectedAnalysis?.inquilino_nome}</strong>?
+              Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCancelDialogOpen(false)}>
+              Manter Análise
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleConfirmCancel}
+              disabled={isCanceling}
+            >
+              {isCanceling && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Confirmar Cancelamento
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

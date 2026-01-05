@@ -143,7 +143,13 @@ export function KanbanBoard({ filters, autoOpenAnalysisId, onAutoOpenHandled }: 
       return;
     }
 
-    // Check if moving to aguardando_pagamento - show approval modal
+    // Block moving directly from PENDENTE to AGUARDANDO_PAGAMENTO - must go through EM_ANALISE first
+    if (analysis.status === 'pendente' && newStatus === 'aguardando_pagamento') {
+      toast.error('É necessário iniciar a análise antes de aprovar');
+      return;
+    }
+
+    // Check if moving to aguardando_pagamento - show approval modal (only from em_analise)
     if (newStatus === 'aguardando_pagamento') {
       setPendingMove({ analysis, newStatus });
       setApprovalModalOpen(true);

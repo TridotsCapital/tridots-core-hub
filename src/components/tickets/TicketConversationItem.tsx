@@ -97,7 +97,7 @@ export function TicketConversationItem({
           {ticket.analysis_id && !ticket.claim_id && (
             <Badge variant="secondary" className="text-[10px] h-4 px-1.5 py-0 shrink-0">
               <FileText className="h-2.5 w-2.5 mr-0.5" />
-              Contrato
+              Análise
             </Badge>
           )}
           {unreadCount > 0 && (
