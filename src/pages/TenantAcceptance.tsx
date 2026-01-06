@@ -155,6 +155,11 @@ export default function TenantAcceptance() {
   
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // Scroll to top when step changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentStep]);
+
   // Calculate total steps based on setup_fee_exempt or setup_fee = 0
   const isSetupExempt = analysis?.setup_fee_exempt || (analysis?.setup_fee || 0) <= 0;
   const totalSteps = isSetupExempt ? 3 : 4;

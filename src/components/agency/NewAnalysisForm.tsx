@@ -50,6 +50,7 @@ const formSchema = z.object({
   conjugeCpf: z.string().optional(),
   conjugeRg: z.string().optional(),
   conjugeDataNascimento: z.string().optional(),
+  conjugeWhatsApp: z.string().optional(),
   conjugeProfissao: z.string().optional(),
   conjugeEmpresa: z.string().optional(),
   conjugeRendaMensal: z.number().optional(),
@@ -151,14 +152,31 @@ export function NewAnalysisForm({ agencyId }: NewAnalysisFormProps) {
   }, [currentStep]);
 
   const handleNext = async () => {
+    const incluirConjuge = form.getValues('incluirConjuge');
+    
     const stepFields: Record<number, (keyof FormData)[]> = {
       0: ['imovelCep', 'imovelEndereco', 'imovelNumero', 'imovelBairro', 'imovelCidade', 'imovelEstado', 'imovelTipo', 'valorAluguel'],
       1: ['inquilinoNome', 'inquilinoCpf', 'inquilinoDataNascimento', 'inquilinoEmail', 'inquilinoTelefone', 'inquilinoProfissao', 'inquilinoEmpresa', 'inquilinoRendaMensal'],
-      2: [],
+      2: incluirConjuge ? ['conjugeNome', 'conjugeCpf', 'conjugeProfissao', 'conjugeEmpresa', 'conjugeRendaMensal'] : [],
     };
 
     const fieldsToValidate = stepFields[currentStep] || [];
-    const isValid = await form.trigger(fieldsToValidate);
+    let isValid = await form.trigger(fieldsToValidate);
+
+    // Additional validation for spouse required fields
+    if (currentStep === 2 && incluirConjuge) {
+      const conjugeProfissao = form.getValues('conjugeProfissao');
+      const conjugeEmpresa = form.getValues('conjugeEmpresa');
+      
+      if (!conjugeProfissao || conjugeProfissao.length < 2) {
+        form.setError('conjugeProfissao', { message: 'Profissão do cônjuge é obrigatória' });
+        isValid = false;
+      }
+      if (!conjugeEmpresa || conjugeEmpresa.length < 2) {
+        form.setError('conjugeEmpresa', { message: 'Empresa do cônjuge é obrigatória' });
+        isValid = false;
+      }
+    }
 
     if (isValid) {
       setCurrentStep(prev => Math.min(prev + 1, STEPS.length - 1));

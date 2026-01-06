@@ -167,7 +167,9 @@ export function TenantStep({ form }: TenantStepProps) {
           name="inquilinoTelefone"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Telefone *</FormLabel>
+              <FormLabel className="flex items-center gap-1">
+                <span>📱</span> WhatsApp *
+              </FormLabel>
               <FormControl>
                 <Input
                   {...field}
