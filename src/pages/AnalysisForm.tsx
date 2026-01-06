@@ -125,19 +125,18 @@ export default function AnalysisForm() {
     }
   };
 
-  // Payment validation logic
-  const isSetupExempt = analysis?.setup_fee === 0;
-  const setupPaymentConfirmed = !!analysis?.setup_payment_confirmed_at;
-  const guaranteePaymentConfirmed = !!analysis?.guarantee_payment_confirmed_at;
-  const paymentsValidated = !!analysis?.payments_validated_at;
-  const paymentsRejected = !!analysis?.payments_rejected_at;
-  
-  const paymentsPendingValidation = 
-    analysis?.status === 'aguardando_pagamento' &&
-    guaranteePaymentConfirmed &&
-    (isSetupExempt || setupPaymentConfirmed) &&
-    !paymentsValidated &&
-    !paymentsRejected;
+  // Payment validation logic - matching AnalysisDrawer logic exactly
+  const paymentsPendingValidation = (() => {
+    if (!analysis) return false;
+    if (analysis.status !== 'aguardando_pagamento') return false;
+    
+    // Has guarantee payment confirmed
+    const hasGuaranteeConfirmed = !!analysis.guarantee_payment_confirmed_at;
+    // Setup is either exempt or confirmed
+    const setupOk = analysis.setup_fee_exempt || !!analysis.setup_payment_confirmed_at;
+    
+    return hasGuaranteeConfirmed && setupOk && !analysis.payments_validated_at && !analysis.payments_rejected_at;
+  })();
 
   const handleValidatePayments = async () => {
     if (!id) return;
