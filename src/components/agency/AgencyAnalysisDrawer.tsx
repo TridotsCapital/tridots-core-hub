@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Analysis, statusConfig } from '@/types/database';
 import {
   Sheet,
@@ -28,12 +29,16 @@ import {
   CheckCircle2,
   AlertTriangle,
   Timer,
+  RefreshCw,
+  Loader2,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface AgencyAnalysisDrawerProps {
   analysis: Analysis | null;
@@ -88,6 +93,9 @@ const getAcceptanceStatus = (analysis: Analysis) => {
 };
 
 export function AgencyAnalysisDrawer({ analysis, open, onOpenChange }: AgencyAnalysisDrawerProps) {
+  const [regeneratingLink, setRegeneratingLink] = useState(false);
+  const queryClient = useQueryClient();
+
   if (!analysis) return null;
 
   const acceptanceStatus = getAcceptanceStatus(analysis);
@@ -98,6 +106,29 @@ export function AgencyAnalysisDrawer({ analysis, open, onOpenChange }: AgencyAna
   const handleCopyLink = () => {
     navigator.clipboard.writeText(acceptanceUrl);
     toast.success('Link copiado para a área de transferência!');
+  };
+
+  const handleRegenerateLink = async () => {
+    setRegeneratingLink(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-acceptance-link', {
+        body: { 
+          analysisId: analysis.id,
+          setupPaymentLink: analysis.setup_payment_link,
+          guaranteePaymentLink: analysis.guarantee_payment_link,
+        }
+      });
+      
+      if (error) throw error;
+      
+      queryClient.invalidateQueries({ queryKey: ['agency-analyses'] });
+      toast.success('Novo link gerado com sucesso!');
+    } catch (error) {
+      console.error('Error regenerating link:', error);
+      toast.error('Erro ao gerar novo link');
+    } finally {
+      setRegeneratingLink(false);
+    }
   };
 
   return (
@@ -180,11 +211,24 @@ export function AgencyAnalysisDrawer({ analysis, open, onOpenChange }: AgencyAna
                       >
                         <Copy className="h-4 w-4" />
                       </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={handleRegenerateLink}
+                        disabled={regeneratingLink}
+                        title="Gerar novo link"
+                      >
+                        {regeneratingLink ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <RefreshCw className="h-4 w-4" />
+                        )}
+                      </Button>
                     </div>
                     
                     {acceptanceStatus?.status === 'expired' && (
                       <p className="text-xs text-muted-foreground mt-2">
-                        Este link expirou. Solicite um novo link à equipe Tridots pelo chat.
+                        Este link expirou. Clique no botão de atualizar para gerar um novo link.
                       </p>
                     )}
                   </div>

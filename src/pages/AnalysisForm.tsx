@@ -45,6 +45,8 @@ export default function AnalysisForm() {
 
   const [isValidating, setIsValidating] = useState(false);
   const [validateDialogOpen, setValidateDialogOpen] = useState(false);
+  const [setupPaymentDate, setSetupPaymentDate] = useState('');
+  const [guaranteePaymentDate, setGuaranteePaymentDate] = useState('');
 
   const { data: analysis, isLoading: loadingAnalysis } = useAnalysis(id);
   const { data: agencies } = useAgencies();
@@ -143,16 +145,35 @@ export default function AnalysisForm() {
   const handleValidatePayments = async () => {
     if (!id) return;
     
+    // Validate required dates
+    if (!guaranteePaymentDate) {
+      toast.error('Informe a data do pagamento da garantia');
+      return;
+    }
+    
+    const needsSetupDate = !analysis?.setup_fee_exempt && analysis?.setup_fee && analysis.setup_fee > 0;
+    if (needsSetupDate && !setupPaymentDate) {
+      toast.error('Informe a data do pagamento da taxa setup');
+      return;
+    }
+    
     setIsValidating(true);
     try {
       const { error } = await supabase.functions.invoke('validate-payments', {
-        body: { action: 'validate', analysisId: id },
+        body: { 
+          action: 'validate', 
+          analysisId: id,
+          setupPaymentDate: needsSetupDate ? setupPaymentDate : null,
+          guaranteePaymentDate: guaranteePaymentDate,
+        },
       });
 
       if (error) throw error;
 
       toast.success('Pagamentos validados com sucesso!');
       setValidateDialogOpen(false);
+      setSetupPaymentDate('');
+      setGuaranteePaymentDate('');
       queryClient.invalidateQueries({ queryKey: ['analysis', id] });
     } catch (error: any) {
       console.error('Error validating payments:', error);
@@ -583,20 +604,64 @@ export default function AnalysisForm() {
       </form>
 
       {/* Validate Payments Dialog */}
-      <Dialog open={validateDialogOpen} onOpenChange={setValidateDialogOpen}>
+      <Dialog open={validateDialogOpen} onOpenChange={(open) => {
+        setValidateDialogOpen(open);
+        if (!open) {
+          setSetupPaymentDate('');
+          setGuaranteePaymentDate('');
+        }
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Confirmar Validação de Pagamentos</DialogTitle>
             <DialogDescription>
-              Ao confirmar, a análise será aprovada e um contrato será criado automaticamente.
-              A imobiliária será notificada para enviar os documentos obrigatórios.
+              Informe as datas dos pagamentos para validar e criar o contrato.
             </DialogDescription>
           </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Guarantee Payment Date - Always required */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Data do Pagamento - Garantia *</Label>
+              <Input 
+                type="date" 
+                value={guaranteePaymentDate}
+                onChange={(e) => setGuaranteePaymentDate(e.target.value)}
+                required
+              />
+            </div>
+            
+            {/* Setup Payment Date - Conditional */}
+            {!analysis?.setup_fee_exempt && analysis?.setup_fee && analysis.setup_fee > 0 && (
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Data do Pagamento - Taxa Setup *</Label>
+                <Input 
+                  type="date" 
+                  value={setupPaymentDate}
+                  onChange={(e) => setSetupPaymentDate(e.target.value)}
+                  required
+                />
+              </div>
+            )}
+          </div>
+          
+          <div className="rounded-lg bg-muted/50 p-4 space-y-2 text-sm">
+            <p className="font-medium">O que acontecerá:</p>
+            <ul className="text-muted-foreground space-y-1">
+              <li>• Análise será aprovada e movida para "Ativa"</li>
+              <li>• Contrato será criado automaticamente</li>
+              <li>• Imobiliária será notificada para enviar documentos</li>
+            </ul>
+          </div>
+          
           <DialogFooter>
             <Button variant="outline" onClick={() => setValidateDialogOpen(false)} disabled={isValidating}>
               Cancelar
             </Button>
-            <Button onClick={handleValidatePayments} disabled={isValidating}>
+            <Button 
+              onClick={handleValidatePayments} 
+              disabled={isValidating || !guaranteePaymentDate || (!analysis?.setup_fee_exempt && analysis?.setup_fee && analysis.setup_fee > 0 && !setupPaymentDate)}
+            >
               {isValidating ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />

@@ -97,6 +97,8 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
   const [regeneratingLink, setRegeneratingLink] = useState(false);
   const [validationModalOpen, setValidationModalOpen] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
+  const [setupPaymentDate, setSetupPaymentDate] = useState('');
+  const [guaranteePaymentDate, setGuaranteePaymentDate] = useState('');
   const moveAnalysis = useMoveAnalysis();
   const queryClient = useQueryClient();
 
@@ -177,12 +179,26 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
   const handleValidatePayments = async () => {
     if (!analysis) return;
     
+    // Validate required dates
+    if (!guaranteePaymentDate) {
+      toast.error('Informe a data do pagamento da garantia');
+      return;
+    }
+    
+    const needsSetupDate = !analysis.setup_fee_exempt && analysis.setup_fee > 0;
+    if (needsSetupDate && !setupPaymentDate) {
+      toast.error('Informe a data do pagamento da taxa setup');
+      return;
+    }
+    
     setIsValidating(true);
     try {
       const { data, error } = await supabase.functions.invoke('validate-payments', {
         body: { 
           analysisId: analysis.id,
           action: 'validate',
+          setupPaymentDate: needsSetupDate ? setupPaymentDate : null,
+          guaranteePaymentDate: guaranteePaymentDate,
         }
       });
       
@@ -191,6 +207,8 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
       queryClient.invalidateQueries({ queryKey: ['analyses-kanban'] });
       toast.success('Pagamentos validados! Contrato criado com sucesso.');
       setValidationModalOpen(false);
+      setSetupPaymentDate('');
+      setGuaranteePaymentDate('');
       onOpenChange(false);
     } catch (error: any) {
       console.error('Error validating payments:', error);
@@ -447,17 +465,17 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
                         </Button>
                       </div>
                       
-                      {acceptanceStatus?.status === 'expired' && (
-                        <Button 
-                          size="sm" 
-                          className="mt-3 w-full"
-                          onClick={handleRegenerateLink}
-                          disabled={regeneratingLink}
-                        >
-                          <RefreshCw className={`h-4 w-4 mr-2 ${regeneratingLink ? 'animate-spin' : ''}`} />
-                          {regeneratingLink ? 'Gerando...' : 'Regenerar Link'}
-                        </Button>
-                      )}
+                      {/* Always show regenerate button when token exists */}
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className="mt-3 w-full"
+                        onClick={handleRegenerateLink}
+                        disabled={regeneratingLink}
+                      >
+                        <RefreshCw className={`h-4 w-4 mr-2 ${regeneratingLink ? 'animate-spin' : ''}`} />
+                        {regeneratingLink ? 'Gerando...' : 'Gerar Novo Link'}
+                      </Button>
                     </div>
                   )}
 
@@ -683,7 +701,13 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
       />
 
       {/* Validation Confirmation Modal */}
-      <Dialog open={validationModalOpen} onOpenChange={setValidationModalOpen}>
+      <Dialog open={validationModalOpen} onOpenChange={(open) => {
+        setValidationModalOpen(open);
+        if (!open) {
+          setSetupPaymentDate('');
+          setGuaranteePaymentDate('');
+        }
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -691,14 +715,40 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
               Validar Pagamentos
             </DialogTitle>
             <DialogDescription>
-              Ao confirmar, os pagamentos serão validados e um contrato será criado automaticamente com status "Documentação Pendente".
+              Informe as datas dos pagamentos para validar e criar o contrato.
             </DialogDescription>
           </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Guarantee Payment Date - Always required */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Data do Pagamento - Garantia *</Label>
+              <Input 
+                type="date" 
+                value={guaranteePaymentDate}
+                onChange={(e) => setGuaranteePaymentDate(e.target.value)}
+                required
+              />
+            </div>
+            
+            {/* Setup Payment Date - Conditional */}
+            {!analysis?.setup_fee_exempt && analysis?.setup_fee && analysis.setup_fee > 0 && (
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Data do Pagamento - Taxa Setup *</Label>
+                <Input 
+                  type="date" 
+                  value={setupPaymentDate}
+                  onChange={(e) => setSetupPaymentDate(e.target.value)}
+                  required
+                />
+              </div>
+            )}
+          </div>
           
           <div className="rounded-lg bg-muted/50 p-4 space-y-2">
             <p className="text-sm font-medium">O que acontecerá:</p>
             <ul className="text-sm text-muted-foreground space-y-1">
-              <li>• Análise será movida para "Aprovada"</li>
+              <li>• Análise será movida para "Ativa"</li>
               <li>• Contrato será criado automaticamente</li>
               <li>• Imobiliária será notificada para enviar documentos</li>
             </ul>
@@ -711,7 +761,7 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
             <Button 
               className="bg-success hover:bg-success/90"
               onClick={handleValidatePayments}
-              disabled={isValidating}
+              disabled={isValidating || !guaranteePaymentDate || (!analysis?.setup_fee_exempt && analysis?.setup_fee && analysis.setup_fee > 0 && !setupPaymentDate)}
             >
               {isValidating ? (
                 <>

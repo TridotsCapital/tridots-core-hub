@@ -10,6 +10,8 @@ interface ValidatePaymentsRequest {
   analysisId: string;
   action: "validate" | "reject";
   rejectionReason?: string;
+  setupPaymentDate?: string;
+  guaranteePaymentDate?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -32,10 +34,14 @@ const handler = async (req: Request): Promise<Response> => {
       userId = user?.id || null;
     }
 
-    const { analysisId, action, rejectionReason }: ValidatePaymentsRequest = await req.json();
+    const { analysisId, action, rejectionReason, setupPaymentDate, guaranteePaymentDate }: ValidatePaymentsRequest = await req.json();
 
     if (!analysisId || !action) {
       throw new Error("Missing required fields: analysisId and action");
+    }
+
+    if (action === "validate" && !guaranteePaymentDate) {
+      throw new Error("Data de pagamento da garantia é obrigatória");
     }
 
     console.log("Processing payment validation:", { analysisId, action, userId });
@@ -58,15 +64,22 @@ const handler = async (req: Request): Promise<Response> => {
     if (action === "validate") {
       // Validate payments - move to approved and create contract
       
-      // Update analysis status
+      // Update analysis status with payment dates
+      const updateData: Record<string, any> = {
+        status: "aprovada",
+        approved_at: new Date().toISOString(),
+        payments_validated_at: new Date().toISOString(),
+        payments_validated_by: userId,
+        guarantee_payment_date: guaranteePaymentDate,
+      };
+      
+      if (setupPaymentDate) {
+        updateData.setup_payment_date = setupPaymentDate;
+      }
+
       const { error: updateError } = await supabase
         .from("analyses")
-        .update({
-          status: "aprovada",
-          approved_at: new Date().toISOString(),
-          payments_validated_at: new Date().toISOString(),
-          payments_validated_by: userId,
-        })
+        .update(updateData)
         .eq("id", analysisId);
 
       if (updateError) {
@@ -85,14 +98,17 @@ const handler = async (req: Request): Promise<Response> => {
         // Don't fail the whole operation, log it
       }
 
-      // Log timeline event
+      // Log timeline event with payment dates
+      const setupDateInfo = setupPaymentDate ? `, Setup: ${setupPaymentDate}` : '';
       await supabase.rpc("log_analysis_timeline_event", {
         _analysis_id: analysisId,
         _event_type: "payments_validated",
-        _description: "Pagamentos validados pela Tridots - Contrato criado",
+        _description: `Pagamentos validados - Garantia: ${guaranteePaymentDate}${setupDateInfo}`,
         _metadata: { 
           validated_by: userId,
           contract_id: contractId,
+          setup_payment_date: setupPaymentDate || null,
+          guarantee_payment_date: guaranteePaymentDate,
         },
         _created_by: userId,
       });
