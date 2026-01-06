@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { formatCPF, formatCurrencyInput, validateCPF, formatPhone } from '@/lib/validators';
 import { Users } from 'lucide-react';
+import whatsappIcon from '@/assets/whatsapp-icon.png';
 
 interface SpouseStepProps {
   form: UseFormReturn<any>;
@@ -140,8 +141,9 @@ export function SpouseStep({ form }: SpouseStepProps) {
             name="conjugeWhatsApp"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="flex items-center gap-1">
-                  <span>📱</span> WhatsApp
+                <FormLabel className="flex items-center gap-1.5">
+                  <img src={whatsappIcon} alt="WhatsApp" className="h-4 w-4" />
+                  WhatsApp
                 </FormLabel>
                 <FormControl>
                   <Input

@@ -3,6 +3,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/comp
 import { Input } from '@/components/ui/input';
 import { formatCPF, formatPhone, formatCurrencyInput, validateCPF, validateEmail } from '@/lib/validators';
 import { User } from 'lucide-react';
+import whatsappIcon from '@/assets/whatsapp-icon.png';
 
 interface TenantStepProps {
   form: UseFormReturn<any>;
@@ -167,8 +168,9 @@ export function TenantStep({ form }: TenantStepProps) {
           name="inquilinoTelefone"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="flex items-center gap-1">
-                <span>📱</span> WhatsApp *
+              <FormLabel className="flex items-center gap-1.5">
+                <img src={whatsappIcon} alt="WhatsApp" className="h-4 w-4" />
+                WhatsApp *
               </FormLabel>
               <FormControl>
                 <Input
