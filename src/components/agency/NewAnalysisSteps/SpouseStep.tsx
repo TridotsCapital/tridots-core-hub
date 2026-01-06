@@ -2,7 +2,7 @@ import { UseFormReturn } from 'react-hook-form';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { formatCPF, formatCurrencyInput, validateCPF } from '@/lib/validators';
+import { formatCPF, formatCurrencyInput, validateCPF, formatPhone } from '@/lib/validators';
 import { Users } from 'lucide-react';
 
 interface SpouseStepProps {
@@ -24,6 +24,11 @@ export function SpouseStep({ form }: SpouseStepProps) {
         form.clearErrors('conjugeCpf');
       }
     }
+  };
+
+  const handlePhoneChange = (value: string) => {
+    const formatted = formatPhone(value);
+    form.setValue('conjugeWhatsApp', formatted);
   };
 
   const handleCurrencyInput = (field: string, value: string) => {
@@ -129,6 +134,28 @@ export function SpouseStep({ form }: SpouseStepProps) {
             )}
           />
 
+          {/* WhatsApp */}
+          <FormField
+            control={form.control}
+            name="conjugeWhatsApp"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="flex items-center gap-1">
+                  <span>📱</span> WhatsApp
+                </FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    onChange={(e) => handlePhoneChange(e.target.value)}
+                    placeholder="(00) 00000-0000"
+                    maxLength={15}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
           {/* Professional info */}
           <div className="pt-4 border-t">
             <div className="text-sm font-medium text-muted-foreground mb-4">
@@ -141,7 +168,7 @@ export function SpouseStep({ form }: SpouseStepProps) {
                 name="conjugeProfissao"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Profissão</FormLabel>
+                    <FormLabel>Profissão *</FormLabel>
                     <FormControl>
                       <Input {...field} placeholder="Ex: Engenheiro, Médico, etc." />
                     </FormControl>
@@ -155,7 +182,7 @@ export function SpouseStep({ form }: SpouseStepProps) {
                 name="conjugeEmpresa"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Empresa</FormLabel>
+                    <FormLabel>Empresa *</FormLabel>
                     <FormControl>
                       <Input {...field} placeholder="Nome da empresa" />
                     </FormControl>

@@ -108,6 +108,8 @@ export function AgencyAnalysisDrawer({ analysis, open, onOpenChange }: AgencyAna
             <div>
               <SheetTitle className="text-xl">{analysis.inquilino_nome}</SheetTitle>
               <SheetDescription className="mt-1">
+                <span className="font-mono font-semibold">#{analysis.id.slice(0, 8).toUpperCase()}</span>
+                {' • '}
                 Criada em {formatDate(analysis.created_at)}
               </SheetDescription>
             </div>

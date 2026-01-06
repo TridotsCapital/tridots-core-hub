@@ -106,6 +106,9 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
           <h4 className="font-semibold text-sm text-foreground truncate">
             {analysis.inquilino_nome}
           </h4>
+          <p className="text-[10px] font-mono text-muted-foreground">
+            #{analysis.id.slice(0, 8).toUpperCase()}
+          </p>
           <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
             <Building2 className="h-3 w-3" />
             <span className="truncate">{analysis.agency?.razao_social || 'Sem imobiliária'}</span>

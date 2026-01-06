@@ -55,6 +55,9 @@ export function AgencyKanbanCard({ analysis, onClick, hasUnread = false }: Agenc
           <h4 className="font-semibold text-sm text-foreground truncate">
             {analysis.inquilino_nome}
           </h4>
+          <p className="text-[10px] font-mono text-muted-foreground">
+            #{analysis.id.slice(0, 8).toUpperCase()}
+          </p>
           <p className="text-xs text-muted-foreground mt-0.5 truncate">
             {analysis.imovel_endereco}, {analysis.imovel_cidade}
           </p>
