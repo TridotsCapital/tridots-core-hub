@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useAnalysis, useCreateAnalysis, useUpdateAnalysis, useUpdateAnalysisStatus } from '@/hooks/useAnalyses';
@@ -17,9 +18,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowLeft, Save, CheckCircle, XCircle, Clock } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { ArrowLeft, Save, CheckCircle, XCircle, Clock, Loader2, CreditCard } from 'lucide-react';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import type { TablesInsert } from '@/integrations/supabase/types';
 import { statusConfig, AnalysisStatus } from '@/types/database';
+import { useQueryClient } from '@tanstack/react-query';
 
 type AnalysisFormData = Omit<TablesInsert<'analyses'>, 'id' | 'created_at' | 'updated_at' | 'approved_at' | 'rejected_at' | 'canceled_at' | 'status'>;
 
@@ -28,6 +40,10 @@ export default function AnalysisForm() {
   const navigate = useNavigate();
   const { isMaster, user } = useAuth();
   const isEditing = !!id;
+  const queryClient = useQueryClient();
+
+  const [isValidating, setIsValidating] = useState(false);
+  const [validateDialogOpen, setValidateDialogOpen] = useState(false);
 
   const { data: analysis, isLoading: loadingAnalysis } = useAnalysis(id);
   const { data: agencies } = useAgencies();
@@ -109,6 +125,42 @@ export default function AnalysisForm() {
     }
   };
 
+  // Payment validation logic
+  const isSetupExempt = analysis?.setup_fee === 0;
+  const setupPaymentConfirmed = !!analysis?.setup_payment_confirmed_at;
+  const guaranteePaymentConfirmed = !!analysis?.guarantee_payment_confirmed_at;
+  const paymentsValidated = !!analysis?.payments_validated_at;
+  const paymentsRejected = !!analysis?.payments_rejected_at;
+  
+  const paymentsPendingValidation = 
+    analysis?.status === 'aguardando_pagamento' &&
+    guaranteePaymentConfirmed &&
+    (isSetupExempt || setupPaymentConfirmed) &&
+    !paymentsValidated &&
+    !paymentsRejected;
+
+  const handleValidatePayments = async () => {
+    if (!id) return;
+    
+    setIsValidating(true);
+    try {
+      const { error } = await supabase.functions.invoke('validate-payments', {
+        body: { action: 'validate', analysisId: id },
+      });
+
+      if (error) throw error;
+
+      toast.success('Pagamentos validados com sucesso!');
+      setValidateDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['analysis', id] });
+    } catch (error: any) {
+      console.error('Error validating payments:', error);
+      toast.error('Erro ao validar pagamentos: ' + error.message);
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
   if (isEditing && loadingAnalysis) {
     return (
       <DashboardLayout title="Carregando...">
@@ -178,6 +230,31 @@ export default function AnalysisForm() {
             </div>
           )}
         </div>
+
+        {/* Payment Validation Card */}
+        {isEditing && isMaster && paymentsPendingValidation && (
+          <Card className="border-amber-500 bg-amber-50/50 dark:bg-amber-950/20">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
+                <CreditCard className="h-5 w-5" />
+                Pagamentos Aguardando Validação
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">
+                O inquilino confirmou os pagamentos. Valide para aprovar a análise e criar o contrato.
+              </p>
+              <Button 
+                type="button"
+                onClick={() => setValidateDialogOpen(true)}
+                className="bg-amber-600 hover:bg-amber-700"
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Validar Pagamentos
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Agency Selection */}
         <Card>
@@ -503,6 +580,37 @@ export default function AnalysisForm() {
           </Button>
         </div>
       </form>
+
+      {/* Validate Payments Dialog */}
+      <Dialog open={validateDialogOpen} onOpenChange={setValidateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar Validação de Pagamentos</DialogTitle>
+            <DialogDescription>
+              Ao confirmar, a análise será aprovada e um contrato será criado automaticamente.
+              A imobiliária será notificada para enviar os documentos obrigatórios.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setValidateDialogOpen(false)} disabled={isValidating}>
+              Cancelar
+            </Button>
+            <Button onClick={handleValidatePayments} disabled={isValidating}>
+              {isValidating ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Validando...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Confirmar Validação
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }
