@@ -375,8 +375,8 @@ export default function TenantAcceptance() {
 
       if (error) throw error;
 
-      // Go to step 3 (setup or guarantee depending on exemption)
-      setCurrentStep(3);
+      // If setup is exempt, skip to step 4 (guarantee payment), otherwise step 3 (setup payment)
+      setCurrentStep(isSetupExempt ? 4 : 3);
       toast.success('Dados confirmados com sucesso!');
     } catch (error) {
       console.error('Error submitting payer data:', error);
@@ -954,48 +954,7 @@ export default function TenantAcceptance() {
           </Card>
         )}
 
-        {/* Step 3: Setup Payment (conditional) OR Setup Exempt Message */}
-        {currentStep === 3 && isSetupExempt && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-success">
-                <CheckCircle className="h-5 w-5" />
-                Taxa Setup Isenta!
-              </CardTitle>
-              <CardDescription>
-                Parabéns! Você foi isento da taxa de setup.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="rounded-lg bg-success/10 border border-success/30 p-6 text-center">
-                <CheckCircle className="h-12 w-12 text-success mx-auto mb-3" />
-                <p className="text-lg font-medium">Isenção Concedida</p>
-                <p className="text-sm text-muted-foreground mt-2">
-                  A taxa de setup foi isenta pela imobiliária parceira.
-                  Continue para o próximo passo.
-                </p>
-              </div>
-
-              <div className="flex gap-3">
-                <Button 
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => setCurrentStep(2)}
-                >
-                  Voltar
-                </Button>
-                <Button 
-                  className="flex-1" 
-                  onClick={() => setCurrentStep(4)}
-                >
-                  Continuar
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
+        {/* Step 3: Setup Payment (conditional) - Skip step if exempt, go directly to guarantee */}
         {currentStep === 3 && !isSetupExempt && (
           <Card>
             <CardHeader>
@@ -1106,8 +1065,8 @@ export default function TenantAcceptance() {
           </Card>
         )}
 
-        {/* Step 3 or 4: Guarantee Payment */}
-        {((currentStep === 3 && isSetupExempt) || currentStep === 4) && (
+        {/* Step 4: Guarantee Payment */}
+        {currentStep === 4 && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -1119,6 +1078,19 @@ export default function TenantAcceptance() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+              {/* Setup Exempt Banner */}
+              {isSetupExempt && (
+                <div className="rounded-lg bg-success/10 border border-success/30 p-4 text-center">
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <CheckCircle className="h-5 w-5 text-success" />
+                    <p className="font-medium text-success">Taxa Setup Isenta!</p>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Parabéns! A taxa de setup foi isenta pela imobiliária parceira.
+                  </p>
+                </div>
+              )}
+              
               {/* Value */}
               <div className="rounded-lg bg-primary/10 border border-primary/30 p-6 text-center">
                 <p className="text-sm text-muted-foreground mb-1">Valor da Garantia Anual</p>

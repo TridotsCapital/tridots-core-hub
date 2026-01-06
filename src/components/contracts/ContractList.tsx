@@ -47,6 +47,7 @@ interface Contract {
   id: string;
   status: ContractStatus;
   created_at: string;
+  activation_pending?: boolean;
   doc_contrato_locacao_status?: string | null;
   doc_vistoria_inicial_status?: string | null;
   doc_seguro_incendio_status?: string | null;
@@ -184,10 +185,17 @@ export function ContractList({ contracts, isLoading, onRenew, onFlagPendency, on
                 contract.doc_contrato_locacao_status === 'enviado' ||
                 contract.doc_vistoria_inicial_status === 'enviado' ||
                 contract.doc_seguro_incendio_status === 'enviado';
+              // Check if contract is ready for activation (all docs approved)
+              const isActivationPending = contract.activation_pending || (
+                contract.status === 'documentacao_pendente' &&
+                contract.doc_contrato_locacao_status === 'aprovado' &&
+                contract.doc_vistoria_inicial_status === 'aprovado' &&
+                contract.doc_seguro_incendio_status === 'aprovado'
+              );
               return (
                 <TableRow 
                   key={contract.id}
-                  className={`cursor-pointer hover:bg-muted/50 ${hasPendingDocs ? 'bg-amber-50/50 dark:bg-amber-950/20' : ''}`}
+                  className={`cursor-pointer hover:bg-muted/50 ${isActivationPending ? 'bg-green-50/50 dark:bg-green-950/20' : hasPendingDocs ? 'bg-amber-50/50 dark:bg-amber-950/20' : ''}`}
                   onClick={() => navigate(`/contracts/${contract.id}`)}
                 >
                   <TableCell onClick={e => e.stopPropagation()}>
@@ -199,7 +207,13 @@ export function ContractList({ contracts, isLoading, onRenew, onFlagPendency, on
                   <TableCell className="font-mono font-medium">
                     <div className="flex items-center gap-2">
                       #{contract.id.slice(0, 8).toUpperCase()}
-                      {hasPendingDocs && (
+                      {isActivationPending && (
+                        <span className="flex h-2 w-2 relative" title="Pronto para ativar">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                        </span>
+                      )}
+                      {!isActivationPending && hasPendingDocs && (
                         <span className="flex h-2 w-2 relative" title="Documentos pendentes de validação">
                           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
                           <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>

@@ -161,7 +161,7 @@ export function TicketDetail({ ticketId, onClose }: TicketDetailProps) {
                 <Badge variant="outline" className={statusConfig.color}>
                   {statusConfig.label}
                 </Badge>
-                {/* Show Sinistro badge if linked to claim, otherwise Contrato if linked */}
+                {/* Show Sinistro badge if linked to claim, otherwise Contrato/Análise if linked */}
                 {ticket.claim_id ? (
                   <Badge 
                     variant="secondary" 
@@ -172,14 +172,25 @@ export function TicketDetail({ ticketId, onClose }: TicketDetailProps) {
                     Sinistro
                   </Badge>
                 ) : ticket.analysis_id && (
-                  <Badge 
-                    variant="secondary" 
-                    className="cursor-pointer hover:bg-muted"
-                    onClick={() => navigate(`/contracts/${ticket.analysis_id}`)}
-                  >
-                    <FileText className="h-3 w-3 mr-1" />
-                    Contrato
-                  </Badge>
+                  (ticket as any).contract?.id ? (
+                    <Badge 
+                      variant="secondary" 
+                      className="cursor-pointer hover:bg-muted"
+                      onClick={() => navigate(`/contracts/${(ticket as any).contract.id}`)}
+                    >
+                      <FileText className="h-3 w-3 mr-1" />
+                      Contrato
+                    </Badge>
+                  ) : (
+                    <Badge 
+                      variant="secondary" 
+                      className="cursor-pointer hover:bg-muted bg-blue-100 text-blue-700"
+                      onClick={() => navigate(`/analyses/${ticket.analysis_id}`)}
+                    >
+                      <FileText className="h-3 w-3 mr-1" />
+                      Análise
+                    </Badge>
+                  )
                 )}
                 <span className="text-xs text-muted-foreground">
                   Criado {formatDistanceToNow(new Date(ticket.created_at), { addSuffix: true, locale: ptBR })}

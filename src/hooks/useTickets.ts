@@ -72,7 +72,8 @@ export function useAgencyTickets(agencyId: string | undefined) {
           *,
           created_by_profile:profiles!tickets_created_by_fkey(full_name, email),
           assigned_to_profile:profiles!tickets_assigned_to_fkey(full_name, email),
-          analysis:analyses(id, inquilino_nome, imovel_endereco, status)
+          analysis:analyses(id, inquilino_nome, imovel_endereco, status),
+          contract:contracts!contracts_analysis_id_fkey(id, status)
         `)
         .eq("agency_id", agencyId)
         .order("created_at", { ascending: false });
@@ -105,7 +106,8 @@ export function useTickets(filters?: TicketFilters) {
           agency:agencies(id, nome_fantasia, razao_social, responsavel_nome, responsavel_email, responsavel_telefone, logo_url),
           creator:profiles!tickets_created_by_fkey(id, full_name, email, avatar_url),
           assignee:profiles!tickets_assigned_to_fkey(id, full_name, email, avatar_url),
-          analysis:analyses(id, inquilino_nome, imovel_endereco, status)
+          analysis:analyses(id, inquilino_nome, imovel_endereco, status),
+          contract:contracts!contracts_analysis_id_fkey(id, status)
         `)
         .order("created_at", { ascending: false });
 
@@ -164,7 +166,8 @@ export function useTicket(ticketId: string | undefined) {
           agency:agencies(id, nome_fantasia, razao_social, responsavel_nome, responsavel_email, responsavel_telefone, logo_url),
           creator:profiles!tickets_created_by_fkey(id, full_name, email, avatar_url),
           assignee:profiles!tickets_assigned_to_fkey(id, full_name, email, avatar_url),
-          analysis:analyses(id, inquilino_nome, imovel_endereco, status)
+          analysis:analyses(id, inquilino_nome, imovel_endereco, status),
+          contract:contracts!contracts_analysis_id_fkey(id, status)
         `)
         .eq("id", ticketId)
         .single();
