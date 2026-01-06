@@ -128,17 +128,18 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
     };
   }, [analysis?.acceptance_token, analysis?.acceptance_token_expires_at, analysis?.acceptance_token_used_at]);
 
-  // Check if payments are pending validation
+  // Check if payments are pending validation - show if at least ONE confirmed (or setup exempt)
   const paymentsPendingValidation = useMemo(() => {
     if (!analysis) return false;
     if (analysis.status !== 'aguardando_pagamento') return false;
     
-    // Has guarantee payment confirmed
+    // Any confirmation exists
     const hasGuaranteeConfirmed = !!analysis.guarantee_payment_confirmed_at;
-    // Setup is either exempt or confirmed
-    const setupOk = analysis.setup_fee_exempt || !!analysis.setup_payment_confirmed_at;
+    const hasSetupConfirmed = !!analysis.setup_payment_confirmed_at;
+    const setupIsExempt = !!analysis.setup_fee_exempt;
+    const anyConfirmed = hasGuaranteeConfirmed || hasSetupConfirmed || setupIsExempt;
     
-    return hasGuaranteeConfirmed && setupOk && !analysis.payments_validated_at && !analysis.payments_rejected_at;
+    return anyConfirmed && !analysis.payments_validated_at && !analysis.payments_rejected_at;
   }, [analysis]);
 
   const handleRegenerateLink = async () => {

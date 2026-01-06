@@ -38,8 +38,9 @@ type AnalysisFormData = Omit<TablesInsert<'analyses'>, 'id' | 'created_at' | 'up
 export default function AnalysisForm() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isMaster, user } = useAuth();
+  const { isMaster, user, role } = useAuth();
   const isEditing = !!id;
+  const canValidatePayments = role === 'master' || role === 'analyst';
   const queryClient = useQueryClient();
 
   const [isValidating, setIsValidating] = useState(false);
@@ -125,17 +126,18 @@ export default function AnalysisForm() {
     }
   };
 
-  // Payment validation logic - matching AnalysisDrawer logic exactly
+  // Payment validation logic - show button if at least ONE payment confirmed (or setup exempt)
   const paymentsPendingValidation = (() => {
     if (!analysis) return false;
     if (analysis.status !== 'aguardando_pagamento') return false;
     
-    // Has guarantee payment confirmed
+    // Any confirmation exists
     const hasGuaranteeConfirmed = !!analysis.guarantee_payment_confirmed_at;
-    // Setup is either exempt or confirmed
-    const setupOk = analysis.setup_fee_exempt || !!analysis.setup_payment_confirmed_at;
+    const hasSetupConfirmed = !!analysis.setup_payment_confirmed_at;
+    const setupIsExempt = !!analysis.setup_fee_exempt;
+    const anyConfirmed = hasGuaranteeConfirmed || hasSetupConfirmed || setupIsExempt;
     
-    return hasGuaranteeConfirmed && setupOk && !analysis.payments_validated_at && !analysis.payments_rejected_at;
+    return anyConfirmed && !analysis.payments_validated_at && !analysis.payments_rejected_at;
   })();
 
   const handleValidatePayments = async () => {
@@ -231,7 +233,7 @@ export default function AnalysisForm() {
         </div>
 
         {/* Payment Validation Card */}
-        {isEditing && isMaster && paymentsPendingValidation && (
+        {isEditing && canValidatePayments && paymentsPendingValidation && (
           <Card className="border-amber-500 bg-amber-50/50 dark:bg-amber-950/20">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
@@ -241,7 +243,7 @@ export default function AnalysisForm() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground mb-4">
-                O inquilino confirmou os pagamentos. Valide para aprovar a análise e criar o contrato.
+                O inquilino confirmou pelo menos um pagamento (ou setup isento). Valide para aprovar a análise e criar o contrato.
               </p>
               <Button 
                 type="button"
