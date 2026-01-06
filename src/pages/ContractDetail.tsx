@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { 
@@ -24,6 +25,8 @@ import {
   Eye,
   ExternalLink,
   FileCheck,
+  ShieldCheck,
+  Loader2,
 } from 'lucide-react';
 import { useContract } from '@/hooks/useContracts';
 import { useTicketCountByAnalysis, useTicketsByAnalysis } from '@/hooks/useTickets';
@@ -36,6 +39,8 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Database } from '@/integrations/supabase/types';
 import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 type ContractStatus = Database['public']['Enums']['contract_status'];
 
@@ -98,6 +103,43 @@ export default function ContractDetail() {
   const statusConfig = STATUS_CONFIG[contract.status];
   const StatusIcon = statusConfig.icon;
   const propertyType = PROPERTY_TYPES.find(t => t.value === analysis.imovel_tipo)?.label || analysis.imovel_tipo;
+
+  // Check if all documents are approved (ready for activation)
+  const allDocsApproved = 
+    contract.doc_contrato_locacao_status === 'approved' &&
+    contract.doc_vistoria_inicial_status === 'approved' &&
+    contract.doc_seguro_incendio_status === 'approved';
+  
+  const readyForActivation = contract.status === 'documentacao_pendente' && allDocsApproved;
+
+  // Activation state
+  const [activationModalOpen, setActivationModalOpen] = useState(false);
+  const [isActivating, setIsActivating] = useState(false);
+
+  const handleActivateContract = async () => {
+    setIsActivating(true);
+    try {
+      const { error } = await supabase
+        .from('contracts')
+        .update({
+          status: 'ativo',
+          activated_at: new Date().toISOString(),
+        })
+        .eq('id', contract.id);
+
+      if (error) throw error;
+
+      toast.success('Contrato ativado com sucesso!');
+      setActivationModalOpen(false);
+      refetch();
+      queryClient.invalidateQueries({ queryKey: ['contracts'] });
+    } catch (error) {
+      console.error('Error activating contract:', error);
+      toast.error('Erro ao ativar contrato');
+    } finally {
+      setIsActivating(false);
+    }
+  };
 
   // Build timeline events
   const timelineEvents: TimelineEvent[] = [
@@ -213,6 +255,26 @@ export default function ContractDetail() {
             </Button>
           </div>
         </div>
+
+        {/* Ready for Activation Banner */}
+        {readyForActivation && (
+          <div className="flex items-center justify-between p-4 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg">
+            <div className="flex items-center gap-3">
+              <ShieldCheck className="h-6 w-6 text-green-600 dark:text-green-500" />
+              <div>
+                <p className="font-semibold text-green-800 dark:text-green-300">Pronto para Ativar!</p>
+                <p className="text-sm text-green-700 dark:text-green-400">Todos os documentos foram aprovados</p>
+              </div>
+            </div>
+            <Button 
+              onClick={() => setActivationModalOpen(true)}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Ativar Contrato
+            </Button>
+          </div>
+        )}
 
         {/* Ticket Detail Sheet */}
         <TicketDetailSheet
@@ -566,6 +628,39 @@ export default function ContractDetail() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Activation Confirmation Modal */}
+      <Dialog open={activationModalOpen} onOpenChange={setActivationModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-green-700">
+              <ShieldCheck className="h-5 w-5" />
+              Ativar Contrato
+            </DialogTitle>
+            <DialogDescription>
+              Todos os documentos foram aprovados. Deseja ativar o contrato agora?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-2 text-sm">
+            <p><strong>Inquilino:</strong> {analysis.inquilino_nome}</p>
+            <p><strong>Imóvel:</strong> {analysis.imovel_endereco}, {analysis.imovel_numero}</p>
+            <p><strong>Valor Total:</strong> {formatCurrency(analysis.valor_total || 0)}</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setActivationModalOpen(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleActivateContract} 
+              disabled={isActivating}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {isActivating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Confirmar Ativação
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }
