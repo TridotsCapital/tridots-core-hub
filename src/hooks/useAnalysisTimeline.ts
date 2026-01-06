@@ -143,6 +143,54 @@ export const timelineEventConfig: Record<string, {
     bgColor: 'bg-indigo-100',
     iconName: 'UserCheck',
   },
+  payments_validated: {
+    label: 'Pagamentos Validados',
+    color: 'text-green-600',
+    bgColor: 'bg-green-100',
+    iconName: 'CheckCircle',
+  },
+  payments_rejected: {
+    label: 'Pagamentos Rejeitados',
+    color: 'text-red-600',
+    bgColor: 'bg-red-100',
+    iconName: 'XCircle',
+  },
+  payer_confirmed: {
+    label: 'Pagador Confirmado',
+    color: 'text-blue-600',
+    bgColor: 'bg-blue-100',
+    iconName: 'UserCheck',
+  },
+  guarantee_payment_confirmed: {
+    label: 'Pag. Garantia Confirmado',
+    color: 'text-green-600',
+    bgColor: 'bg-green-100',
+    iconName: 'CreditCard',
+  },
+  setup_payment_confirmed: {
+    label: 'Pag. Setup Confirmado',
+    color: 'text-green-600',
+    bgColor: 'bg-green-100',
+    iconName: 'CreditCard',
+  },
+  acceptance_completed: {
+    label: 'Aceite Concluído',
+    color: 'text-emerald-600',
+    bgColor: 'bg-emerald-100',
+    iconName: 'CheckCircle2',
+  },
+  ticket_opened: {
+    label: 'Chamado Aberto',
+    color: 'text-amber-600',
+    bgColor: 'bg-amber-100',
+    iconName: 'FileText',
+  },
+  ticket_resolved: {
+    label: 'Chamado Resolvido',
+    color: 'text-green-600',
+    bgColor: 'bg-green-100',
+    iconName: 'CheckCircle',
+  },
 };
 
 export function getEventConfig(eventType: string) {

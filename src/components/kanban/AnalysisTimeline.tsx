@@ -57,6 +57,34 @@ const iconMap: Record<string, React.ElementType> = {
   FileSearch,
 };
 
+// Helper functions for formatting
+const formatDate = (dateStr: string) => {
+  try {
+    return format(new Date(dateStr), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+  } catch {
+    return dateStr;
+  }
+};
+
+const formatDateOnly = (dateStr: string) => {
+  try {
+    return format(new Date(dateStr), 'dd/MM/yyyy', { locale: ptBR });
+  } catch {
+    return dateStr;
+  }
+};
+
+const formatId = (id: string) => `#${id.slice(0, 8).toUpperCase()}`;
+
+const formatBoolean = (value: boolean) => value ? 'Sim' : 'Não';
+
+// Fields to ignore in metadata display
+const ignoredFields = [
+  'validated_by', 'rejected_by', 'created_by', 'analyst_id', 'canceled_by',
+  'photo_path', 'receipt_path', 'identity_photo_path', 'setup_payment_receipt_path',
+  'guarantee_payment_receipt_path', 'file_path', 'user_id', 'activated_by'
+];
+
 // Format metadata based on event type
 const formatMetadata = (eventType: string, metadata: Record<string, unknown>): { label: string; value: string }[] => {
   const entries: { label: string; value: string }[] = [];
@@ -76,7 +104,15 @@ const formatMetadata = (eventType: string, metadata: Record<string, unknown>): {
     case 'acceptance_link_generated':
       if (metadata.expires_at) entries.push({ 
         label: 'Expira em', 
-        value: format(new Date(metadata.expires_at as string), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
+        value: formatDate(metadata.expires_at as string)
+      });
+      if (metadata.has_setup_link !== undefined) entries.push({
+        label: 'Link Setup',
+        value: formatBoolean(metadata.has_setup_link as boolean)
+      });
+      if (metadata.has_guarantee_link !== undefined) entries.push({
+        label: 'Link Garantia',
+        value: formatBoolean(metadata.has_guarantee_link as boolean)
       });
       break;
       
@@ -101,8 +137,8 @@ const formatMetadata = (eventType: string, metadata: Record<string, unknown>): {
       
     case 'payment_completed':
       if (metadata.checkout_session_id) entries.push({ 
-        label: 'Sessão Stripe', 
-        value: (metadata.checkout_session_id as string).slice(0, 20) + '...' 
+        label: 'Sessão', 
+        value: `...${(metadata.checkout_session_id as string).slice(-8)}` 
       });
       break;
 
@@ -111,37 +147,163 @@ const formatMetadata = (eventType: string, metadata: Record<string, unknown>): {
         label: 'Tentativa', 
         value: `${metadata.attempt}/3` 
       });
+      if (metadata.reason) entries.push({
+        label: 'Motivo',
+        value: metadata.reason as string
+      });
       break;
 
     case 'contract_created':
       if (metadata.contract_id) entries.push({ 
-        label: 'ID do Contrato', 
-        value: (metadata.contract_id as string).slice(0, 8) + '...' 
+        label: 'Contrato', 
+        value: formatId(metadata.contract_id as string) 
+      });
+      break;
+
+    case 'payments_validated':
+      if (metadata.contract_id) entries.push({
+        label: 'Contrato',
+        value: formatId(metadata.contract_id as string)
+      });
+      if (metadata.guarantee_payment_date) entries.push({
+        label: 'Data Pag. Garantia',
+        value: formatDateOnly(metadata.guarantee_payment_date as string)
+      });
+      if (metadata.setup_payment_date) entries.push({
+        label: 'Data Pag. Setup',
+        value: formatDateOnly(metadata.setup_payment_date as string)
+      });
+      break;
+
+    case 'payments_rejected':
+      if (metadata.reason) entries.push({
+        label: 'Motivo',
+        value: metadata.reason as string
+      });
+      break;
+
+    case 'identity_verified':
+      entries.push({
+        label: 'Foto',
+        value: 'Capturada com sucesso'
+      });
+      break;
+
+    case 'payer_confirmed':
+      entries.push({
+        label: 'Pagador',
+        value: metadata.is_tenant ? 'O próprio inquilino' : 'Terceiro responsável'
+      });
+      if (metadata.payer_name) entries.push({
+        label: 'Nome',
+        value: metadata.payer_name as string
+      });
+      break;
+
+    case 'guarantee_payment_confirmed':
+    case 'setup_payment_confirmed':
+      if (metadata.has_receipt !== undefined) entries.push({
+        label: 'Comprovante',
+        value: formatBoolean(metadata.has_receipt as boolean)
+      });
+      break;
+
+    case 'acceptance_completed':
+      // Este evento não tem metadados relevantes para exibir
+      break;
+
+    case 'ticket_opened':
+      if (metadata.ticket_id) entries.push({
+        label: 'Chamado',
+        value: formatId(metadata.ticket_id as string)
+      });
+      if (metadata.subject) entries.push({
+        label: 'Assunto',
+        value: metadata.subject as string
+      });
+      break;
+
+    case 'ticket_resolved':
+      if (metadata.ticket_id) entries.push({
+        label: 'Chamado',
+        value: formatId(metadata.ticket_id as string)
+      });
+      break;
+
+    case 'document_uploaded':
+    case 'document_approved':
+    case 'document_rejected':
+      if (metadata.document_type) entries.push({
+        label: 'Tipo',
+        value: metadata.document_type as string
+      });
+      if (metadata.file_name) entries.push({
+        label: 'Arquivo',
+        value: metadata.file_name as string
+      });
+      if (metadata.feedback) entries.push({
+        label: 'Feedback',
+        value: metadata.feedback as string
+      });
+      break;
+
+    case 'contract_activated':
+      if (metadata.contract_id) entries.push({
+        label: 'Contrato',
+        value: formatId(metadata.contract_id as string)
+      });
+      break;
+
+    case 'contract_canceled':
+      if (metadata.contract_id) entries.push({
+        label: 'Contrato',
+        value: formatId(metadata.contract_id as string)
+      });
+      if (metadata.reason) entries.push({
+        label: 'Motivo',
+        value: metadata.reason as string
       });
       break;
       
     default:
-      // Fallback: show formatted key-value with proper handling for objects/arrays
+      // Fallback melhorado: filtrar campos sensíveis e formatar adequadamente
       Object.entries(metadata).forEach(([key, value]) => {
+        // Ignorar campos que são IDs de usuário ou caminhos internos
+        if (ignoredFields.includes(key)) return;
+        
         if (value !== null && value !== undefined) {
-          const formattedKey = key.replace(/_/g, ' ')
-            .replace(/\b\w/g, l => l.toUpperCase());
+          // Formatar a chave de snake_case para texto legível
+          const formattedKey = key
+            .replace(/_/g, ' ')
+            .replace(/\b\w/g, l => l.toUpperCase())
+            .replace('Id', 'ID');
           
           let formattedValue: string;
-          if (typeof value === 'object') {
-            // Handle objects and arrays - show compact JSON
+          
+          // Detectar e formatar UUIDs
+          if (typeof value === 'string' && value.match(/^[0-9a-f]{8}-[0-9a-f]{4}-/i)) {
+            formattedValue = formatId(value);
+          }
+          // Formatar booleanos
+          else if (typeof value === 'boolean') {
+            formattedValue = formatBoolean(value);
+          }
+          // Formatar objetos/arrays
+          else if (typeof value === 'object') {
             formattedValue = JSON.stringify(value);
             if (formattedValue.length > 50) {
               formattedValue = formattedValue.slice(0, 47) + '...';
             }
-          } else if (typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}T/)) {
-            // Handle ISO date strings
-            try {
-              formattedValue = format(new Date(value), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
-            } catch {
-              formattedValue = String(value);
-            }
-          } else {
+          }
+          // Formatar datas ISO completas (com T)
+          else if (typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}T/)) {
+            formattedValue = formatDate(value);
+          }
+          // Formatar datas simples (YYYY-MM-DD)
+          else if (typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            formattedValue = formatDateOnly(value);
+          }
+          else {
             formattedValue = String(value);
           }
           
