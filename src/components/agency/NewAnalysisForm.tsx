@@ -152,7 +152,7 @@ export function NewAnalysisForm({ agencyId }: NewAnalysisFormProps) {
 
   const handleNext = async () => {
     const stepFields: Record<number, (keyof FormData)[]> = {
-      0: ['imovelCep', 'imovelEndereco', 'imovelNumero', 'imovelBairro', 'imovelCidade', 'imovelEstado', 'valorAluguel'],
+      0: ['imovelCep', 'imovelEndereco', 'imovelNumero', 'imovelBairro', 'imovelCidade', 'imovelEstado', 'imovelTipo', 'valorAluguel'],
       1: ['inquilinoNome', 'inquilinoCpf', 'inquilinoDataNascimento', 'inquilinoEmail', 'inquilinoTelefone', 'inquilinoProfissao', 'inquilinoEmpresa', 'inquilinoRendaMensal'],
       2: [],
     };
