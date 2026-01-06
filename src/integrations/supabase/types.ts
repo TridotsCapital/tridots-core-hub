@@ -846,6 +846,8 @@ export type Database = {
         Row: {
           activated_at: string | null
           activated_by: string | null
+          activation_pending: boolean | null
+          activation_pending_since: string | null
           agency_id: string
           analysis_id: string
           canceled_at: string | null
@@ -874,6 +876,8 @@ export type Database = {
         Insert: {
           activated_at?: string | null
           activated_by?: string | null
+          activation_pending?: boolean | null
+          activation_pending_since?: string | null
           agency_id: string
           analysis_id: string
           canceled_at?: string | null
@@ -902,6 +906,8 @@ export type Database = {
         Update: {
           activated_at?: string | null
           activated_by?: string | null
+          activation_pending?: boolean | null
+          activation_pending_since?: string | null
           agency_id?: string
           analysis_id?: string
           canceled_at?: string | null

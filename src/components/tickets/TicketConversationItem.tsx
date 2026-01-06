@@ -95,10 +95,17 @@ export function TicketConversationItem({
             </Badge>
           )}
           {ticket.analysis_id && !ticket.claim_id && (
-            <Badge variant="secondary" className="text-[10px] h-4 px-1.5 py-0 shrink-0 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
-              <FileText className="h-2.5 w-2.5 mr-0.5" />
-              Análise
-            </Badge>
+            (ticket as any).contract?.id ? (
+              <Badge variant="secondary" className="text-[10px] h-4 px-1.5 py-0 shrink-0">
+                <FileText className="h-2.5 w-2.5 mr-0.5" />
+                Contrato
+              </Badge>
+            ) : (
+              <Badge variant="secondary" className="text-[10px] h-4 px-1.5 py-0 shrink-0 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                <FileText className="h-2.5 w-2.5 mr-0.5" />
+                Análise
+              </Badge>
+            )
           )}
           {unreadCount > 0 && (
             <span className="ml-auto bg-primary text-primary-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center shrink-0">

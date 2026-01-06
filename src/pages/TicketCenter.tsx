@@ -20,7 +20,7 @@ const TicketCenter = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<TicketStatus | 'all' | 'unread'>('all');
   const [contractFilter, setContractFilter] = useState<string | null>(null);
-  const [linkFilter, setLinkFilter] = useState<'all' | 'claim' | 'contract' | 'none'>('all');
+  const [linkFilter, setLinkFilter] = useState<'all' | 'claim' | 'analysis' | 'contract' | 'none'>('all');
   const [filters, setFilters] = useState<{
     status?: TicketStatus | 'all';
     category?: TicketCategory | 'all';
@@ -83,9 +83,10 @@ const TicketCenter = () => {
       return false;
     }
 
-    // Link type filter (Sinistro/Contrato/Sem vínculo)
+    // Link type filter (Sinistro/Análise/Contrato/Sem vínculo)
     if (linkFilter === 'claim' && !ticket.claim_id) return false;
-    if (linkFilter === 'contract' && (!ticket.analysis_id || ticket.claim_id)) return false;
+    if (linkFilter === 'analysis' && (!(ticket as any).analysis_id || (ticket as any).contract?.id || ticket.claim_id)) return false;
+    if (linkFilter === 'contract' && (!(ticket as any).contract?.id || ticket.claim_id)) return false;
     if (linkFilter === 'none' && (ticket.claim_id || ticket.analysis_id)) return false;
 
     if (!search.trim()) return true;
@@ -205,9 +206,15 @@ const TicketCenter = () => {
                   Sinistros
                 </div>
               </SelectItem>
-              <SelectItem value="contract">
+              <SelectItem value="analysis">
                 <div className="flex items-center gap-2">
                   <FileText className="h-3.5 w-3.5 text-blue-500" />
+                  Análises
+                </div>
+              </SelectItem>
+              <SelectItem value="contract">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-3.5 w-3.5 text-green-500" />
                   Contratos
                 </div>
               </SelectItem>

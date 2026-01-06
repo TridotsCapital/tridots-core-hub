@@ -235,6 +235,25 @@ export function ContractDocumentsSection({
       setReviewModal(null);
       setFeedback('');
       onUpdate?.();
+      
+      // After approval, check if all 3 docs are now approved to trigger activation modal
+      if (action === 'approve') {
+        // Fetch updated contract to check all doc statuses
+        const { data: updatedContract } = await supabase
+          .from('contracts')
+          .select('*')
+          .eq('id', contract.id)
+          .single();
+        
+        if (updatedContract && 
+            updatedContract.status === 'documentacao_pendente' &&
+            updatedContract.doc_contrato_locacao_status === 'aprovado' &&
+            updatedContract.doc_vistoria_inicial_status === 'aprovado' &&
+            updatedContract.doc_seguro_incendio_status === 'aprovado') {
+          // All docs approved - open activation modal
+          setActivateModalOpen(true);
+        }
+      }
     } catch (error: any) {
       toast.error('Erro ao processar revisão');
     } finally {

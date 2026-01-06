@@ -96,8 +96,6 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
   const [approvalModalOpen, setApprovalModalOpen] = useState(false);
   const [regeneratingLink, setRegeneratingLink] = useState(false);
   const [validationModalOpen, setValidationModalOpen] = useState(false);
-  const [rejectionDialogOpen, setRejectionDialogOpen] = useState(false);
-  const [rejectionReason, setRejectionReason] = useState('');
   const [isValidating, setIsValidating] = useState(false);
   const moveAnalysis = useMoveAnalysis();
   const queryClient = useQueryClient();
@@ -201,35 +199,6 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
     }
   };
 
-  const handleRejectPayments = async () => {
-    if (!analysis || !rejectionReason.trim()) {
-      toast.error('Informe o motivo da rejeição');
-      return;
-    }
-    
-    setIsValidating(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('validate-payments', {
-        body: { 
-          analysisId: analysis.id,
-          action: 'reject',
-          rejectionReason: rejectionReason.trim(),
-        }
-      });
-      
-      if (error) throw error;
-      
-      queryClient.invalidateQueries({ queryKey: ['analyses-kanban'] });
-      toast.success('Pagamentos rejeitados. A imobiliária foi notificada.');
-      setRejectionDialogOpen(false);
-      setRejectionReason('');
-    } catch (error: any) {
-      console.error('Error rejecting payments:', error);
-      toast.error(error.message || 'Erro ao rejeitar pagamentos');
-    } finally {
-      setIsValidating(false);
-    }
-  };
 
   const openReceiptUrl = async (path: string | null) => {
     if (!path) return;
@@ -402,13 +371,6 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
                         >
                           <CheckCircle className="h-4 w-4 mr-2" />
                           Validar Pagamentos
-                        </Button>
-                        <Button 
-                          variant="destructive"
-                          onClick={() => setRejectionDialogOpen(true)}
-                        >
-                          <XCircle className="h-4 w-4 mr-2" />
-                          Rejeitar
                         </Button>
                       </div>
                     </div>
@@ -764,54 +726,6 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
         </DialogContent>
       </Dialog>
 
-      {/* Rejection Dialog */}
-      <Dialog open={rejectionDialogOpen} onOpenChange={setRejectionDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <XCircle className="h-5 w-5 text-destructive" />
-              Rejeitar Pagamentos
-            </DialogTitle>
-            <DialogDescription>
-              Informe o motivo da rejeição. A imobiliária será notificada.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-2">
-            <Label htmlFor="rejectionReason">Motivo da Rejeição *</Label>
-            <Textarea
-              id="rejectionReason"
-              value={rejectionReason}
-              onChange={(e) => setRejectionReason(e.target.value)}
-              placeholder="Ex: Comprovante ilegível, pagamento não identificado..."
-              rows={3}
-            />
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setRejectionDialogOpen(false)}>
-              Cancelar
-            </Button>
-            <Button 
-              variant="destructive"
-              onClick={handleRejectPayments}
-              disabled={isValidating || !rejectionReason.trim()}
-            >
-              {isValidating ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Rejeitando...
-                </>
-              ) : (
-                <>
-                  <XCircle className="h-4 w-4 mr-2" />
-                  Rejeitar Pagamentos
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }

@@ -7,6 +7,7 @@ import { useAgencyUser } from "@/hooks/useAgencyUser";
 import { useAgencyTickets } from "@/hooks/useTickets";
 import { useUnreadItemIds, useMarkItemAsRead } from "@/hooks/useUnreadItemIds";
 import { Loader2, Search, MessageSquare, Clock, FileText, X } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -70,7 +71,7 @@ export default function AgencySupport() {
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilterValue>("all");
-  const [hasContractFilter, setHasContractFilter] = useState(false);
+  const [linkFilter, setLinkFilter] = useState<'all' | 'analysis' | 'contract'>('all');
   const [contractFilter, setContractFilter] = useState<string | null>(null);
   
   const { data: agencyUser, isLoading: agencyUserLoading } = useAgencyUser();
@@ -125,14 +126,19 @@ export default function AgencySupport() {
       ticket.subject.toLowerCase().includes(search.toLowerCase()) ||
       ticket.id.toLowerCase().includes(search.toLowerCase());
     
+    // Link filter: analysis (has analysis_id but no contract) or contract (has contract)
+    const hasContract = !!(ticket as any).contract?.id;
+    const hasAnalysis = !!ticket.analysis_id;
+    
+    if (linkFilter === 'analysis' && (!hasAnalysis || hasContract)) return false;
+    if (linkFilter === 'contract' && !hasContract) return false;
+    
     if (statusFilter === "unread") {
-      const matchesContract = !hasContractFilter || ticket.analysis_id !== null;
-      return matchesSearch && unreadIds?.chamados.has(ticket.id) && matchesContract;
+      return matchesSearch && unreadIds?.chamados.has(ticket.id);
     }
     
     const matchesStatus = statusFilter === "all" || ticket.status === statusFilter;
-    const matchesContract = !hasContractFilter || ticket.analysis_id !== null;
-    return matchesSearch && matchesStatus && matchesContract;
+    return matchesSearch && matchesStatus;
   });
 
   if (agencyUserLoading) {
@@ -207,15 +213,16 @@ export default function AgencySupport() {
                 {filter.label}
               </Button>
             ))}
-            <Button
-              variant={hasContractFilter ? "default" : "outline"}
-              size="sm"
-              onClick={() => setHasContractFilter(!hasContractFilter)}
-              className="whitespace-nowrap"
-            >
-              <FileText className="h-4 w-4 mr-1" />
-              Com Contrato
-            </Button>
+            <Select value={linkFilter} onValueChange={(v) => setLinkFilter(v as any)}>
+              <SelectTrigger className="w-[140px] h-9">
+                <SelectValue placeholder="Vínculo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="analysis">Apenas Análises</SelectItem>
+                <SelectItem value="contract">Apenas Contratos</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <AgencyTicketForm agencyId={agencyUser.agency_id} />
         </div>
@@ -280,10 +287,17 @@ export default function AgencySupport() {
                             {categoryConfig[ticket.category as TicketCategory].label}
                           </Badge>
                           {ticket.analysis_id && (
-                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 shrink-0">
-                              <FileText className="h-2.5 w-2.5 mr-0.5" />
-                              Contrato
-                            </Badge>
+                            (ticket as any).contract?.id ? (
+                              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 shrink-0">
+                                <FileText className="h-2.5 w-2.5 mr-0.5" />
+                                Contrato
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 shrink-0 bg-blue-100 text-blue-700 border-blue-200">
+                                <FileText className="h-2.5 w-2.5 mr-0.5" />
+                                Análise
+                              </Badge>
+                            )
                           )}
                         </div>
 

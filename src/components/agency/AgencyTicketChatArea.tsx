@@ -194,14 +194,25 @@ export function AgencyTicketChatArea({ ticketId }: AgencyTicketChatAreaProps) {
             {categoryConfig[ticket.category as TicketCategory].label}
           </Badge>
           {ticket.analysis_id && (
-            <Badge
-              variant="secondary"
-              className="text-xs shrink-0 cursor-pointer hover:bg-secondary/80"
-              onClick={() => navigate(`/agency/contracts/${ticket.analysis_id}`)}
-            >
-              <FileText className="h-3 w-3 mr-1" />
-              Contrato
-            </Badge>
+            (ticket as any).contract?.id ? (
+              <Badge
+                variant="secondary"
+                className="text-xs shrink-0 cursor-pointer hover:bg-secondary/80"
+                onClick={() => navigate(`/agency/contracts/${(ticket as any).contract.id}`)}
+              >
+                <FileText className="h-3 w-3 mr-1" />
+                Contrato
+              </Badge>
+            ) : (
+              <Badge
+                variant="secondary"
+                className="text-xs shrink-0 cursor-pointer hover:bg-secondary/80 bg-blue-100 text-blue-700"
+                onClick={() => navigate(`/agency/analyses`)}
+              >
+                <FileText className="h-3 w-3 mr-1" />
+                Análise
+              </Badge>
+            )
           )}
           <h2 className="font-semibold text-sm truncate">
             {ticket.subject}

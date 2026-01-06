@@ -149,14 +149,25 @@ export function TicketChatArea({ ticketId, onClose }: TicketChatAreaProps) {
                 {ticketCategoryConfig[ticket.category].label}
               </Badge>
               {ticket.analysis_id && (
-                <Badge 
-                  variant="secondary" 
-                  className="text-[10px] h-5 cursor-pointer hover:bg-secondary/80"
-                  onClick={() => navigate(`/contracts/${ticket.analysis_id}`)}
-                >
-                  <FileText className="h-3 w-3 mr-1" />
-                  Contrato
-                </Badge>
+                (ticket as any).contract?.id ? (
+                  <Badge 
+                    variant="secondary" 
+                    className="text-[10px] h-5 cursor-pointer hover:bg-secondary/80"
+                    onClick={() => navigate(`/contracts/${(ticket as any).contract.id}`)}
+                  >
+                    <FileText className="h-3 w-3 mr-1" />
+                    Contrato
+                  </Badge>
+                ) : (
+                  <Badge 
+                    variant="secondary" 
+                    className="text-[10px] h-5 cursor-pointer hover:bg-secondary/80 bg-blue-100 text-blue-700"
+                    onClick={() => navigate(`/analyses/${ticket.analysis_id}`)}
+                  >
+                    <FileText className="h-3 w-3 mr-1" />
+                    Análise
+                  </Badge>
+                )
               )}
               {ticket.status === 'resolvido' && ticket.closed_by_type === 'agency' && (
                 <Badge 
