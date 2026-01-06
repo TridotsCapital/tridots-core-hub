@@ -69,6 +69,8 @@ export default function ContractDetail() {
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'overview');
   const [ticketSheetOpen, setTicketSheetOpen] = useState(false);
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
+  const [activationModalOpen, setActivationModalOpen] = useState(false);
+  const [isActivating, setIsActivating] = useState(false);
 
   const { data: contract, isLoading, refetch } = useContract(id);
   const analysisId = contract?.analysis_id;
@@ -112,9 +114,6 @@ export default function ContractDetail() {
   
   const readyForActivation = contract.status === 'documentacao_pendente' && allDocsApproved;
 
-  // Activation state
-  const [activationModalOpen, setActivationModalOpen] = useState(false);
-  const [isActivating, setIsActivating] = useState(false);
 
   const handleActivateContract = async () => {
     setIsActivating(true);
