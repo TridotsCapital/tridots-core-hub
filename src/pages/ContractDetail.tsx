@@ -255,6 +255,23 @@ export default function ContractDetail() {
           </div>
         </div>
 
+        {/* Ticket Detail Sheet */}
+        <TicketDetailSheet
+          ticketId={selectedTicketId}
+          onClose={() => setSelectedTicketId(null)}
+        />
+
+        {/* Ticket Sheet */}
+        <ContractTicketSheet
+          open={ticketSheetOpen}
+          onOpenChange={setTicketSheetOpen}
+          analysisId={contract.analysis_id}
+          agencyId={contract.agency_id}
+          contractRef={contract.id.slice(0, 8).toUpperCase()}
+          agencyName={analysis.agency?.nome_fantasia || analysis.agency?.razao_social}
+          tenantName={analysis.inquilino_nome}
+        />
+
         {/* Ready for Activation Banner */}
         {readyForActivation && (
           <div className="flex items-center justify-between p-4 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg">
@@ -274,23 +291,6 @@ export default function ContractDetail() {
             </Button>
           </div>
         )}
-
-        {/* Ticket Detail Sheet */}
-        <TicketDetailSheet
-          ticketId={selectedTicketId}
-          onClose={() => setSelectedTicketId(null)}
-        />
-
-        {/* Ticket Sheet */}
-        <ContractTicketSheet
-          open={ticketSheetOpen}
-          onOpenChange={setTicketSheetOpen}
-          analysisId={contract.analysis_id}
-          agencyId={contract.agency_id}
-          contractRef={contract.id.slice(0, 8).toUpperCase()}
-          agencyName={analysis.agency?.nome_fantasia || analysis.agency?.razao_social}
-          tenantName={analysis.inquilino_nome}
-        />
 
         {/* Quick Actions */}
         <Card>
