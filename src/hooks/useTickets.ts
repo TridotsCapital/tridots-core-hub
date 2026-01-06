@@ -72,14 +72,37 @@ export function useAgencyTickets(agencyId: string | undefined) {
           *,
           created_by_profile:profiles!tickets_created_by_fkey(full_name, email),
           assigned_to_profile:profiles!tickets_assigned_to_fkey(full_name, email),
-          analysis:analyses(id, inquilino_nome, imovel_endereco, status),
-          contract:contracts!contracts_analysis_id_fkey(id, status)
+          analysis:analyses(id, inquilino_nome, imovel_endereco, status)
         `)
         .eq("agency_id", agencyId)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data;
+      
+      // Fetch contracts separately for tickets that have analysis_id
+      const analysisIds = data
+        .filter(t => t.analysis_id)
+        .map(t => t.analysis_id);
+      
+      let contractsMap: Record<string, { id: string; status: string }> = {};
+      if (analysisIds.length > 0) {
+        const { data: contracts } = await supabase
+          .from("contracts")
+          .select("id, status, analysis_id")
+          .in("analysis_id", analysisIds);
+        
+        if (contracts) {
+          contractsMap = contracts.reduce((acc, c) => {
+            if (c.analysis_id) acc[c.analysis_id] = { id: c.id, status: c.status };
+            return acc;
+          }, {} as Record<string, { id: string; status: string }>);
+        }
+      }
+      
+      return data.map(ticket => ({
+        ...ticket,
+        contract: ticket.analysis_id ? contractsMap[ticket.analysis_id] || null : null,
+      }));
     },
     enabled: !!agencyId,
   });
@@ -106,8 +129,7 @@ export function useTickets(filters?: TicketFilters) {
           agency:agencies(id, nome_fantasia, razao_social, responsavel_nome, responsavel_email, responsavel_telefone, logo_url),
           creator:profiles!tickets_created_by_fkey(id, full_name, email, avatar_url),
           assignee:profiles!tickets_assigned_to_fkey(id, full_name, email, avatar_url),
-          analysis:analyses(id, inquilino_nome, imovel_endereco, status),
-          contract:contracts!contracts_analysis_id_fkey(id, status)
+          analysis:analyses(id, inquilino_nome, imovel_endereco, status)
         `)
         .order("created_at", { ascending: false });
 
@@ -129,7 +151,31 @@ export function useTickets(filters?: TicketFilters) {
 
       const { data, error } = await q;
       if (error) throw error;
-      return data as Ticket[];
+      
+      // Fetch contracts separately for tickets that have analysis_id
+      const analysisIds = data
+        .filter(t => t.analysis_id)
+        .map(t => t.analysis_id);
+      
+      let contractsMap: Record<string, { id: string; status: string }> = {};
+      if (analysisIds.length > 0) {
+        const { data: contracts } = await supabase
+          .from("contracts")
+          .select("id, status, analysis_id")
+          .in("analysis_id", analysisIds);
+        
+        if (contracts) {
+          contractsMap = contracts.reduce((acc, c) => {
+            if (c.analysis_id) acc[c.analysis_id] = { id: c.id, status: c.status };
+            return acc;
+          }, {} as Record<string, { id: string; status: string }>);
+        }
+      }
+      
+      return data.map(ticket => ({
+        ...ticket,
+        contract: ticket.analysis_id ? contractsMap[ticket.analysis_id] || null : null,
+      })) as Ticket[];
     },
   });
 
@@ -166,13 +212,24 @@ export function useTicket(ticketId: string | undefined) {
           agency:agencies(id, nome_fantasia, razao_social, responsavel_nome, responsavel_email, responsavel_telefone, logo_url),
           creator:profiles!tickets_created_by_fkey(id, full_name, email, avatar_url),
           assignee:profiles!tickets_assigned_to_fkey(id, full_name, email, avatar_url),
-          analysis:analyses(id, inquilino_nome, imovel_endereco, status),
-          contract:contracts!contracts_analysis_id_fkey(id, status)
+          analysis:analyses(id, inquilino_nome, imovel_endereco, status)
         `)
         .eq("id", ticketId)
         .single();
       if (error) throw error;
-      return data as Ticket;
+      
+      // Fetch contract if ticket has analysis_id
+      let contract = null;
+      if (data.analysis_id) {
+        const { data: contractData } = await supabase
+          .from("contracts")
+          .select("id, status")
+          .eq("analysis_id", data.analysis_id)
+          .maybeSingle();
+        contract = contractData;
+      }
+      
+      return { ...data, contract } as Ticket;
     },
     enabled: !!ticketId,
   });
