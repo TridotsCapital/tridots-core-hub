@@ -47,15 +47,36 @@ const handler = async (req: Request): Promise<Response> => {
     expiresAt.setHours(expiresAt.getHours() + 72); // 72 hours expiration
 
     // Update analysis with token and payment links
+    // Reset ALL step-by-step fields so tenant must repeat entire flow
     const updateData: Record<string, unknown> = {
       acceptance_token: token,
       acceptance_token_expires_at: expiresAt.toISOString(),
-      acceptance_token_used_at: null, // Reset if regenerating
-      // Reset payment confirmations when regenerating
+      acceptance_token_used_at: null,
+      // Reset Step 1 - Identity Photo
+      identity_photo_path: null,
+      // Reset Step 2 - Terms Acceptance
+      terms_accepted_at: null,
+      // Reset Step 2 - Payer Data
+      payer_is_tenant: null,
+      payer_name: null,
+      payer_cpf: null,
+      payer_email: null,
+      payer_phone: null,
+      payer_cep: null,
+      payer_address: null,
+      payer_number: null,
+      payer_complement: null,
+      payer_neighborhood: null,
+      payer_city: null,
+      payer_state: null,
+      // Reset Steps 3 & 4 - Payment confirmations
       setup_payment_confirmed_at: null,
       setup_payment_receipt_path: null,
+      setup_payment_date: null,
       guarantee_payment_confirmed_at: null,
       guarantee_payment_receipt_path: null,
+      guarantee_payment_date: null,
+      // Reset validation status
       payments_validated_at: null,
       payments_validated_by: null,
       payments_rejected_at: null,
