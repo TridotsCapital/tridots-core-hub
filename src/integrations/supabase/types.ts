@@ -133,6 +133,7 @@ export type Database = {
           conjuge_rg: string | null
           created_at: string
           guarantee_payment_confirmed_at: string | null
+          guarantee_payment_date: string | null
           guarantee_payment_link: string | null
           guarantee_payment_receipt_path: string | null
           id: string
@@ -183,6 +184,7 @@ export type Database = {
           setup_fee: number
           setup_fee_exempt: boolean | null
           setup_payment_confirmed_at: string | null
+          setup_payment_date: string | null
           setup_payment_link: string | null
           setup_payment_receipt_path: string | null
           status: Database["public"]["Enums"]["analysis_status"]
@@ -215,6 +217,7 @@ export type Database = {
           conjuge_rg?: string | null
           created_at?: string
           guarantee_payment_confirmed_at?: string | null
+          guarantee_payment_date?: string | null
           guarantee_payment_link?: string | null
           guarantee_payment_receipt_path?: string | null
           id?: string
@@ -265,6 +268,7 @@ export type Database = {
           setup_fee?: number
           setup_fee_exempt?: boolean | null
           setup_payment_confirmed_at?: string | null
+          setup_payment_date?: string | null
           setup_payment_link?: string | null
           setup_payment_receipt_path?: string | null
           status?: Database["public"]["Enums"]["analysis_status"]
@@ -297,6 +301,7 @@ export type Database = {
           conjuge_rg?: string | null
           created_at?: string
           guarantee_payment_confirmed_at?: string | null
+          guarantee_payment_date?: string | null
           guarantee_payment_link?: string | null
           guarantee_payment_receipt_path?: string | null
           id?: string
@@ -347,6 +352,7 @@ export type Database = {
           setup_fee?: number
           setup_fee_exempt?: boolean | null
           setup_payment_confirmed_at?: string | null
+          setup_payment_date?: string | null
           setup_payment_link?: string | null
           setup_payment_receipt_path?: string | null
           status?: Database["public"]["Enums"]["analysis_status"]

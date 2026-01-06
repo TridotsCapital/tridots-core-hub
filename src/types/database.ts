@@ -210,7 +210,7 @@ export interface AuditLog {
 export const statusConfig: Record<AnalysisStatus, { label: string; class: string }> = {
   pendente: { label: 'Pendente', class: 'status-pendente' },
   em_analise: { label: 'Em Análise', class: 'status-em_analise' },
-  aprovada: { label: 'Aprovada', class: 'status-aprovada' },
+  aprovada: { label: 'Ativa', class: 'status-aprovada' },
   reprovada: { label: 'Reprovada', class: 'status-reprovada' },
   cancelada: { label: 'Cancelada', class: 'status-cancelada' },
   aguardando_pagamento: { label: 'Aguardando Pagamento', class: 'status-aguardando_pagamento' },
