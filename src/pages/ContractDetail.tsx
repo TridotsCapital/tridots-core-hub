@@ -108,9 +108,9 @@ export default function ContractDetail() {
 
   // Check if all documents are approved (ready for activation)
   const allDocsApproved = 
-    contract.doc_contrato_locacao_status === 'approved' &&
-    contract.doc_vistoria_inicial_status === 'approved' &&
-    contract.doc_seguro_incendio_status === 'approved';
+    contract.doc_contrato_locacao_status === 'aprovado' &&
+    contract.doc_vistoria_inicial_status === 'aprovado' &&
+    contract.doc_seguro_incendio_status === 'aprovado';
   
   const readyForActivation = contract.status === 'documentacao_pendente' && allDocsApproved;
 
