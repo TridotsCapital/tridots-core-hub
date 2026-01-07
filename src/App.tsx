@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SubdomainProvider, useSubdomain } from "@/contexts/SubdomainContext";
+import { GlobalNotificationListener } from "@/components/notifications/GlobalNotificationListener";
 import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
 import Agencies from "./pages/Agencies";
@@ -39,6 +40,8 @@ import {
   AgencyClaimDetail,
   AgencyNewClaim
 } from "./pages/agency";
+import AgencyCommissions from "./pages/agency/AgencyCommissions";
+import AgencyDocuments from "./pages/agency/AgencyDocuments";
 
 // Internal Portal Pages
 import Claims from "./pages/Claims";
@@ -97,6 +100,8 @@ function AgencyRoutes({ atRoot = false }: { atRoot?: boolean }) {
       <Route path={`${prefix}/claims/:id`} element={<AgencyClaimDetail />} />
       <Route path={`${prefix}/collaborators`} element={<AgencyCollaborators />} />
       <Route path={`${prefix}/support`} element={<AgencySupport />} />
+      <Route path={`${prefix}/commissions`} element={<AgencyCommissions />} />
+      <Route path={`${prefix}/documents`} element={<AgencyDocuments />} />
     </>
   );
 }
@@ -162,6 +167,7 @@ const App = () => (
     <SubdomainProvider>
       <AuthProvider>
         <TooltipProvider>
+          <GlobalNotificationListener />
           <Toaster />
           <Sonner />
           <BrowserRouter>
