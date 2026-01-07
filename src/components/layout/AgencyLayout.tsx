@@ -27,7 +27,7 @@ const AgencyStatusContext = createContext<AgencyStatusContextType>({ isAgencyAct
 export const useAgencyStatus = () => useContext(AgencyStatusContext);
 
 export function AgencyLayout({ children, title, description, actions }: AgencyLayoutProps) {
-  const { user, loading, role } = useAuth();
+  const { user, loading, role, profile } = useAuth();
   const { portal, isProduction } = useSubdomain();
   const [agencyId, setAgencyId] = useState<string | null>(null);
   const [agencyName, setAgencyName] = useState<string | null>(null);
@@ -155,6 +155,9 @@ export function AgencyLayout({ children, title, description, actions }: AgencyLa
                 {agencyName && (
                   <div className="text-right">
                     <p className="text-sm font-medium">{agencyName}</p>
+                    {profile?.full_name && (
+                      <p className="text-xs text-muted-foreground">{profile.full_name}</p>
+                    )}
                     <div className="flex items-center justify-end gap-1">
                       <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
                       <span className="text-[10px] font-semibold text-primary uppercase tracking-wider">
