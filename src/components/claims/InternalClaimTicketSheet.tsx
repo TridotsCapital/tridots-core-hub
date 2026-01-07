@@ -75,7 +75,7 @@ export function InternalClaimTicketSheet({ open, onOpenChange, claim }: Internal
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-amber-500" />
-            Chamados do Sinistro
+            Chamados da Garantia
           </SheetTitle>
           <SheetDescription>
             {claim.contract?.analysis?.inquilino_nome} • {claim.agency?.nome_fantasia}
@@ -214,7 +214,7 @@ export function InternalClaimTicketSheet({ open, onOpenChange, claim }: Internal
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
                   <MessageSquare className="h-10 w-10 mx-auto mb-3 opacity-50" />
-                  <p className="text-sm">Nenhum chamado vinculado a este sinistro.</p>
+                  <p className="text-sm">Nenhum chamado vinculado a esta garantia.</p>
                 </div>
               )}
             </ScrollArea>

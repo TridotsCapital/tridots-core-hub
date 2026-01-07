@@ -7,6 +7,7 @@ import { useEffect } from "react";
 interface CreateTicketData {
   agency_id: string;
   analysis_id?: string;
+  contract_id?: string;
   claim_id?: string;
   subject: string;
   description?: string;
@@ -28,6 +29,7 @@ export function useCreateTicket() {
         .insert({
           agency_id: data.agency_id,
           analysis_id: data.analysis_id || null,
+          contract_id: data.contract_id || null,
           claim_id: data.claim_id || null,
           created_by: user.id,
           subject: data.subject,

@@ -1522,6 +1522,7 @@ export type Database = {
           claim_id: string | null
           closed_by: string | null
           closed_by_type: string | null
+          contract_id: string | null
           created_at: string
           created_by: string
           description: string | null
@@ -1544,6 +1545,7 @@ export type Database = {
           claim_id?: string | null
           closed_by?: string | null
           closed_by_type?: string | null
+          contract_id?: string | null
           created_at?: string
           created_by: string
           description?: string | null
@@ -1566,6 +1568,7 @@ export type Database = {
           claim_id?: string | null
           closed_by?: string | null
           closed_by_type?: string | null
+          contract_id?: string | null
           created_at?: string
           created_by?: string
           description?: string | null
@@ -1614,6 +1617,13 @@ export type Database = {
             columns: ["closed_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
             referencedColumns: ["id"]
           },
           {

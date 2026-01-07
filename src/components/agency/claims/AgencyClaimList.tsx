@@ -124,8 +124,8 @@ export function AgencyClaimList({
         {filteredClaims.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             {claims.length === 0 
-              ? "Você ainda não possui sinistros registrados."
-              : "Nenhum sinistro encontrado com os filtros selecionados."
+              ? "Você ainda não possui garantias solicitadas."
+              : "Nenhuma garantia encontrada com os filtros selecionados."
             }
           </div>
         ) : (

@@ -120,7 +120,7 @@ export function ClaimChecklist() {
           <div className="flex items-start gap-2 text-xs text-muted-foreground">
             <Info className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
             <p>
-              Estes documentos agilizam a análise do sinistro. A falta de alguns
+              Estes documentos agilizam a análise da garantia. A falta de alguns
               pode não impedir o envio, mas pode atrasar o processo.
             </p>
           </div>

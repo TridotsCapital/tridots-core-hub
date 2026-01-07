@@ -21,6 +21,8 @@ interface Ticket {
   first_response_at: string | null;
   closed_by_type: 'agency' | 'internal' | null;
   claim_id?: string | null;
+  contract_id?: string | null;
+  analysis_id?: string | null;
 }
 
 interface AgencyTicketListProps {

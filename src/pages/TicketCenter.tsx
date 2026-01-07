@@ -83,11 +83,11 @@ const TicketCenter = () => {
       return false;
     }
 
-    // Link type filter (Sinistro/Análise/Contrato/Sem vínculo)
+    // Link type filter (Garantia/Análise/Contrato/Sem vínculo)
     if (linkFilter === 'claim' && !ticket.claim_id) return false;
-    if (linkFilter === 'analysis' && (!(ticket as any).analysis_id || (ticket as any).contract?.id || ticket.claim_id)) return false;
-    if (linkFilter === 'contract' && (!(ticket as any).contract?.id || ticket.claim_id)) return false;
-    if (linkFilter === 'none' && (ticket.claim_id || ticket.analysis_id)) return false;
+    if (linkFilter === 'analysis' && (!ticket.analysis_id || ticket.contract_id || ticket.claim_id)) return false;
+    if (linkFilter === 'contract' && (!ticket.contract_id || ticket.claim_id)) return false;
+    if (linkFilter === 'none' && (ticket.claim_id || ticket.analysis_id || ticket.contract_id)) return false;
 
     if (!search.trim()) return true;
     const searchLower = search.toLowerCase();
@@ -203,7 +203,7 @@ const TicketCenter = () => {
               <SelectItem value="claim">
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
-                  Sinistros
+                  Garantias
                 </div>
               </SelectItem>
               <SelectItem value="analysis">
