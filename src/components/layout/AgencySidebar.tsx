@@ -13,7 +13,8 @@ import {
   DollarSign,
   FolderOpen,
   Star,
-  KeyRound
+  KeyRound,
+  UserCircle
 } from "lucide-react";
 import logoBlack from "@/assets/logo-tridots-black.webp";
 import { NavLink } from "@/components/NavLink";
@@ -256,6 +257,15 @@ export function AgencySidebar() {
             <p className="text-xs text-muted-foreground truncate">{profile?.email}</p>
           </div>
           <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/agency/profile")}
+              className="shrink-0 text-muted-foreground hover:text-foreground hover:bg-muted"
+              title="Meu Perfil"
+            >
+              <UserCircle className="h-4 w-4" />
+            </Button>
             <Button
               variant="ghost"
               size="icon"
