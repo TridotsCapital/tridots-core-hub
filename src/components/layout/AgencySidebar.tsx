@@ -46,7 +46,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AgencyLogoUpload } from "@/components/agency/AgencyLogoUpload";
 
 // Map paths to notification sources
@@ -85,15 +84,6 @@ export function AgencySidebar() {
     navigate("/auth");
   };
 
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
   const getNotificationCount = (path: string) => {
     const source = pathToSource[path];
     if (!source || !notificationCounts) return 0;
@@ -103,9 +93,23 @@ export function AgencySidebar() {
   return (
     <Sidebar className="border-r border-border/30 bg-white">
       <SidebarHeader className="border-b border-border/30 p-4 bg-gradient-to-br from-primary/5 to-transparent">
-        <div className="flex items-center justify-between">
-          <img src={logoBlack} alt="Tridots Capital" className="h-10 w-auto object-contain" />
-          <NotificationCenter isAgencyPortal={true} />
+        <div className="flex items-center justify-between gap-2">
+          <img src={logoBlack} alt="Tridots Capital" className="h-10 w-auto object-contain flex-shrink-0" />
+          <div className="flex items-center gap-2 min-w-0">
+            {/* Portal info moved to header */}
+            <div className="text-right hidden sm:block min-w-0">
+              <div className="flex items-center justify-end gap-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse flex-shrink-0" />
+                <span className="text-[10px] font-semibold text-primary uppercase tracking-wider truncate">
+                  Portal {agencyName}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground truncate">
+                {profile?.full_name}
+              </p>
+            </div>
+            <NotificationCenter isAgencyPortal={true} />
+          </div>
         </div>
       </SidebarHeader>
 
@@ -241,21 +245,8 @@ export function AgencySidebar() {
               agencyName={agencyName}
               size="sm"
             />
-          ) : (
-            <Avatar className="h-10 w-10 ring-2 ring-primary/20">
-              <AvatarFallback className="bg-primary text-primary-foreground text-sm font-semibold">
-                {profile?.full_name ? getInitials(profile.full_name) : "U"}
-              </AvatarFallback>
-            </Avatar>
-          )}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5 mb-0.5">
-              <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-              <span className="text-[9px] font-semibold text-primary uppercase tracking-wider truncate">Portal {agencyName}</span>
-            </div>
-            <p className="text-sm font-semibold text-foreground truncate">{profile?.full_name}</p>
-            <p className="text-xs text-muted-foreground truncate">{profile?.email}</p>
-          </div>
+          ) : null}
+          <div className="flex-1" />
           <div className="flex items-center gap-1">
             <Button
               variant="ghost"
@@ -280,6 +271,7 @@ export function AgencySidebar() {
               size="icon"
               onClick={handleSignOut}
               className="shrink-0 text-muted-foreground hover:text-foreground hover:bg-muted"
+              title="Sair"
             >
               <LogOut className="h-4 w-4" />
             </Button>

@@ -13,11 +13,13 @@ export interface AuditLog {
   user_agent: string | null;
   created_at: string;
   user?: { full_name: string } | null;
+  organization?: string | null;
 }
 
 export const TABLE_LABELS: Record<string, string> = {
   agencies: 'Imobiliárias',
   agency_users: 'Usuários de Imobiliárias',
+  agency_user_positions: 'Cargos de Usuários',
   analyses: 'Análises',
   analysis_documents: 'Documentos de Análises',
   analysis_timeline: 'Timeline de Análises',
@@ -85,11 +87,14 @@ export const useAuditLogs = (filters?: {
 
       if (error) throw error;
 
-      // Fetch user names separately
+      // Collect unique user IDs
       const userIds = [...new Set(data?.map(log => log.user_id).filter(Boolean) as string[])];
+      
       let userMap: Record<string, string> = {};
+      let userOrgMap: Record<string, string> = {};
       
       if (userIds.length > 0) {
+        // Fetch user profiles
         const { data: profiles } = await supabase
           .from("profiles")
           .select("id, full_name")
@@ -99,6 +104,57 @@ export const useAuditLogs = (filters?: {
           acc[p.id] = p.full_name;
           return acc;
         }, {} as Record<string, string>);
+
+        // Fetch agency users to determine organization
+        const { data: agencyUsers } = await supabase
+          .from("agency_users")
+          .select("user_id, agency_id")
+          .in("user_id", userIds);
+
+        // Get unique agency IDs
+        const agencyIds = [...new Set(agencyUsers?.map(au => au.agency_id).filter(Boolean) as string[])];
+        
+        let agencyNames: Record<string, string> = {};
+        if (agencyIds.length > 0) {
+          const { data: agencies } = await supabase
+            .from("agencies")
+            .select("id, nome_fantasia, razao_social")
+            .in("id", agencyIds);
+          
+          agencyNames = (agencies || []).reduce((acc, a) => {
+            acc[a.id] = a.nome_fantasia || a.razao_social;
+            return acc;
+          }, {} as Record<string, string>);
+        }
+
+        // Map agency user to agency name
+        const userToAgency = (agencyUsers || []).reduce((acc, au) => {
+          acc[au.user_id] = agencyNames[au.agency_id] || null;
+          return acc;
+        }, {} as Record<string, string | null>);
+
+        // Fetch user roles to identify Tridots users
+        const { data: userRoles } = await supabase
+          .from("user_roles")
+          .select("user_id, role")
+          .in("user_id", userIds);
+
+        const tridotsUsers = new Set(
+          (userRoles || [])
+            .filter(ur => ur.role === "master" || ur.role === "analyst")
+            .map(ur => ur.user_id)
+        );
+
+        // Build organization map
+        userIds.forEach(userId => {
+          if (tridotsUsers.has(userId)) {
+            userOrgMap[userId] = "Tridots Capital";
+          } else if (userToAgency[userId]) {
+            userOrgMap[userId] = userToAgency[userId]!;
+          } else {
+            userOrgMap[userId] = "Sistema";
+          }
+        });
       }
 
       return (data || []).map(log => ({
@@ -107,6 +163,7 @@ export const useAuditLogs = (filters?: {
         old_data: log.old_data as Record<string, unknown> | null,
         new_data: log.new_data as Record<string, unknown> | null,
         user: log.user_id ? { full_name: userMap[log.user_id] || 'Usuário desconhecido' } : null,
+        organization: log.user_id ? userOrgMap[log.user_id] || "Sistema" : "Sistema",
       })) as AuditLog[];
     },
   });

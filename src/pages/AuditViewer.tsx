@@ -30,8 +30,10 @@ import { useAuditLogs, useAuditUsers, TABLE_LABELS, AuditLog } from "@/hooks/use
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Loader2, Search, Filter, Shield, AlertTriangle, Download, Eye, User } from "lucide-react";
+import { Loader2, Search, Filter, Shield, AlertTriangle, Download, Eye, User, Building2 } from "lucide-react";
 import { Navigate } from "react-router-dom";
+import { HumanizedDataView } from "@/components/audit/HumanizedDataView";
+import { getFieldLabel, formatFieldValue } from "@/lib/field-labels";
 
 const AuditViewer = () => {
   const { isMaster, loading } = useAuth();
@@ -59,20 +61,34 @@ const AuditViewer = () => {
     }));
   }, []);
 
+  // Humanize JSON data for CSV export
+  const humanizeDataForCsv = (data: Record<string, unknown> | null): string => {
+    if (!data) return "-";
+    
+    const entries = Object.entries(data)
+      .filter(([key]) => !["acceptance_token", "stripe_customer_id", "stripe_checkout_session_id", "stripe_subscription_id", "document_hash"].includes(key))
+      .map(([key, value]) => {
+        const label = getFieldLabel(key);
+        const formattedValue = formatFieldValue(key, value);
+        return `${label}: ${formattedValue}`;
+      });
+    
+    return entries.join("; ");
+  };
+
   const exportToCSV = () => {
     if (!logs?.length) return;
 
-    const headers = ["Data/Hora", "Usuário", "Tabela", "Ação", "ID Registro", "Dados Anteriores", "Dados Novos", "IP", "User-Agent"];
+    const headers = ["Data/Hora", "Organização", "Usuário", "Tabela", "Ação", "ID Registro", "Dados Anteriores", "Dados Novos"];
     const rows = logs.map(log => [
       format(new Date(log.created_at), "dd/MM/yyyy HH:mm:ss"),
+      log.organization || "Sistema",
       log.user?.full_name || "Sistema",
       TABLE_LABELS[log.table_name] || log.table_name,
-      log.action,
+      log.action === "INSERT" ? "Criação" : log.action === "UPDATE" ? "Atualização" : log.action === "DELETE" ? "Exclusão" : log.action,
       log.record_id || "-",
-      log.old_data ? JSON.stringify(log.old_data) : "-",
-      log.new_data ? JSON.stringify(log.new_data) : "-",
-      log.ip_address || "-",
-      log.user_agent || "-",
+      humanizeDataForCsv(log.old_data),
+      humanizeDataForCsv(log.new_data),
     ]);
 
     const csvContent = [
@@ -126,12 +142,6 @@ const AuditViewer = () => {
       }
     });
     return changed;
-  };
-
-  const formatValue = (value: unknown): string => {
-    if (value === null || value === undefined) return "null";
-    if (typeof value === "object") return JSON.stringify(value, null, 2);
-    return String(value);
   };
 
   return (
@@ -260,6 +270,7 @@ const AuditViewer = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Data/Hora</TableHead>
+                      <TableHead>Organização</TableHead>
                       <TableHead>Usuário</TableHead>
                       <TableHead>Tabela</TableHead>
                       <TableHead>Ação</TableHead>
@@ -277,6 +288,14 @@ const AuditViewer = () => {
                             {format(new Date(log.created_at), "dd/MM/yyyy HH:mm:ss", {
                               locale: ptBR,
                             })}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Building2 className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm">
+                                {log.organization || "Sistema"}
+                              </span>
+                            </div>
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
@@ -300,7 +319,7 @@ const AuditViewer = () => {
                               <div className="flex flex-wrap gap-1">
                                 {changedFields.slice(0, 3).map(field => (
                                   <Badge key={field} variant="outline" className="text-xs">
-                                    {field}
+                                    {getFieldLabel(field)}
                                   </Badge>
                                 ))}
                                 {changedFields.length > 3 && (
@@ -349,7 +368,7 @@ const AuditViewer = () => {
         </Card>
       </div>
 
-      {/* Diff View Modal */}
+      {/* Detail Modal */}
       <Dialog open={!!selectedLog} onOpenChange={() => setSelectedLog(null)}>
         <DialogContent className="max-w-5xl max-h-[90vh]">
           <DialogHeader>
@@ -361,12 +380,16 @@ const AuditViewer = () => {
           {selectedLog && (
             <div className="space-y-4">
               {/* Metadata */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
                 <div>
                   <span className="text-muted-foreground">Data/Hora:</span>
                   <p className="font-medium">
                     {format(new Date(selectedLog.created_at), "dd/MM/yyyy HH:mm:ss", { locale: ptBR })}
                   </p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Organização:</span>
+                  <p className="font-medium">{selectedLog.organization || "Sistema"}</p>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Usuário:</span>
@@ -389,13 +412,13 @@ const AuditViewer = () => {
                 </div>
               )}
 
-              {/* Side-by-side Diff View */}
+              {/* Humanized Data View */}
               {selectedLog.action === "UPDATE" ? (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <h4 className="font-medium mb-2 text-red-600 dark:text-red-400">Antes</h4>
                     <ScrollArea className="h-[400px] border rounded-lg p-4 bg-red-50 dark:bg-red-950/20">
-                      <DiffView 
+                      <HumanizedDataView 
                         data={selectedLog.old_data} 
                         compareData={selectedLog.new_data}
                         mode="old"
@@ -405,7 +428,7 @@ const AuditViewer = () => {
                   <div>
                     <h4 className="font-medium mb-2 text-green-600 dark:text-green-400">Depois</h4>
                     <ScrollArea className="h-[400px] border rounded-lg p-4 bg-green-50 dark:bg-green-950/20">
-                      <DiffView 
+                      <HumanizedDataView 
                         data={selectedLog.new_data} 
                         compareData={selectedLog.old_data}
                         mode="new"
@@ -417,18 +440,14 @@ const AuditViewer = () => {
                 <div>
                   <h4 className="font-medium mb-2 text-green-600 dark:text-green-400">Dados Criados</h4>
                   <ScrollArea className="h-[400px] border rounded-lg p-4 bg-green-50 dark:bg-green-950/20">
-                    <pre className="text-xs whitespace-pre-wrap">
-                      {JSON.stringify(selectedLog.new_data, null, 2)}
-                    </pre>
+                    <HumanizedDataView data={selectedLog.new_data} mode="new" />
                   </ScrollArea>
                 </div>
               ) : selectedLog.action === "DELETE" ? (
                 <div>
                   <h4 className="font-medium mb-2 text-red-600 dark:text-red-400">Dados Excluídos</h4>
                   <ScrollArea className="h-[400px] border rounded-lg p-4 bg-red-50 dark:bg-red-950/20">
-                    <pre className="text-xs whitespace-pre-wrap">
-                      {JSON.stringify(selectedLog.old_data, null, 2)}
-                    </pre>
+                    <HumanizedDataView data={selectedLog.old_data} mode="old" />
                   </ScrollArea>
                 </div>
               ) : null}
@@ -437,55 +456,6 @@ const AuditViewer = () => {
         </DialogContent>
       </Dialog>
     </DashboardLayout>
-  );
-};
-
-// Component to show diff with highlighted changes
-const DiffView = ({ 
-  data, 
-  compareData, 
-  mode 
-}: { 
-  data: Record<string, unknown> | null; 
-  compareData: Record<string, unknown> | null;
-  mode: "old" | "new";
-}) => {
-  if (!data) return <span className="text-muted-foreground">Sem dados</span>;
-
-  const formatValue = (value: unknown): string => {
-    if (value === null || value === undefined) return "null";
-    if (typeof value === "object") return JSON.stringify(value, null, 2);
-    return String(value);
-  };
-
-  const isChanged = (key: string): boolean => {
-    if (!compareData) return false;
-    return JSON.stringify(data[key]) !== JSON.stringify(compareData[key]);
-  };
-
-  return (
-    <div className="space-y-1">
-      {Object.entries(data).map(([key, value]) => {
-        const changed = isChanged(key);
-        return (
-          <div 
-            key={key} 
-            className={`text-xs font-mono p-1 rounded ${
-              changed 
-                ? mode === "old" 
-                  ? "bg-red-200 dark:bg-red-900/50" 
-                  : "bg-green-200 dark:bg-green-900/50"
-                : ""
-            }`}
-          >
-            <span className="text-muted-foreground">{key}:</span>{" "}
-            <span className={changed ? "font-semibold" : ""}>
-              {formatValue(value)}
-            </span>
-          </div>
-        );
-      })}
-    </div>
   );
 };
 
