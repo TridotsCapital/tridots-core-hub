@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,26 +19,75 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useAuditLogs } from "@/hooks/useAuditLogs";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useAuditLogs, useAuditUsers, TABLE_LABELS, AuditLog } from "@/hooks/useAuditLogs";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Loader2, Search, Filter, Shield, AlertTriangle } from "lucide-react";
+import { Loader2, Search, Filter, Shield, AlertTriangle, Download, Eye, User } from "lucide-react";
 import { Navigate } from "react-router-dom";
 
 const AuditViewer = () => {
   const { isMaster, loading } = useAuth();
   const [tableName, setTableName] = useState<string>("");
   const [action, setAction] = useState<string>("");
+  const [userId, setUserId] = useState<string>("");
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
+  const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
 
   const { data: logs, isLoading } = useAuditLogs({
     tableName: tableName && tableName !== "all" ? tableName : undefined,
     action: action && action !== "all" ? action : undefined,
+    userId: userId && userId !== "all" ? userId : undefined,
     startDate: startDate || undefined,
     endDate: endDate || undefined,
   });
+
+  const { data: users } = useAuditUsers();
+
+  const tableOptions = useMemo(() => {
+    return Object.entries(TABLE_LABELS).map(([value, label]) => ({
+      value,
+      label,
+    }));
+  }, []);
+
+  const exportToCSV = () => {
+    if (!logs?.length) return;
+
+    const headers = ["Data/Hora", "Usuário", "Tabela", "Ação", "ID Registro", "Dados Anteriores", "Dados Novos", "IP", "User-Agent"];
+    const rows = logs.map(log => [
+      format(new Date(log.created_at), "dd/MM/yyyy HH:mm:ss"),
+      log.user?.full_name || "Sistema",
+      TABLE_LABELS[log.table_name] || log.table_name,
+      log.action,
+      log.record_id || "-",
+      log.old_data ? JSON.stringify(log.old_data) : "-",
+      log.new_data ? JSON.stringify(log.new_data) : "-",
+      log.ip_address || "-",
+      log.user_agent || "-",
+    ]);
+
+    const csvContent = [
+      headers.join(";"),
+      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(";")),
+    ].join("\n");
+
+    const blob = new Blob(["\ufeff" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `auditoria_${format(new Date(), "yyyy-MM-dd_HH-mm")}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
   if (loading) {
     return (
@@ -55,47 +104,53 @@ const AuditViewer = () => {
   }
 
   const getActionBadge = (actionType: string) => {
-    switch (actionType.toLowerCase()) {
-      case "insert":
-      case "create":
-        return <Badge className="bg-green-500">Criação</Badge>;
-      case "update":
-        return <Badge className="bg-blue-500">Atualização</Badge>;
-      case "delete":
+    switch (actionType.toUpperCase()) {
+      case "INSERT":
+        return <Badge className="bg-green-500 hover:bg-green-600">Criação</Badge>;
+      case "UPDATE":
+        return <Badge className="bg-blue-500 hover:bg-blue-600">Atualização</Badge>;
+      case "DELETE":
         return <Badge variant="destructive">Exclusão</Badge>;
-      case "acceptance":
-        return <Badge className="bg-purple-500">Aceite Digital</Badge>;
       default:
         return <Badge variant="secondary">{actionType}</Badge>;
     }
   };
 
-  const formatLogData = (data: Record<string, unknown> | null) => {
-    if (!data) return "-";
-    
-    const relevantFields = ["inquilino_nome", "status", "name", "email", "accepted_by_name"];
-    const displayFields: string[] = [];
-    
-    for (const field of relevantFields) {
-      if (data[field]) {
-        displayFields.push(`${field}: ${data[field]}`);
+  const getChangedFields = (oldData: Record<string, unknown> | null, newData: Record<string, unknown> | null): string[] => {
+    if (!oldData || !newData) return [];
+    const changed: string[] = [];
+    const allKeys = new Set([...Object.keys(oldData), ...Object.keys(newData)]);
+    allKeys.forEach(key => {
+      if (JSON.stringify(oldData[key]) !== JSON.stringify(newData[key])) {
+        changed.push(key);
       }
-    }
-    
-    return displayFields.length > 0 ? displayFields.join(", ") : JSON.stringify(data).slice(0, 100);
+    });
+    return changed;
+  };
+
+  const formatValue = (value: unknown): string => {
+    if (value === null || value === undefined) return "null";
+    if (typeof value === "object") return JSON.stringify(value, null, 2);
+    return String(value);
   };
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <Shield className="h-8 w-8" />
-            Visualizador de Auditoria
-          </h1>
-          <p className="text-muted-foreground">
-            Histórico completo de todas as ações críticas do sistema
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+              <Shield className="h-8 w-8" />
+              Visualizador de Auditoria
+            </h1>
+            <p className="text-muted-foreground">
+              Histórico completo de todas as ações do sistema
+            </p>
+          </div>
+          <Button onClick={exportToCSV} disabled={!logs?.length}>
+            <Download className="h-4 w-4 mr-2" />
+            Exportar CSV
+          </Button>
         </div>
 
         {/* Filters */}
@@ -107,7 +162,7 @@ const AuditViewer = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 md:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-5">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Tabela</label>
                 <Select value={tableName} onValueChange={setTableName}>
@@ -116,12 +171,11 @@ const AuditViewer = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todas</SelectItem>
-                    <SelectItem value="analyses">Análises</SelectItem>
-                    <SelectItem value="agencies">Imobiliárias</SelectItem>
-                    <SelectItem value="commissions">Comissões</SelectItem>
-                    <SelectItem value="digital_acceptances">Aceites Digitais</SelectItem>
-                    <SelectItem value="term_templates">Modelos de Termos</SelectItem>
-                    <SelectItem value="user_roles">Permissões</SelectItem>
+                    {tableOptions.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -137,7 +191,23 @@ const AuditViewer = () => {
                     <SelectItem value="INSERT">Criação</SelectItem>
                     <SelectItem value="UPDATE">Atualização</SelectItem>
                     <SelectItem value="DELETE">Exclusão</SelectItem>
-                    <SelectItem value="acceptance">Aceite Digital</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Usuário</label>
+                <Select value={userId} onValueChange={setUserId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todos" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    {users?.map(user => (
+                      <SelectItem key={user.id} value={user.id}>
+                        {user.full_name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -190,38 +260,71 @@ const AuditViewer = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Data/Hora</TableHead>
-                      <TableHead>Ação</TableHead>
+                      <TableHead>Usuário</TableHead>
                       <TableHead>Tabela</TableHead>
-                      <TableHead>Detalhes</TableHead>
-                      <TableHead>IP</TableHead>
-                      <TableHead>User-Agent</TableHead>
+                      <TableHead>Ação</TableHead>
+                      <TableHead>ID Registro</TableHead>
+                      <TableHead>Campos Alterados</TableHead>
+                      <TableHead className="text-right">Detalhes</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {logs.map((log) => (
-                      <TableRow key={log.id}>
-                        <TableCell className="whitespace-nowrap">
-                          {format(new Date(log.created_at), "dd/MM/yyyy HH:mm:ss", {
-                            locale: ptBR,
-                          })}
-                        </TableCell>
-                        <TableCell>{getActionBadge(log.action)}</TableCell>
-                        <TableCell>
-                          <code className="text-xs bg-muted px-1 py-0.5 rounded">
-                            {log.table_name}
-                          </code>
-                        </TableCell>
-                        <TableCell className="max-w-xs truncate">
-                          {formatLogData(log.new_data || log.old_data)}
-                        </TableCell>
-                        <TableCell className="font-mono text-xs">
-                          {log.ip_address || "-"}
-                        </TableCell>
-                        <TableCell className="max-w-xs truncate text-xs text-muted-foreground">
-                          {log.user_agent || "-"}
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {logs.map((log) => {
+                      const changedFields = getChangedFields(log.old_data, log.new_data);
+                      return (
+                        <TableRow key={log.id}>
+                          <TableCell className="whitespace-nowrap">
+                            {format(new Date(log.created_at), "dd/MM/yyyy HH:mm:ss", {
+                              locale: ptBR,
+                            })}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <User className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm">
+                                {log.user?.full_name || "Sistema"}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <code className="text-xs bg-muted px-2 py-1 rounded">
+                              {TABLE_LABELS[log.table_name] || log.table_name}
+                            </code>
+                          </TableCell>
+                          <TableCell>{getActionBadge(log.action)}</TableCell>
+                          <TableCell className="font-mono text-xs">
+                            {log.record_id?.slice(0, 8) || "-"}
+                          </TableCell>
+                          <TableCell>
+                            {log.action === "UPDATE" && changedFields.length > 0 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {changedFields.slice(0, 3).map(field => (
+                                  <Badge key={field} variant="outline" className="text-xs">
+                                    {field}
+                                  </Badge>
+                                ))}
+                                {changedFields.length > 3 && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    +{changedFields.length - 3}
+                                  </Badge>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setSelectedLog(log)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>
@@ -245,7 +348,144 @@ const AuditViewer = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Diff View Modal */}
+      <Dialog open={!!selectedLog} onOpenChange={() => setSelectedLog(null)}>
+        <DialogContent className="max-w-5xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              Detalhes do Registro
+              {selectedLog && getActionBadge(selectedLog.action)}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedLog && (
+            <div className="space-y-4">
+              {/* Metadata */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div>
+                  <span className="text-muted-foreground">Data/Hora:</span>
+                  <p className="font-medium">
+                    {format(new Date(selectedLog.created_at), "dd/MM/yyyy HH:mm:ss", { locale: ptBR })}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Usuário:</span>
+                  <p className="font-medium">{selectedLog.user?.full_name || "Sistema"}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Tabela:</span>
+                  <p className="font-medium">{TABLE_LABELS[selectedLog.table_name] || selectedLog.table_name}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">ID Registro:</span>
+                  <p className="font-mono text-xs">{selectedLog.record_id || "-"}</p>
+                </div>
+              </div>
+
+              {selectedLog.ip_address && (
+                <div className="text-sm">
+                  <span className="text-muted-foreground">IP: </span>
+                  <span className="font-mono">{selectedLog.ip_address}</span>
+                </div>
+              )}
+
+              {/* Side-by-side Diff View */}
+              {selectedLog.action === "UPDATE" ? (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="font-medium mb-2 text-red-600 dark:text-red-400">Antes</h4>
+                    <ScrollArea className="h-[400px] border rounded-lg p-4 bg-red-50 dark:bg-red-950/20">
+                      <DiffView 
+                        data={selectedLog.old_data} 
+                        compareData={selectedLog.new_data}
+                        mode="old"
+                      />
+                    </ScrollArea>
+                  </div>
+                  <div>
+                    <h4 className="font-medium mb-2 text-green-600 dark:text-green-400">Depois</h4>
+                    <ScrollArea className="h-[400px] border rounded-lg p-4 bg-green-50 dark:bg-green-950/20">
+                      <DiffView 
+                        data={selectedLog.new_data} 
+                        compareData={selectedLog.old_data}
+                        mode="new"
+                      />
+                    </ScrollArea>
+                  </div>
+                </div>
+              ) : selectedLog.action === "INSERT" ? (
+                <div>
+                  <h4 className="font-medium mb-2 text-green-600 dark:text-green-400">Dados Criados</h4>
+                  <ScrollArea className="h-[400px] border rounded-lg p-4 bg-green-50 dark:bg-green-950/20">
+                    <pre className="text-xs whitespace-pre-wrap">
+                      {JSON.stringify(selectedLog.new_data, null, 2)}
+                    </pre>
+                  </ScrollArea>
+                </div>
+              ) : selectedLog.action === "DELETE" ? (
+                <div>
+                  <h4 className="font-medium mb-2 text-red-600 dark:text-red-400">Dados Excluídos</h4>
+                  <ScrollArea className="h-[400px] border rounded-lg p-4 bg-red-50 dark:bg-red-950/20">
+                    <pre className="text-xs whitespace-pre-wrap">
+                      {JSON.stringify(selectedLog.old_data, null, 2)}
+                    </pre>
+                  </ScrollArea>
+                </div>
+              ) : null}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
+  );
+};
+
+// Component to show diff with highlighted changes
+const DiffView = ({ 
+  data, 
+  compareData, 
+  mode 
+}: { 
+  data: Record<string, unknown> | null; 
+  compareData: Record<string, unknown> | null;
+  mode: "old" | "new";
+}) => {
+  if (!data) return <span className="text-muted-foreground">Sem dados</span>;
+
+  const formatValue = (value: unknown): string => {
+    if (value === null || value === undefined) return "null";
+    if (typeof value === "object") return JSON.stringify(value, null, 2);
+    return String(value);
+  };
+
+  const isChanged = (key: string): boolean => {
+    if (!compareData) return false;
+    return JSON.stringify(data[key]) !== JSON.stringify(compareData[key]);
+  };
+
+  return (
+    <div className="space-y-1">
+      {Object.entries(data).map(([key, value]) => {
+        const changed = isChanged(key);
+        return (
+          <div 
+            key={key} 
+            className={`text-xs font-mono p-1 rounded ${
+              changed 
+                ? mode === "old" 
+                  ? "bg-red-200 dark:bg-red-900/50" 
+                  : "bg-green-200 dark:bg-green-900/50"
+                : ""
+            }`}
+          >
+            <span className="text-muted-foreground">{key}:</span>{" "}
+            <span className={changed ? "font-semibold" : ""}>
+              {formatValue(value)}
+            </span>
+          </div>
+        );
+      })}
+    </div>
   );
 };
 
