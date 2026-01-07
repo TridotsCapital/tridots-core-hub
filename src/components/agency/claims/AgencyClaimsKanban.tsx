@@ -6,6 +6,7 @@ import { ClaimDetailDrawer } from './ClaimDetailDrawer';
 import { ClaimTicketSheet } from './ClaimTicketSheet';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
+import { useUnreadItemIds, useMarkItemAsRead } from '@/hooks/useUnreadItemIds';
 import type { Claim, ClaimPublicStatus } from '@/types/claims';
 import { claimPublicStatusConfig } from '@/types/claims';
 
@@ -27,6 +28,9 @@ export function AgencyClaimsKanban({ claims, onRefresh }: AgencyClaimsKanbanProp
   const [selectedClaim, setSelectedClaim] = useState<Claim | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [ticketSheetOpen, setTicketSheetOpen] = useState(false);
+  
+  const { data: unreadIds } = useUnreadItemIds();
+  const markAsRead = useMarkItemAsRead();
 
   // Configure DnD sensors
   const sensors = useSensors(
@@ -42,6 +46,10 @@ export function AgencyClaimsKanban({ claims, onRefresh }: AgencyClaimsKanbanProp
   };
 
   const handleCardClick = (claim: Claim) => {
+    // Mark as read when clicking
+    if (unreadIds?.garantias.has(claim.id)) {
+      markAsRead(claim.id, 'sinistros');
+    }
     navigate(`/agency/claims/${claim.id}`);
   };
 
@@ -59,7 +67,7 @@ export function AgencyClaimsKanban({ claims, onRefresh }: AgencyClaimsKanbanProp
     // Always show the message - user cannot change status
     toast({
       title: "Ação não permitida",
-      description: "Apenas a equipe Tridots pode alterar o status do sinistro.",
+      description: "Apenas a equipe Tridots pode alterar o status da garantia.",
       variant: "destructive",
     });
   };
@@ -105,7 +113,7 @@ export function AgencyClaimsKanban({ claims, onRefresh }: AgencyClaimsKanbanProp
                   <div className="space-y-2">
                     {columnClaims.length === 0 ? (
                       <div className="text-center py-8 text-sm text-muted-foreground">
-                        Nenhum sinistro
+                        Nenhuma garantia
                       </div>
                     ) : (
                       columnClaims.map((claim) => (
@@ -115,6 +123,7 @@ export function AgencyClaimsKanban({ claims, onRefresh }: AgencyClaimsKanbanProp
                           onClick={() => handleCardClick(claim)}
                           onViewDetails={() => handleViewDetails(claim)}
                           onOpenTicket={() => handleOpenTicket(claim)}
+                          hasUnread={unreadIds?.garantias.has(claim.id) ?? false}
                         />
                       ))
                     )}

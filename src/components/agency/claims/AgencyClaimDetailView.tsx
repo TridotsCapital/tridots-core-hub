@@ -30,7 +30,9 @@ import { claimPublicStatusConfig } from "@/types/claims";
 import { useCancelClaim } from "@/hooks/useClaims";
 import { ClaimItemsSection } from "./ClaimItemsSection";
 import { ClaimFilesSection } from "./ClaimFilesSection";
-import { ClaimHistorySection } from "./ClaimHistorySection";
+import { ClaimTimeline, ClaimTicketsTab } from "@/components/claims";
+import { MessageSquare, Clock } from "lucide-react";
+import { useClaimTickets } from "@/hooks/useClaimTickets";
 
 interface AgencyClaimDetailViewProps {
   claim: Claim;
@@ -40,8 +42,10 @@ interface AgencyClaimDetailViewProps {
 export function AgencyClaimDetailView({ claim, onUpdate }: AgencyClaimDetailViewProps) {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const cancelClaim = useCancelClaim();
+  const { data: tickets } = useClaimTickets(claim.id);
 
   const statusConfig = claimPublicStatusConfig[claim.public_status];
+  const formatClaimId = (id: string) => `#${id.slice(0, 8).toUpperCase()}`;
   const canEdit = claim.public_status === 'solicitado';
   const canCancel = claim.public_status === 'solicitado' && !claim.canceled_at;
 
@@ -64,9 +68,9 @@ export function AgencyClaimDetailView({ claim, onUpdate }: AgencyClaimDetailView
       <Card>
         <CardHeader className="flex flex-row items-start justify-between">
           <div className="space-y-1">
-            <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3">
               <FileWarning className="h-6 w-6 text-primary" />
-              <CardTitle>Detalhes do Sinistro</CardTitle>
+              <CardTitle>Garantia {formatClaimId(claim.id)} - {claim.contract?.analysis?.inquilino_nome}</CardTitle>
             </div>
             <CardDescription>
               Criado em {format(new Date(claim.created_at), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR })}
@@ -157,9 +161,16 @@ export function AgencyClaimDetailView({ claim, onUpdate }: AgencyClaimDetailView
       {/* Tabs */}
       <Tabs defaultValue="items" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="items">Itens do Sinistro</TabsTrigger>
+          <TabsTrigger value="items">Itens da Garantia</TabsTrigger>
           <TabsTrigger value="files">Arquivos</TabsTrigger>
-          <TabsTrigger value="history">Histórico</TabsTrigger>
+          <TabsTrigger value="tickets" className="flex items-center gap-1">
+            <MessageSquare className="h-3.5 w-3.5" />
+            Chamados ({tickets?.length || 0})
+          </TabsTrigger>
+          <TabsTrigger value="timeline" className="flex items-center gap-1">
+            <Clock className="h-3.5 w-3.5" />
+            Timeline
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="items">
@@ -177,8 +188,12 @@ export function AgencyClaimDetailView({ claim, onUpdate }: AgencyClaimDetailView
           />
         </TabsContent>
 
-        <TabsContent value="history">
-          <ClaimHistorySection claimId={claim.id} />
+        <TabsContent value="tickets">
+          <ClaimTicketsTab claimId={claim.id} isAgencyPortal={true} />
+        </TabsContent>
+
+        <TabsContent value="timeline">
+          <ClaimTimeline claimId={claim.id} />
         </TabsContent>
       </Tabs>
 
@@ -186,9 +201,9 @@ export function AgencyClaimDetailView({ claim, onUpdate }: AgencyClaimDetailView
       <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Cancelar Sinistro</AlertDialogTitle>
+            <AlertDialogTitle>Cancelar Solicitação</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja cancelar este sinistro? Esta ação não pode ser desfeita.
+              Tem certeza que deseja cancelar esta solicitação de garantia? Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

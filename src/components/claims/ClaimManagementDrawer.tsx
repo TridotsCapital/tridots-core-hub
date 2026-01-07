@@ -25,7 +25,8 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useClaimItems } from '@/hooks/useClaimItems';
 import { useUpdateClaimStatus, useClaimDetail } from '@/hooks/useClaims';
-import { ClaimItemsSection, ClaimFilesSection, ClaimHistorySection } from '@/components/agency/claims';
+import { ClaimItemsSection, ClaimFilesSection } from '@/components/agency/claims';
+import { ClaimTimeline } from './ClaimTimeline';
 import { ClaimNotesSection } from './ClaimNotesSection';
 import { ClaimDocsChecklist } from './ClaimDocsChecklist';
 import { InternalClaimTicketSheet } from './InternalClaimTicketSheet';
@@ -104,6 +105,7 @@ export function ClaimManagementDrawer({
 
   const publicConfig = claimPublicStatusConfig[currentClaim.public_status];
   const internalConfig = claimInternalStatusConfig[currentClaim.internal_status];
+  const formatClaimId = (id: string) => `#${id.slice(0, 8).toUpperCase()}`;
   const docsChecklist = (currentClaim as { docs_checklist?: Record<string, boolean> }).docs_checklist || {
     contrato: false,
     boletos: false,
@@ -123,7 +125,7 @@ export function ClaimManagementDrawer({
               </div>
               <div>
                 <SheetTitle className="text-left">
-                  {currentClaim.contract?.analysis?.inquilino_nome}
+                  Garantia {formatClaimId(currentClaim.id)} - {currentClaim.contract?.analysis?.inquilino_nome}
                 </SheetTitle>
                 <p className="text-sm text-muted-foreground">
                   {currentClaim.agency?.nome_fantasia} • {format(new Date(currentClaim.created_at), "dd/MM/yyyy", { locale: ptBR })}
@@ -265,9 +267,9 @@ export function ClaimManagementDrawer({
                   <FileText className="h-3 w-3 mr-1" />
                   Arquivos
                 </TabsTrigger>
-                <TabsTrigger value="history" className="text-xs">
+                <TabsTrigger value="timeline" className="text-xs">
                   <History className="h-3 w-3 mr-1" />
-                  Histórico
+                  Timeline
                 </TabsTrigger>
               </TabsList>
               <TabsContent value="items" className="mt-4">
@@ -286,8 +288,8 @@ export function ClaimManagementDrawer({
                   canEdit={true} 
                 />
               </TabsContent>
-              <TabsContent value="history" className="mt-4">
-                <ClaimHistorySection claimId={currentClaim.id} />
+              <TabsContent value="timeline" className="mt-4">
+                <ClaimTimeline claimId={currentClaim.id} />
               </TabsContent>
             </Tabs>
 

@@ -93,13 +93,18 @@ export function ClaimsKanbanCard({ claim, onViewDetails, onOpenTicket }: ClaimsK
         isDragging && 'shadow-lg ring-2 ring-primary'
       )}>
         <CardContent className="p-3 space-y-2">
-          {/* Header with agency */}
+          {/* Header with ID and agency */}
           <div className="flex items-start justify-between gap-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
-              <span className="text-sm font-medium truncate">
-                {claim.agency?.nome_fantasia || claim.agency?.razao_social || 'Imobiliária'}
+            <div className="flex flex-col min-w-0">
+              <span className="text-xs font-mono text-muted-foreground">
+                #{claim.id.slice(0, 8).toUpperCase()}
               </span>
+              <div className="flex items-center gap-1.5">
+                <Building2 className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <span className="text-sm font-medium truncate">
+                  {claim.agency?.nome_fantasia || claim.agency?.razao_social || 'Imobiliária'}
+                </span>
+              </div>
             </div>
             {hasPendingDocs && (
               <Badge variant="outline" className="shrink-0 text-amber-600 border-amber-300 bg-amber-50">
