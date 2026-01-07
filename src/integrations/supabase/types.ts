@@ -695,6 +695,51 @@ export type Database = {
           },
         ]
       }
+      claim_timeline: {
+        Row: {
+          claim_id: string
+          created_at: string | null
+          created_by: string | null
+          description: string
+          event_type: string
+          id: string
+          metadata: Json | null
+        }
+        Insert: {
+          claim_id: string
+          created_at?: string | null
+          created_by?: string | null
+          description: string
+          event_type: string
+          id?: string
+          metadata?: Json | null
+        }
+        Update: {
+          claim_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          description?: string
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claim_timeline_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_timeline_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       claims: {
         Row: {
           agency_id: string

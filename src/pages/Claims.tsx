@@ -74,7 +74,7 @@ export default function Claims() {
               <AlertTriangle className="h-6 w-6 text-amber-400" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Central de Sinistros</h1>
+              <h1 className="text-2xl font-bold text-foreground">Garantias Solicitadas</h1>
               <p className="text-sm text-muted-foreground">
                 Gerencie todas as solicitações de garantia
               </p>
@@ -167,7 +167,7 @@ export default function Claims() {
         {viewMode === "list" && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Sinistros</CardTitle>
+              <CardTitle className="text-lg">Garantias Solicitadas</CardTitle>
             </CardHeader>
             <CardContent>
               {isLoading ? (
@@ -179,7 +179,7 @@ export default function Claims() {
               ) : filteredClaims?.length === 0 ? (
                 <div className="text-center py-12">
                   <AlertTriangle className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
-                  <p className="text-muted-foreground">Nenhum sinistro encontrado</p>
+                  <p className="text-muted-foreground">Nenhuma garantia encontrada</p>
                 </div>
               ) : (
                 <Table>

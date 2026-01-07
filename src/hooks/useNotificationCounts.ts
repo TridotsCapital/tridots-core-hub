@@ -7,6 +7,7 @@ export type NotificationCounts = {
   chamados: number;
   analises: number;
   contratos: number;
+  garantias: number;
 };
 
 export function useNotificationCounts() {
@@ -17,7 +18,7 @@ export function useNotificationCounts() {
     queryKey: ['notification-counts', user?.id],
     queryFn: async (): Promise<NotificationCounts> => {
       if (!user?.id) {
-        return { chamados: 0, analises: 0, contratos: 0 };
+        return { chamados: 0, analises: 0, contratos: 0, garantias: 0 };
       }
 
       const { data, error } = await supabase
@@ -32,12 +33,18 @@ export function useNotificationCounts() {
         chamados: 0,
         analises: 0,
         contratos: 0,
+        garantias: 0,
       };
 
       data?.forEach((n) => {
-        const source = n.source as keyof NotificationCounts;
-        if (source in counts) {
-          counts[source]++;
+        // Map 'sinistros' source to 'garantias' key
+        if (n.source === 'sinistros') {
+          counts.garantias++;
+        } else {
+          const source = n.source as keyof NotificationCounts;
+          if (source in counts) {
+            counts[source]++;
+          }
         }
       });
 

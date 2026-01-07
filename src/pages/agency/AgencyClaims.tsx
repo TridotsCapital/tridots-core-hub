@@ -73,7 +73,7 @@ export default function AgencyClaims() {
   if (loadingAgency) {
     return (
       <AgencyLayout 
-        title="Sinistros" 
+        title="Garantias Solicitadas" 
         description="Gerencie suas solicitações de garantia"
       >
         <div className="flex items-center justify-center h-[400px]">
@@ -85,7 +85,7 @@ export default function AgencyClaims() {
 
   return (
     <AgencyLayout 
-      title="Sinistros" 
+      title="Garantias Solicitadas" 
       description="Gerencie suas solicitações de garantia"
       actions={
         <div className="flex items-center gap-3">
@@ -104,7 +104,7 @@ export default function AgencyClaims() {
           </ToggleGroup>
           <Button onClick={() => navigate('/agency/claims/new')}>
             <Plus className="h-4 w-4 mr-2" />
-            Novo Sinistro
+            Solicitar Garantia
           </Button>
         </div>
       }

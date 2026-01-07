@@ -34,11 +34,11 @@ import {
 import logoWhite from "@/assets/logo-tridots-white.webp";
 
 // Map paths to notification sources
-const pathToSource: Record<string, 'chamados' | 'analises' | 'contratos' | 'sinistros'> = {
+const pathToSource: Record<string, 'chamados' | 'analises' | 'contratos' | 'garantias'> = {
   '/tickets': 'chamados',
   '/analyses': 'analises',
   '/contracts': 'contratos',
-  '/claims': 'sinistros',
+  '/claims': 'garantias',
 };
 
 const menuItems = [
@@ -63,7 +63,7 @@ const menuItems = [
     path: '/contracts',
   },
   {
-    title: 'Sinistros',
+    title: 'Garantias Solicitadas',
     icon: AlertTriangle,
     path: '/claims',
   },
