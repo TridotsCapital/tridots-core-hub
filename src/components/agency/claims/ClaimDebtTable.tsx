@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Plus, Trash2, AlertCircle } from 'lucide-react';
-import { format, parse, isAfter, startOfDay } from 'date-fns';
+import { format, isAfter, startOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,6 +50,8 @@ const createEmptyItem = (): DraftClaimItem => ({
 
 export function ClaimDebtTable({ items, onChange, disabled }: ClaimDebtTableProps) {
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [referenceErrors, setReferenceErrors] = useState<Record<string, string>>({});
+  const [editingAmounts, setEditingAmounts] = useState<Record<string, string>>({});
 
   const handleAddRow = () => {
     onChange([...items, createEmptyItem()]);
@@ -63,6 +65,16 @@ export function ClaimDebtTable({ items, onChange, disabled }: ClaimDebtTableProp
       delete newErrors[`${id}-due_date`];
       return newErrors;
     });
+    setReferenceErrors((prev) => {
+      const newErrors = { ...prev };
+      delete newErrors[id];
+      return newErrors;
+    });
+    setEditingAmounts((prev) => {
+      const newState = { ...prev };
+      delete newState[id];
+      return newState;
+    });
   };
 
   const handleChange = (id: string, field: keyof DraftClaimItem, value: unknown) => {
@@ -71,6 +83,51 @@ export function ClaimDebtTable({ items, onChange, disabled }: ClaimDebtTableProp
         item.id === id ? { ...item, [field]: value } : item
       )
     );
+  };
+
+  // Reference field mask and validation (MM/AAAA)
+  const handleReferenceChange = (id: string, value: string) => {
+    // Remove everything except numbers
+    let numericValue = value.replace(/\D/g, '');
+    
+    // Limit to 6 digits (MMAAAA)
+    numericValue = numericValue.slice(0, 6);
+    
+    // Apply MM/AAAA mask
+    let formatted = numericValue;
+    if (numericValue.length > 2) {
+      formatted = `${numericValue.slice(0, 2)}/${numericValue.slice(2)}`;
+    }
+    
+    // Validate when complete (6 digits)
+    if (numericValue.length === 6) {
+      const month = parseInt(numericValue.slice(0, 2), 10);
+      const year = parseInt(numericValue.slice(2), 10);
+      const now = new Date();
+      const currentMonth = now.getMonth() + 1;
+      const currentYear = now.getFullYear();
+      
+      if (month < 1 || month > 12) {
+        setReferenceErrors(prev => ({ ...prev, [id]: 'Mês inválido' }));
+      } else if (year > currentYear || (year === currentYear && month > currentMonth)) {
+        setReferenceErrors(prev => ({ ...prev, [id]: 'Período futuro não permitido' }));
+      } else {
+        setReferenceErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors[id];
+          return newErrors;
+        });
+      }
+    } else {
+      // Clear error if incomplete
+      setReferenceErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[id];
+        return newErrors;
+      });
+    }
+    
+    handleChange(id, 'reference_period', formatted);
   };
 
   const handleDateSelect = (id: string, date: Date | undefined) => {
@@ -105,22 +162,45 @@ export function ClaimDebtTable({ items, onChange, disabled }: ClaimDebtTableProp
     }
   };
 
-  const handleAmountChange = (id: string, value: string) => {
-    // Remove everything except digits and comma
-    // User types in Brazilian format: 1.234,56 or just 1234,56
-    const cleanValue = value.replace(/[^\d,]/g, '');
-    
-    // Replace comma with dot for parsing
-    const numericString = cleanValue.replace(',', '.');
-    const numValue = parseFloat(numericString) || 0;
-    handleChange(id, 'amount', numValue);
+  // Amount field handlers - use local state while editing
+  const handleAmountFocus = (id: string, currentAmount: number) => {
+    const displayValue = currentAmount > 0 
+      ? currentAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      : '';
+    setEditingAmounts(prev => ({ ...prev, [id]: displayValue }));
   };
-  
-  // Format display value for the input
-  const formatDisplayValue = (value: number): string => {
-    if (value === 0) return '';
-    // Format as Brazilian number (without R$)
-    return value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  const handleAmountInputChange = (id: string, value: string) => {
+    // Allow only numbers, comma and dot
+    const cleanValue = value.replace(/[^\d,\.]/g, '');
+    setEditingAmounts(prev => ({ ...prev, [id]: cleanValue }));
+  };
+
+  const handleAmountBlur = (id: string) => {
+    const rawValue = editingAmounts[id] || '';
+    
+    // Convert to number: remove thousand separators (dots), replace comma with dot
+    const cleanValue = rawValue.replace(/\./g, '').replace(',', '.');
+    const numValue = parseFloat(cleanValue) || 0;
+    
+    handleChange(id, 'amount', numValue);
+    
+    // Clear editing state
+    setEditingAmounts(prev => {
+      const newState = { ...prev };
+      delete newState[id];
+      return newState;
+    });
+  };
+
+  const getAmountDisplayValue = (id: string, amount: number): string => {
+    // If editing, show the editing value
+    if (id in editingAmounts) {
+      return editingAmounts[id];
+    }
+    // Otherwise, show formatted value
+    if (amount === 0) return '';
+    return amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
   const formatCurrency = (value: number) => {
@@ -183,13 +263,19 @@ export function ClaimDebtTable({ items, onChange, disabled }: ClaimDebtTableProp
                 <TableCell className="p-2">
                   <Input
                     value={item.reference_period}
-                    onChange={(e) =>
-                      handleChange(item.id, 'reference_period', e.target.value)
-                    }
+                    onChange={(e) => handleReferenceChange(item.id, e.target.value)}
                     placeholder="MM/AAAA"
-                    className="h-9"
+                    className={cn("h-9", referenceErrors[item.id] && "border-destructive")}
                     disabled={disabled}
+                    maxLength={7}
+                    inputMode="numeric"
                   />
+                  {referenceErrors[item.id] && (
+                    <div className="flex items-center gap-1 text-xs text-destructive mt-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {referenceErrors[item.id]}
+                    </div>
+                  )}
                 </TableCell>
                 <TableCell className="p-2">
                   <Popover>
@@ -230,11 +316,14 @@ export function ClaimDebtTable({ items, onChange, disabled }: ClaimDebtTableProp
                   <div className="relative">
                     <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">R$</span>
                     <Input
-                      value={formatDisplayValue(item.amount)}
-                      onChange={(e) => handleAmountChange(item.id, e.target.value)}
+                      value={getAmountDisplayValue(item.id, item.amount)}
+                      onChange={(e) => handleAmountInputChange(item.id, e.target.value)}
+                      onFocus={() => handleAmountFocus(item.id, item.amount)}
+                      onBlur={() => handleAmountBlur(item.id)}
                       placeholder="0,00"
                       className="h-9 text-right pl-8"
                       disabled={disabled}
+                      inputMode="decimal"
                     />
                   </div>
                 </TableCell>
