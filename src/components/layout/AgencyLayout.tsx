@@ -155,7 +155,12 @@ export function AgencyLayout({ children, title, description, actions }: AgencyLa
                 {agencyName && (
                   <div className="text-right">
                     <p className="text-sm font-medium">{agencyName}</p>
-                    <p className="text-xs text-muted-foreground">Imobiliária Parceira</p>
+                    <div className="flex items-center justify-end gap-1">
+                      <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                      <span className="text-[10px] font-semibold text-primary uppercase tracking-wider">
+                        Portal Imobiliária
+                      </span>
+                    </div>
                   </div>
                 )}
               </header>
