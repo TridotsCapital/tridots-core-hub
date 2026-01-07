@@ -12,10 +12,12 @@ import {
   XCircle,
   Ban
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface AgencyKPICardsProps {
   data: AgencyDashboardData | undefined;
   isLoading: boolean;
+  onKpiClick?: (kpiKey: string) => void;
 }
 
 // Animated KPI value component
@@ -44,7 +46,16 @@ function AnimatedValue({
   return <>{animatedValue}</>;
 }
 
-export function AgencyKPICards({ data, isLoading }: AgencyKPICardsProps) {
+function formatCurrencyValue(value: number): string {
+  return value.toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  });
+}
+
+export function AgencyKPICards({ data, isLoading, onKpiClick }: AgencyKPICardsProps) {
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -81,15 +92,20 @@ export function AgencyKPICards({ data, isLoading }: AgencyKPICardsProps) {
   // Main KPIs (large cards)
   const mainKpis = [
     {
+      key: "active_contracts",
       title: "Contratos Ativos",
       value: data?.activeContracts || 0,
       icon: FileCheck2,
       iconColor: "text-green-500",
       bgColor: "bg-green-500/10",
-      isCurrency: false
+      isCurrency: false,
+      subtitle: data?.totalGuaranteedMonthly 
+        ? `Total Garantido/mês: ${formatCurrencyValue(data.totalGuaranteedMonthly)}`
+        : undefined
     },
     {
-      title: "Garantias Efetuadas",
+      key: "paid_claims",
+      title: "Garantias Pagas", // Renamed from "Garantias Efetuadas"
       value: data?.totalGuaranteedValue || 0,
       icon: ShieldCheck,
       iconColor: "text-blue-500",
@@ -97,7 +113,8 @@ export function AgencyKPICards({ data, isLoading }: AgencyKPICardsProps) {
       isCurrency: true
     },
     {
-      title: "Para Renovar",
+      key: "contracts_to_renew",
+      title: "Contratos para Renovar", // Renamed from "Para Renovar"
       value: data?.contractsToRenew || 0,
       icon: CalendarClock,
       iconColor: "text-amber-500",
@@ -106,6 +123,7 @@ export function AgencyKPICards({ data, isLoading }: AgencyKPICardsProps) {
       subtitle: "próximos 30 dias"
     },
     {
+      key: "commissions",
       title: "Comissões Recebidas",
       value: data?.receivedCommissions || 0,
       icon: Wallet,
@@ -121,24 +139,28 @@ export function AgencyKPICards({ data, isLoading }: AgencyKPICardsProps) {
   // Secondary KPIs (smaller cards)
   const secondaryKpis = [
     {
+      key: "analyses_in_progress",
       title: "Análises em Andamento",
       value: data?.analysesInProgress || 0,
       icon: Clock,
       color: "text-blue-500"
     },
     {
+      key: "analyses_active",
       title: "Análises Ativas",
       value: data?.analysesByStatus?.['ativo'] || 0,
       icon: CheckCircle2,
       color: "text-green-500"
     },
     {
+      key: "canceled_contracts",
       title: "Contratos Cancelados",
       value: data?.canceledContracts || 0,
       icon: Ban,
       color: "text-red-500"
     },
     {
+      key: "analyses_rejected",
       title: "Análises Recusadas",
       value: data?.analysesByStatus?.['reprovada'] || 0,
       icon: XCircle,
@@ -146,14 +168,22 @@ export function AgencyKPICards({ data, isLoading }: AgencyKPICardsProps) {
     }
   ];
 
+  const handleClick = (key: string) => {
+    onKpiClick?.(key);
+  };
+
   return (
     <div className="space-y-4">
       {/* Main KPIs */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {mainKpis.map((kpi, index) => (
+        {mainKpis.map((kpi) => (
           <Card 
-            key={index} 
-            className="hover:shadow-md transition-shadow cursor-pointer group"
+            key={kpi.key} 
+            className={cn(
+              "hover:shadow-md transition-all group",
+              onKpiClick && "cursor-pointer hover:border-primary/50"
+            )}
+            onClick={() => handleClick(kpi.key)}
           >
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-4">
@@ -177,8 +207,15 @@ export function AgencyKPICards({ data, isLoading }: AgencyKPICardsProps) {
 
       {/* Secondary KPIs */}
       <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
-        {secondaryKpis.map((kpi, index) => (
-          <Card key={index} className="bg-muted/30 border-muted">
+        {secondaryKpis.map((kpi) => (
+          <Card 
+            key={kpi.key} 
+            className={cn(
+              "bg-muted/30 border-muted transition-all",
+              onKpiClick && "cursor-pointer hover:bg-muted/50 hover:border-primary/30"
+            )}
+            onClick={() => handleClick(kpi.key)}
+          >
             <CardContent className="p-4 flex items-center gap-3">
               <kpi.icon className={`h-4 w-4 ${kpi.color} shrink-0`} />
               <div className="min-w-0">

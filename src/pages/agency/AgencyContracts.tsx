@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import { AgencyLayout } from "@/components/layout/AgencyLayout";
 import { AgencyContractList } from "@/components/agency/AgencyContractList";
@@ -6,6 +6,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, AlertTriangle } from "lucide-react";
 import { useRejectedDocumentsCount } from "@/hooks/useRejectedDocumentsCount";
+import { addDays, isWithinInterval, parseISO } from 'date-fns';
+
+interface LocationState {
+  contractId?: string;
+  statusFilter?: string;
+  renewalFilter?: boolean;
+}
 
 export default function AgencyContracts() {
   const location = useLocation();
@@ -15,15 +22,28 @@ export default function AgencyContracts() {
   const [loading, setLoading] = useState(true);
   const [autoOpenContractId, setAutoOpenContractId] = useState<string | null>(null);
   const { data: rejectedDocsCount } = useRejectedDocumentsCount();
+  
+  // Get navigation state for filters
+  const locationState = location.state as LocationState | null;
+  const [initialStatusFilter, setInitialStatusFilter] = useState<string | undefined>(undefined);
+  const [initialRenewalFilter, setInitialRenewalFilter] = useState<boolean>(false);
 
-  // Auto-open contract from notification
+  // Auto-open contract from notification and apply filters
   useEffect(() => {
-    const state = location.state as { contractId?: string } | null;
-    if (state?.contractId) {
-      setAutoOpenContractId(state.contractId);
+    if (locationState?.contractId) {
+      setAutoOpenContractId(locationState.contractId);
+    }
+    if (locationState?.statusFilter) {
+      setInitialStatusFilter(locationState.statusFilter);
+    }
+    if (locationState?.renewalFilter) {
+      setInitialRenewalFilter(true);
+    }
+    // Clear navigation state to prevent reapplying on refresh
+    if (locationState) {
       window.history.replaceState({}, document.title);
     }
-  }, [location.state]);
+  }, [locationState]);
 
   const fetchData = async () => {
     if (!user) return;
@@ -48,6 +68,7 @@ export default function AgencyContracts() {
           status, 
           created_at, 
           activated_at,
+          data_fim_contrato,
           doc_contrato_locacao_status,
           doc_vistoria_inicial_status,
           doc_seguro_incendio_status,
@@ -117,6 +138,8 @@ export default function AgencyContracts() {
         onRefresh={fetchData}
         autoOpenContractId={autoOpenContractId}
         onAutoOpenHandled={() => setAutoOpenContractId(null)}
+        initialStatusFilter={initialStatusFilter}
+        initialRenewalFilter={initialRenewalFilter}
       />
     </AgencyLayout>
   );
