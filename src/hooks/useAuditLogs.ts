@@ -57,7 +57,7 @@ export const useAuditLogs = (filters?: {
     queryFn: async () => {
       let query = supabase
         .from("audit_logs")
-        .select("*, user:profiles(full_name)")
+        .select("*")
         .order("created_at", { ascending: false })
         .limit(500);
 
@@ -84,7 +84,30 @@ export const useAuditLogs = (filters?: {
       const { data, error } = await query;
 
       if (error) throw error;
-      return data as AuditLog[];
+
+      // Fetch user names separately
+      const userIds = [...new Set(data?.map(log => log.user_id).filter(Boolean) as string[])];
+      let userMap: Record<string, string> = {};
+      
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, full_name")
+          .in("id", userIds);
+        
+        userMap = (profiles || []).reduce((acc, p) => {
+          acc[p.id] = p.full_name;
+          return acc;
+        }, {} as Record<string, string>);
+      }
+
+      return (data || []).map(log => ({
+        ...log,
+        ip_address: log.ip_address as string | null,
+        old_data: log.old_data as Record<string, unknown> | null,
+        new_data: log.new_data as Record<string, unknown> | null,
+        user: log.user_id ? { full_name: userMap[log.user_id] || 'Usuário desconhecido' } : null,
+      })) as AuditLog[];
     },
   });
 };
