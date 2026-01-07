@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -7,11 +7,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, MoreHorizontal, Eye, MessageSquare, FileText, Loader2, FileSearch, CheckCircle, Clock, XCircle, FileCheck } from 'lucide-react';
+import { Search, MoreHorizontal, Eye, MessageSquare, FileText, Loader2, FileSearch, CheckCircle, Clock, XCircle, FileCheck, ShieldAlert } from 'lucide-react';
 import { formatCurrency } from '@/lib/validators';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useUnreadItemIds, useMarkItemAsRead } from '@/hooks/useUnreadItemIds';
+import { useContractsWithActiveClaims } from '@/hooks/useContractsWithActiveClaims';
 import { cn } from '@/lib/utils';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -56,6 +57,9 @@ export function AgencyContractList({ contracts, isLoading, onRefresh, autoOpenCo
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const { data: unreadIds } = useUnreadItemIds();
   const markAsRead = useMarkItemAsRead();
+  
+  const contractIds = useMemo(() => contracts.map(c => c.id), [contracts]);
+  const { data: contractsWithActiveClaims } = useContractsWithActiveClaims(contractIds);
 
   // Auto-open contract from notification
   useEffect(() => {
@@ -163,6 +167,8 @@ export function AgencyContractList({ contracts, isLoading, onRefresh, autoOpenCo
                       contract.doc_contrato_locacao_status === 'rejeitado' ||
                       contract.doc_vistoria_inicial_status === 'rejeitado' ||
                       contract.doc_seguro_incendio_status === 'rejeitado';
+                    // Check if contract has an active claim
+                    const hasActiveClaim = contractsWithActiveClaims?.has(contract.id) ?? false;
 
                     const handleRowClick = () => {
                       if (hasUnread && analysisId) {
@@ -195,7 +201,7 @@ export function AgencyContractList({ contracts, isLoading, onRefresh, autoOpenCo
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <Badge variant={statusConfig.variant} className="text-xs">
                               <StatusIcon className="h-3 w-3 mr-1" />
                               {statusConfig.label}
@@ -203,6 +209,16 @@ export function AgencyContractList({ contracts, isLoading, onRefresh, autoOpenCo
                             {hasRejectedDoc && (
                               <Badge variant="destructive" className="text-xs animate-pulse">
                                 Doc. Rejeitado
+                              </Badge>
+                            )}
+                            {hasActiveClaim && (
+                              <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-700 dark:text-amber-400 text-xs">
+                                <span className="relative flex h-2 w-2 mr-1.5">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                                </span>
+                                <ShieldAlert className="h-3 w-3 mr-1" />
+                                Garantia
                               </Badge>
                             )}
                           </div>
