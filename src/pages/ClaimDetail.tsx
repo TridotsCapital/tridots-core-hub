@@ -15,18 +15,21 @@ import {
   Building2,
   MessageSquare,
   FileText,
-  History,
-  DollarSign
+  Clock,
+  DollarSign,
+  FileCheck
 } from "lucide-react";
 import { useClaimDetail, useUpdateClaimStatus } from "@/hooks/useClaims";
 import { useClaimItems } from "@/hooks/useClaimItems";
+import { useClaimTickets } from "@/hooks/useClaimTickets";
 import { 
   ClaimPublicStatus, 
   ClaimInternalStatus,
   claimPublicStatusConfig,
   claimInternalStatusConfig 
 } from "@/types/claims";
-import { ClaimItemsSection, ClaimFilesSection, ClaimHistorySection } from "@/components/agency/claims";
+import { ClaimItemsSection, ClaimFilesSection } from "@/components/agency/claims";
+import { ClaimTimeline, ClaimTicketsTab, ClaimContractTab } from "@/components/claims";
 import { InternalClaimTicketSheet } from "@/components/claims";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -39,6 +42,10 @@ export default function ClaimDetail() {
 
   const { data: claim, isLoading, refetch } = useClaimDetail(id!);
   const { data: items } = useClaimItems(id!);
+  const { data: tickets } = useClaimTickets(id);
+  const updateStatus = useUpdateClaimStatus();
+
+  const formatClaimId = (claimId: string) => `#${claimId.slice(0, 8).toUpperCase()}`;
   const updateStatus = useUpdateClaimStatus();
 
   const handlePublicStatusChange = async (newStatus: ClaimPublicStatus) => {
@@ -90,7 +97,7 @@ export default function ClaimDetail() {
       <DashboardLayout>
         <div className="flex flex-col items-center justify-center py-12">
           <AlertTriangle className="h-12 w-12 text-muted-foreground/30 mb-4" />
-          <p className="text-muted-foreground">Sinistro não encontrado</p>
+          <p className="text-muted-foreground">Garantia não encontrada</p>
           <Button variant="outline" className="mt-4" onClick={() => navigate("/claims")}>
             Voltar
           </Button>
@@ -117,7 +124,7 @@ export default function ClaimDetail() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-foreground">
-                  Sinistro - {claim.contract?.analysis?.inquilino_nome}
+                  Garantia {formatClaimId(claim.id)} - {claim.contract?.analysis?.inquilino_nome}
                 </h1>
                 <p className="text-sm text-muted-foreground">
                   {claim.agency?.nome_fantasia} • Criado em{" "}
@@ -276,7 +283,7 @@ export default function ClaimDetail() {
             <Card>
               <Tabs defaultValue="items" className="w-full">
                 <CardHeader className="pb-0">
-                  <TabsList className="grid w-full grid-cols-3">
+                  <TabsList className="grid w-full grid-cols-5">
                     <TabsTrigger value="items" className="flex items-center gap-2">
                       <DollarSign className="h-4 w-4" />
                       Itens ({items?.length || 0})
@@ -285,9 +292,17 @@ export default function ClaimDetail() {
                       <FileText className="h-4 w-4" />
                       Arquivos
                     </TabsTrigger>
-                    <TabsTrigger value="history" className="flex items-center gap-2">
-                      <History className="h-4 w-4" />
-                      Histórico
+                    <TabsTrigger value="tickets" className="flex items-center gap-2">
+                      <MessageSquare className="h-4 w-4" />
+                      Chamados ({tickets?.length || 0})
+                    </TabsTrigger>
+                    <TabsTrigger value="contract" className="flex items-center gap-2">
+                      <FileCheck className="h-4 w-4" />
+                      Contrato
+                    </TabsTrigger>
+                    <TabsTrigger value="timeline" className="flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      Timeline
                     </TabsTrigger>
                   </TabsList>
                 </CardHeader>
@@ -305,8 +320,14 @@ export default function ClaimDetail() {
                       canEdit={true} 
                     />
                   </TabsContent>
-                  <TabsContent value="history" className="mt-0">
-                    <ClaimHistorySection claimId={claim.id} />
+                  <TabsContent value="tickets" className="mt-0">
+                    <ClaimTicketsTab claimId={claim.id} isAgencyPortal={false} />
+                  </TabsContent>
+                  <TabsContent value="contract" className="mt-0">
+                    <ClaimContractTab contractId={claim.contract_id} />
+                  </TabsContent>
+                  <TabsContent value="timeline" className="mt-0">
+                    <ClaimTimeline claimId={claim.id} />
                   </TabsContent>
                 </CardContent>
               </Tabs>

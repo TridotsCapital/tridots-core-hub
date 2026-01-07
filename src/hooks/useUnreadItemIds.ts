@@ -7,6 +7,7 @@ export interface UnreadItemIds {
   chamados: Set<string>;
   analises: Set<string>;
   contratos: Set<string>;
+  garantias: Set<string>;
 }
 
 export function useUnreadItemIds() {
@@ -21,6 +22,7 @@ export function useUnreadItemIds() {
           chamados: new Set(),
           analises: new Set(),
           contratos: new Set(),
+          garantias: new Set(),
         };
       }
 
@@ -35,6 +37,7 @@ export function useUnreadItemIds() {
       const chamadosIds = new Set<string>();
       const analisesIds = new Set<string>();
       const contratosIds = new Set<string>();
+      const garantiasIds = new Set<string>();
 
       data?.forEach((notification) => {
         if (!notification.reference_id) return;
@@ -45,6 +48,8 @@ export function useUnreadItemIds() {
           analisesIds.add(notification.reference_id);
         } else if (notification.source === 'contratos') {
           contratosIds.add(notification.reference_id);
+        } else if (notification.source === 'sinistros') {
+          garantiasIds.add(notification.reference_id);
         }
       });
 
@@ -52,6 +57,7 @@ export function useUnreadItemIds() {
         chamados: chamadosIds,
         analises: analisesIds,
         contratos: contratosIds,
+        garantias: garantiasIds,
       };
     },
     enabled: !!user?.id,

@@ -48,11 +48,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AgencyLogoUpload } from "@/components/agency/AgencyLogoUpload";
 
 // Map paths to notification sources
-const pathToSource: Record<string, 'chamados' | 'analises' | 'contratos' | 'sinistros'> = {
+const pathToSource: Record<string, 'chamados' | 'analises' | 'contratos' | 'garantias'> = {
   '/agency/support': 'chamados',
   '/agency/analyses': 'analises',
   '/agency/contracts': 'contratos',
-  '/agency/claims': 'sinistros',
+  '/agency/claims': 'garantias',
 };
 
 const menuItems = [
@@ -60,7 +60,7 @@ const menuItems = [
   { title: "Chamados", icon: HelpCircle, path: "/agency/support" },
   { title: "Minhas Análises", icon: FileSearch, path: "/agency/analyses" },
   { title: "Meus Contratos", icon: FileCheck, path: "/agency/contracts" },
-  { title: "Sinistros", icon: AlertTriangle, path: "/agency/claims" },
+  { title: "Garantias Solicitadas", icon: AlertTriangle, path: "/agency/claims" },
   { title: "Minhas Comissões", icon: DollarSign, path: "/agency/commissions" },
   { title: "Drive Documentos", icon: FolderOpen, path: "/agency/documents" },
   { title: "Colaboradores", icon: Users, path: "/agency/collaborators" },
