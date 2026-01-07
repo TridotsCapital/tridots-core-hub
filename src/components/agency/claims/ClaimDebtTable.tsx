@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Trash2, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, AlertCircle, RotateCcw } from 'lucide-react';
 import { format, isAfter, startOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
@@ -34,6 +34,7 @@ import type { DraftClaimItem } from '@/hooks/useClaimDraft';
 interface ClaimDebtTableProps {
   items: DraftClaimItem[];
   onChange: (items: DraftClaimItem[]) => void;
+  onClearAll?: () => void;
   disabled?: boolean;
 }
 
@@ -48,7 +49,7 @@ const createEmptyItem = (): DraftClaimItem => ({
   amount: 0,
 });
 
-export function ClaimDebtTable({ items, onChange, disabled }: ClaimDebtTableProps) {
+export function ClaimDebtTable({ items, onChange, onClearAll, disabled }: ClaimDebtTableProps) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [referenceErrors, setReferenceErrors] = useState<Record<string, string>>({});
   const [editingAmounts, setEditingAmounts] = useState<Record<string, string>>({});
@@ -198,8 +199,7 @@ export function ClaimDebtTable({ items, onChange, disabled }: ClaimDebtTableProp
     if (id in editingAmounts) {
       return editingAmounts[id];
     }
-    // Otherwise, show formatted value
-    if (amount === 0) return '';
+    // Always show formatted value (with currency mask)
     return amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
@@ -214,6 +214,21 @@ export function ClaimDebtTable({ items, onChange, disabled }: ClaimDebtTableProp
 
   return (
     <div className="space-y-3">
+      {onClearAll && (
+        <div className="flex justify-end">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onClearAll}
+            disabled={disabled}
+            className="gap-2 text-muted-foreground hover:text-foreground"
+          >
+            <RotateCcw className="h-4 w-4" />
+            Limpar Tabela
+          </Button>
+        </div>
+      )}
       <div className="border rounded-lg overflow-hidden">
         <Table>
           <TableHeader>

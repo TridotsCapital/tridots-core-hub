@@ -401,6 +401,7 @@ export default function AgencyNewClaim() {
                     setValidationErrors(prev => ({ ...prev, items: false }));
                   }
                 }}
+                onClearAll={() => setItems(createInitialItems())}
                 disabled={isSubmitting}
               />
             </CardContent>
