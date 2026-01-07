@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Table,
@@ -28,10 +28,12 @@ import {
   FileText,
   Download,
   FileCheck,
+  ShieldAlert,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatCurrency } from '@/lib/validators';
+import { useContractsWithActiveClaims } from '@/hooks/useContractsWithActiveClaims';
 import type { Database } from '@/integrations/supabase/types';
 
 type ContractStatus = Database['public']['Enums']['contract_status'];
@@ -78,6 +80,9 @@ interface Props {
 export function ContractList({ contracts, isLoading, onRenew, onFlagPendency, onViewPayments }: Props) {
   const navigate = useNavigate();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  
+  const contractIds = useMemo(() => contracts.map(c => c.id), [contracts]);
+  const { data: contractsWithActiveClaims } = useContractsWithActiveClaims(contractIds);
 
   const toggleSelect = (id: string) => {
     setSelectedIds(prev => 
@@ -192,6 +197,8 @@ export function ContractList({ contracts, isLoading, onRenew, onFlagPendency, on
                 contract.doc_vistoria_inicial_status === 'aprovado' &&
                 contract.doc_seguro_incendio_status === 'aprovado'
               );
+              // Check if contract has an active claim
+              const hasActiveClaim = contractsWithActiveClaims?.has(contract.id) ?? false;
               return (
                 <TableRow 
                   key={contract.id}
@@ -237,7 +244,19 @@ export function ContractList({ contracts, isLoading, onRenew, onFlagPendency, on
                     {contract.analysis?.valor_aluguel ? formatCurrency(contract.analysis.valor_aluguel) : '-'}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={status?.variant || 'secondary'}>{status?.label || contract.status}</Badge>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge variant={status?.variant || 'secondary'}>{status?.label || contract.status}</Badge>
+                      {hasActiveClaim && (
+                        <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-700 dark:text-amber-400 text-xs">
+                          <span className="relative flex h-2 w-2 mr-1.5">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                          </span>
+                          <ShieldAlert className="h-3 w-3 mr-1" />
+                          Garantia em Andamento
+                        </Badge>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
                     {format(new Date(contract.created_at), 'dd/MM/yyyy', { locale: ptBR })}
