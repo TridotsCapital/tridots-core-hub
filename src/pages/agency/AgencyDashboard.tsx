@@ -40,6 +40,38 @@ export default function AgencyDashboard() {
 
   const isLoadingMotivational = loadingRanking || loadingProjection || loadingApproval;
 
+  // Handle KPI card clicks - navigate to relevant pages with filters
+  const handleKpiClick = (kpiKey: string) => {
+    switch (kpiKey) {
+      case 'active_contracts':
+        navigate('/agency/contracts', { state: { statusFilter: 'ativo' } });
+        break;
+      case 'paid_claims':
+        navigate('/agency/claims', { state: { statusFilter: 'finalizado' } });
+        break;
+      case 'contracts_to_renew':
+        navigate('/agency/contracts', { state: { renewalFilter: true } });
+        break;
+      case 'commissions':
+        navigate('/agency/commissions');
+        break;
+      case 'analyses_in_progress':
+        navigate('/agency/analyses', { 
+          state: { highlightColumns: ['pendente', 'em_analise', 'aguardando_pagamento'] } 
+        });
+        break;
+      case 'analyses_active':
+        navigate('/agency/analyses', { state: { highlightColumns: ['ativo'] } });
+        break;
+      case 'canceled_contracts':
+        navigate('/agency/contracts', { state: { statusFilter: 'cancelado' } });
+        break;
+      case 'analyses_rejected':
+        navigate('/agency/analyses', { state: { highlightColumns: ['reprovada'] } });
+        break;
+    }
+  };
+
   return (
     <AgencyLayout 
       title="Dashboard" 
@@ -67,8 +99,12 @@ export default function AgencyDashboard() {
           <AgencyPeriodFilter value={period} onChange={setPeriod} />
         </div>
 
-        {/* KPI Cards */}
-        <AgencyKPICards data={dashboardData} isLoading={loadingDashboard} />
+        {/* KPI Cards - with click navigation */}
+        <AgencyKPICards 
+          data={dashboardData} 
+          isLoading={loadingDashboard} 
+          onKpiClick={handleKpiClick}
+        />
 
         {/* Motivational Cards */}
         <AgencyMotivationalCards 
@@ -78,14 +114,14 @@ export default function AgencyDashboard() {
           isLoading={isLoadingMotivational}
         />
 
-        {/* Mini Kanban Funnel */}
-        <AgencyMiniKanban analysesByStatus={dashboardData?.analysesByStatus || {}} />
-
         {/* Charts */}
         <div className="grid gap-6 lg:grid-cols-2">
           <AgencyEarningsChart data={earningsData} isLoading={loadingEarnings} />
           <AgencyPortfolioChart data={portfolioData} isLoading={loadingPortfolio} />
         </div>
+
+        {/* Mini Kanban Funnel - moved to last */}
+        <AgencyMiniKanban analysesByStatus={dashboardData?.analysesByStatus || {}} />
       </div>
     </AgencyLayout>
   );

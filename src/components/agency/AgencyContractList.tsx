@@ -7,9 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, MoreHorizontal, Eye, MessageSquare, FileText, Loader2, FileSearch, CheckCircle, Clock, XCircle, FileCheck, ShieldAlert } from 'lucide-react';
+import { Search, MoreHorizontal, Eye, MessageSquare, FileText, Loader2, FileSearch, CheckCircle, Clock, XCircle, FileCheck, ShieldAlert, CalendarClock } from 'lucide-react';
 import { formatCurrency } from '@/lib/validators';
-import { format } from 'date-fns';
+import { format, addDays, isWithinInterval, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useUnreadItemIds, useMarkItemAsRead } from '@/hooks/useUnreadItemIds';
 import { useContractsWithActiveClaims } from '@/hooks/useContractsWithActiveClaims';
@@ -23,6 +23,7 @@ interface Contract {
   status: ContractStatus;
   created_at: string;
   activated_at: string | null;
+  data_fim_contrato?: string | null;
   doc_contrato_locacao_status?: string | null;
   doc_vistoria_inicial_status?: string | null;
   doc_seguro_incendio_status?: string | null;
@@ -42,24 +43,44 @@ interface AgencyContractListProps {
   onRefresh: () => void;
   autoOpenContractId?: string | null;
   onAutoOpenHandled?: () => void;
+  initialStatusFilter?: string;
+  initialRenewalFilter?: boolean;
 }
 
-const STATUS_CONFIG: Record<ContractStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: any }> = {
+const STATUS_CONFIG: Record<ContractStatus | 'renewal', { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: any }> = {
   documentacao_pendente: { label: 'Doc. Pendente', variant: 'outline', icon: FileCheck },
   ativo: { label: 'Ativo', variant: 'default', icon: CheckCircle },
   cancelado: { label: 'Cancelado', variant: 'destructive', icon: XCircle },
   encerrado: { label: 'Encerrado', variant: 'secondary', icon: Clock },
+  renewal: { label: 'Para Renovar', variant: 'outline', icon: Clock },
 };
 
-export function AgencyContractList({ contracts, isLoading, onRefresh, autoOpenContractId, onAutoOpenHandled }: AgencyContractListProps) {
+export function AgencyContractList({ 
+  contracts, 
+  isLoading, 
+  onRefresh, 
+  autoOpenContractId, 
+  onAutoOpenHandled,
+  initialStatusFilter,
+  initialRenewalFilter
+}: AgencyContractListProps) {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>(initialStatusFilter || (initialRenewalFilter ? 'renewal' : 'all'));
   const { data: unreadIds } = useUnreadItemIds();
   const markAsRead = useMarkItemAsRead();
   
   const contractIds = useMemo(() => contracts.map(c => c.id), [contracts]);
   const { data: contractsWithActiveClaims } = useContractsWithActiveClaims(contractIds);
+
+  // Update filter when initial values change
+  useEffect(() => {
+    if (initialStatusFilter) {
+      setStatusFilter(initialStatusFilter);
+    } else if (initialRenewalFilter) {
+      setStatusFilter('renewal');
+    }
+  }, [initialStatusFilter, initialRenewalFilter]);
 
   // Auto-open contract from notification
   useEffect(() => {
@@ -73,12 +94,25 @@ export function AgencyContractList({ contracts, isLoading, onRefresh, autoOpenCo
   }, [autoOpenContractId, contracts, navigate, onAutoOpenHandled]);
 
   // Filter contracts
+  const now = new Date();
+  const thirtyDaysFromNow = addDays(now, 30);
+  
   const filteredContracts = contracts.filter(contract => {
     if (!contract.analysis) return false;
     
     const matchesSearch = 
       contract.analysis.inquilino_nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
       contract.analysis.inquilino_cpf.includes(searchTerm.replace(/\D/g, ''));
+    
+    // Handle renewal filter
+    if (statusFilter === 'renewal') {
+      const hasRenewalDate = contract.data_fim_contrato;
+      if (!hasRenewalDate) return false;
+      const endDate = parseISO(contract.data_fim_contrato);
+      const isRenewalPeriod = contract.status === 'ativo' && 
+        isWithinInterval(endDate, { start: now, end: thirtyDaysFromNow });
+      return matchesSearch && isRenewalPeriod;
+    }
     
     const matchesStatus = statusFilter === 'all' || contract.status === statusFilter;
     

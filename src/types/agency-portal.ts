@@ -9,6 +9,7 @@ export interface AgencyUser {
 export interface AgencyDashboardData {
   activeContracts: number;
   totalGuaranteedValue: number;
+  totalGuaranteedMonthly: number; // Sum of (aluguel + condominio + iptu + outros) for active contracts
   receivedCommissions: number;
   totalHistoricalCommissions?: number;
   pendingCommissions: number;

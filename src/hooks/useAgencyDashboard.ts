@@ -29,10 +29,16 @@ export const useAgencyDashboard = (agencyId: string | null, period: AgencyPeriod
       const thirtyDaysFromNow = addDays(now, 30);
       const twelveMonthsAgo = subMonths(now, 12);
 
-      // Fetch active contracts (status = 'ativo')
+      // Fetch active contracts (status = 'ativo') with analysis values for total guaranteed monthly
       const { data: activeContracts, error: contractsError } = await supabase
         .from('contracts')
-        .select('id, status, data_fim_contrato, canceled_at')
+        .select(`
+          id, 
+          status, 
+          data_fim_contrato, 
+          canceled_at,
+          analysis:analyses(valor_aluguel, valor_condominio, valor_iptu, valor_outros_encargos)
+        `)
         .eq('agency_id', agencyId);
 
       if (contractsError) throw contractsError;
@@ -46,6 +52,17 @@ export const useAgencyDashboard = (agencyId: string | null, period: AgencyPeriod
       }).length;
 
       const canceledContracts = activeContracts?.filter(c => c.canceled_at !== null).length || 0;
+
+      // Calculate total guaranteed monthly (sum of all rental values for active contracts)
+      const totalGuaranteedMonthly = activeContractsList.reduce((sum, c) => {
+        const analysis = c.analysis as any;
+        if (!analysis) return sum;
+        return sum + 
+          (analysis.valor_aluguel || 0) + 
+          (analysis.valor_condominio || 0) + 
+          (analysis.valor_iptu || 0) + 
+          (analysis.valor_outros_encargos || 0);
+      }, 0);
 
       // Fetch analyses by status for the funnel
       const { data: allAnalyses, error: allAnalysesError } = await supabase
@@ -101,6 +118,7 @@ export const useAgencyDashboard = (agencyId: string | null, period: AgencyPeriod
       return {
         activeContracts: activeContractsList.length,
         totalGuaranteedValue,
+        totalGuaranteedMonthly,
         receivedCommissions,
         totalHistoricalCommissions,
         pendingCommissions: 0,
