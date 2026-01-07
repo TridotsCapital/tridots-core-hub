@@ -80,6 +80,38 @@ export type Database = {
         }
         Relationships: []
       }
+      agency_user_positions: {
+        Row: {
+          agency_user_id: string
+          created_at: string
+          id: string
+          position: Database["public"]["Enums"]["agency_position"]
+          updated_at: string
+        }
+        Insert: {
+          agency_user_id: string
+          created_at?: string
+          id?: string
+          position?: Database["public"]["Enums"]["agency_position"]
+          updated_at?: string
+        }
+        Update: {
+          agency_user_id?: string
+          created_at?: string
+          id?: string
+          position?: Database["public"]["Enums"]["agency_position"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agency_user_positions_agency_user_id_fkey"
+            columns: ["agency_user_id"]
+            isOneToOne: true
+            referencedRelation: "agency_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agency_users: {
         Row: {
           agency_id: string
@@ -1172,6 +1204,7 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          phone: string | null
           updated_at: string
         }
         Insert: {
@@ -1181,6 +1214,7 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          phone?: string | null
           updated_at?: string
         }
         Update: {
@@ -1190,6 +1224,7 @@ export type Database = {
           email?: string
           full_name?: string
           id?: string
+          phone?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -1726,6 +1761,7 @@ export type Database = {
       }
     }
     Enums: {
+      agency_position: "dono" | "gerente" | "auxiliar"
       analysis_status:
         | "pendente"
         | "em_analise"
@@ -1913,6 +1949,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      agency_position: ["dono", "gerente", "auxiliar"],
       analysis_status: [
         "pendente",
         "em_analise",

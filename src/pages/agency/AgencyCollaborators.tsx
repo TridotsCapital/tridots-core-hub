@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Plus, Users, UserCheck, UserX } from "lucide-react";
+import { Plus, Users, UserCheck, UserX, Phone } from "lucide-react";
 import { AgencyLayout, useAgencyStatus } from "@/components/layout/AgencyLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +12,19 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { AddUserDialog } from "@/components/users/AddUserDialog";
 import { useAgencyUser } from "@/hooks/useAgencyUser";
-import { useAgencyCollaborators, useToggleCollaboratorActive } from "@/hooks/useAgencyCollaborators";
+import { useAgencyCollaborators, useToggleCollaboratorActive, type AgencyPosition } from "@/hooks/useAgencyCollaborators";
+
+const positionLabels: Record<AgencyPosition, string> = {
+  dono: "Dono",
+  gerente: "Gerente",
+  auxiliar: "Auxiliar",
+};
+
+const positionColors: Record<AgencyPosition, string> = {
+  dono: "bg-primary text-primary-foreground",
+  gerente: "bg-blue-500 text-white",
+  auxiliar: "bg-muted text-muted-foreground",
+};
 
 function getInitials(name: string): string {
   return name
@@ -157,16 +169,29 @@ function AgencyCollaboratorsContent() {
                               Responsável
                             </Badge>
                           )}
+                          {collaborator.position && (
+                            <Badge className={`text-xs ${positionColors[collaborator.position]}`}>
+                              {positionLabels[collaborator.position]}
+                            </Badge>
+                          )}
                         </div>
                         <p className="text-sm text-muted-foreground">
                           {collaborator.profile?.email}
                         </p>
-                        <p className="text-xs text-muted-foreground">
-                          Desde{" "}
-                          {format(new Date(collaborator.created_at), "dd/MM/yyyy", {
-                            locale: ptBR,
-                          })}
-                        </p>
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                          <span>
+                            Desde{" "}
+                            {format(new Date(collaborator.created_at), "dd/MM/yyyy", {
+                              locale: ptBR,
+                            })}
+                          </span>
+                          {collaborator.profile?.phone && (
+                            <span className="flex items-center gap-1">
+                              <Phone className="h-3 w-3" />
+                              {collaborator.profile.phone}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
