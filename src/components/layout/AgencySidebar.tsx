@@ -21,6 +21,7 @@ import { useAgencyUser } from "@/hooks/useAgencyUser";
 import { useAnalysisDraft } from "@/hooks/useAnalysisDraft";
 import { useClaimDraft } from "@/hooks/useClaimDraft";
 import { useNotificationCounts } from "@/hooks/useNotificationCounts";
+import { useRejectedDocumentsCount } from "@/hooks/useRejectedDocumentsCount";
 import { useNps } from "@/contexts/NpsContext";
 import { NotificationCenter } from "@/components/notifications";
 import { Button } from "@/components/ui/button";
@@ -72,6 +73,7 @@ export function AgencySidebar() {
   const { hasDraft: hasAnalysisDraft, getLastSavedTime } = useAnalysisDraft();
   const { hasDraft: hasClaimDraft } = useClaimDraft();
   const { pendingSurveys, hasPendingNps, showNpsModal } = useNps();
+  const { data: rejectedDocsCount } = useRejectedDocumentsCount();
   
   const agencyName = agencyUser?.agency?.nome_fantasia || agencyUser?.agency?.razao_social || "Imobiliária";
   const { data: notificationCounts } = useNotificationCounts();
@@ -115,6 +117,7 @@ export function AgencySidebar() {
               {menuItems.map((item) => {
                 const count = getNotificationCount(item.path);
                 const showDraftBadge = item.path === '/agency/claims' && hasClaimDraft;
+                const showRejectedBadge = item.path === '/agency/contracts' && (rejectedDocsCount ?? 0) > 0;
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
@@ -136,7 +139,15 @@ export function AgencySidebar() {
                               !
                             </Badge>
                           )}
-                          {count > 0 && (
+                          {showRejectedBadge && (
+                            <Badge 
+                              variant="destructive" 
+                              className="h-5 min-w-5 text-xs flex items-center justify-center p-0 px-1.5 animate-pulse"
+                            >
+                              !
+                            </Badge>
+                          )}
+                          {count > 0 && !showRejectedBadge && (
                             <Badge 
                               variant="destructive" 
                               className="h-5 min-w-5 text-xs flex items-center justify-center p-0 px-1.5"
