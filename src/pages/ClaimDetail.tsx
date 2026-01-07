@@ -46,7 +46,6 @@ export default function ClaimDetail() {
   const updateStatus = useUpdateClaimStatus();
 
   const formatClaimId = (claimId: string) => `#${claimId.slice(0, 8).toUpperCase()}`;
-  const updateStatus = useUpdateClaimStatus();
 
   const handlePublicStatusChange = async (newStatus: ClaimPublicStatus) => {
     if (!claim) return;

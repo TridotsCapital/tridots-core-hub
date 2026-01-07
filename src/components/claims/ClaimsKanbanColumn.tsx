@@ -126,7 +126,7 @@ export function ClaimsKanbanColumn({
 
           {claims.length === 0 && (
             <div className="flex items-center justify-center h-24 text-muted-foreground text-sm border-2 border-dashed rounded-lg bg-background/50">
-              Nenhum sinistro
+              Nenhuma garantia
             </div>
           )}
         </div>

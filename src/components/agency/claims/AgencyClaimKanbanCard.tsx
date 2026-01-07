@@ -11,6 +11,7 @@ interface AgencyClaimKanbanCardProps {
   onClick: () => void;
   onViewDetails: () => void;
   onOpenTicket: () => void;
+  hasUnread?: boolean;
 }
 
 const formatCurrency = (value: number) => {
@@ -25,6 +26,7 @@ export function AgencyClaimKanbanCard({
   onClick,
   onViewDetails,
   onOpenTicket,
+  hasUnread = false,
 }: AgencyClaimKanbanCardProps) {
   const createdAt = new Date(claim.created_at);
   const daysSinceCreation = Math.floor(
@@ -38,11 +40,21 @@ export function AgencyClaimKanbanCard({
   });
 
   return (
-    <Card className="hover:shadow-md transition-shadow cursor-pointer group" onClick={onClick}>
+    <Card className="hover:shadow-md transition-shadow cursor-pointer group relative" onClick={onClick}>
+      {/* Unread notification indicator */}
+      {hasUnread && (
+        <span className="absolute -top-1 -right-1 flex h-3 w-3 z-10">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+        </span>
+      )}
       <CardContent className="p-3 space-y-3">
-        {/* Header */}
+        {/* Header with ID */}
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
+            <span className="text-xs font-mono text-muted-foreground">
+              #{claim.id.slice(0, 8).toUpperCase()}
+            </span>
             <p className="font-medium text-sm truncate">
               {claim.contract?.analysis?.inquilino_nome || 'Inquilino'}
             </p>

@@ -38,13 +38,14 @@ export function ClaimDetailDrawer({ claim, open, onOpenChange }: ClaimDetailDraw
   if (!claim) return null;
 
   const statusConfig = claimPublicStatusConfig[claim.public_status];
+  const formatClaimId = (id: string) => `#${id.slice(0, 8).toUpperCase()}`;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="sm:max-w-md">
         <SheetHeader className="pb-4">
           <SheetTitle className="flex items-center justify-between">
-            <span>Detalhes do Sinistro</span>
+            <span>Garantia {formatClaimId(claim.id)}</span>
             <Badge className={`${statusConfig.bgColor} ${statusConfig.color}`}>
               {statusConfig.label}
             </Badge>

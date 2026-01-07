@@ -19,11 +19,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ArrowLeft, Loader2, Save, Send, Info, User, MapPin, DollarSign } from "lucide-react";
+import { ArrowLeft, Loader2, Save, Send, Info, User, MapPin, DollarSign, AlertTriangle, Shield } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ClaimDebtTable } from "@/components/agency/claims/ClaimDebtTable";
 import { ClaimFileUploader } from "@/components/agency/claims/ClaimFileUploader";
 import { ClaimChecklist } from "@/components/agency/claims/ClaimChecklist";
+import { useActiveClaimByContract } from "@/hooks/useActiveClaimByContract";
 
 interface Contract {
   id: string;
@@ -97,6 +98,9 @@ export default function AgencyNewClaim() {
   const uploadClaimFile = useUploadClaimFile();
   
   const preselectedContractId = searchParams.get('contract');
+  
+  // Check for active claim on selected contract
+  const { data: activeClaim, isLoading: checkingActiveClaim } = useActiveClaimByContract(selectedContractId || undefined);
 
   // Load agency data and contracts
   useEffect(() => {
@@ -182,6 +186,16 @@ export default function AgencyNewClaim() {
     
     if (!selectedContractId) {
       errors.contract = true;
+    }
+    
+    // Block if there's an active claim
+    if (activeClaim) {
+      toast({
+        title: 'Garantia em andamento',
+        description: 'Este contrato já possui uma solicitação de garantia ativa.',
+        variant: 'destructive',
+      });
+      return false;
     }
 
     const validItems = items.filter((i) => i.due_date && i.reference_period && i.amount > 0);
@@ -349,7 +363,29 @@ export default function AgencyNewClaim() {
                 </SelectContent>
               </Select>
 
-              {selectedContract && selectedContract.analysis && (
+              {/* Active claim warning */}
+              {activeClaim && (
+                <Alert variant="destructive" className="border-amber-500 bg-amber-50 text-amber-900">
+                  <Shield className="h-4 w-4 text-amber-600" />
+                  <div className="flex-1">
+                    <p className="font-medium">Garantia em andamento</p>
+                    <p className="text-sm text-amber-700">
+                      Este contrato já possui uma solicitação de garantia ativa (#{activeClaim.id.slice(0, 8).toUpperCase()}).
+                      Para alterações, abra um chamado na solicitação existente.
+                    </p>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="border-amber-500 text-amber-700 hover:bg-amber-100"
+                    onClick={() => navigate(`/agency/claims/${activeClaim.id}`)}
+                  >
+                    Ver Garantia
+                  </Button>
+                </Alert>
+              )}
+
+              {selectedContract && selectedContract.analysis && !activeClaim && (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted/40 rounded-lg">
                   <div className="flex items-start gap-2">
                     <User className="h-4 w-4 text-muted-foreground mt-0.5" />
@@ -482,7 +518,7 @@ export default function AgencyNewClaim() {
                 className="w-full gap-2"
                 size="lg"
                 onClick={handleSubmit}
-                disabled={isSubmitting}
+                disabled={isSubmitting || !!activeClaim || checkingActiveClaim}
               >
                 {isSubmitting ? (
                   <>

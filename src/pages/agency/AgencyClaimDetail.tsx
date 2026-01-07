@@ -13,9 +13,11 @@ export default function AgencyClaimDetail() {
   const { data: claim, isLoading, refetch } = useClaimDetail(id);
   const [ticketSheetOpen, setTicketSheetOpen] = useState(false);
 
+  const formatClaimId = (id: string) => `#${id.slice(0, 8).toUpperCase()}`;
+
   if (isLoading) {
     return (
-      <AgencyLayout title="Detalhes do Sinistro">
+      <AgencyLayout title="Detalhes da Garantia">
         <div className="flex items-center justify-center h-[400px]">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
@@ -25,14 +27,14 @@ export default function AgencyClaimDetail() {
 
   if (!claim) {
     return (
-      <AgencyLayout title="Sinistro não encontrado">
+      <AgencyLayout title="Garantia não encontrada">
         <div className="text-center py-12">
           <p className="text-muted-foreground mb-4">
-            O sinistro solicitado não foi encontrado.
+            A solicitação de garantia não foi encontrada.
           </p>
           <Button onClick={() => navigate('/agency/claims')}>
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar para Sinistros
+            Voltar para Garantias
           </Button>
         </div>
       </AgencyLayout>
@@ -41,7 +43,7 @@ export default function AgencyClaimDetail() {
 
   return (
     <AgencyLayout 
-      title={`Sinistro - ${claim.contract?.analysis?.inquilino_nome || 'Carregando...'}`}
+      title={`Garantia ${formatClaimId(claim.id)} - ${claim.contract?.analysis?.inquilino_nome || 'Carregando...'}`}
       description={`Contrato: ${claim.contract?.analysis?.imovel_endereco || ''}, ${claim.contract?.analysis?.imovel_cidade || ''}`}
       actions={
         <div className="flex items-center gap-2">
