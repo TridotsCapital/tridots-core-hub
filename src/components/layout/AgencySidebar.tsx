@@ -95,21 +95,7 @@ export function AgencySidebar() {
       <SidebarHeader className="border-b border-border/30 p-4 bg-gradient-to-br from-primary/5 to-transparent">
         <div className="flex items-center justify-between gap-2">
           <img src={logoBlack} alt="Tridots Capital" className="h-10 w-auto object-contain flex-shrink-0" />
-          <div className="flex items-center gap-2 min-w-0">
-            {/* Portal info moved to header */}
-            <div className="text-right hidden sm:block min-w-0">
-              <div className="flex items-center justify-end gap-1">
-                <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse flex-shrink-0" />
-                <span className="text-[10px] font-semibold text-primary uppercase tracking-wider truncate">
-                  Portal {agencyName}
-                </span>
-              </div>
-              <p className="text-xs text-muted-foreground truncate">
-                {profile?.full_name}
-              </p>
-            </div>
-            <NotificationCenter isAgencyPortal={true} />
-          </div>
+          <NotificationCenter isAgencyPortal={true} />
         </div>
       </SidebarHeader>
 
