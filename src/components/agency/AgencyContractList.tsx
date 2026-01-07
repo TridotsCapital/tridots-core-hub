@@ -22,6 +22,9 @@ interface Contract {
   status: ContractStatus;
   created_at: string;
   activated_at: string | null;
+  doc_contrato_locacao_status?: string | null;
+  doc_vistoria_inicial_status?: string | null;
+  doc_seguro_incendio_status?: string | null;
   analysis: {
     id: string;
     inquilino_nome: string;
@@ -156,6 +159,10 @@ export function AgencyContractList({ contracts, isLoading, onRefresh, autoOpenCo
                     const StatusIcon = statusConfig.icon;
                     const analysisId = contract.analysis?.id;
                     const hasUnread = analysisId ? (unreadIds?.contratos.has(analysisId) ?? false) : false;
+                    const hasRejectedDoc = 
+                      contract.doc_contrato_locacao_status === 'rejeitado' ||
+                      contract.doc_vistoria_inicial_status === 'rejeitado' ||
+                      contract.doc_seguro_incendio_status === 'rejeitado';
 
                     const handleRowClick = () => {
                       if (hasUnread && analysisId) {
@@ -188,10 +195,17 @@ export function AgencyContractList({ contracts, isLoading, onRefresh, autoOpenCo
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={statusConfig.variant} className="text-xs">
-                            <StatusIcon className="h-3 w-3 mr-1" />
-                            {statusConfig.label}
-                          </Badge>
+                          <div className="flex items-center gap-2">
+                            <Badge variant={statusConfig.variant} className="text-xs">
+                              <StatusIcon className="h-3 w-3 mr-1" />
+                              {statusConfig.label}
+                            </Badge>
+                            {hasRejectedDoc && (
+                              <Badge variant="destructive" className="text-xs animate-pulse">
+                                Doc. Rejeitado
+                              </Badge>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell className="text-right font-medium">
                           {formatCurrency(contract.analysis?.valor_aluguel || 0)}

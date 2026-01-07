@@ -446,6 +446,38 @@ export function ContractDocumentsSection({
                     </div>
                   )}
 
+                  {/* Tridots: Upload button (any status) */}
+                  {!isAgencyView && (
+                    <div>
+                      <Input
+                        type="file"
+                        id={`tridots-upload-${doc.key}`}
+                        className="hidden"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleUpload(doc.key, file);
+                        }}
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => document.getElementById(`tridots-upload-${doc.key}`)?.click()}
+                        disabled={uploading === doc.key}
+                        title="Enviar documento (ficará como 'Enviado - Aguardando Validação')"
+                      >
+                        {uploading === doc.key ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <>
+                            <Upload className="h-4 w-4 mr-2" />
+                            Enviar
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+
                   {/* Tridots: Approve/Reject buttons (if enviado) */}
                   {!isAgencyView && status === 'enviado' && (
                     <>

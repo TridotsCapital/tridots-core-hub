@@ -4,7 +4,8 @@ import { AgencyLayout } from "@/components/layout/AgencyLayout";
 import { AgencyContractList } from "@/components/agency/AgencyContractList";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertTriangle } from "lucide-react";
+import { useRejectedDocumentsCount } from "@/hooks/useRejectedDocumentsCount";
 
 export default function AgencyContracts() {
   const location = useLocation();
@@ -13,6 +14,7 @@ export default function AgencyContracts() {
   const [contracts, setContracts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [autoOpenContractId, setAutoOpenContractId] = useState<string | null>(null);
+  const { data: rejectedDocsCount } = useRejectedDocumentsCount();
 
   // Auto-open contract from notification
   useEffect(() => {
@@ -46,6 +48,9 @@ export default function AgencyContracts() {
           status, 
           created_at, 
           activated_at,
+          doc_contrato_locacao_status,
+          doc_vistoria_inicial_status,
+          doc_seguro_incendio_status,
           analysis:analyses(
             id,
             inquilino_nome,
@@ -89,6 +94,23 @@ export default function AgencyContracts() {
       title="Meus Contratos" 
       description="Gerencie seus contratos de garantia ativos"
     >
+      {(rejectedDocsCount ?? 0) > 0 && (
+        <div className="flex items-center justify-between p-4 bg-red-50 border border-red-200 rounded-lg mb-4">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="h-5 w-5 text-red-600" />
+            <div>
+              <p className="font-semibold text-red-800">
+                {rejectedDocsCount === 1 
+                  ? '1 contrato possui documento rejeitado' 
+                  : `${rejectedDocsCount} contratos possuem documentos rejeitados`}
+              </p>
+              <p className="text-sm text-red-700">
+                Reenvie os documentos solicitados para prosseguir com a ativação
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
       <AgencyContractList 
         contracts={contracts} 
         isLoading={loading}
