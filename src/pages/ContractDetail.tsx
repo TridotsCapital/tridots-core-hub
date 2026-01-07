@@ -314,6 +314,7 @@ export default function ContractDetail() {
           open={ticketSheetOpen}
           onOpenChange={setTicketSheetOpen}
           analysisId={contract.analysis_id}
+          contractId={contract.id}
           agencyId={contract.agency_id}
           contractRef={contract.id.slice(0, 8).toUpperCase()}
           agencyName={analysis.agency?.nome_fantasia || analysis.agency?.razao_social}

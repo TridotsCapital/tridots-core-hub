@@ -14,6 +14,7 @@ interface ContractTicketSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   analysisId: string;
+  contractId: string;
   agencyId: string;
   contractRef: string;
   agencyName?: string;
@@ -24,6 +25,7 @@ export function ContractTicketSheet({
   open,
   onOpenChange,
   analysisId,
+  contractId,
   agencyId,
   contractRef,
   agencyName,
@@ -42,6 +44,7 @@ export function ContractTicketSheet({
     await createTicket.mutateAsync({
       agency_id: agencyId,
       analysis_id: analysisId,
+      contract_id: contractId,
       subject,
       category,
       priority,

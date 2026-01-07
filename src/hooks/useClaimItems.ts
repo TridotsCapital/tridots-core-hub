@@ -61,7 +61,7 @@ export function useCreateClaimItem() {
       queryClient.invalidateQueries({ queryKey: ['claims'] });
       toast({
         title: 'Item adicionado',
-        description: 'O item foi adicionado ao sinistro.',
+        description: 'O item foi adicionado à solicitação de garantia.',
       });
     },
     onError: (error) => {
@@ -129,7 +129,7 @@ export function useDeleteClaimItem() {
       queryClient.invalidateQueries({ queryKey: ['claims'] });
       toast({
         title: 'Item removido',
-        description: 'O item foi removido do sinistro.',
+        description: 'O item foi removido da solicitação de garantia.',
       });
     },
     onError: (error) => {

@@ -127,14 +127,14 @@ export function ClaimTicketSheet({ open, onOpenChange, claim }: ClaimTicketSheet
         <SheetHeader>
           <SheetTitle>Abrir Chamado</SheetTitle>
           <SheetDescription>
-            Este chamado será vinculado ao sinistro selecionado
+            Este chamado será vinculado à garantia selecionada
           </SheetDescription>
         </SheetHeader>
 
         <div className="mt-4 p-3 bg-muted/50 rounded-lg flex items-center gap-3">
           <FileWarning className="h-5 w-5 text-primary" />
           <div className="flex-1">
-            <p className="text-sm font-medium">Sinistro vinculado</p>
+            <p className="text-sm font-medium">Garantia vinculada</p>
             <p className="text-xs text-muted-foreground">
               {claim.contract?.analysis?.inquilino_nome} - {claim.contract?.analysis?.imovel_endereco}
             </p>

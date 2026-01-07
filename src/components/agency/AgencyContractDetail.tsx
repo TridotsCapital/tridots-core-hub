@@ -319,6 +319,7 @@ export function AgencyContractDetail() {
         open={ticketSheetOpen}
         onOpenChange={setTicketSheetOpen}
         analysisId={analysis.id}
+        contractId={contract?.id || ''}
         agencyId={analysis.agency_id}
         contractRef={(contract?.id || analysis.id).slice(0, 8).toUpperCase()}
         tenantName={analysis.inquilino_nome}

@@ -21,7 +21,7 @@ export function ClaimDraftBanner({ lastSavedTime, onDiscard }: ClaimDraftBannerP
           
           <div className="flex-1 min-w-0">
             <p className="font-medium text-foreground">
-              Você tem um sinistro em andamento
+              Você tem uma solicitação de garantia em andamento
             </p>
             {lastSavedTime && (
               <p className="text-sm text-muted-foreground">
