@@ -26,30 +26,28 @@ export function useAgencyCollaborators(agencyId: string | null) {
     queryFn: async () => {
       if (!agencyId) return [];
 
-      // Fetch agency users with profiles
-      const { data, error } = await supabase
+      // 1. Fetch agency_users for this agency
+      const { data: agencyUsers, error: auError } = await supabase
         .from('agency_users')
-        .select(`
-          id,
-          user_id,
-          is_primary_contact,
-          created_at,
-          profile:profiles!agency_users_user_id_fkey (
-            id,
-            full_name,
-            email,
-            active,
-            avatar_url,
-            phone
-          )
-        `)
+        .select('id, user_id, is_primary_contact, created_at')
         .eq('agency_id', agencyId)
         .order('created_at', { ascending: true });
 
-      if (error) throw error;
+      if (auError) throw auError;
+      if (!agencyUsers?.length) return [];
 
-      // Fetch positions for all agency_user ids
-      const agencyUserIds = (data || []).map(d => d.id);
+      const userIds = agencyUsers.map(au => au.user_id);
+      const agencyUserIds = agencyUsers.map(au => au.id);
+
+      // 2. Fetch profiles separately using user_ids
+      const { data: profiles, error: pError } = await supabase
+        .from('profiles')
+        .select('id, full_name, email, active, avatar_url, phone')
+        .in('id', userIds);
+
+      if (pError) throw pError;
+
+      // 3. Fetch positions for all agency_user ids
       let positionsMap: Record<string, AgencyPosition> = {};
       
       if (agencyUserIds.length > 0) {
@@ -66,12 +64,18 @@ export function useAgencyCollaborators(agencyId: string | null) {
         }
       }
 
-      // Transform the data to flatten the profile and add position
-      return (data || []).map(item => ({
-        ...item,
-        profile: Array.isArray(item.profile) ? item.profile[0] : item.profile,
-        position: positionsMap[item.id] || null,
-      })) as AgencyCollaborator[];
+      // 4. Combine data in JavaScript
+      return agencyUsers.map(au => {
+        const profile = profiles?.find(p => p.id === au.user_id);
+        return {
+          id: au.id,
+          user_id: au.user_id,
+          is_primary_contact: au.is_primary_contact,
+          created_at: au.created_at,
+          profile: profile || null,
+          position: positionsMap[au.id] || null,
+        };
+      }) as AgencyCollaborator[];
     },
     enabled: !!agencyId,
   });
