@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Send, Loader2, Clock, CheckCircle, AlertCircle, MessageSquare, FileText, XCircle } from "lucide-react";
+import { Send, Loader2, Clock, CheckCircle, AlertCircle, MessageSquare, FileText, XCircle, Shield } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -193,7 +193,17 @@ export function AgencyTicketChatArea({ ticketId }: AgencyTicketChatAreaProps) {
           >
             {categoryConfig[ticket.category as TicketCategory].label}
           </Badge>
-          {ticket.analysis_id && (
+          {(ticket as any).claim_id && (
+            <Badge
+              variant="secondary"
+              className="text-xs shrink-0 cursor-pointer hover:bg-amber-200 bg-amber-100 text-amber-700"
+              onClick={() => navigate(`/agency/claims/${(ticket as any).claim_id}`)}
+            >
+              <Shield className="h-3 w-3 mr-1" />
+              Garantia
+            </Badge>
+          )}
+          {ticket.analysis_id && !(ticket as any).claim_id && (
             (ticket as any).contract?.id ? (
               <Badge
                 variant="secondary"

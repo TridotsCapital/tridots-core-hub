@@ -4,7 +4,7 @@ import { Ticket, ticketStatusConfig, ticketPriorityConfig } from "@/types/ticket
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { FileText, AlertTriangle } from "lucide-react";
+import { FileText, Shield } from "lucide-react";
 
 interface TicketConversationItemProps {
   ticket: Ticket;
@@ -90,8 +90,8 @@ export function TicketConversationItem({
           </span>
           {ticket.claim_id && (
             <Badge variant="secondary" className="text-[10px] h-4 px-1.5 py-0 shrink-0 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-              <AlertTriangle className="h-2.5 w-2.5 mr-0.5" />
-              Sinistro
+              <Shield className="h-2.5 w-2.5 mr-0.5" />
+              Garantia
             </Badge>
           )}
           {ticket.analysis_id && !ticket.claim_id && (

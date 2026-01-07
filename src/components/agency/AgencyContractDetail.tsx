@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Home, User, Users, DollarSign, Calendar, CheckCircle, Clock, XCircle, CreditCard, FileText, Loader2, MessageSquare, Eye, ExternalLink, FileCheck } from 'lucide-react';
+import { ArrowLeft, Home, User, Users, DollarSign, Calendar, CheckCircle, Clock, XCircle, CreditCard, FileText, Loader2, MessageSquare, Eye, ExternalLink, FileCheck, Shield } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency, PROPERTY_TYPES } from '@/lib/validators';
 import { format } from 'date-fns';
@@ -14,6 +14,8 @@ import { ContractDocumentsSection } from '@/components/contracts/ContractDocumen
 import { ContractTicketSheet } from './ContractTicketSheet';
 import { AgencyTicketDetail } from './AgencyTicketDetail';
 import { useTicketCountByAnalysis, useTicketsByAnalysis } from '@/hooks/useTickets';
+import { useActiveClaimByContract } from '@/hooks/useActiveClaimByContract';
+import { useQuery } from '@tanstack/react-query';
 import type { Database } from '@/integrations/supabase/types';
 
 type ContractStatus = Database['public']['Enums']['contract_status'];
@@ -42,8 +44,9 @@ interface TimelineEvent {
   description: string;
   icon: any;
   iconColor: string;
-  type?: 'contract' | 'ticket';
+  type?: 'contract' | 'ticket' | 'claim';
   ticketId?: string;
+  claimId?: string;
 }
 
 export function AgencyContractDetail() {
@@ -59,6 +62,24 @@ export function AgencyContractDetail() {
 
   const { data: ticketCount = 0 } = useTicketCountByAnalysis(id);
   const { data: tickets = [] } = useTicketsByAnalysis(id);
+  const { data: activeClaim } = useActiveClaimByContract(contract?.id);
+
+  // Fetch all claims for this contract (for timeline)
+  const { data: contractClaims = [] } = useQuery({
+    queryKey: ['agency-contract-claims', contract?.id],
+    queryFn: async () => {
+      if (!contract?.id) return [];
+      const { data, error } = await supabase
+        .from('claims')
+        .select('id, public_status, created_at')
+        .eq('contract_id', contract.id)
+        .is('canceled_at', null)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!contract?.id,
+  });
 
   const fetchData = async () => {
     if (!id) return;
@@ -213,6 +234,32 @@ export function AgencyContractDetail() {
     }
   });
 
+  // Add claim events to timeline
+  contractClaims.forEach((claim) => {
+    const claimRef = `#${claim.id.slice(0, 8).toUpperCase()}`;
+    timelineEvents.push({
+      date: claim.created_at,
+      title: 'Garantia Solicitada',
+      description: `${claimRef} - Solicitação de garantia aberta`,
+      icon: Shield,
+      iconColor: 'text-amber-500',
+      type: 'claim',
+      claimId: claim.id,
+    });
+    
+    if (claim.public_status === 'finalizado') {
+      timelineEvents.push({
+        date: claim.created_at, // Ideally use a finalized_at date if available
+        title: 'Garantia Finalizada',
+        description: `${claimRef} - Processo concluído`,
+        icon: CheckCircle,
+        iconColor: 'text-amber-600',
+        type: 'claim',
+        claimId: claim.id,
+      });
+    }
+  });
+
   timelineEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   const totalEncargos = analysis.valor_aluguel + (analysis.valor_condominio || 0) + (analysis.valor_iptu || 0);
@@ -276,6 +323,29 @@ export function AgencyContractDetail() {
         contractRef={(contract?.id || analysis.id).slice(0, 8).toUpperCase()}
         tenantName={analysis.inquilino_nome}
       />
+
+      {/* Active Claim Banner */}
+      {activeClaim && (
+        <div className="flex items-center justify-between p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
+          <div className="flex items-center gap-3">
+            <Shield className="h-6 w-6 text-amber-600 dark:text-amber-500" />
+            <div>
+              <p className="font-semibold text-amber-800 dark:text-amber-300">Garantia em Andamento</p>
+              <p className="text-sm text-amber-700 dark:text-amber-400">
+                #{activeClaim.id.slice(0, 8).toUpperCase()} - Solicitação de garantia aberta para este contrato
+              </p>
+            </div>
+          </div>
+          <Button 
+            variant="outline"
+            onClick={() => navigate(`/agency/claims/${activeClaim.id}`)}
+            className="border-amber-300 text-amber-700 hover:bg-amber-100"
+          >
+            <ExternalLink className="h-4 w-4 mr-2" />
+            Ver Garantia
+          </Button>
+        </div>
+      )}
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -467,11 +537,21 @@ export function AgencyContractDetail() {
                 <div className="absolute left-4 top-2 bottom-2 w-0.5 bg-border" />
                 
                 <div className="space-y-6">
-                  {timelineEvents.map((event, index) => {
+                    {timelineEvents.map((event, index) => {
                     const EventIcon = event.icon;
                     return (
-                      <div key={index} className="relative pl-10">
-                        <div className={`absolute left-0 w-8 h-8 rounded-full bg-background border-2 ${event.type === 'ticket' ? 'border-amber-300' : 'border-border'} flex items-center justify-center`}>
+                      <div 
+                        key={index} 
+                        className={`relative pl-10 ${(event.type === 'ticket' || event.type === 'claim') ? 'cursor-pointer hover:bg-muted/50 rounded-lg p-2 -m-2 transition-colors' : ''}`}
+                        onClick={() => {
+                          if (event.type === 'ticket' && event.ticketId) {
+                            setSelectedTicketId(event.ticketId);
+                          } else if (event.type === 'claim' && event.claimId) {
+                            navigate(`/agency/claims/${event.claimId}`);
+                          }
+                        }}
+                      >
+                        <div className={`absolute left-0 w-8 h-8 rounded-full bg-background border-2 ${event.type === 'ticket' || event.type === 'claim' ? 'border-amber-300' : 'border-border'} flex items-center justify-center`}>
                           <EventIcon className={`h-4 w-4 ${event.iconColor}`} />
                         </div>
                         <div className="pb-4">
@@ -480,6 +560,11 @@ export function AgencyContractDetail() {
                             {event.type === 'ticket' && (
                               <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
                                 Chamado
+                              </Badge>
+                            )}
+                            {event.type === 'claim' && (
+                              <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
+                                Garantia
                               </Badge>
                             )}
                           </div>
@@ -492,10 +577,27 @@ export function AgencyContractDetail() {
                               variant="link"
                               size="sm"
                               className="h-auto p-0 mt-1 text-xs text-amber-600 hover:text-amber-700"
-                              onClick={() => setSelectedTicketId(event.ticketId!)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedTicketId(event.ticketId!);
+                              }}
                             >
                               <ExternalLink className="h-3 w-3 mr-1" />
                               Abrir chamado
+                            </Button>
+                          )}
+                          {event.type === 'claim' && event.claimId && (
+                            <Button
+                              variant="link"
+                              size="sm"
+                              className="h-auto p-0 mt-1 text-xs text-amber-600 hover:text-amber-700"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/agency/claims/${event.claimId}`);
+                              }}
+                            >
+                              <ExternalLink className="h-3 w-3 mr-1" />
+                              Ver garantia
                             </Button>
                           )}
                         </div>

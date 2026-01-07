@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Search, MessageSquare, Clock } from "lucide-react";
+import { Search, MessageSquare, Clock, Shield } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ interface Ticket {
   updated_at: string;
   first_response_at: string | null;
   closed_by_type: 'agency' | 'internal' | null;
+  claim_id?: string | null;
 }
 
 interface AgencyTicketListProps {
@@ -207,6 +208,15 @@ export function AgencyTicketList({
                         className="text-[10px] px-1.5 py-0 shrink-0 bg-amber-100 text-amber-700 border-amber-200"
                       >
                         Encerrado por você
+                      </Badge>
+                    )}
+                    {ticket.claim_id && (
+                      <Badge
+                        variant="secondary"
+                        className="text-[10px] px-1.5 py-0 shrink-0 bg-amber-100 text-amber-700 border-amber-200"
+                      >
+                        <Shield className="h-2.5 w-2.5 mr-0.5" />
+                        Garantia
                       </Badge>
                     )}
                   </div>
