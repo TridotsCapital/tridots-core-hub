@@ -6,7 +6,7 @@ import { AgencyTicketChatArea } from "@/components/agency/AgencyTicketChatArea";
 import { useAgencyUser } from "@/hooks/useAgencyUser";
 import { useAgencyTickets } from "@/hooks/useTickets";
 import { useUnreadItemIds, useMarkItemAsRead } from "@/hooks/useUnreadItemIds";
-import { Loader2, Search, MessageSquare, Clock, FileText, X } from "lucide-react";
+import { Loader2, Search, MessageSquare, Clock, FileText, X, Shield } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -71,7 +71,7 @@ export default function AgencySupport() {
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilterValue>("all");
-  const [linkFilter, setLinkFilter] = useState<'all' | 'analysis' | 'contract'>('all');
+  const [linkFilter, setLinkFilter] = useState<'all' | 'analysis' | 'contract' | 'claim'>('all');
   const [contractFilter, setContractFilter] = useState<string | null>(null);
   
   const { data: agencyUser, isLoading: agencyUserLoading } = useAgencyUser();
@@ -126,12 +126,14 @@ export default function AgencySupport() {
       ticket.subject.toLowerCase().includes(search.toLowerCase()) ||
       ticket.id.toLowerCase().includes(search.toLowerCase());
     
-    // Link filter: analysis (has analysis_id but no contract) or contract (has contract)
-    const hasContract = !!(ticket as any).contract?.id;
+    // Link filter: claim, analysis (has analysis_id but no contract), or contract (has contract)
+    const hasClaim = !!(ticket as any).claim_id;
+    const hasContract = !!(ticket as any).contract_id;
     const hasAnalysis = !!ticket.analysis_id;
     
-    if (linkFilter === 'analysis' && (!hasAnalysis || hasContract)) return false;
-    if (linkFilter === 'contract' && !hasContract) return false;
+    if (linkFilter === 'claim' && !hasClaim) return false;
+    if (linkFilter === 'analysis' && (!hasAnalysis || hasContract || hasClaim)) return false;
+    if (linkFilter === 'contract' && (!hasContract || hasClaim)) return false;
     
     if (statusFilter === "unread") {
       return matchesSearch && unreadIds?.chamados.has(ticket.id);
@@ -214,13 +216,14 @@ export default function AgencySupport() {
               </Button>
             ))}
             <Select value={linkFilter} onValueChange={(v) => setLinkFilter(v as any)}>
-              <SelectTrigger className="w-[140px] h-9">
+              <SelectTrigger className="w-[150px] h-9">
                 <SelectValue placeholder="Vínculo" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="analysis">Apenas Análises</SelectItem>
-                <SelectItem value="contract">Apenas Contratos</SelectItem>
+                <SelectItem value="claim">Garantias</SelectItem>
+                <SelectItem value="analysis">Análises</SelectItem>
+                <SelectItem value="contract">Contratos</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -286,19 +289,22 @@ export default function AgencySupport() {
                           >
                             {categoryConfig[ticket.category as TicketCategory].label}
                           </Badge>
-                          {ticket.analysis_id && (
-                            (ticket as any).contract?.id ? (
-                              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 shrink-0">
-                                <FileText className="h-2.5 w-2.5 mr-0.5" />
-                                Contrato
-                              </Badge>
-                            ) : (
-                              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 shrink-0 bg-blue-100 text-blue-700 border-blue-200">
-                                <FileText className="h-2.5 w-2.5 mr-0.5" />
-                                Análise
-                              </Badge>
-                            )
-                          )}
+                          {(ticket as any).claim_id ? (
+                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 shrink-0 bg-amber-100 text-amber-700 border-amber-200">
+                              <Shield className="h-2.5 w-2.5 mr-0.5" />
+                              Garantia
+                            </Badge>
+                          ) : (ticket as any).contract_id ? (
+                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 shrink-0">
+                              <FileText className="h-2.5 w-2.5 mr-0.5" />
+                              Contrato
+                            </Badge>
+                          ) : ticket.analysis_id ? (
+                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 shrink-0 bg-blue-100 text-blue-700 border-blue-200">
+                              <FileText className="h-2.5 w-2.5 mr-0.5" />
+                              Análise
+                            </Badge>
+                          ) : null}
                         </div>
 
                         {/* Subject */}
