@@ -51,7 +51,7 @@ export default function Claims() {
     if (!search) return true;
     const searchLower = search.toLowerCase();
     return (
-      claim.analysis?.inquilino_nome?.toLowerCase().includes(searchLower) ||
+      claim.contract?.analysis?.inquilino_nome?.toLowerCase().includes(searchLower) ||
       claim.agency?.nome_fantasia?.toLowerCase().includes(searchLower) ||
       claim.id.toLowerCase().includes(searchLower)
     );
@@ -202,7 +202,7 @@ export default function Claims() {
                       return (
                         <TableRow key={claim.id} className="cursor-pointer hover:bg-muted/50">
                           <TableCell className="font-medium">
-                            {claim.analysis?.inquilino_nome || "—"}
+                            {claim.contract?.analysis?.inquilino_nome || "—"}
                           </TableCell>
                           <TableCell>
                             {claim.agency?.nome_fantasia || claim.agency?.razao_social || "—"}

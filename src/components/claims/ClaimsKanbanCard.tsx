@@ -111,7 +111,7 @@ export function ClaimsKanbanCard({ claim, onViewDetails, onOpenTicket }: ClaimsK
 
           {/* Tenant name */}
           <p className="text-sm text-muted-foreground truncate">
-            {claim.analysis?.inquilino_nome}
+            {claim.contract?.analysis?.inquilino_nome}
           </p>
 
           {/* Value and indicators row */}

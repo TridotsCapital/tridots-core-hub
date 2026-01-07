@@ -100,8 +100,8 @@ export function AgencyClaimDetailView({ claim, onUpdate }: AgencyClaimDetailView
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Inquilino</p>
-                <p className="font-medium">{claim.analysis?.inquilino_nome}</p>
-                <p className="text-xs text-muted-foreground">CPF: {claim.analysis?.inquilino_cpf}</p>
+                <p className="font-medium">{claim.contract?.analysis?.inquilino_nome}</p>
+                <p className="text-xs text-muted-foreground">CPF: {claim.contract?.analysis?.inquilino_cpf}</p>
               </div>
             </div>
 
@@ -112,9 +112,9 @@ export function AgencyClaimDetailView({ claim, onUpdate }: AgencyClaimDetailView
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Imóvel</p>
-                <p className="font-medium">{claim.analysis?.imovel_endereco}</p>
+                <p className="font-medium">{claim.contract?.analysis?.imovel_endereco}</p>
                 <p className="text-xs text-muted-foreground">
-                  {claim.analysis?.imovel_cidade}/{claim.analysis?.imovel_estado}
+                  {claim.contract?.analysis?.imovel_cidade}/{claim.contract?.analysis?.imovel_estado}
                 </p>
               </div>
             </div>
@@ -137,7 +137,7 @@ export function AgencyClaimDetailView({ claim, onUpdate }: AgencyClaimDetailView
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Aluguel Mensal</p>
-                <p className="font-medium">{formatCurrency(claim.analysis?.valor_aluguel || 0)}</p>
+                <p className="font-medium">{formatCurrency(claim.contract?.analysis?.valor_aluguel || 0)}</p>
               </div>
             </div>
           </div>

@@ -60,9 +60,9 @@ export function ClaimDetailDrawer({ claim, open, onOpenChange }: ClaimDetailDraw
                 Inquilino
               </h4>
               <div className="bg-muted/40 rounded-lg p-3 space-y-1">
-                <p className="font-medium">{claim.analysis?.inquilino_nome}</p>
+                <p className="font-medium">{claim.contract?.analysis?.inquilino_nome}</p>
                 <p className="text-sm text-muted-foreground">
-                  CPF: {claim.analysis?.inquilino_cpf}
+                  CPF: {claim.contract?.analysis?.inquilino_cpf}
                 </p>
               </div>
             </div>
@@ -74,9 +74,9 @@ export function ClaimDetailDrawer({ claim, open, onOpenChange }: ClaimDetailDraw
                 Imóvel
               </h4>
               <div className="bg-muted/40 rounded-lg p-3 space-y-1">
-                <p className="font-medium">{claim.analysis?.imovel_endereco}</p>
+                <p className="font-medium">{claim.contract?.analysis?.imovel_endereco}</p>
                 <p className="text-sm text-muted-foreground">
-                  {claim.analysis?.imovel_cidade} - {claim.analysis?.imovel_estado}
+                  {claim.contract?.analysis?.imovel_cidade} - {claim.contract?.analysis?.imovel_estado}
                 </p>
               </div>
             </div>

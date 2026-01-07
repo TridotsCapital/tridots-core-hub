@@ -48,7 +48,7 @@ export type ClaimFileType =
 
 export interface Claim {
   id: string;
-  analysis_id: string;
+  contract_id: string;
   agency_id: string;
   created_by: string;
   public_status: ClaimPublicStatus;
@@ -60,13 +60,17 @@ export interface Claim {
   created_at: string;
   updated_at: string;
   // Relações opcionais (quando join é feito)
-  analysis?: {
-    inquilino_nome: string;
-    inquilino_cpf: string;
-    imovel_endereco: string;
-    imovel_cidade: string;
-    imovel_estado: string;
-    valor_aluguel: number;
+  contract?: {
+    id: string;
+    status: string;
+    analysis: {
+      inquilino_nome: string;
+      inquilino_cpf: string;
+      imovel_endereco: string;
+      imovel_cidade: string;
+      imovel_estado: string;
+      valor_aluguel: number;
+    };
   };
   agency?: {
     nome_fantasia: string | null;
@@ -126,7 +130,7 @@ export interface ClaimStatusHistory {
 // =====================================================
 
 export interface CreateClaimInput {
-  analysis_id: string;
+  contract_id: string;
   agency_id: string;
   observations?: string;
 }
