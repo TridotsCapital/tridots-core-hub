@@ -40,9 +40,9 @@ interface Contract {
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
-// All categories for pre-filling rows
-const allCategories: Array<DraftClaimItem['category']> = [
-  'aluguel', 'condominio', 'iptu', 'luz', 'agua', 'gas', 'danos', 'pintura', 'multa_contratual', 'outros'
+// Initial categories for pre-filling rows (just 3)
+const initialCategories: Array<DraftClaimItem['category']> = [
+  'aluguel', 'condominio', 'iptu'
 ];
 
 const createEmptyItem = (category: DraftClaimItem['category'] = 'aluguel'): DraftClaimItem => ({
@@ -55,7 +55,7 @@ const createEmptyItem = (category: DraftClaimItem['category'] = 'aluguel'): Draf
 });
 
 const createInitialItems = (): DraftClaimItem[] => 
-  allCategories.map(cat => createEmptyItem(cat));
+  initialCategories.map(cat => createEmptyItem(cat));
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('pt-BR', {
@@ -76,7 +76,7 @@ export default function AgencyNewClaim() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Draft state
-  const { draft, hasDraft, isSaving, saveDraft, clearDraft, getLastSavedTime } = useClaimDraft();
+  const { draft, hasDraft, saveDraft, clearDraft, getLastSavedTime } = useClaimDraft();
   
   // Form state
   const [selectedContractId, setSelectedContractId] = useState<string>('');
@@ -184,7 +184,7 @@ export default function AgencyNewClaim() {
       errors.contract = true;
     }
 
-    const validItems = items.filter((i) => i.due_date && i.amount > 0);
+    const validItems = items.filter((i) => i.due_date && i.reference_period && i.amount > 0);
     if (validItems.length === 0) {
       errors.items = true;
     }
@@ -226,7 +226,7 @@ export default function AgencyNewClaim() {
       });
 
       // 2. Create items
-      const validItems = items.filter((i) => i.due_date && i.amount > 0);
+      const validItems = items.filter((i) => i.due_date && i.reference_period && i.amount > 0);
       for (const item of validItems) {
         await createClaimItem.mutateAsync({
           claim_id: claim.id,
@@ -307,16 +307,11 @@ export default function AgencyNewClaim() {
       description="Preencha os dados do sinistro para solicitar a garantia"
       actions={
         <div className="flex items-center gap-3">
-          {isSaving ? (
-            <span className="text-sm text-muted-foreground flex items-center gap-2">
-              <Loader2 className="h-3 w-3 animate-spin" />
-              Salvando...
-            </span>
-          ) : hasDraft && getLastSavedTime() ? (
+          {hasDraft && getLastSavedTime() && (
             <span className="text-sm text-muted-foreground">
-              Rascunho salvo às {getLastSavedTime()}
+              Salvo automaticamente às {getLastSavedTime()}
             </span>
-          ) : null}
+          )}
           <Button variant="ghost" onClick={() => navigate('/agency/claims')}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Voltar
