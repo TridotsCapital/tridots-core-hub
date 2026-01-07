@@ -12,7 +12,8 @@ import {
   Shield,
   DollarSign,
   FolderOpen,
-  Star
+  Star,
+  KeyRound
 } from "lucide-react";
 import logoBlack from "@/assets/logo-tridots-black.webp";
 import { NavLink } from "@/components/NavLink";
@@ -254,14 +255,25 @@ export function AgencySidebar() {
             <p className="text-sm font-semibold text-foreground truncate">{profile?.full_name}</p>
             <p className="text-xs text-muted-foreground truncate">{profile?.email}</p>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleSignOut}
-            className="shrink-0 text-muted-foreground hover:text-foreground hover:bg-muted"
-          >
-            <LogOut className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/agency/settings/password")}
+              className="shrink-0 text-muted-foreground hover:text-foreground hover:bg-muted"
+              title="Alterar senha"
+            >
+              <KeyRound className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleSignOut}
+              className="shrink-0 text-muted-foreground hover:text-foreground hover:bg-muted"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </SidebarFooter>
     </Sidebar>
