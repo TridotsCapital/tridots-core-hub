@@ -10,9 +10,12 @@ export interface AgencyDashboardData {
   activeContracts: number;
   totalGuaranteedValue: number;
   receivedCommissions: number;
+  totalHistoricalCommissions?: number;
   pendingCommissions: number;
   analysesInProgress: number;
   analysesByStatus: Record<string, number>;
+  contractsToRenew?: number;
+  canceledContracts?: number;
 }
 
 export interface AgencyRanking {

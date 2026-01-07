@@ -905,6 +905,7 @@ export type Database = {
           canceled_by: string | null
           cancellation_reason: string | null
           created_at: string
+          data_fim_contrato: string | null
           doc_contrato_locacao_feedback: string | null
           doc_contrato_locacao_name: string | null
           doc_contrato_locacao_path: string | null
@@ -935,6 +936,7 @@ export type Database = {
           canceled_by?: string | null
           cancellation_reason?: string | null
           created_at?: string
+          data_fim_contrato?: string | null
           doc_contrato_locacao_feedback?: string | null
           doc_contrato_locacao_name?: string | null
           doc_contrato_locacao_path?: string | null
@@ -965,6 +967,7 @@ export type Database = {
           canceled_by?: string | null
           cancellation_reason?: string | null
           created_at?: string
+          data_fim_contrato?: string | null
           doc_contrato_locacao_feedback?: string | null
           doc_contrato_locacao_name?: string | null
           doc_contrato_locacao_path?: string | null

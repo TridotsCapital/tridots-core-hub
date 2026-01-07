@@ -8,3 +8,5 @@ export { default as AgencyCollaborators } from './AgencyCollaborators';
 export { default as AgencyClaims } from './AgencyClaims';
 export { default as AgencyClaimDetail } from './AgencyClaimDetail';
 export { default as AgencyNewClaim } from './AgencyNewClaim';
+export { default as AgencyCommissions } from './AgencyCommissions';
+export { default as AgencyDocuments } from './AgencyDocuments';

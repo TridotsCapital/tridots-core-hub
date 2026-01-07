@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AgencyDashboardData, AgencyRanking, AgencyProjection, AgencyApprovalRate, AgencyPeriodFilter } from "@/types/agency-portal";
-import { startOfMonth, subMonths, startOfYear } from "date-fns";
+import { startOfMonth, subMonths, startOfYear, addDays } from "date-fns";
 
 const getPeriodStartDate = (period: AgencyPeriodFilter): Date => {
   const now = new Date();
@@ -25,45 +25,68 @@ export const useAgencyDashboard = (agencyId: string | null, period: AgencyPeriod
     queryFn: async (): Promise<AgencyDashboardData> => {
       if (!agencyId) throw new Error('Agency ID is required');
 
-      const periodStart = getPeriodStartDate(period);
+      const now = new Date();
+      const thirtyDaysFromNow = addDays(now, 30);
+      const twelveMonthsAgo = subMonths(now, 12);
 
       // Fetch active contracts (status = 'ativo')
-      const { data: activeAnalyses, error: analysesError } = await supabase
-        .from('analyses')
-        .select('valor_aluguel, status')
-        .eq('agency_id', agencyId)
-        .eq('status', 'ativo');
+      const { data: activeContracts, error: contractsError } = await supabase
+        .from('contracts')
+        .select('id, status, data_fim_contrato, canceled_at')
+        .eq('agency_id', agencyId);
 
-      if (analysesError) throw analysesError;
+      if (contractsError) throw contractsError;
+
+      // Count active contracts and contracts to renew
+      const activeContractsList = activeContracts?.filter(c => c.status === 'ativo') || [];
+      const contractsToRenew = activeContractsList.filter(c => {
+        if (!c.data_fim_contrato) return false;
+        const endDate = new Date(c.data_fim_contrato);
+        return endDate >= now && endDate <= thirtyDaysFromNow;
+      }).length;
+
+      const canceledContracts = activeContracts?.filter(c => c.canceled_at !== null).length || 0;
 
       // Fetch analyses by status for the funnel
       const { data: allAnalyses, error: allAnalysesError } = await supabase
         .from('analyses')
-        .select('status')
+        .select('status, valor_aluguel')
         .eq('agency_id', agencyId);
 
       if (allAnalysesError) throw allAnalysesError;
 
-      // Fetch commissions
-      const { data: commissions, error: commissionsError } = await supabase
-        .from('commissions')
-        .select('valor, status')
+      // Fetch finalized claims for guaranteed value
+      const { data: finalizedClaims, error: claimsError } = await supabase
+        .from('claims')
+        .select('total_claimed_value')
         .eq('agency_id', agencyId)
-        .gte('created_at', periodStart.toISOString());
+        .eq('public_status', 'finalizado');
+
+      if (claimsError) throw claimsError;
+
+      const totalGuaranteedValue = finalizedClaims?.reduce((sum, c) => sum + (c.total_claimed_value || 0), 0) || 0;
+
+      // Fetch commissions for last 12 months
+      const { data: recentCommissions, error: commissionsError } = await supabase
+        .from('commissions')
+        .select('valor, status, created_at')
+        .eq('agency_id', agencyId)
+        .eq('status', 'paga')
+        .gte('created_at', twelveMonthsAgo.toISOString());
 
       if (commissionsError) throw commissionsError;
 
-      // Calculate metrics
-      const activeContracts = activeAnalyses?.length || 0;
-      const totalGuaranteedValue = activeAnalyses?.reduce((sum, a) => sum + (a.valor_aluguel || 0), 0) || 0;
-      
-      const receivedCommissions = commissions
-        ?.filter(c => c.status === 'paga')
-        .reduce((sum, c) => sum + (c.valor || 0), 0) || 0;
-      
-      const pendingCommissions = commissions
-        ?.filter(c => c.status === 'pendente')
-        .reduce((sum, c) => sum + (c.valor || 0), 0) || 0;
+      // Fetch all historical commissions
+      const { data: allCommissions, error: allCommissionsError } = await supabase
+        .from('commissions')
+        .select('valor')
+        .eq('agency_id', agencyId)
+        .eq('status', 'paga');
+
+      if (allCommissionsError) throw allCommissionsError;
+
+      const receivedCommissions = recentCommissions?.reduce((sum, c) => sum + (c.valor || 0), 0) || 0;
+      const totalHistoricalCommissions = allCommissions?.reduce((sum, c) => sum + (c.valor || 0), 0) || 0;
 
       // Count analyses by status
       const analysesByStatus: Record<string, number> = {};
@@ -76,12 +99,15 @@ export const useAgencyDashboard = (agencyId: string | null, period: AgencyPeriod
                                   (analysesByStatus['aguardando_pagamento'] || 0);
 
       return {
-        activeContracts,
+        activeContracts: activeContractsList.length,
         totalGuaranteedValue,
         receivedCommissions,
-        pendingCommissions,
+        totalHistoricalCommissions,
+        pendingCommissions: 0,
         analysesInProgress,
-        analysesByStatus
+        analysesByStatus,
+        contractsToRenew,
+        canceledContracts
       };
     },
     enabled: !!agencyId
