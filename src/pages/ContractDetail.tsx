@@ -27,9 +27,12 @@ import {
   FileCheck,
   ShieldCheck,
   Loader2,
+  Shield,
 } from 'lucide-react';
 import { useContract } from '@/hooks/useContracts';
 import { useTicketCountByAnalysis, useTicketsByAnalysis } from '@/hooks/useTickets';
+import { useActiveClaimByContract } from '@/hooks/useActiveClaimByContract';
+import { useQuery } from '@tanstack/react-query';
 import { ContractActions } from '@/components/contracts';
 import { ContractDocumentsSection } from '@/components/contracts/ContractDocumentsSection';
 import { ContractTicketSheet } from '@/components/contracts/ContractTicketSheet';
@@ -57,8 +60,9 @@ interface TimelineEvent {
   description: string;
   icon: React.ComponentType<{ className?: string }>;
   iconColor: string;
-  type?: 'contract' | 'ticket';
+  type?: 'contract' | 'ticket' | 'claim';
   ticketId?: string;
+  claimId?: string;
 }
 
 export default function ContractDetail() {
@@ -76,6 +80,24 @@ export default function ContractDetail() {
   const analysisId = contract?.analysis_id;
   const { data: ticketCount = 0 } = useTicketCountByAnalysis(analysisId);
   const { data: tickets = [] } = useTicketsByAnalysis(analysisId);
+  const { data: activeClaim } = useActiveClaimByContract(contract?.id);
+
+  // Fetch all claims for this contract (for timeline)
+  const { data: contractClaims = [] } = useQuery({
+    queryKey: ['contract-claims', contract?.id],
+    queryFn: async () => {
+      if (!contract?.id) return [];
+      const { data, error } = await supabase
+        .from('claims')
+        .select('id, public_status, created_at')
+        .eq('contract_id', contract.id)
+        .is('canceled_at', null)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!contract?.id,
+  });
 
   if (isLoading) {
     return (
@@ -211,6 +233,32 @@ export default function ContractDetail() {
     }
   });
 
+  // Add claim events to timeline
+  contractClaims.forEach((claim) => {
+    const claimRef = `#${claim.id.slice(0, 8).toUpperCase()}`;
+    timelineEvents.push({
+      date: claim.created_at,
+      title: 'Garantia Solicitada',
+      description: `${claimRef} - Solicitação de garantia aberta`,
+      icon: Shield,
+      iconColor: 'text-amber-500',
+      type: 'claim',
+      claimId: claim.id,
+    });
+    
+    if (claim.public_status === 'finalizado') {
+      timelineEvents.push({
+        date: claim.created_at, // Ideally use a finalized_at date if available
+        title: 'Garantia Finalizada',
+        description: `${claimRef} - Processo concluído`,
+        icon: CheckCircle,
+        iconColor: 'text-amber-600',
+        type: 'claim',
+        claimId: claim.id,
+      });
+    }
+  });
+
   timelineEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   const totalEncargos = (analysis.valor_aluguel || 0) + (analysis.valor_condominio || 0) + (analysis.valor_iptu || 0);
@@ -288,6 +336,29 @@ export default function ContractDetail() {
             >
               <CheckCircle className="h-4 w-4 mr-2" />
               Ativar Contrato
+            </Button>
+          </div>
+        )}
+
+        {/* Active Claim Banner */}
+        {activeClaim && (
+          <div className="flex items-center justify-between p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
+            <div className="flex items-center gap-3">
+              <Shield className="h-6 w-6 text-amber-600 dark:text-amber-500" />
+              <div>
+                <p className="font-semibold text-amber-800 dark:text-amber-300">Garantia em Andamento</p>
+                <p className="text-sm text-amber-700 dark:text-amber-400">
+                  #{activeClaim.id.slice(0, 8).toUpperCase()} - Solicitação de garantia aberta para este contrato
+                </p>
+              </div>
+            </div>
+            <Button 
+              variant="outline"
+              onClick={() => navigate(`/claims/${activeClaim.id}`)}
+              className="border-amber-300 text-amber-700 hover:bg-amber-100"
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Ver Garantia
             </Button>
           </div>
         )}
@@ -512,16 +583,31 @@ export default function ContractDetail() {
                     {timelineEvents.map((event, index) => {
                       const EventIcon = event.icon;
                       return (
-                        <div key={index} className="relative pl-10">
-                          <div className={`absolute left-0 w-8 h-8 rounded-full bg-background border-2 ${event.type === 'ticket' ? 'border-amber-300' : 'border-border'} flex items-center justify-center`}>
+                        <div 
+                          key={index} 
+                          className={`relative pl-10 ${(event.type === 'ticket' || event.type === 'claim') ? 'cursor-pointer hover:bg-muted/50 rounded-lg p-2 -m-2 transition-colors' : ''}`}
+                          onClick={() => {
+                            if (event.type === 'ticket' && event.ticketId) {
+                              setSelectedTicketId(event.ticketId);
+                            } else if (event.type === 'claim' && event.claimId) {
+                              navigate(`/claims/${event.claimId}`);
+                            }
+                          }}
+                        >
+                          <div className={`absolute left-0 w-8 h-8 rounded-full bg-background border-2 ${event.type === 'ticket' || event.type === 'claim' ? 'border-amber-300' : 'border-border'} flex items-center justify-center`}>
                             <EventIcon className={`h-4 w-4 ${event.iconColor}`} />
                           </div>
                           <div className="pb-4">
                             <div className="flex items-center gap-2">
-                            <p className="font-medium">{event.title}</p>
+                              <p className="font-medium">{event.title}</p>
                               {event.type === 'ticket' && (
                                 <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
                                   Chamado
+                                </Badge>
+                              )}
+                              {event.type === 'claim' && (
+                                <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
+                                  Garantia
                                 </Badge>
                               )}
                             </div>
@@ -534,10 +620,27 @@ export default function ContractDetail() {
                                 variant="link"
                                 size="sm"
                                 className="h-auto p-0 mt-1 text-xs text-amber-600 hover:text-amber-700"
-                                onClick={() => setSelectedTicketId(event.ticketId!)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedTicketId(event.ticketId!);
+                                }}
                               >
                                 <ExternalLink className="h-3 w-3 mr-1" />
                                 Abrir chamado
+                              </Button>
+                            )}
+                            {event.type === 'claim' && event.claimId && (
+                              <Button
+                                variant="link"
+                                size="sm"
+                                className="h-auto p-0 mt-1 text-xs text-amber-600 hover:text-amber-700"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(`/claims/${event.claimId}`);
+                                }}
+                              >
+                                <ExternalLink className="h-3 w-3 mr-1" />
+                                Ver garantia
                               </Button>
                             )}
                           </div>

@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ticketCategoryConfig, ticketStatusConfig, ticketPriorityConfig, TicketStatus } from "@/types/tickets";
-import { X, Send, Zap, Building2, Phone, Mail, FileText, DollarSign, Clock, User, ChevronDown, AlertTriangle } from "lucide-react";
+import { X, Send, Zap, Building2, Phone, Mail, FileText, DollarSign, Clock, User, ChevronDown, Shield } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -161,15 +161,15 @@ export function TicketDetail({ ticketId, onClose }: TicketDetailProps) {
                 <Badge variant="outline" className={statusConfig.color}>
                   {statusConfig.label}
                 </Badge>
-                {/* Show Sinistro badge if linked to claim, otherwise Contrato/Análise if linked */}
+                {/* Show Garantia badge if linked to claim, otherwise Contrato/Análise if linked */}
                 {ticket.claim_id ? (
                   <Badge 
                     variant="secondary" 
                     className="bg-amber-100 text-amber-700 cursor-pointer hover:bg-amber-200"
                     onClick={() => navigate(`/claims/${ticket.claim_id}`)}
                   >
-                    <AlertTriangle className="h-3 w-3 mr-1" />
-                    Sinistro
+                    <Shield className="h-3 w-3 mr-1" />
+                    Garantia
                   </Badge>
                 ) : ticket.analysis_id && (
                   (ticket as any).contract?.id ? (
