@@ -27,7 +27,7 @@ import { Loader2, AlertCircle, Home, User } from "lucide-react";
 import { useCreateClaim } from "@/hooks/useClaims";
 
 const formSchema = z.object({
-  analysis_id: z.string().min(1, 'Selecione um contrato'),
+  contract_id: z.string().min(1, 'Selecione um contrato'),
   observations: z.string().optional(),
 });
 
@@ -35,12 +35,15 @@ type FormValues = z.infer<typeof formSchema>;
 
 interface Contract {
   id: string;
-  inquilino_nome: string;
-  inquilino_cpf: string;
-  imovel_endereco: string;
-  imovel_cidade: string;
-  imovel_estado: string;
-  valor_aluguel: number;
+  status: string;
+  analysis: {
+    inquilino_nome: string;
+    inquilino_cpf: string;
+    imovel_endereco: string;
+    imovel_cidade: string;
+    imovel_estado: string;
+    valor_aluguel: number;
+  };
 }
 
 interface AgencyNewClaimFormProps {
@@ -64,7 +67,7 @@ export function AgencyNewClaimForm({
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      analysis_id: preselectedContractId || '',
+      contract_id: preselectedContractId || '',
       observations: '',
     },
   });
@@ -72,7 +75,7 @@ export function AgencyNewClaimForm({
   const onSubmit = async (values: FormValues) => {
     try {
       const result = await createClaim.mutateAsync({
-        analysis_id: values.analysis_id,
+        contract_id: values.contract_id,
         agency_id: agencyId,
         observations: values.observations,
       });
@@ -85,7 +88,7 @@ export function AgencyNewClaimForm({
   const handleContractChange = (contractId: string) => {
     const contract = contracts.find(c => c.id === contractId);
     setSelectedContract(contract || null);
-    form.setValue('analysis_id', contractId);
+    form.setValue('contract_id', contractId);
   };
 
   const formatCurrency = (value: number) => {
@@ -116,7 +119,7 @@ export function AgencyNewClaimForm({
             <CardContent className="space-y-6">
               <FormField
                 control={form.control}
-                name="analysis_id"
+                name="contract_id"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Contrato</FormLabel>
@@ -132,7 +135,7 @@ export function AgencyNewClaimForm({
                       <SelectContent>
                         {contracts.map((contract) => (
                           <SelectItem key={contract.id} value={contract.id}>
-                            {contract.inquilino_nome} - {contract.imovel_endereco}
+                            {contract.analysis?.inquilino_nome} - {contract.analysis?.imovel_endereco}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -142,29 +145,29 @@ export function AgencyNewClaimForm({
                 )}
               />
 
-              {selectedContract && (
+              {selectedContract && selectedContract.analysis && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
                   <div className="flex items-start gap-3">
                     <User className="h-5 w-5 text-muted-foreground mt-0.5" />
                     <div>
                       <p className="text-sm font-medium">Inquilino</p>
-                      <p className="text-sm text-muted-foreground">{selectedContract.inquilino_nome}</p>
-                      <p className="text-xs text-muted-foreground">CPF: {selectedContract.inquilino_cpf}</p>
+                      <p className="text-sm text-muted-foreground">{selectedContract.analysis.inquilino_nome}</p>
+                      <p className="text-xs text-muted-foreground">CPF: {selectedContract.analysis.inquilino_cpf}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
                     <Home className="h-5 w-5 text-muted-foreground mt-0.5" />
                     <div>
                       <p className="text-sm font-medium">Imóvel</p>
-                      <p className="text-sm text-muted-foreground">{selectedContract.imovel_endereco}</p>
+                      <p className="text-sm text-muted-foreground">{selectedContract.analysis.imovel_endereco}</p>
                       <p className="text-xs text-muted-foreground">
-                        {selectedContract.imovel_cidade}/{selectedContract.imovel_estado}
+                        {selectedContract.analysis.imovel_cidade}/{selectedContract.analysis.imovel_estado}
                       </p>
                     </div>
                   </div>
                   <div className="md:col-span-2">
                     <p className="text-sm text-muted-foreground">
-                      Aluguel: <span className="font-medium text-foreground">{formatCurrency(selectedContract.valor_aluguel)}</span>
+                      Aluguel: <span className="font-medium text-foreground">{formatCurrency(selectedContract.analysis.valor_aluguel)}</span>
                     </p>
                   </div>
                 </div>

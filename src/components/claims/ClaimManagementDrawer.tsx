@@ -123,7 +123,7 @@ export function ClaimManagementDrawer({
               </div>
               <div>
                 <SheetTitle className="text-left">
-                  {currentClaim.analysis?.inquilino_nome}
+                  {currentClaim.contract?.analysis?.inquilino_nome}
                 </SheetTitle>
                 <p className="text-sm text-muted-foreground">
                   {currentClaim.agency?.nome_fantasia} • {format(new Date(currentClaim.created_at), "dd/MM/yyyy", { locale: ptBR })}
@@ -223,7 +223,7 @@ export function ClaimManagementDrawer({
                     <User className="h-3 w-3" />
                     <span className="text-xs">Inquilino</span>
                   </div>
-                  <p className="text-sm font-medium truncate">{currentClaim.analysis?.inquilino_nome}</p>
+                  <p className="text-sm font-medium truncate">{currentClaim.contract?.analysis?.inquilino_nome}</p>
                 </CardContent>
               </Card>
               <Card>
@@ -233,7 +233,7 @@ export function ClaimManagementDrawer({
                     <span className="text-xs">Imóvel</span>
                   </div>
                   <p className="text-sm font-medium truncate">
-                    {currentClaim.analysis?.imovel_cidade}/{currentClaim.analysis?.imovel_estado}
+                    {currentClaim.contract?.analysis?.imovel_cidade}/{currentClaim.contract?.analysis?.imovel_estado}
                   </p>
                 </CardContent>
               </Card>

@@ -698,10 +698,10 @@ export type Database = {
       claims: {
         Row: {
           agency_id: string
-          analysis_id: string
           assigned_to: string | null
           canceled_at: string | null
           canceled_by: string | null
+          contract_id: string
           created_at: string
           created_by: string
           docs_checklist: Json | null
@@ -715,10 +715,10 @@ export type Database = {
         }
         Insert: {
           agency_id: string
-          analysis_id: string
           assigned_to?: string | null
           canceled_at?: string | null
           canceled_by?: string | null
+          contract_id: string
           created_at?: string
           created_by: string
           docs_checklist?: Json | null
@@ -732,10 +732,10 @@ export type Database = {
         }
         Update: {
           agency_id?: string
-          analysis_id?: string
           assigned_to?: string | null
           canceled_at?: string | null
           canceled_by?: string | null
+          contract_id?: string
           created_at?: string
           created_by?: string
           docs_checklist?: Json | null
@@ -756,13 +756,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "claims_analysis_id_fkey"
-            columns: ["analysis_id"]
-            isOneToOne: false
-            referencedRelation: "analyses"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "claims_assigned_to_fkey"
             columns: ["assigned_to"]
             isOneToOne: false
@@ -774,6 +767,13 @@ export type Database = {
             columns: ["canceled_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claims_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
             referencedColumns: ["id"]
           },
           {

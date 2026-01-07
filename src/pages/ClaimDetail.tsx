@@ -117,7 +117,7 @@ export default function ClaimDetail() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-foreground">
-                  Sinistro - {claim.analysis?.inquilino_nome}
+                  Sinistro - {claim.contract?.analysis?.inquilino_nome}
                 </h1>
                 <p className="text-sm text-muted-foreground">
                   {claim.agency?.nome_fantasia} • Criado em{" "}
@@ -221,8 +221,8 @@ export default function ClaimDetail() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
-                <p className="font-medium">{claim.analysis?.inquilino_nome}</p>
-                <p className="text-muted-foreground">CPF: {claim.analysis?.inquilino_cpf}</p>
+                <p className="font-medium">{claim.contract?.analysis?.inquilino_nome}</p>
+                <p className="text-muted-foreground">CPF: {claim.contract?.analysis?.inquilino_cpf}</p>
               </CardContent>
             </Card>
 
@@ -235,9 +235,9 @@ export default function ClaimDetail() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
-                <p>{claim.analysis?.imovel_endereco}</p>
+                <p>{claim.contract?.analysis?.imovel_endereco}</p>
                 <p className="text-muted-foreground">
-                  {claim.analysis?.imovel_cidade}/{claim.analysis?.imovel_estado}
+                  {claim.contract?.analysis?.imovel_cidade}/{claim.contract?.analysis?.imovel_estado}
                 </p>
               </CardContent>
             </Card>

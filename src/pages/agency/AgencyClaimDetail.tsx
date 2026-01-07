@@ -41,8 +41,8 @@ export default function AgencyClaimDetail() {
 
   return (
     <AgencyLayout 
-      title={`Sinistro - ${claim.analysis?.inquilino_nome || 'Carregando...'}`}
-      description={`Contrato: ${claim.analysis?.imovel_endereco || ''}, ${claim.analysis?.imovel_cidade || ''}`}
+      title={`Sinistro - ${claim.contract?.analysis?.inquilino_nome || 'Carregando...'}`}
+      description={`Contrato: ${claim.contract?.analysis?.imovel_endereco || ''}, ${claim.contract?.analysis?.imovel_cidade || ''}`}
       actions={
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={() => setTicketSheetOpen(true)}>

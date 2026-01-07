@@ -27,12 +27,15 @@ import { ClaimChecklist } from "@/components/agency/claims/ClaimChecklist";
 
 interface Contract {
   id: string;
-  inquilino_nome: string;
-  inquilino_cpf: string;
-  imovel_endereco: string;
-  imovel_cidade: string;
-  imovel_estado: string;
-  valor_aluguel: number;
+  status: string;
+  analysis: {
+    inquilino_nome: string;
+    inquilino_cpf: string;
+    imovel_endereco: string;
+    imovel_cidade: string;
+    imovel_estado: string;
+    valor_aluguel: number;
+  };
 }
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
@@ -111,11 +114,22 @@ export default function AgencyNewClaim() {
         setAgencyId(agencyUser.agency_id);
 
         const { data: contractsData, error: contractsError } = await supabase
-          .from('analyses')
-          .select('id, inquilino_nome, inquilino_cpf, imovel_endereco, imovel_cidade, imovel_estado, valor_aluguel')
+          .from('contracts')
+          .select(`
+            id,
+            status,
+            analysis:analyses(
+              inquilino_nome,
+              inquilino_cpf,
+              imovel_endereco,
+              imovel_cidade,
+              imovel_estado,
+              valor_aluguel
+            )
+          `)
           .eq('agency_id', agencyUser.agency_id)
-          .eq('status', 'ativo')
-          .order('inquilino_nome', { ascending: true });
+          .in('status', ['ativo', 'documentacao_pendente'])
+          .order('created_at', { ascending: false });
 
         if (contractsError) throw contractsError;
         setContracts(contractsData || []);
@@ -206,7 +220,7 @@ export default function AgencyNewClaim() {
     try {
       // 1. Create claim
       const claim = await createClaim.mutateAsync({
-        analysis_id: selectedContractId,
+        contract_id: selectedContractId,
         agency_id: agencyId,
         observations: observations || undefined,
       });
@@ -334,29 +348,29 @@ export default function AgencyNewClaim() {
                 <SelectContent>
                   {contracts.map((contract) => (
                     <SelectItem key={contract.id} value={contract.id}>
-                      {contract.inquilino_nome} - {contract.imovel_endereco}
+                      {contract.analysis?.inquilino_nome} - {contract.analysis?.imovel_endereco}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
 
-              {selectedContract && (
+              {selectedContract && selectedContract.analysis && (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted/40 rounded-lg">
                   <div className="flex items-start gap-2">
                     <User className="h-4 w-4 text-muted-foreground mt-0.5" />
                     <div>
                       <p className="text-xs text-muted-foreground">Inquilino</p>
-                      <p className="text-sm font-medium">{selectedContract.inquilino_nome}</p>
-                      <p className="text-xs text-muted-foreground">{selectedContract.inquilino_cpf}</p>
+                      <p className="text-sm font-medium">{selectedContract.analysis.inquilino_nome}</p>
+                      <p className="text-xs text-muted-foreground">{selectedContract.analysis.inquilino_cpf}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-2">
                     <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
                     <div>
                       <p className="text-xs text-muted-foreground">Imóvel</p>
-                      <p className="text-sm font-medium">{selectedContract.imovel_endereco}</p>
+                      <p className="text-sm font-medium">{selectedContract.analysis.imovel_endereco}</p>
                       <p className="text-xs text-muted-foreground">
-                        {selectedContract.imovel_cidade} - {selectedContract.imovel_estado}
+                        {selectedContract.analysis.imovel_cidade} - {selectedContract.analysis.imovel_estado}
                       </p>
                     </div>
                   </div>
@@ -365,7 +379,7 @@ export default function AgencyNewClaim() {
                     <div>
                       <p className="text-xs text-muted-foreground">Aluguel</p>
                       <p className="text-sm font-medium">
-                        {formatCurrency(selectedContract.valor_aluguel)}
+                        {formatCurrency(selectedContract.analysis.valor_aluguel)}
                       </p>
                     </div>
                   </div>

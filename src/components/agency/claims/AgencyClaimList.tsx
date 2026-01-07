@@ -54,8 +54,8 @@ export function AgencyClaimList({
 
   const filteredClaims = claims.filter((claim) => {
     const matchesSearch = 
-      claim.analysis?.inquilino_nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      claim.analysis?.imovel_endereco?.toLowerCase().includes(searchTerm.toLowerCase());
+      claim.contract?.analysis?.inquilino_nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      claim.contract?.analysis?.imovel_endereco?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === 'all' || claim.public_status === statusFilter;
     
@@ -152,10 +152,10 @@ export function AgencyClaimList({
                       onClick={() => navigate(`/agency/claims/${claim.id}`)}
                     >
                       <TableCell className="font-medium">
-                        {claim.analysis?.inquilino_nome || '-'}
+                        {claim.contract?.analysis?.inquilino_nome || '-'}
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {claim.analysis?.imovel_endereco}, {claim.analysis?.imovel_cidade}
+                        {claim.contract?.analysis?.imovel_endereco}, {claim.contract?.analysis?.imovel_cidade}
                       </TableCell>
                       <TableCell className="font-medium">
                         {formatCurrency(claim.total_claimed_value)}

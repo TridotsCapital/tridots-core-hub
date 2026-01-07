@@ -15,7 +15,7 @@ import type {
 
 export function useClaims(filters?: {
   agencyId?: string;
-  analysisId?: string;
+  contractId?: string;
   publicStatus?: ClaimPublicStatus;
   internalStatus?: ClaimInternalStatus;
 }) {
@@ -26,13 +26,17 @@ export function useClaims(filters?: {
         .from('claims')
         .select(`
           *,
-          analysis:analyses(
-            inquilino_nome,
-            inquilino_cpf,
-            imovel_endereco,
-            imovel_cidade,
-            imovel_estado,
-            valor_aluguel
+          contract:contracts(
+            id,
+            status,
+            analysis:analyses(
+              inquilino_nome,
+              inquilino_cpf,
+              imovel_endereco,
+              imovel_cidade,
+              imovel_estado,
+              valor_aluguel
+            )
           ),
           agency:agencies(
             nome_fantasia,
@@ -48,8 +52,8 @@ export function useClaims(filters?: {
       if (filters?.agencyId) {
         query = query.eq('agency_id', filters.agencyId);
       }
-      if (filters?.analysisId) {
-        query = query.eq('analysis_id', filters.analysisId);
+      if (filters?.contractId) {
+        query = query.eq('contract_id', filters.contractId);
       }
       if (filters?.publicStatus) {
         query = query.eq('public_status', filters.publicStatus);
@@ -75,13 +79,17 @@ export function useClaimDetail(claimId: string | undefined) {
         .from('claims')
         .select(`
           *,
-          analysis:analyses(
-            inquilino_nome,
-            inquilino_cpf,
-            imovel_endereco,
-            imovel_cidade,
-            imovel_estado,
-            valor_aluguel
+          contract:contracts(
+            id,
+            status,
+            analysis:analyses(
+              inquilino_nome,
+              inquilino_cpf,
+              imovel_endereco,
+              imovel_cidade,
+              imovel_estado,
+              valor_aluguel
+            )
           ),
           agency:agencies(
             nome_fantasia,
@@ -103,11 +111,11 @@ export function useClaimDetail(claimId: string | undefined) {
 }
 
 // Hook para buscar sinistros de um contrato específico (para timeline)
-export function useClaimsByAnalysis(analysisId: string | undefined) {
+export function useClaimsByContract(contractId: string | undefined) {
   return useQuery({
-    queryKey: ['claims', 'by-analysis', analysisId],
+    queryKey: ['claims', 'by-contract', contractId],
     queryFn: async () => {
-      if (!analysisId) return [];
+      if (!contractId) return [];
       
       const { data, error } = await supabase
         .from('claims')
@@ -120,13 +128,13 @@ export function useClaimsByAnalysis(analysisId: string | undefined) {
           updated_at,
           creator:profiles!claims_created_by_fkey(full_name)
         `)
-        .eq('analysis_id', analysisId)
+        .eq('contract_id', contractId)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
       return data;
     },
-    enabled: !!analysisId,
+    enabled: !!contractId,
   });
 }
 
@@ -146,7 +154,7 @@ export function useCreateClaim() {
       const { data, error } = await supabase
         .from('claims')
         .insert({
-          analysis_id: input.analysis_id,
+          contract_id: input.contract_id,
           agency_id: input.agency_id,
           created_by: user.id,
           observations: input.observations || null,

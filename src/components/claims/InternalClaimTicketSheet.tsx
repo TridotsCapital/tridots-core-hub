@@ -50,7 +50,6 @@ export function InternalClaimTicketSheet({ open, onOpenChange, claim }: Internal
 
     await createTicket.mutateAsync({
       agency_id: claim.agency_id,
-      analysis_id: claim.analysis_id,
       claim_id: claim.id,
       subject,
       description: description || undefined,
@@ -79,7 +78,7 @@ export function InternalClaimTicketSheet({ open, onOpenChange, claim }: Internal
             Chamados do Sinistro
           </SheetTitle>
           <SheetDescription>
-            {claim.analysis?.inquilino_nome} • {claim.agency?.nome_fantasia}
+            {claim.contract?.analysis?.inquilino_nome} • {claim.agency?.nome_fantasia}
           </SheetDescription>
         </SheetHeader>
 

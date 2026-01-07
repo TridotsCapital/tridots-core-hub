@@ -99,7 +99,6 @@ export function ClaimTicketSheet({ open, onOpenChange, claim }: ClaimTicketSheet
           agency_id: agencyId,
           created_by: user.id,
           claim_id: claim.id,
-          analysis_id: claim.analysis_id,
         }]);
 
       if (error) throw error;
@@ -137,7 +136,7 @@ export function ClaimTicketSheet({ open, onOpenChange, claim }: ClaimTicketSheet
           <div className="flex-1">
             <p className="text-sm font-medium">Sinistro vinculado</p>
             <p className="text-xs text-muted-foreground">
-              {claim.analysis?.inquilino_nome} - {claim.analysis?.imovel_endereco}
+              {claim.contract?.analysis?.inquilino_nome} - {claim.contract?.analysis?.imovel_endereco}
             </p>
           </div>
           <Badge variant="secondary">
