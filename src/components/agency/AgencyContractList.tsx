@@ -52,7 +52,8 @@ const STATUS_CONFIG: Record<ContractStatus | 'renewal', { label: string; variant
   ativo: { label: 'Ativo', variant: 'default', icon: CheckCircle },
   cancelado: { label: 'Cancelado', variant: 'destructive', icon: XCircle },
   encerrado: { label: 'Encerrado', variant: 'secondary', icon: Clock },
-  renewal: { label: 'Para Renovar', variant: 'outline', icon: Clock },
+  vencido: { label: 'Vencido', variant: 'outline', icon: CalendarClock },
+  renewal: { label: 'Para Renovar', variant: 'outline', icon: CalendarClock },
 };
 
 export function AgencyContractList({ 

@@ -43,6 +43,7 @@ const STATUS_CONFIG: Record<ContractStatus, { label: string; variant: 'default' 
   ativo: { label: 'Ativo', variant: 'default' },
   cancelado: { label: 'Cancelado', variant: 'destructive' },
   encerrado: { label: 'Encerrado', variant: 'outline' },
+  vencido: { label: 'Vencido', variant: 'outline' },
 };
 
 interface Contract {
