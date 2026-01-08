@@ -1810,6 +1810,7 @@ export type Database = {
         | "ativo"
         | "cancelado"
         | "encerrado"
+        | "vencido"
       notification_type:
         | "new_message"
         | "status_change"
@@ -2003,6 +2004,7 @@ export const Constants = {
         "ativo",
         "cancelado",
         "encerrado",
+        "vencido",
       ],
       notification_type: [
         "new_message",
