@@ -925,6 +925,113 @@ export type Database = {
           },
         ]
       }
+      contract_renewals: {
+        Row: {
+          acceptance_token: string | null
+          acceptance_token_expires_at: string | null
+          acceptance_token_used_at: string | null
+          contract_id: string
+          created_at: string
+          guarantee_payment_validated_at: string | null
+          guarantee_payment_validated_by: string | null
+          id: string
+          new_data_fim_contrato: string | null
+          new_taxa_garantia_percentual: number | null
+          new_valor_aluguel: number
+          new_valor_condominio: number | null
+          new_valor_iptu: number | null
+          new_valor_outros_encargos: number | null
+          old_data_fim_contrato: string | null
+          old_taxa_garantia_percentual: number | null
+          old_valor_aluguel: number
+          old_valor_condominio: number | null
+          old_valor_iptu: number | null
+          old_valor_outros_encargos: number | null
+          rejection_reason: string | null
+          renewal_duration_months: number | null
+          request_source: string
+          requested_at: string
+          requested_by: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          terms_accepted_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          acceptance_token?: string | null
+          acceptance_token_expires_at?: string | null
+          acceptance_token_used_at?: string | null
+          contract_id: string
+          created_at?: string
+          guarantee_payment_validated_at?: string | null
+          guarantee_payment_validated_by?: string | null
+          id?: string
+          new_data_fim_contrato?: string | null
+          new_taxa_garantia_percentual?: number | null
+          new_valor_aluguel: number
+          new_valor_condominio?: number | null
+          new_valor_iptu?: number | null
+          new_valor_outros_encargos?: number | null
+          old_data_fim_contrato?: string | null
+          old_taxa_garantia_percentual?: number | null
+          old_valor_aluguel: number
+          old_valor_condominio?: number | null
+          old_valor_iptu?: number | null
+          old_valor_outros_encargos?: number | null
+          rejection_reason?: string | null
+          renewal_duration_months?: number | null
+          request_source: string
+          requested_at?: string
+          requested_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          terms_accepted_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          acceptance_token?: string | null
+          acceptance_token_expires_at?: string | null
+          acceptance_token_used_at?: string | null
+          contract_id?: string
+          created_at?: string
+          guarantee_payment_validated_at?: string | null
+          guarantee_payment_validated_by?: string | null
+          id?: string
+          new_data_fim_contrato?: string | null
+          new_taxa_garantia_percentual?: number | null
+          new_valor_aluguel?: number
+          new_valor_condominio?: number | null
+          new_valor_iptu?: number | null
+          new_valor_outros_encargos?: number | null
+          old_data_fim_contrato?: string | null
+          old_taxa_garantia_percentual?: number | null
+          old_valor_aluguel?: number
+          old_valor_condominio?: number | null
+          old_valor_iptu?: number | null
+          old_valor_outros_encargos?: number | null
+          rejection_reason?: string | null
+          renewal_duration_months?: number | null
+          request_source?: string
+          requested_at?: string
+          requested_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          terms_accepted_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_renewals_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contracts: {
         Row: {
           activated_at: string | null
@@ -954,6 +1061,8 @@ export type Database = {
           doc_vistoria_inicial_status: string | null
           doc_vistoria_inicial_uploaded_at: string | null
           id: string
+          last_renewal_id: string | null
+          renewal_count: number | null
           status: Database["public"]["Enums"]["contract_status"]
           updated_at: string
         }
@@ -985,6 +1094,8 @@ export type Database = {
           doc_vistoria_inicial_status?: string | null
           doc_vistoria_inicial_uploaded_at?: string | null
           id?: string
+          last_renewal_id?: string | null
+          renewal_count?: number | null
           status?: Database["public"]["Enums"]["contract_status"]
           updated_at?: string
         }
@@ -1016,6 +1127,8 @@ export type Database = {
           doc_vistoria_inicial_status?: string | null
           doc_vistoria_inicial_uploaded_at?: string | null
           id?: string
+          last_renewal_id?: string | null
+          renewal_count?: number | null
           status?: Database["public"]["Enums"]["contract_status"]
           updated_at?: string
         }

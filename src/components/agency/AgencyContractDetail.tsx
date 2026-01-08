@@ -5,18 +5,23 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Home, User, Users, DollarSign, Calendar, CheckCircle, Clock, XCircle, CreditCard, FileText, Loader2, MessageSquare, Eye, ExternalLink, FileCheck, Shield } from 'lucide-react';
+import { ArrowLeft, Home, User, Users, DollarSign, Calendar, CheckCircle, Clock, XCircle, CreditCard, FileText, Loader2, MessageSquare, Eye, ExternalLink, FileCheck, Shield, CalendarSync } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency, PROPERTY_TYPES } from '@/lib/validators';
-import { format } from 'date-fns';
+import { format, addDays, isWithinInterval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ContractDocumentsSection } from '@/components/contracts/ContractDocumentsSection';
 import { ContractTicketSheet } from './ContractTicketSheet';
 import { AgencyTicketDetail } from './AgencyTicketDetail';
+import { ContractRenewalModal } from './ContractRenewalModal';
+import { ContractRenewalStatus } from './ContractRenewalStatus';
+import { ContractRenewalHistory } from './ContractRenewalHistory';
 import { useTicketCountByAnalysis, useTicketsByAnalysis } from '@/hooks/useTickets';
 import { useActiveClaimByContract } from '@/hooks/useActiveClaimByContract';
+import { usePendingRenewal } from '@/hooks/useContractRenewal';
 import { useQuery } from '@tanstack/react-query';
 import type { Database } from '@/integrations/supabase/types';
+
 
 type ContractStatus = Database['public']['Enums']['contract_status'];
 type AnalysisStatus = Database['public']['Enums']['analysis_status'];
@@ -26,6 +31,7 @@ const CONTRACT_STATUS_CONFIG: Record<ContractStatus, { label: string; color: str
   ativo: { label: 'Ativo', color: 'bg-green-100 text-green-800 border-green-200', icon: CheckCircle },
   cancelado: { label: 'Cancelado', color: 'bg-red-100 text-red-800 border-red-200', icon: XCircle },
   encerrado: { label: 'Encerrado', color: 'bg-gray-100 text-gray-800 border-gray-200', icon: Clock },
+  vencido: { label: 'Vencido', color: 'bg-orange-100 text-orange-800 border-orange-200', icon: Clock },
 };
 
 const ANALYSIS_STATUS_CONFIG: Record<AnalysisStatus, { label: string; color: string; icon: any }> = {
@@ -59,10 +65,18 @@ export function AgencyContractDetail() {
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'overview');
   const [ticketSheetOpen, setTicketSheetOpen] = useState(false);
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
+  const [renewalModalOpen, setRenewalModalOpen] = useState(false);
 
   const { data: ticketCount = 0 } = useTicketCountByAnalysis(id);
   const { data: tickets = [] } = useTicketsByAnalysis(id);
   const { data: activeClaim } = useActiveClaimByContract(contract?.id);
+  const { data: pendingRenewal } = usePendingRenewal(contract?.id);
+
+  // Check if contract is eligible for renewal (ativo or vencido, within 30 days of expiry)
+  const now = new Date();
+  const isEligibleForRenewal = contract && 
+    ['ativo', 'vencido'].includes(contract.status) && 
+    !pendingRenewal;
 
   // Fetch all claims for this contract (for timeline)
   const { data: contractClaims = [] } = useQuery({
@@ -346,6 +360,56 @@ export function AgencyContractDetail() {
             Ver Garantia
           </Button>
         </div>
+      )}
+
+      {/* Renewal Section */}
+      {contract && (
+        <div className="space-y-4">
+          {pendingRenewal ? (
+            <ContractRenewalStatus renewal={pendingRenewal} />
+          ) : isEligibleForRenewal && (
+            <Card className="border-primary/20 bg-primary/5">
+              <CardContent className="p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <CalendarSync className="h-5 w-5 text-primary" />
+                  <div>
+                    <p className="font-medium">Renovação Disponível</p>
+                    <p className="text-sm text-muted-foreground">
+                      {contract.data_fim_contrato 
+                        ? `Contrato vence em ${format(new Date(contract.data_fim_contrato), "dd/MM/yyyy", { locale: ptBR })}`
+                        : 'Solicite a renovação do contrato'}
+                    </p>
+                  </div>
+                </div>
+                <Button onClick={() => setRenewalModalOpen(true)}>
+                  <CalendarSync className="h-4 w-4 mr-2" />
+                  Solicitar Renovação
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+          
+          <ContractRenewalHistory contractId={contract.id} />
+        </div>
+      )}
+
+      {/* Renewal Modal */}
+      {contract && analysis && (
+        <ContractRenewalModal
+          open={renewalModalOpen}
+          onOpenChange={setRenewalModalOpen}
+          contract={{
+            id: contract.id,
+            data_fim_contrato: contract.data_fim_contrato,
+            analysis: {
+              valor_aluguel: analysis.valor_aluguel,
+              valor_condominio: analysis.valor_condominio,
+              valor_iptu: analysis.valor_iptu,
+              valor_outros_encargos: analysis.valor_outros_encargos,
+              taxa_garantia_percentual: analysis.taxa_garantia_percentual
+            }
+          }}
+        />
       )}
 
       {/* Tabs */}

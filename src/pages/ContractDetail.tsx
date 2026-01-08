@@ -52,6 +52,7 @@ const STATUS_CONFIG: Record<ContractStatus, { label: string; color: string; icon
   ativo: { label: 'Ativo', color: 'bg-green-100 text-green-800 border-green-200', icon: CheckCircle },
   cancelado: { label: 'Cancelado', color: 'bg-red-100 text-red-800 border-red-200', icon: XCircle },
   encerrado: { label: 'Encerrado', color: 'bg-gray-100 text-gray-800 border-gray-200', icon: Clock },
+  vencido: { label: 'Vencido', color: 'bg-orange-100 text-orange-800 border-orange-200', icon: Clock },
 };
 
 interface TimelineEvent {
