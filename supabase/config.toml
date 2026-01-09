@@ -26,3 +26,12 @@ verify_jwt = false
 
 [functions.validate-payments]
 verify_jwt = false
+
+[functions.renewal-reminders]
+verify_jwt = false
+
+[functions.generate-renewal-acceptance-link]
+verify_jwt = false
+
+[functions.check-expired-contracts]
+verify_jwt = false

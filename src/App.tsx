@@ -26,6 +26,8 @@ import NotFound from "./pages/NotFound";
 // Public Pages (no auth required)
 import TenantAcceptance from "./pages/TenantAcceptance";
 import AcceptanceSuccess from "./pages/AcceptanceSuccess";
+import RenewalAcceptance from "./pages/RenewalAcceptance";
+import RenewalAcceptanceSuccess from "./pages/RenewalAcceptanceSuccess";
 
 // Agency Portal Pages
 import { 
@@ -118,6 +120,8 @@ function PublicRoutes() {
     <>
       <Route path="/aceite/:token" element={<TenantAcceptance />} />
       <Route path="/aceite/:token/sucesso" element={<AcceptanceSuccess />} />
+      <Route path="/aceite-renovacao/:token" element={<RenewalAcceptance />} />
+      <Route path="/aceite-renovacao-sucesso" element={<RenewalAcceptanceSuccess />} />
     </>
   );
 }
