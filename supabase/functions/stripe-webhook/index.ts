@@ -116,7 +116,7 @@ serve(async (req) => {
           // Create first recurring commission
           if (analysis) {
             const valorTotal = analysis.valor_total || analysis.valor_aluguel;
-            const garantiaMensal = (valorTotal * analysis.taxa_garantia_percentual / 100) / 12;
+            const garantiaMensal = valorTotal * analysis.taxa_garantia_percentual / 100;
             const recurringCommissionValue = garantiaMensal * (analysis.agency.percentual_comissao_recorrente / 100);
             
             const now = new Date();
@@ -181,7 +181,7 @@ serve(async (req) => {
 
             if (analysis) {
               const valorTotal = analysis.valor_total || analysis.valor_aluguel;
-              const garantiaMensal = (valorTotal * analysis.taxa_garantia_percentual / 100) / 12;
+              const garantiaMensal = valorTotal * analysis.taxa_garantia_percentual / 100;
               const recurringCommissionValue = garantiaMensal * (analysis.agency.percentual_comissao_recorrente / 100);
               
               await supabase.from("commissions").insert({
