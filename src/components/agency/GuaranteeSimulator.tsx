@@ -1,16 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
+import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calculator, ArrowRight, TrendingUp } from 'lucide-react';
+import { Calculator, ArrowRight, TrendingUp, Wallet } from 'lucide-react';
 import { formatCurrency, formatCurrencyInput, parseCurrencyInput, SETUP_FEE_OPTIONS } from '@/lib/validators';
+import { PaymentOptionsDisplay } from '@/components/payment/PaymentOptionsDisplay';
 
 interface GuaranteeSimulatorProps {
   onStartAnalysis: (values: SimulatorValues) => void;
   initialValues?: Partial<SimulatorValues>;
+  descontoPix?: number;
 }
 
 export interface SimulatorValues {
@@ -21,7 +24,7 @@ export interface SimulatorValues {
   setupFee: number;
 }
 
-export function GuaranteeSimulator({ onStartAnalysis, initialValues }: GuaranteeSimulatorProps) {
+export function GuaranteeSimulator({ onStartAnalysis, initialValues, descontoPix = 5 }: GuaranteeSimulatorProps) {
   const [aluguelInput, setAluguelInput] = useState(
     initialValues?.aluguel ? formatCurrencyInput((initialValues.aluguel * 100).toString()) : ''
   );
@@ -43,6 +46,7 @@ export function GuaranteeSimulator({ onStartAnalysis, initialValues }: Guarantee
   // Calculations
   const totalEncargos = aluguel + condominio + iptu;
   const taxaMensal = totalEncargos * (taxaGarantia / 100);
+  const garantiaAnual = taxaMensal * 12;
   const custoMensalTotal = totalEncargos + taxaMensal;
 
   const handleCurrencyInput = (
@@ -186,9 +190,15 @@ export function GuaranteeSimulator({ onStartAnalysis, initialValues }: Guarantee
                 <span className="text-muted-foreground">Total de Encargos</span>
                 <span>{formatCurrency(totalEncargos)}</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Taxa Mensal Tridots ({taxaGarantia}%)</span>
-                <span>{formatCurrency(taxaMensal)}</span>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground flex items-center gap-2">
+                  Taxa Mensal Tridots ({taxaGarantia}%)
+                  <Badge className="bg-primary text-primary-foreground text-xs">
+                    <Wallet className="h-3 w-3 mr-1" />
+                    Valor do Inquilino
+                  </Badge>
+                </span>
+                <span className="font-semibold text-primary">{formatCurrency(taxaMensal)}</span>
               </div>
               <div className="h-px bg-border my-2" />
               <div className="flex justify-between font-medium">
@@ -201,6 +211,15 @@ export function GuaranteeSimulator({ onStartAnalysis, initialValues }: Guarantee
                   <span>{formatCurrency(setupFee)}</span>
                 </div>
               )}
+            </div>
+
+            {/* Payment Options */}
+            <div className="pt-3 border-t">
+              <PaymentOptionsDisplay
+                garantiaAnual={garantiaAnual}
+                descontoPix={descontoPix}
+                compact={true}
+              />
             </div>
           </div>
         )}

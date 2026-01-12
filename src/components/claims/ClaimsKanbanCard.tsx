@@ -16,6 +16,7 @@ import { formatDistanceToNow, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import type { Claim, ClaimInternalStatus } from '@/types/claims';
+import { useTicketCountByClaim } from '@/hooks/useTickets';
 
 interface ClaimsKanbanCardProps {
   claim: Claim & {
@@ -46,6 +47,8 @@ export function ClaimsKanbanCard({ claim, onViewDetails, onOpenTicket }: ClaimsK
     transition,
     isDragging,
   } = useSortable({ id: claim.id });
+
+  const { data: ticketData } = useTicketCountByClaim(claim.id);
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -180,13 +183,24 @@ export function ClaimsKanbanCard({ claim, onViewDetails, onOpenTicket }: ClaimsK
             <Button
               variant="ghost"
               size="sm"
-              className="h-7 text-xs px-2"
+              className={cn(
+                "h-7 text-xs px-2 relative",
+                ticketData?.hasOpen && "text-destructive"
+              )}
               onClick={(e) => {
                 e.stopPropagation();
                 onOpenTicket(claim);
               }}
             >
               <MessageSquare className="h-3 w-3" />
+              {ticketData && ticketData.count > 0 && (
+                <Badge 
+                  variant={ticketData.hasOpen ? "destructive" : "secondary"} 
+                  className="absolute -top-1 -right-1 h-4 min-w-4 p-0 flex items-center justify-center text-[9px]"
+                >
+                  {ticketData.count}
+                </Badge>
+              )}
             </Button>
           </div>
         </CardContent>

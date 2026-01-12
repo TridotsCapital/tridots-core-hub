@@ -1,9 +1,10 @@
 import { Analysis } from '@/types/database';
 import { Badge } from '@/components/ui/badge';
-import { Clock, AlertTriangle } from 'lucide-react';
+import { Clock, AlertTriangle, MessageSquare } from 'lucide-react';
 import { formatDistanceToNow, differenceInHours } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { useTicketCountWithStatus } from '@/hooks/useTickets';
 
 interface AgencyKanbanCardProps {
   analysis: Analysis;
@@ -32,6 +33,7 @@ const getUrgencyLevel = (createdAt: string): 'low' | 'medium' | 'high' => {
 export function AgencyKanbanCard({ analysis, onClick, hasUnread = false }: AgencyKanbanCardProps) {
   const urgencyLevel = getUrgencyLevel(analysis.created_at);
   const urgencyClass = getUrgencyClass(analysis.created_at);
+  const { data: ticketData } = useTicketCountWithStatus(analysis.id);
 
   return (
     <div
@@ -84,12 +86,24 @@ export function AgencyKanbanCard({ analysis, onClick, hasUnread = false }: Agenc
           </span>
         </div>
 
-        {urgencyLevel === 'high' && (
-          <Badge variant="destructive" className="text-[10px] px-1.5 py-0 h-5">
-            <AlertTriangle className="h-3 w-3 mr-1" />
-            Urgente
-          </Badge>
-        )}
+        <div className="flex items-center gap-1">
+          {ticketData && ticketData.count > 0 && (
+            <Badge 
+              variant={ticketData.hasOpen ? "destructive" : "secondary"} 
+              className="text-[10px] px-1.5 py-0 h-5"
+            >
+              <MessageSquare className="h-3 w-3 mr-0.5" />
+              {ticketData.count}
+            </Badge>
+          )}
+
+          {urgencyLevel === 'high' && (
+            <Badge variant="destructive" className="text-[10px] px-1.5 py-0 h-5">
+              <AlertTriangle className="h-3 w-3 mr-1" />
+              Urgente
+            </Badge>
+          )}
+        </div>
       </div>
     </div>
   );

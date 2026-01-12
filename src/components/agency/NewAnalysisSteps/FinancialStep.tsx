@@ -3,24 +3,33 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/comp
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 import { SETUP_FEE_OPTIONS, formatCurrency } from '@/lib/validators';
-import { Settings, TrendingUp } from 'lucide-react';
+import { Settings, TrendingUp, Wallet } from 'lucide-react';
+import { PaymentOptionsDisplay, PaymentOption } from '@/components/payment/PaymentOptionsDisplay';
 
 interface FinancialStepProps {
   form: UseFormReturn<any>;
+  descontoPix?: number;
 }
 
-export function FinancialStep({ form }: FinancialStepProps) {
+export function FinancialStep({ form, descontoPix = 5 }: FinancialStepProps) {
   const taxaGarantia = form.watch('taxaGarantiaPercentual') || 10;
   const setupFee = form.watch('setupFee') || 100;
   const valorAluguel = form.watch('valorAluguel') || 0;
   const valorCondominio = form.watch('valorCondominio') || 0;
   const valorIptu = form.watch('valorIptu') || 0;
+  const formaPagamentoPreferida = form.watch('formaPagamentoPreferida');
 
   // Calculations
   const totalEncargos = valorAluguel + valorCondominio + valorIptu;
   const taxaMensal = totalEncargos * (taxaGarantia / 100);
+  const garantiaAnual = taxaMensal * 12;
   const custoMensalTotal = totalEncargos + taxaMensal;
+
+  const handlePaymentOptionSelect = (option: PaymentOption) => {
+    form.setValue('formaPagamentoPreferida', option, { shouldValidate: true });
+  };
 
   return (
     <div className="space-y-6">
@@ -102,9 +111,15 @@ export function FinancialStep({ form }: FinancialStepProps) {
               <span className="text-muted-foreground">Total de Encargos</span>
               <span>{formatCurrency(totalEncargos)}</span>
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Taxa Mensal ({taxaGarantia}%)</span>
-              <span>{formatCurrency(taxaMensal)}</span>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-muted-foreground flex items-center gap-2">
+                Taxa Mensal ({taxaGarantia}%)
+                <Badge className="bg-primary text-primary-foreground text-xs">
+                  <Wallet className="h-3 w-3 mr-1" />
+                  Valor do Inquilino
+                </Badge>
+              </span>
+              <span className="font-semibold text-primary">{formatCurrency(taxaMensal)}</span>
             </div>
             <div className="h-px bg-border my-2" />
             <div className="flex justify-between font-medium">
@@ -117,6 +132,29 @@ export function FinancialStep({ form }: FinancialStepProps) {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Payment Option Selection */}
+      {valorAluguel > 0 && (
+        <FormField
+          control={form.control}
+          name="formaPagamentoPreferida"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Forma de Pagamento Preferida *</FormLabel>
+              <FormControl>
+                <PaymentOptionsDisplay
+                  garantiaAnual={garantiaAnual}
+                  descontoPix={descontoPix}
+                  formaEscolhida={field.value}
+                  onSelect={handlePaymentOptionSelect}
+                  compact={false}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
       )}
 
       {/* Observations */}

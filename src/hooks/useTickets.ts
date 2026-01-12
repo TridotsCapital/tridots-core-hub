@@ -586,6 +586,42 @@ export function useTicketsByClaimId(claimId: string | undefined) {
   });
 }
 
+// Hook to count tickets for a specific claim with status info
+export function useTicketCountByClaim(claimId: string | undefined) {
+  return useQuery({
+    queryKey: ["ticket-count-by-claim", claimId],
+    queryFn: async () => {
+      if (!claimId) return { count: 0, hasOpen: false };
+      const { data, error } = await supabase
+        .from("tickets")
+        .select("id, status")
+        .eq("claim_id", claimId);
+      if (error) throw error;
+      const hasOpen = data?.some(t => ['aberto', 'em_atendimento'].includes(t.status)) ?? false;
+      return { count: data?.length || 0, hasOpen };
+    },
+    enabled: !!claimId,
+  });
+}
+
+// Hook to count tickets for analysis with status info
+export function useTicketCountWithStatus(analysisId: string | undefined) {
+  return useQuery({
+    queryKey: ["ticket-count-with-status", analysisId],
+    queryFn: async () => {
+      if (!analysisId) return { count: 0, hasOpen: false };
+      const { data, error } = await supabase
+        .from("tickets")
+        .select("id, status")
+        .eq("analysis_id", analysisId);
+      if (error) throw error;
+      const hasOpen = data?.some(t => ['aberto', 'em_atendimento'].includes(t.status)) ?? false;
+      return { count: data?.length || 0, hasOpen };
+    },
+    enabled: !!analysisId,
+  });
+}
+
 export function useSetTypingIndicator() {
   return useMutation({
     mutationFn: async ({ ticketId, isTyping }: { ticketId: string; isTyping: boolean }) => {
