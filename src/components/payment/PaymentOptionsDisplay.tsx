@@ -13,7 +13,9 @@ const formatCurrency = (value: number) => {
 
 export type PaymentMethod = 'pix' | 'card_1x' | 'card_2x' | 'card_3x' | 'card_4x' | 'card_5x' | 'card_6x' | 'card_7x' | 'card_8x' | 'card_9x' | 'card_10x' | 'card_11x' | 'card_12x';
 
-interface PaymentOption {
+export type PaymentOption = PaymentMethod;
+
+interface PaymentOptionItem {
   id: PaymentMethod;
   label: string;
   description: string;
@@ -45,7 +47,7 @@ export function PaymentOptionsDisplay({
 
   const pixValue = garantiaAnual * (1 - descontoPix / 100);
 
-  const allOptions: PaymentOption[] = [
+  const allOptions: PaymentOptionItem[] = [
     {
       id: 'pix',
       label: 'PIX à vista',

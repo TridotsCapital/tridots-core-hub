@@ -11,11 +11,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Clock, Building2, UserPlus, Bell, MoreHorizontal, AlertTriangle } from 'lucide-react';
+import { Clock, Building2, UserPlus, Bell, MoreHorizontal, AlertTriangle, MessageSquare } from 'lucide-react';
 import { formatDistanceToNow, differenceInHours } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useAssignAnalyst, useTeamMembers } from '@/hooks/useAnalysesKanban';
+import { useTicketCountWithStatus } from '@/hooks/useTickets';
 
 interface KanbanCardProps {
   analysis: Analysis;
@@ -50,6 +51,7 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
 
     const assignAnalyst = useAssignAnalyst();
     const { data: teamMembers } = useTeamMembers();
+    const { data: ticketData } = useTicketCountWithStatus(analysis.id);
 
     const style = {
       transform: CSS.Transform.toString(transform),
@@ -193,20 +195,32 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
           </span>
         </div>
 
-        {urgencyLevel === 'high' && (
-          <Badge variant="destructive" className="text-[10px] px-1.5 py-0 h-5">
-            <AlertTriangle className="h-3 w-3 mr-1" />
-            Urgente
-          </Badge>
-        )}
+        <div className="flex items-center gap-1">
+          {ticketData && ticketData.count > 0 && (
+            <Badge 
+              variant={ticketData.hasOpen ? "destructive" : "secondary"} 
+              className="text-[10px] px-1.5 py-0 h-5"
+            >
+              <MessageSquare className="h-3 w-3 mr-0.5" />
+              {ticketData.count}
+            </Badge>
+          )}
 
-        {analysis.analyst_id && (
-          <Avatar className="h-6 w-6 border-2 border-background">
-            <AvatarFallback className="text-[10px] bg-primary text-primary-foreground">
-              AN
-            </AvatarFallback>
-          </Avatar>
-        )}
+          {urgencyLevel === 'high' && (
+            <Badge variant="destructive" className="text-[10px] px-1.5 py-0 h-5">
+              <AlertTriangle className="h-3 w-3 mr-1" />
+              Urgente
+            </Badge>
+          )}
+
+          {analysis.analyst_id && (
+            <Avatar className="h-6 w-6 border-2 border-background">
+              <AvatarFallback className="text-[10px] bg-primary text-primary-foreground">
+                AN
+              </AvatarFallback>
+            </Avatar>
+          )}
+        </div>
       </div>
     </div>
     );

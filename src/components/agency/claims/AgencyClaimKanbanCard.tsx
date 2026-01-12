@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { Claim } from '@/types/claims';
+import { useTicketCountByClaim } from '@/hooks/useTickets';
+import { cn } from '@/lib/utils';
 
 interface AgencyClaimKanbanCardProps {
   claim: Claim;
@@ -39,6 +41,8 @@ export function AgencyClaimKanbanCard({
     locale: ptBR,
   });
 
+  const { data: ticketData } = useTicketCountByClaim(claim.id);
+
   return (
     <Card className="hover:shadow-md transition-shadow cursor-pointer group relative" onClick={onClick}>
       {/* Unread notification indicator */}
@@ -62,12 +66,23 @@ export function AgencyClaimKanbanCard({
               {claim.contract?.analysis?.imovel_endereco}, {claim.contract?.analysis?.imovel_cidade}
             </p>
           </div>
-          {isUrgent && (
-            <Badge variant="destructive" className="flex-shrink-0 h-5 gap-1">
-              <AlertTriangle className="h-3 w-3" />
-              {daysSinceCreation}d
-            </Badge>
-          )}
+          <div className="flex items-center gap-1">
+            {ticketData && ticketData.count > 0 && (
+              <Badge 
+                variant={ticketData.hasOpen ? "destructive" : "secondary"} 
+                className="text-[10px] px-1.5 py-0 h-5"
+              >
+                <MessageCircle className="h-3 w-3 mr-0.5" />
+                {ticketData.count}
+              </Badge>
+            )}
+            {isUrgent && (
+              <Badge variant="destructive" className="flex-shrink-0 h-5 gap-1">
+                <AlertTriangle className="h-3 w-3" />
+                {daysSinceCreation}d
+              </Badge>
+            )}
+          </div>
         </div>
 
         {/* Value and Time */}
@@ -95,7 +110,10 @@ export function AgencyClaimKanbanCard({
           <Button
             variant="ghost"
             size="sm"
-            className="flex-1 h-8 text-xs gap-1.5"
+            className={cn(
+              "flex-1 h-8 text-xs gap-1.5",
+              ticketData?.hasOpen && "text-destructive"
+            )}
             onClick={(e) => {
               e.stopPropagation();
               onOpenTicket();
