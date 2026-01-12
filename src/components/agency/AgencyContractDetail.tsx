@@ -473,6 +473,12 @@ export function AgencyContractDetail() {
                 <span className="text-muted-foreground">CPF:</span>
                 <p className="font-medium">{analysis.inquilino_cpf}</p>
               </div>
+              {analysis.inquilino_rg && (
+                <div>
+                  <span className="text-muted-foreground">RG:</span>
+                  <p className="font-medium">{analysis.inquilino_rg}</p>
+                </div>
+              )}
               {analysis.inquilino_email && (
                 <div>
                   <span className="text-muted-foreground">E-mail:</span>
@@ -483,6 +489,12 @@ export function AgencyContractDetail() {
                 <div>
                   <span className="text-muted-foreground">Telefone:</span>
                   <p className="font-medium">{analysis.inquilino_telefone}</p>
+                </div>
+              )}
+              {analysis.inquilino_telefone_secundario && (
+                <div>
+                  <span className="text-muted-foreground">Telefone Secundário:</span>
+                  <p className="font-medium">{analysis.inquilino_telefone_secundario}</p>
                 </div>
               )}
               {analysis.inquilino_profissao && (

@@ -162,7 +162,7 @@ export function ApprovalModal({ analysis, open, onOpenChange, onConfirm }: Appro
             </div>
             
             <div className="flex justify-between text-sm border-t pt-2">
-              <span className="text-muted-foreground">Taxa de Garantia ({taxaGarantia}% a.a.)</span>
+              <span className="text-muted-foreground">Taxa de Garantia ({taxaGarantia}%)</span>
               <span>{formatCurrency(garantiaAnual)}/ano</span>
             </div>
             

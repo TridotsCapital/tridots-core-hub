@@ -86,6 +86,10 @@ export function SummaryStep({ form }: SummaryStepProps) {
               <span className="text-muted-foreground">CPF:</span>
               <p className="font-medium">{values.inquilinoCpf}</p>
             </div>
+            <div>
+              <span className="text-muted-foreground">RG:</span>
+              <p className="font-medium">{values.inquilinoRg}</p>
+            </div>
             {values.inquilinoEmail && (
               <div>
                 <span className="text-muted-foreground">E-mail:</span>
@@ -96,6 +100,12 @@ export function SummaryStep({ form }: SummaryStepProps) {
               <div>
                 <span className="text-muted-foreground">Telefone:</span>
                 <p className="font-medium">{values.inquilinoTelefone}</p>
+              </div>
+            )}
+            {values.inquilinoTelefoneSecundario && (
+              <div>
+                <span className="text-muted-foreground">Telefone Secundário:</span>
+                <p className="font-medium">{values.inquilinoTelefoneSecundario}</p>
               </div>
             )}
             {values.inquilinoProfissao && (

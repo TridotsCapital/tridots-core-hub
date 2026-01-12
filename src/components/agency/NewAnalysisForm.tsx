@@ -36,10 +36,11 @@ const formSchema = z.object({
   // Tenant
   inquilinoNome: z.string().min(3, 'Nome obrigatório'),
   inquilinoCpf: z.string().refine(val => validateCPF(val), 'CPF inválido'),
-  inquilinoRg: z.string().optional(),
+  inquilinoRg: z.string().min(5, 'RG deve ter pelo menos 5 caracteres'),
   inquilinoDataNascimento: z.string().min(1, 'Data de nascimento obrigatória'),
   inquilinoEmail: z.string().min(1, 'E-mail obrigatório').email('E-mail inválido'),
   inquilinoTelefone: z.string().min(10, 'Telefone inválido (mínimo 10 dígitos)'),
+  inquilinoTelefoneSecundario: z.string().min(10, 'Telefone secundário obrigatório (mínimo 10 dígitos)'),
   inquilinoProfissao: z.string().min(2, 'Profissão obrigatória'),
   inquilinoEmpresa: z.string().min(2, 'Empresa obrigatória'),
   inquilinoRendaMensal: z.number().min(1, 'Renda obrigatória'),
@@ -156,7 +157,7 @@ export function NewAnalysisForm({ agencyId }: NewAnalysisFormProps) {
     
     const stepFields: Record<number, (keyof FormData)[]> = {
       0: ['imovelCep', 'imovelEndereco', 'imovelNumero', 'imovelBairro', 'imovelCidade', 'imovelEstado', 'imovelTipo', 'valorAluguel'],
-      1: ['inquilinoNome', 'inquilinoCpf', 'inquilinoDataNascimento', 'inquilinoEmail', 'inquilinoTelefone', 'inquilinoProfissao', 'inquilinoEmpresa', 'inquilinoRendaMensal'],
+      1: ['inquilinoNome', 'inquilinoCpf', 'inquilinoRg', 'inquilinoDataNascimento', 'inquilinoEmail', 'inquilinoTelefone', 'inquilinoTelefoneSecundario', 'inquilinoProfissao', 'inquilinoEmpresa', 'inquilinoRendaMensal'],
       2: incluirConjuge ? ['conjugeNome', 'conjugeCpf', 'conjugeProfissao', 'conjugeEmpresa', 'conjugeRendaMensal'] : [],
     };
 
@@ -210,10 +211,11 @@ export function NewAnalysisForm({ agencyId }: NewAnalysisFormProps) {
           valor_iptu: data.valorIptu,
           inquilino_nome: data.inquilinoNome,
           inquilino_cpf: data.inquilinoCpf.replace(/\D/g, ''),
-          inquilino_rg: data.inquilinoRg || null,
+          inquilino_rg: data.inquilinoRg,
           inquilino_data_nascimento: data.inquilinoDataNascimento || null,
           inquilino_email: data.inquilinoEmail || null,
           inquilino_telefone: data.inquilinoTelefone || null,
+          inquilino_telefone_secundario: data.inquilinoTelefoneSecundario || null,
           inquilino_profissao: data.inquilinoProfissao || null,
           inquilino_empresa: data.inquilinoEmpresa || null,
           inquilino_renda_mensal: data.inquilinoRendaMensal,

@@ -49,6 +49,7 @@ export interface Agency {
   responsavel_telefone: string | null;
   percentual_comissao_recorrente: number;
   percentual_comissao_setup: number;
+  desconto_pix_percentual: number | null;
   active: boolean;
   logo_url: string | null;
   created_at: string;

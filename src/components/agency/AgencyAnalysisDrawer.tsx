@@ -300,6 +300,7 @@ export function AgencyAnalysisDrawer({ analysis, open, onOpenChange }: AgencyAna
                     <InfoRow label="Data de Nascimento" value={formatDate(analysis.inquilino_data_nascimento)} />
                     <InfoRow label="E-mail" value={analysis.inquilino_email} icon={Mail} />
                     <InfoRow label="Telefone" value={analysis.inquilino_telefone} icon={Phone} />
+                    <InfoRow label="Telefone Secundário" value={(analysis as any).inquilino_telefone_secundario} icon={Phone} />
                     <InfoRow label="Profissão" value={analysis.inquilino_profissao} icon={Briefcase} />
                     <InfoRow label="Empresa" value={analysis.inquilino_empresa} icon={DollarSign} />
                     <InfoRow label="Renda Mensal" value={formatCurrency(analysis.inquilino_renda_mensal)} icon={DollarSign} />

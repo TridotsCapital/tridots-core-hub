@@ -21,6 +21,7 @@ export type Database = {
           cidade: string | null
           cnpj: string
           created_at: string
+          desconto_pix_percentual: number | null
           email: string
           endereco: string | null
           estado: string | null
@@ -42,6 +43,7 @@ export type Database = {
           cidade?: string | null
           cnpj: string
           created_at?: string
+          desconto_pix_percentual?: number | null
           email: string
           endereco?: string | null
           estado?: string | null
@@ -63,6 +65,7 @@ export type Database = {
           cidade?: string | null
           cnpj?: string
           created_at?: string
+          desconto_pix_percentual?: number | null
           email?: string
           endereco?: string | null
           estado?: string | null
@@ -164,6 +167,7 @@ export type Database = {
           conjuge_renda_mensal: number | null
           conjuge_rg: string | null
           created_at: string
+          forma_pagamento_preferida: string | null
           guarantee_payment_confirmed_at: string | null
           guarantee_payment_date: string | null
           guarantee_payment_link: string | null
@@ -189,6 +193,7 @@ export type Database = {
           inquilino_renda_mensal: number | null
           inquilino_rg: string | null
           inquilino_telefone: string | null
+          inquilino_telefone_secundario: string | null
           observacoes: string | null
           original_taxa_garantia_percentual: number | null
           payer_address: string | null
@@ -248,6 +253,7 @@ export type Database = {
           conjuge_renda_mensal?: number | null
           conjuge_rg?: string | null
           created_at?: string
+          forma_pagamento_preferida?: string | null
           guarantee_payment_confirmed_at?: string | null
           guarantee_payment_date?: string | null
           guarantee_payment_link?: string | null
@@ -273,6 +279,7 @@ export type Database = {
           inquilino_renda_mensal?: number | null
           inquilino_rg?: string | null
           inquilino_telefone?: string | null
+          inquilino_telefone_secundario?: string | null
           observacoes?: string | null
           original_taxa_garantia_percentual?: number | null
           payer_address?: string | null
@@ -332,6 +339,7 @@ export type Database = {
           conjuge_renda_mensal?: number | null
           conjuge_rg?: string | null
           created_at?: string
+          forma_pagamento_preferida?: string | null
           guarantee_payment_confirmed_at?: string | null
           guarantee_payment_date?: string | null
           guarantee_payment_link?: string | null
@@ -357,6 +365,7 @@ export type Database = {
           inquilino_renda_mensal?: number | null
           inquilino_rg?: string | null
           inquilino_telefone?: string | null
+          inquilino_telefone_secundario?: string | null
           observacoes?: string | null
           original_taxa_garantia_percentual?: number | null
           payer_address?: string | null
