@@ -100,8 +100,8 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Calculate values
     const valorTotal = analysis.valor_total || analysis.valor_aluguel;
-    const garantiaAnual = valorTotal * analysis.taxa_garantia_percentual / 100;
-    const garantiaMensal = garantiaAnual / 12;
+    const garantiaMensal = valorTotal * analysis.taxa_garantia_percentual / 100;
+    const garantiaAnual = garantiaMensal * 12;
     const setupFee = analysis.setup_fee_exempt ? 0 : analysis.setup_fee;
     const primeiraParcela = setupFee + garantiaMensal;
 

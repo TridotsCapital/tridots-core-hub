@@ -57,7 +57,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Calculate values (in centavos for Stripe)
     const valorTotal = analysis.valor_total || analysis.valor_aluguel;
-    const garantiaMensal = Math.round((valorTotal * analysis.taxa_garantia_percentual / 100) / 12 * 100);
+    const garantiaMensal = Math.round((valorTotal * analysis.taxa_garantia_percentual / 100) * 100);
     const setupFee = analysis.setup_fee_exempt ? 0 : Math.round(analysis.setup_fee * 100);
 
     // Create or get Stripe customer
