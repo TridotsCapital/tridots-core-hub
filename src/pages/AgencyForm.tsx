@@ -42,6 +42,7 @@ export default function AgencyForm() {
       responsavel_telefone: agency.responsavel_telefone,
       percentual_comissao_recorrente: agency.percentual_comissao_recorrente,
       percentual_comissao_setup: agency.percentual_comissao_setup,
+      desconto_pix_percentual: agency.desconto_pix_percentual,
       active: agency.active,
     } : undefined,
   });
@@ -140,9 +141,9 @@ export default function AgencyForm() {
         {/* Commission Settings */}
         <Card>
           <CardHeader>
-            <CardTitle>Configurações de Comissão</CardTitle>
+            <CardTitle>Configurações de Comissão e Pagamento</CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-2">
               <Label htmlFor="percentual_comissao_recorrente">
                 % Comissão Recorrente sobre Taxa Tridots *
@@ -191,6 +192,36 @@ export default function AgencyForm() {
               <p className="text-xs text-muted-foreground">
                 Percentual do setup fee que é repassado à imobiliária (padrão: 100%)
               </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="desconto_pix_percentual">
+                Desconto PIX (%) *
+              </Label>
+              <div className="relative">
+                <Input
+                  id="desconto_pix_percentual"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="20"
+                  placeholder="5.00"
+                  className="pr-8"
+                  {...register('desconto_pix_percentual', { 
+                    required: 'Desconto PIX é obrigatório para ativar a imobiliária',
+                    valueAsNumber: true,
+                    min: { value: 0, message: 'Mínimo 0%' },
+                    max: { value: 20, message: 'Máximo 20%' }
+                  })}
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Desconto para pagamento via PIX (obrigatório para ativar)
+              </p>
+              {errors.desconto_pix_percentual && (
+                <p className="text-sm text-destructive">{errors.desconto_pix_percentual.message}</p>
+              )}
             </div>
           </CardContent>
         </Card>

@@ -627,7 +627,7 @@ export default function TenantAcceptance() {
                     <span className="font-medium">{formatCurrency(analysis?.valor_total || 0)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Taxa de Garantia ({analysis?.taxa_garantia_percentual}% a.a.)</span>
+                    <span className="text-muted-foreground">Taxa de Garantia ({analysis?.taxa_garantia_percentual}%)</span>
                     <span>{formatCurrency(analysis?.garantia_anual || 0)}/ano</span>
                   </div>
                   <div className="flex justify-between text-sm">

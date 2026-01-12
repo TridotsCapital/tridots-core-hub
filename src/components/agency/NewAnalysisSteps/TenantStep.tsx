@@ -112,7 +112,7 @@ export function TenantStep({ form }: TenantStepProps) {
           name="inquilinoRg"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>RG</FormLabel>
+              <FormLabel>RG *</FormLabel>
               <FormControl>
                 <Input {...field} placeholder="Documento de identidade" />
               </FormControl>
@@ -121,6 +121,32 @@ export function TenantStep({ form }: TenantStepProps) {
           )}
         />
       </div>
+
+      {/* Secondary Phone */}
+      <FormField
+        control={form.control}
+        name="inquilinoTelefoneSecundario"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel className="flex items-center gap-1.5">
+              <img src={whatsappIcon} alt="WhatsApp" className="h-4 w-4" />
+              Telefone Secundário *
+            </FormLabel>
+            <FormControl>
+              <Input
+                {...field}
+                onChange={(e) => {
+                  const formatted = formatPhone(e.target.value);
+                  field.onChange(formatted);
+                }}
+                placeholder="(00) 00000-0000"
+                maxLength={15}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
 
       {/* Birth date */}
       <FormField
