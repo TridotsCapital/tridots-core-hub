@@ -74,6 +74,7 @@ export default function AgencyForm() {
       percentual_comissao_setup: agency.percentual_comissao_setup,
       desconto_pix_percentual: agency.desconto_pix_percentual,
       active: agency.active,
+      internal_observations: (agency as any).internal_observations,
     } : undefined,
   });
 
@@ -266,6 +267,27 @@ export default function AgencyForm() {
               {errors.desconto_pix_percentual && (
                 <p className="text-sm text-destructive">{errors.desconto_pix_percentual.message}</p>
               )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Internal Observations - Only visible to Tridots */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Observações Internas (apenas Tridots)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <Label htmlFor="internal_observations">Observações</Label>
+              <textarea
+                id="internal_observations"
+                className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+                placeholder="Adicione observações internas sobre esta imobiliária..."
+                {...register('internal_observations' as any)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Estas observações são visíveis apenas para a equipe Tridots
+              </p>
             </div>
           </CardContent>
         </Card>
