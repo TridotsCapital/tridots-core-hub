@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -18,25 +18,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useCreateTicket } from '@/hooks/useTickets';
 import { TicketCategory, TicketPriority } from '@/types/tickets';
-import { Check, ChevronsUpDown, Building2, User, Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Building2, User, Loader2, Search } from 'lucide-react';
 
 interface Agency {
   id: string;
@@ -78,10 +65,9 @@ export function NewTicketDialog({ open, onOpenChange, onSuccess }: NewTicketDial
   
   // Agency search
   const [agencySearch, setAgencySearch] = useState('');
-  const [agencyOpen, setAgencyOpen] = useState(false);
   const [agencies, setAgencies] = useState<Agency[]>([]);
   const [loadingAgencies, setLoadingAgencies] = useState(false);
-  const [selectedAgency, setSelectedAgency] = useState<Agency | null>(null);
+  const [selectedAgencyId, setSelectedAgencyId] = useState<string>('');
 
   // Collaborators
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
@@ -94,34 +80,39 @@ export function NewTicketDialog({ open, onOpenChange, onSuccess }: NewTicketDial
   const [category, setCategory] = useState<TicketCategory>('tecnico');
   const [priority, setPriority] = useState<TicketPriority>('media');
 
-  // Search agencies
+  // Load all active agencies when dialog opens
   useEffect(() => {
-    const searchAgencies = async () => {
-      if (agencySearch.length < 2) {
-        setAgencies([]);
-        return;
-      }
+    if (open) {
+      const loadAgencies = async () => {
+        setLoadingAgencies(true);
+        const { data } = await supabase
+          .from('agencies')
+          .select('id, nome_fantasia, razao_social')
+          .eq('active', true)
+          .order('razao_social', { ascending: true });
+        setAgencies(data || []);
+        setLoadingAgencies(false);
+      };
+      loadAgencies();
+    }
+  }, [open]);
 
-      setLoadingAgencies(true);
-      const { data } = await supabase
-        .from('agencies')
-        .select('id, nome_fantasia, razao_social')
-        .eq('active', true)
-        .or(`nome_fantasia.ilike.%${agencySearch}%,razao_social.ilike.%${agencySearch}%`)
-        .limit(10);
+  // Filter agencies locally based on search
+  const filteredAgencies = useMemo(() => {
+    if (!agencySearch.trim()) return agencies;
+    const search = agencySearch.toLowerCase();
+    return agencies.filter(agency => {
+      const name = (agency.nome_fantasia || agency.razao_social).toLowerCase();
+      return name.includes(search);
+    });
+  }, [agencies, agencySearch]);
 
-      setAgencies(data || []);
-      setLoadingAgencies(false);
-    };
-
-    const timeout = setTimeout(searchAgencies, 300);
-    return () => clearTimeout(timeout);
-  }, [agencySearch]);
+  const selectedAgency = agencies.find(a => a.id === selectedAgencyId) || null;
 
   // Load collaborators when agency is selected
   useEffect(() => {
     const loadCollaborators = async () => {
-      if (!selectedAgency) {
+      if (!selectedAgencyId) {
         setCollaborators([]);
         setSelectedCollaboratorId('');
         return;
@@ -133,7 +124,7 @@ export function NewTicketDialog({ open, onOpenChange, onSuccess }: NewTicketDial
       const { data: agencyUsers } = await supabase
         .from('agency_users')
         .select('id, user_id')
-        .eq('agency_id', selectedAgency.id);
+        .eq('agency_id', selectedAgencyId);
 
       if (!agencyUsers?.length) {
         setCollaborators([]);
@@ -160,13 +151,13 @@ export function NewTicketDialog({ open, onOpenChange, onSuccess }: NewTicketDial
     };
 
     loadCollaborators();
-  }, [selectedAgency]);
+  }, [selectedAgencyId]);
 
   const handleSubmit = async () => {
-    if (!selectedAgency || !subject.trim()) return;
+    if (!selectedAgencyId || !subject.trim()) return;
 
     await createTicket.mutateAsync({
-      agency_id: selectedAgency.id,
+      agency_id: selectedAgencyId,
       subject,
       description,
       category,
@@ -174,7 +165,7 @@ export function NewTicketDialog({ open, onOpenChange, onSuccess }: NewTicketDial
     });
 
     // Reset form
-    setSelectedAgency(null);
+    setSelectedAgencyId('');
     setSelectedCollaboratorId('');
     setSubject('');
     setDescription('');
@@ -192,7 +183,7 @@ export function NewTicketDialog({ open, onOpenChange, onSuccess }: NewTicketDial
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-xl w-[95vw] max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Novo Chamado</DialogTitle>
           <DialogDescription>
@@ -200,77 +191,59 @@ export function NewTicketDialog({ open, onOpenChange, onSuccess }: NewTicketDial
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
-          {/* Agency Search */}
+        <div className="space-y-4 py-4 overflow-y-auto flex-1 px-1">
+          {/* Agency Select with Search */}
           <div className="space-y-2">
             <Label>Imobiliária *</Label>
-            <Popover open={agencyOpen} onOpenChange={setAgencyOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={agencyOpen}
-                  className="w-full justify-between"
-                >
-                  {selectedAgency ? (
+            <Select value={selectedAgencyId} onValueChange={setSelectedAgencyId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecionar imobiliária...">
+                  {selectedAgency && (
                     <span className="flex items-center gap-2">
                       <Building2 className="h-4 w-4" />
                       {getAgencyDisplayName(selectedAgency)}
                     </span>
-                  ) : (
-                    <span className="text-muted-foreground">Buscar imobiliária...</span>
                   )}
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-full p-0" align="start">
-                <Command>
-                  <CommandInput 
-                    placeholder="Digite para buscar..." 
-                    value={agencySearch}
-                    onValueChange={setAgencySearch}
-                  />
-                  <CommandList>
-                    <CommandEmpty>
-                      {loadingAgencies ? (
-                        <div className="flex items-center justify-center py-4">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        </div>
-                      ) : agencySearch.length < 2 ? (
-                        'Digite ao menos 2 caracteres'
-                      ) : (
-                        'Nenhuma imobiliária encontrada'
-                      )}
-                    </CommandEmpty>
-                    <CommandGroup>
-                      {agencies.map((agency) => (
-                        <CommandItem
-                          key={agency.id}
-                          value={agency.id}
-                          onSelect={() => {
-                            setSelectedAgency(agency);
-                            setAgencyOpen(false);
-                          }}
-                        >
-                          <Check
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              selectedAgency?.id === agency.id ? "opacity-100" : "opacity-0"
-                            )}
-                          />
-                          <Building2 className="mr-2 h-4 w-4 text-muted-foreground" />
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <div className="p-2 border-b">
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                      placeholder="Buscar imobiliária..." 
+                      value={agencySearch}
+                      onChange={(e) => setAgencySearch(e.target.value)}
+                      className="pl-8"
+                    />
+                  </div>
+                </div>
+                {loadingAgencies ? (
+                  <div className="flex items-center justify-center py-4">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  </div>
+                ) : filteredAgencies.length === 0 ? (
+                  <div className="py-4 text-center text-sm text-muted-foreground">
+                    Nenhuma imobiliária encontrada
+                  </div>
+                ) : (
+                  <ScrollArea className="h-[200px]">
+                    {filteredAgencies.map((agency) => (
+                      <SelectItem key={agency.id} value={agency.id}>
+                        <span className="flex items-center gap-2">
+                          <Building2 className="h-4 w-4 text-muted-foreground" />
                           {getAgencyDisplayName(agency)}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </ScrollArea>
+                )}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Collaborator Select */}
-          {selectedAgency && (
+          {selectedAgencyId && (
             <div className="space-y-2">
               <Label>Colaborador (opcional)</Label>
               {loadingCollaborators ? (
@@ -366,13 +339,13 @@ export function NewTicketDialog({ open, onOpenChange, onSuccess }: NewTicketDial
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="mt-auto pt-4 border-t">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
           <Button 
             onClick={handleSubmit}
-            disabled={!selectedAgency || !subject.trim() || createTicket.isPending}
+            disabled={!selectedAgencyId || !subject.trim() || createTicket.isPending}
           >
             {createTicket.isPending ? (
               <>

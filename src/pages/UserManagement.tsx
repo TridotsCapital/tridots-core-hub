@@ -29,6 +29,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Switch } from "@/components/ui/switch";
 import {
   useUsersWithRoles,
@@ -37,13 +43,15 @@ import {
   useToggleUserActive,
   UserWithRole,
 } from "@/hooks/useUserManagement";
+import { useAdminResetPassword } from "@/hooks/useAdminResetPassword";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Loader2, Users, Shield, Crown, UserCheck, Trash2, Plus } from "lucide-react";
+import { Loader2, Users, Shield, Crown, UserCheck, Trash2, Plus, Key } from "lucide-react";
 import { Navigate } from "react-router-dom";
 import { Database } from "@/integrations/supabase/types";
 import { AddUserDialog } from "@/components/users/AddUserDialog";
+import { GeneratePasswordDialog } from "@/components/users/GeneratePasswordDialog";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -53,10 +61,12 @@ const UserManagement = () => {
   const assignRole = useAssignRole();
   const removeRole = useRemoveRole();
   const toggleActive = useToggleUserActive();
+  const { resetPassword, generatedPassword, isLoading: isGeneratingPassword, showPasswordDialog, closeDialog, copyToClipboard } = useAdminResetPassword();
 
   const [selectedUser, setSelectedUser] = useState<UserWithRole | null>(null);
   const [isRemoveOpen, setIsRemoveOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [targetUserName, setTargetUserName] = useState('');
 
   if (loading) {
     return (
@@ -121,6 +131,11 @@ const UserManagement = () => {
       userId: user.id,
       active: !user.active,
     });
+  };
+
+  const handleGeneratePassword = async (user: UserWithRole) => {
+    setTargetUserName(user.full_name);
+    resetPassword(user.id);
   };
 
   const getInitials = (name: string) => {
@@ -245,21 +260,43 @@ const UserManagement = () => {
                             locale: ptBR,
                           })}
                         </TableCell>
-                        <TableCell className="text-right">
-                          <Select
-                            value={user.role || "none"}
-                            onValueChange={(value) => handleRoleChange(user, value)}
-                            disabled={user.id === currentUser?.id}
-                          >
-                            <SelectTrigger className="w-36">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="master">Administrador</SelectItem>
-                              <SelectItem value="analyst">Analista</SelectItem>
-                              <SelectItem value="none">Remover</SelectItem>
-                            </SelectContent>
-                          </Select>
+                        <TableCell>
+                          <div className="flex items-center justify-end gap-2">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleGeneratePassword(user)}
+                                    disabled={user.id === currentUser?.id || isGeneratingPassword}
+                                  >
+                                    {isGeneratingPassword ? (
+                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                      <Key className="h-4 w-4" />
+                                    )}
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Gerar Senha Provisória</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            
+                            <Select
+                              value={user.role || "none"}
+                              onValueChange={(value) => handleRoleChange(user, value)}
+                              disabled={user.id === currentUser?.id}
+                            >
+                              <SelectTrigger className="w-36">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="master">Administrador</SelectItem>
+                                <SelectItem value="analyst">Analista</SelectItem>
+                                <SelectItem value="none">Remover</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -334,6 +371,14 @@ const UserManagement = () => {
           open={isAddDialogOpen}
           onOpenChange={setIsAddDialogOpen}
           type="team"
+        />
+
+        <GeneratePasswordDialog
+          open={showPasswordDialog}
+          onOpenChange={closeDialog}
+          password={generatedPassword}
+          userName={targetUserName}
+          onCopy={copyToClipboard}
         />
       </div>
     </DashboardLayout>

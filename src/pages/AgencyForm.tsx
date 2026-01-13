@@ -1,16 +1,42 @@
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useAgency, useCreateAgency, useUpdateAgency } from '@/hooks/useAgencies';
+import { useAgencyCollaborators } from '@/hooks/useAgencyCollaborators';
+import { useAdminResetPassword } from '@/hooks/useAdminResetPassword';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
-import { ArrowLeft, Save } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { GeneratePasswordDialog } from '@/components/users/GeneratePasswordDialog';
+import { ArrowLeft, Save, Users, Key, Loader2 } from 'lucide-react';
 import type { TablesInsert } from '@/integrations/supabase/types';
 
 type AgencyFormData = Omit<TablesInsert<'agencies'>, 'id' | 'created_at' | 'updated_at'>;
+
+const POSITION_LABELS: Record<string, string> = {
+  dono: 'Dono',
+  gerente: 'Gerente',
+  auxiliar: 'Auxiliar',
+};
 
 export default function AgencyForm() {
   const { id } = useParams();
@@ -18,8 +44,12 @@ export default function AgencyForm() {
   const isEditing = !!id;
 
   const { data: agency, isLoading: loadingAgency } = useAgency(id);
+  const { data: collaborators, isLoading: loadingCollaborators } = useAgencyCollaborators(id);
   const createAgency = useCreateAgency();
   const updateAgency = useUpdateAgency();
+  const { resetPassword, generatedPassword, isLoading: isGeneratingPassword, showPasswordDialog, closeDialog, copyToClipboard } = useAdminResetPassword();
+
+  const [targetUserName, setTargetUserName] = useState('');
 
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<AgencyFormData>({
     defaultValues: {
@@ -56,6 +86,20 @@ export default function AgencyForm() {
       await createAgency.mutateAsync(data);
     }
     navigate('/agencies');
+  };
+
+  const handleGeneratePassword = (userId: string, userName: string) => {
+    setTargetUserName(userName);
+    resetPassword(userId);
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   if (isEditing && loadingAgency) {
@@ -308,6 +352,100 @@ export default function AgencyForm() {
           </CardContent>
         </Card>
 
+        {/* Collaborators Section - Only when editing */}
+        {isEditing && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Colaboradores
+              </CardTitle>
+              <CardDescription>
+                Lista de colaboradores vinculados a esta imobiliária
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loadingCollaborators ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : !collaborators?.length ? (
+                <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                  <Users className="h-10 w-10 mb-2" />
+                  <p>Nenhum colaborador cadastrado</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Colaborador</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Cargo</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {collaborators.map((collab) => (
+                        <TableRow key={collab.id}>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-8 w-8">
+                                <AvatarImage src={collab.profile?.avatar_url || undefined} />
+                                <AvatarFallback className="text-xs">
+                                  {getInitials(collab.profile?.full_name || 'U')}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="font-medium">{collab.profile?.full_name}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>{collab.profile?.email}</TableCell>
+                          <TableCell>
+                            <Badge variant="secondary">
+                              {POSITION_LABELS[collab.position || ''] || 'N/A'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={collab.profile?.active ? 'default' : 'outline'}>
+                              {collab.profile?.active ? 'Ativo' : 'Inativo'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleGeneratePassword(
+                                      collab.user_id,
+                                      collab.profile?.full_name || 'Colaborador'
+                                    )}
+                                    disabled={isGeneratingPassword}
+                                  >
+                                    {isGeneratingPassword ? (
+                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                      <Key className="h-4 w-4" />
+                                    )}
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Gerar Senha Provisória</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Status & Submit */}
         <Card>
           <CardContent className="flex items-center justify-between py-6">
@@ -332,6 +470,14 @@ export default function AgencyForm() {
           </CardContent>
         </Card>
       </form>
+
+      <GeneratePasswordDialog
+        open={showPasswordDialog}
+        onOpenChange={closeDialog}
+        password={generatedPassword}
+        userName={targetUserName}
+        onCopy={copyToClipboard}
+      />
     </DashboardLayout>
   );
 }
