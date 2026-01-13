@@ -4,9 +4,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calculator, ArrowRight, TrendingUp, Wallet } from 'lucide-react';
+import { Calculator, ArrowRight, TrendingUp, Shield } from 'lucide-react';
 import { formatCurrency, formatCurrencyInput, parseCurrencyInput, SETUP_FEE_OPTIONS } from '@/lib/validators';
 import { PaymentOptionsDisplay } from '@/components/payment/PaymentOptionsDisplay';
 
@@ -177,43 +176,63 @@ export function GuaranteeSimulator({ onStartAnalysis, initialValues, descontoPix
           </Select>
         </div>
 
-        {/* Results */}
-        {isValid && (
-          <div className="rounded-lg border bg-card p-4 space-y-3">
-            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <TrendingUp className="h-4 w-4" />
-              Custos para o Inquilino
+        {/* Results - Always visible */}
+        <div className="rounded-lg border bg-card p-4 space-y-3">
+          {/* Section 1: Tridots Guarantee Costs - HIGHLIGHTED */}
+          <div className="bg-primary/10 -mx-4 -mt-4 px-4 pt-4 pb-3 rounded-t-lg border-b border-primary/20">
+            <div className="flex items-center gap-2 text-sm font-semibold text-primary mb-3">
+              <Shield className="h-4 w-4" />
+              Custos da Garantia Tridots
             </div>
             
             <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Total de Encargos</span>
-                <span>{formatCurrency(totalEncargos)}</span>
-              </div>
+              {/* Taxa Mensal - MAIN HIGHLIGHT */}
               <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground flex items-center gap-2">
-                  Taxa Mensal Tridots ({taxaGarantia}%)
-                  <Badge className="bg-primary text-primary-foreground text-xs">
-                    <Wallet className="h-3 w-3 mr-1" />
-                    Valor do Inquilino
-                  </Badge>
+                <span className="text-sm font-medium">Taxa Mensal Tridots ({taxaGarantia}%)</span>
+                <span className="text-xl font-bold text-primary">
+                  {isValid ? formatCurrency(taxaMensal) : 'R$ --'}
                 </span>
-                <span className="font-semibold text-primary">{formatCurrency(taxaMensal)}</span>
               </div>
-              <div className="h-px bg-border my-2" />
-              <div className="flex justify-between font-medium">
-                <span>Custo Mensal Total</span>
-                <span className="text-primary">{formatCurrency(custoMensalTotal)}</span>
+              
+              {/* Garantia Anual */}
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground">Garantia Anual (12x)</span>
+                <span className="font-semibold">
+                  {isValid ? formatCurrency(garantiaAnual) : 'R$ --'}
+                </span>
               </div>
+              
+              {/* Setup Fee */}
               {setupFee !== null && (
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between items-center text-sm">
                   <span className="text-muted-foreground">Setup Fee (único)</span>
-                  <span>{formatCurrency(setupFee)}</span>
+                  <span>{setupFee > 0 ? formatCurrency(setupFee) : 'Isenta'}</span>
                 </div>
               )}
             </div>
+          </div>
 
-            {/* Payment Options */}
+          {/* Section 2: Complementary Information - Less prominent */}
+          <div className="pt-2">
+            <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground mb-2">
+              <TrendingUp className="h-3 w-3" />
+              Informações Complementares
+            </div>
+            
+            <div className="space-y-1.5 text-sm text-muted-foreground">
+              <div className="flex justify-between">
+                <span>Total de Encargos</span>
+                <span>{isValid ? formatCurrency(totalEncargos) : 'R$ --'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Custo Mensal Total</span>
+                <span>{isValid ? formatCurrency(custoMensalTotal) : 'R$ --'}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Payment Options (only if valid) */}
+          {isValid && (
             <div className="pt-3 border-t">
               <PaymentOptionsDisplay
                 garantiaAnual={garantiaAnual}
@@ -221,8 +240,8 @@ export function GuaranteeSimulator({ onStartAnalysis, initialValues, descontoPix
                 compact={true}
               />
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Start Analysis Button */}
         <Button

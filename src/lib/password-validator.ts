@@ -7,8 +7,8 @@ export interface PasswordRequirement {
 export const passwordRequirements: PasswordRequirement[] = [
   {
     id: 'length',
-    label: 'Mínimo 12 caracteres',
-    validator: (password) => password.length >= 12,
+    label: 'Mínimo 6 caracteres',
+    validator: (password) => password.length >= 6,
   },
   {
     id: 'uppercase',

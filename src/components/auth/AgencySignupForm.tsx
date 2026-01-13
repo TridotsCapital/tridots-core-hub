@@ -144,7 +144,13 @@ export function AgencySignupForm({ onSubmit, loading }: AgencySignupFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (validateStep(currentStep)) {
+    // Only submit if on the final step (step 4)
+    if (currentStep !== 4) {
+      // If not on final step, just advance to next step
+      handleNext();
+      return;
+    }
+    if (validateStep(4)) {
       await onSubmit(formData);
     }
   };
