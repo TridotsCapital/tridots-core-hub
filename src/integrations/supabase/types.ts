@@ -1991,7 +1991,12 @@ export type Database = {
         | "status_change"
         | "ticket_escalated"
         | "ticket_assigned"
-      ticket_category: "financeiro" | "tecnico" | "comercial" | "urgente"
+      ticket_category:
+        | "financeiro"
+        | "tecnico"
+        | "comercial"
+        | "urgente"
+        | "solicitacao_link"
       ticket_priority: "baixa" | "media" | "alta"
       ticket_status:
         | "aberto"
@@ -2187,7 +2192,13 @@ export const Constants = {
         "ticket_escalated",
         "ticket_assigned",
       ],
-      ticket_category: ["financeiro", "tecnico", "comercial", "urgente"],
+      ticket_category: [
+        "financeiro",
+        "tecnico",
+        "comercial",
+        "urgente",
+        "solicitacao_link",
+      ],
       ticket_priority: ["baixa", "media", "alta"],
       ticket_status: [
         "aberto",

@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { X, Send, Loader2, Clock, CheckCircle, AlertCircle, User } from "lucide-react";
+import { X, Send, Loader2, Clock, CheckCircle, AlertCircle, User, FileCheck, Shield, FileText } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -68,6 +69,10 @@ const categoryConfig: Record<TicketCategory, { label: string; className: string 
   urgente: {
     label: "Urgente",
     className: "bg-red-50 text-red-700 border-red-200",
+  },
+  solicitacao_link: {
+    label: "Solicitação de Link",
+    className: "bg-amber-50 text-amber-700 border-amber-200",
   },
 };
 

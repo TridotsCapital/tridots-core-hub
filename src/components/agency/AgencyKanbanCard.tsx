@@ -16,23 +16,42 @@ const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 };
 
-const getUrgencyClass = (createdAt: string): string => {
-  const hours = differenceInHours(new Date(), new Date(createdAt));
+const getUrgencyClass = (analysis: Analysis): string => {
+  // Don't show urgency for final statuses
+  const finalStatuses = ['aprovada', 'reprovada', 'cancelada', 'ativo'];
+  if (finalStatuses.includes(analysis.status)) {
+    return 'urgency-low';
+  }
+  
+  const lastUpdate = analysis.updated_at || analysis.created_at;
+  const hours = differenceInHours(new Date(), new Date(lastUpdate));
   if (hours < 24) return 'urgency-low';
   if (hours < 48) return 'urgency-medium';
   return 'urgency-high-pulse';
 };
 
-const getUrgencyLevel = (createdAt: string): 'low' | 'medium' | 'high' => {
-  const hours = differenceInHours(new Date(), new Date(createdAt));
+const getUrgencyLevel = (analysis: Analysis): 'low' | 'medium' | 'high' => {
+  // Don't show urgency for final statuses
+  const finalStatuses = ['aprovada', 'reprovada', 'cancelada', 'ativo'];
+  if (finalStatuses.includes(analysis.status)) {
+    return 'low';
+  }
+  
+  const lastUpdate = analysis.updated_at || analysis.created_at;
+  const hours = differenceInHours(new Date(), new Date(lastUpdate));
   if (hours < 24) return 'low';
   if (hours < 48) return 'medium';
   return 'high';
 };
 
 export function AgencyKanbanCard({ analysis, onClick, hasUnread = false }: AgencyKanbanCardProps) {
-  const urgencyLevel = getUrgencyLevel(analysis.created_at);
-  const urgencyClass = getUrgencyClass(analysis.created_at);
+  const urgencyLevel = getUrgencyLevel(analysis);
+  const urgencyClass = getUrgencyClass(analysis);
+  
+  // Only show urgency badge for actionable statuses
+  const showUrgencyBadge = 
+    urgencyLevel !== 'low' && 
+    ['pendente', 'em_analise', 'aguardando_pagamento'].includes(analysis.status);
   const { data: ticketData } = useTicketCountWithStatus(analysis.id);
 
   return (
@@ -97,10 +116,10 @@ export function AgencyKanbanCard({ analysis, onClick, hasUnread = false }: Agenc
             </Badge>
           )}
 
-          {urgencyLevel === 'high' && (
-            <Badge variant="destructive" className="text-[10px] px-1.5 py-0 h-5">
+          {showUrgencyBadge && (
+            <Badge variant="destructive" className="text-[10px] px-1.5 py-0 h-5 animate-pulse">
               <AlertTriangle className="h-3 w-3 mr-1" />
-              Urgente
+              URGENTE
             </Badge>
           )}
         </div>

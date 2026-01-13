@@ -53,6 +53,7 @@ const categoryLabels: Record<TicketCategory, string> = {
   tecnico: "Técnico",
   comercial: "Comercial",
   urgente: "Urgente",
+  solicitacao_link: "Solicitação de Link",
 };
 
 const priorityLabels: Record<TicketPriority, string> = {

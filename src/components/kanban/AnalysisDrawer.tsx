@@ -306,32 +306,32 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
           </SheetHeader>
 
           <Tabs defaultValue="resumo" className="flex flex-col flex-1 overflow-hidden">
-            <TabsList className="w-full justify-start rounded-none border-b bg-transparent px-6 h-12 shrink-0">
-              <TabsTrigger value="resumo" className="gap-1.5">
+            <TabsList className="w-full justify-start rounded-none border-b bg-transparent px-6 h-12 shrink-0 overflow-x-auto scrollbar-hide">
+              <TabsTrigger value="resumo" className="gap-1.5 whitespace-nowrap shrink-0">
                 <Clock className="h-4 w-4" />
                 Resumo
               </TabsTrigger>
-              <TabsTrigger value="imobiliaria" className="gap-1.5">
+              <TabsTrigger value="imobiliaria" className="gap-1.5 whitespace-nowrap shrink-0">
                 <Building2 className="h-4 w-4" />
                 Imobiliária
               </TabsTrigger>
-              <TabsTrigger value="inquilino" className="gap-1.5">
+              <TabsTrigger value="inquilino" className="gap-1.5 whitespace-nowrap shrink-0">
                 <User className="h-4 w-4" />
                 Inquilino
               </TabsTrigger>
-              <TabsTrigger value="imovel" className="gap-1.5">
+              <TabsTrigger value="imovel" className="gap-1.5 whitespace-nowrap shrink-0">
                 <Home className="h-4 w-4" />
                 Imóvel
               </TabsTrigger>
-              <TabsTrigger value="documentos" className="gap-1.5">
+              <TabsTrigger value="documentos" className="gap-1.5 whitespace-nowrap shrink-0">
                 <FileText className="h-4 w-4" />
                 Docs
               </TabsTrigger>
-              <TabsTrigger value="chat" className="gap-1.5">
+              <TabsTrigger value="chat" className="gap-1.5 whitespace-nowrap shrink-0">
                 <MessageSquare className="h-4 w-4" />
                 Chamados
               </TabsTrigger>
-              <TabsTrigger value="notas" className="gap-1.5">
+              <TabsTrigger value="notas" className="gap-1.5 whitespace-nowrap shrink-0">
                 <StickyNote className="h-4 w-4" />
                 Notas
               </TabsTrigger>

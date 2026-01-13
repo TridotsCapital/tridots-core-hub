@@ -119,7 +119,23 @@ export function KanbanBoard({ filters, autoOpenAnalysisId, onAutoOpenHandled }: 
     if (!over) return;
 
     const analysisId = active.id as string;
-    const newStatus = over.id as AnalysisStatus;
+    const newStatus = over.id as string;
+    
+    // Validate if over.id is a valid status (not a card UUID)
+    const validStatuses: AnalysisStatus[] = [
+      'pendente', 
+      'em_analise', 
+      'aprovada', 
+      'reprovada', 
+      'cancelada', 
+      'aguardando_pagamento'
+    ];
+    
+    if (!validStatuses.includes(newStatus as AnalysisStatus)) {
+      console.log('Drop target is not a valid status column:', newStatus);
+      return;
+    }
+    
     const analysis = analyses?.find((a) => a.id === analysisId);
 
     if (!analysis || analysis.status === newStatus) return;
@@ -158,13 +174,13 @@ export function KanbanBoard({ filters, autoOpenAnalysisId, onAutoOpenHandled }: 
 
     // Check if critical status change - show confirmation
     if (['reprovada', 'cancelada'].includes(newStatus)) {
-      setPendingMove({ analysis, newStatus });
+      setPendingMove({ analysis, newStatus: newStatus as AnalysisStatus });
       setConfirmationOpen(true);
       return;
     }
 
     // Direct move for non-critical status changes
-    moveAnalysis.mutate({ id: analysisId, newStatus });
+    moveAnalysis.mutate({ id: analysisId, newStatus: newStatus as AnalysisStatus });
   };
 
   const handleStartAnalysisSuccess = () => {
