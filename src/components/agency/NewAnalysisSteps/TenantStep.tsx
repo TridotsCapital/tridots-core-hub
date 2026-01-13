@@ -86,8 +86,8 @@ export function TenantStep({ form }: TenantStepProps) {
         )}
       />
 
-      {/* CPF and RG */}
-      <div className="grid gap-4 md:grid-cols-2">
+      {/* CPF, RG and Birth date - 3 fields on same line */}
+      <div className="grid gap-4 md:grid-cols-3">
         <FormField
           control={form.control}
           name="inquilinoCpf"
@@ -120,56 +120,29 @@ export function TenantStep({ form }: TenantStepProps) {
             </FormItem>
           )}
         />
+
+        <FormField
+          control={form.control}
+          name="inquilinoDataNascimento"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Data de Nascimento *</FormLabel>
+              <FormControl>
+                <Input 
+                  {...field} 
+                  type="date" 
+                  max={new Date().toISOString().split('T')[0]}
+                  onChange={(e) => handleBirthDateChange(e.target.value)}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
       </div>
 
-      {/* Secondary Phone */}
-      <FormField
-        control={form.control}
-        name="inquilinoTelefoneSecundario"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel className="flex items-center gap-1.5">
-              <img src={whatsappIcon} alt="WhatsApp" className="h-4 w-4" />
-              Telefone Secundário *
-            </FormLabel>
-            <FormControl>
-              <Input
-                {...field}
-                onChange={(e) => {
-                  const formatted = formatPhone(e.target.value);
-                  field.onChange(formatted);
-                }}
-                placeholder="(00) 00000-0000"
-                maxLength={15}
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      {/* Birth date */}
-      <FormField
-        control={form.control}
-        name="inquilinoDataNascimento"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Data de Nascimento *</FormLabel>
-            <FormControl>
-              <Input 
-                {...field} 
-                type="date" 
-                max={new Date().toISOString().split('T')[0]}
-                onChange={(e) => handleBirthDateChange(e.target.value)}
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      {/* Contact */}
-      <div className="grid gap-4 md:grid-cols-2">
+      {/* Email, WhatsApp and Secondary Phone - 3 fields on same line */}
+      <div className="grid gap-4 md:grid-cols-3">
         <FormField
           control={form.control}
           name="inquilinoEmail"
@@ -202,6 +175,31 @@ export function TenantStep({ form }: TenantStepProps) {
                 <Input
                   {...field}
                   onChange={(e) => handlePhoneChange(e.target.value)}
+                  placeholder="(00) 00000-0000"
+                  maxLength={15}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="inquilinoTelefoneSecundario"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="flex items-center gap-1.5">
+                <img src={whatsappIcon} alt="WhatsApp" className="h-4 w-4" />
+                Telefone Secundário *
+              </FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  onChange={(e) => {
+                    const formatted = formatPhone(e.target.value);
+                    field.onChange(formatted);
+                  }}
                   placeholder="(00) 00000-0000"
                   maxLength={15}
                 />
