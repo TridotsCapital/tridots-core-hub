@@ -120,43 +120,44 @@ export function SpouseStep({ form }: SpouseStepProps) {
             />
           </div>
 
-          {/* Birth date */}
-          <FormField
-            control={form.control}
-            name="conjugeDataNascimento"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Data de Nascimento</FormLabel>
-                <FormControl>
-                  <Input {...field} type="date" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {/* Birth date and WhatsApp - 2 fields on same line */}
+          <div className="grid gap-4 md:grid-cols-2">
+            <FormField
+              control={form.control}
+              name="conjugeDataNascimento"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Data de Nascimento</FormLabel>
+                  <FormControl>
+                    <Input {...field} type="date" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          {/* WhatsApp */}
-          <FormField
-            control={form.control}
-            name="conjugeWhatsApp"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="flex items-center gap-1.5">
-                  <img src={whatsappIcon} alt="WhatsApp" className="h-4 w-4" />
-                  WhatsApp
-                </FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    onChange={(e) => handlePhoneChange(e.target.value)}
-                    placeholder="(00) 00000-0000"
-                    maxLength={15}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+            <FormField
+              control={form.control}
+              name="conjugeWhatsApp"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-1.5">
+                    <img src={whatsappIcon} alt="WhatsApp" className="h-4 w-4" />
+                    WhatsApp
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      onChange={(e) => handlePhoneChange(e.target.value)}
+                      placeholder="(00) 00000-0000"
+                      maxLength={15}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
           {/* Professional info */}
           <div className="pt-4 border-t">
