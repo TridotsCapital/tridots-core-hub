@@ -1,6 +1,7 @@
 import { useAnalyses } from '@/hooks/useAnalyses';
 import { useAgencies } from '@/hooks/useAgencies';
 import { useCommissions } from '@/hooks/useCommissions';
+import { usePendingAgenciesCount } from '@/hooks/usePendingAgencies';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,7 +13,8 @@ import {
   CheckCircle,
   XCircle,
   TrendingUp,
-  ArrowUpRight
+  ArrowUpRight,
+  AlertTriangle
 } from 'lucide-react';
 import { statusConfig } from '@/types/database';
 import { Link, Navigate } from 'react-router-dom';
@@ -56,6 +58,7 @@ export default function Dashboard() {
   const { data: analyses, isLoading: loadingAnalyses } = useAnalyses();
   const { data: agencies, isLoading: loadingAgencies } = useAgencies();
   const { data: commissions, isLoading: loadingCommissions } = useCommissions();
+  const { data: pendingAgenciesCount = 0 } = usePendingAgenciesCount();
 
   const pendingAnalyses = analyses?.filter(a => a.status === 'pendente').length || 0;
   const inProgressAnalyses = analyses?.filter(a => a.status === 'em_analise').length || 0;
@@ -74,6 +77,27 @@ export default function Dashboard() {
   return (
     <DashboardLayout title="Dashboard" description="Visão geral do sistema">
       <div className="space-y-6">
+        {/* Pending Agencies Alert */}
+        {pendingAgenciesCount > 0 && (
+          <Link to="/agencies?status=pending">
+            <Card className="border-amber-300 bg-amber-50 dark:bg-amber-950/30 hover:shadow-md transition-shadow cursor-pointer">
+              <CardContent className="flex items-center gap-4 py-4">
+                <div className="p-3 rounded-full bg-amber-100 dark:bg-amber-900">
+                  <AlertTriangle className="h-6 w-6 text-amber-600" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-amber-800 dark:text-amber-200">
+                    {pendingAgenciesCount} imobiliária{pendingAgenciesCount > 1 ? 's' : ''} aguardando ativação
+                  </p>
+                  <p className="text-sm text-amber-700 dark:text-amber-300">
+                    Clique para revisar e ativar
+                  </p>
+                </div>
+                <ArrowUpRight className="h-5 w-5 text-amber-600" />
+              </CardContent>
+            </Card>
+          </Link>
+        )}
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="card-hover border-l-4 border-l-warning animate-slide-up" style={{ animationDelay: '0ms' }}>
