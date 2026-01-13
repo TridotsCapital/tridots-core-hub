@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import { Camera, Trash2, Loader2, ZoomIn, ZoomOut, RotateCw } from "lucide-react";
+import { toast } from "sonner";
 import ReactCrop, { type Crop, centerCrop, makeAspectCrop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -84,12 +85,25 @@ export function UserAvatarUpload({
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Log for debugging
+    console.log('Avatar upload attempt:', { 
+      name: file.name, 
+      type: file.type, 
+      size: file.size 
+    });
+
     const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
     if (!allowedTypes.includes(file.type)) {
+      toast.error("Formato não suportado", {
+        description: `O arquivo "${file.name}" está em formato ${file.type || 'desconhecido'}. Use JPG, PNG ou WebP.`,
+      });
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
+      toast.error("Arquivo muito grande", {
+        description: `O arquivo tem ${(file.size / 1024 / 1024).toFixed(1)}MB. Máximo permitido: 5MB.`,
+      });
       return;
     }
 
@@ -98,6 +112,11 @@ export function UserAvatarUpload({
       setImageSrc(reader.result as string);
       setZoom(1);
       setRotation(0);
+    };
+    reader.onerror = () => {
+      toast.error("Erro ao ler arquivo", {
+        description: "Não foi possível processar a imagem. Tente outro arquivo.",
+      });
     };
     reader.readAsDataURL(file);
     

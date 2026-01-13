@@ -102,7 +102,7 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
   const [startModalOpen, setStartModalOpen] = useState(false);
   const [rejectionModalOpen, setRejectionModalOpen] = useState(false);
   const [approvalModalOpen, setApprovalModalOpen] = useState(false);
-  const [regeneratingLink, setRegeneratingLink] = useState(false);
+  const [regenerateModalOpen, setRegenerateModalOpen] = useState(false);
   const [validationModalOpen, setValidationModalOpen] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
   const [setupPaymentDate, setSetupPaymentDate] = useState('');
@@ -155,28 +155,20 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
     return anyConfirmed && !analysis.payments_validated_at && !analysis.payments_rejected_at;
   }, [analysis]);
 
-  const handleRegenerateLink = async () => {
+  const handleRegenerateConfirm = async (data: Record<string, unknown>) => {
     if (!analysis) return;
     
-    setRegeneratingLink(true);
     try {
-      const { data, error } = await supabase.functions.invoke('generate-acceptance-link', {
-        body: { 
-          analysisId: analysis.id,
-          setupPaymentLink: analysis.setup_payment_link,
-          guaranteePaymentLink: analysis.guarantee_payment_link,
-        }
-      });
-      
-      if (error) throw error;
+      await supabase
+        .from('analyses')
+        .update(data)
+        .eq('id', analysis.id);
       
       queryClient.invalidateQueries({ queryKey: ['analyses-kanban'] });
-      toast.success('Novo link gerado com sucesso!');
+      setRegenerateModalOpen(false);
     } catch (error) {
-      console.error('Error regenerating link:', error);
-      toast.error('Erro ao regenerar link');
-    } finally {
-      setRegeneratingLink(false);
+      console.error('Error updating analysis with new link:', error);
+      toast.error('Erro ao atualizar análise');
     }
   };
 
@@ -516,11 +508,10 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
                         size="sm" 
                         variant="outline"
                         className="mt-3 w-full"
-                        onClick={handleRegenerateLink}
-                        disabled={regeneratingLink}
+                        onClick={() => setRegenerateModalOpen(true)}
                       >
-                        <RefreshCw className={`h-4 w-4 mr-2 ${regeneratingLink ? 'animate-spin' : ''}`} />
-                        {regeneratingLink ? 'Gerando...' : 'Gerar Novo Link'}
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Gerar Novo Link
                       </Button>
                     </div>
                   )}
@@ -833,6 +824,15 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Regenerate Link Modal */}
+      <ApprovalModal
+        analysis={analysis}
+        open={regenerateModalOpen}
+        onOpenChange={setRegenerateModalOpen}
+        mode="regenerate"
+        onConfirm={handleRegenerateConfirm}
+      />
 
     </>
   );
