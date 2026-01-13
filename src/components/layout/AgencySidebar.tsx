@@ -1,8 +1,8 @@
 import { useNavigate } from "react-router-dom";
-import { 
-  LayoutDashboard, 
-  FileSearch, 
-  FileCheck, 
+import {
+  LayoutDashboard,
+  FileSearch,
+  FileCheck,
   HelpCircle,
   LogOut,
   Plus,
@@ -14,7 +14,7 @@ import {
   FolderOpen,
   Star,
   KeyRound,
-  UserCircle
+  UserCircle,
 } from "lucide-react";
 import logoBlack from "@/assets/logo-tridots-black.webp";
 import { NavLink } from "@/components/NavLink";
@@ -28,12 +28,7 @@ import { useNps } from "@/contexts/NpsContext";
 import { NotificationCenter } from "@/components/notifications";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Sidebar,
   SidebarContent,
@@ -49,11 +44,11 @@ import {
 import { AgencyLogoUpload } from "@/components/agency/AgencyLogoUpload";
 
 // Map paths to notification sources
-const pathToSource: Record<string, 'chamados' | 'analises' | 'contratos' | 'garantias'> = {
-  '/agency/support': 'chamados',
-  '/agency/analyses': 'analises',
-  '/agency/contracts': 'contratos',
-  '/agency/claims': 'garantias',
+const pathToSource: Record<string, "chamados" | "analises" | "contratos" | "garantias"> = {
+  "/agency/support": "chamados",
+  "/agency/analyses": "analises",
+  "/agency/contracts": "contratos",
+  "/agency/claims": "garantias",
 };
 
 const menuItems = [
@@ -61,7 +56,7 @@ const menuItems = [
   { title: "Chamados", icon: HelpCircle, path: "/agency/support" },
   { title: "Minhas Análises", icon: FileSearch, path: "/agency/analyses" },
   { title: "Meus Contratos", icon: FileCheck, path: "/agency/contracts" },
-  { title: "Garantias Solicitadas", icon: AlertTriangle, path: "/agency/claims" },
+  { title: "Garantias", icon: AlertTriangle, path: "/agency/claims" },
   { title: "Minhas Comissões", icon: DollarSign, path: "/agency/commissions" },
   { title: "Drive Documentos", icon: FolderOpen, path: "/agency/documents" },
   { title: "Colaboradores", icon: Users, path: "/agency/collaborators" },
@@ -75,7 +70,7 @@ export function AgencySidebar() {
   const { hasDraft: hasClaimDraft } = useClaimDraft();
   const { pendingSurveys, hasPendingNps, showNpsModal } = useNps();
   const { data: rejectedDocsCount } = useRejectedDocumentsCount();
-  
+
   const agencyName = agencyUser?.agency?.nome_fantasia || agencyUser?.agency?.razao_social || "Imobiliária";
   const { data: notificationCounts } = useNotificationCounts();
 
@@ -108,8 +103,8 @@ export function AgencySidebar() {
             <SidebarMenu>
               {menuItems.map((item) => {
                 const count = getNotificationCount(item.path);
-                const showDraftBadge = item.path === '/agency/claims' && hasClaimDraft;
-                const showRejectedBadge = item.path === '/agency/contracts' && (rejectedDocsCount ?? 0) > 0;
+                const showDraftBadge = item.path === "/agency/claims" && hasClaimDraft;
+                const showRejectedBadge = item.path === "/agency/contracts" && (rejectedDocsCount ?? 0) > 0;
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
@@ -125,26 +120,24 @@ export function AgencySidebar() {
                         </div>
                         <div className="flex items-center gap-1">
                           {showDraftBadge && (
-                            <Badge 
-                              className="h-5 min-w-5 text-xs flex items-center justify-center p-0 px-1.5 bg-orange-500"
-                            >
+                            <Badge className="h-5 min-w-5 text-xs flex items-center justify-center p-0 px-1.5 bg-orange-500">
                               !
                             </Badge>
                           )}
                           {showRejectedBadge && (
-                            <Badge 
-                              variant="destructive" 
+                            <Badge
+                              variant="destructive"
                               className="h-5 min-w-5 text-xs flex items-center justify-center p-0 px-1.5 animate-pulse"
                             >
                               !
                             </Badge>
                           )}
                           {count > 0 && !showRejectedBadge && (
-                            <Badge 
-                              variant="destructive" 
+                            <Badge
+                              variant="destructive"
                               className="h-5 min-w-5 text-xs flex items-center justify-center p-0 px-1.5"
                             >
-                              {count > 99 ? '99+' : count}
+                              {count > 99 ? "99+" : count}
                             </Badge>
                           )}
                         </div>
@@ -165,11 +158,11 @@ export function AgencySidebar() {
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button 
+                  <Button
                     className={`w-full justify-start gap-2 shadow-sm ${
-                      hasAnalysisDraft 
-                        ? 'bg-amber-600 hover:bg-amber-700 text-white' 
-                        : 'bg-primary hover:bg-primary/90 text-primary-foreground'
+                      hasAnalysisDraft
+                        ? "bg-amber-600 hover:bg-amber-700 text-white"
+                        : "bg-primary hover:bg-primary/90 text-primary-foreground"
                     }`}
                     onClick={() => navigate("/agency/analyses/new")}
                   >
@@ -196,7 +189,7 @@ export function AgencySidebar() {
                 )}
               </Tooltip>
             </TooltipProvider>
-            <Button 
+            <Button
               variant="outline"
               className="w-full justify-start gap-2 border-amber-300 text-amber-700 hover:bg-amber-50 hover:text-amber-800 mt-2"
               onClick={() => navigate("/agency/claims/new")}
@@ -204,18 +197,16 @@ export function AgencySidebar() {
               <Shield className="h-4 w-4" />
               Solicitar Garantia
             </Button>
-            
+
             {hasPendingNps && (
-              <Button 
+              <Button
                 variant="outline"
                 className="w-full justify-start gap-2 border-amber-400 bg-amber-50 text-amber-800 hover:bg-amber-100 mt-2"
                 onClick={showNpsModal}
               >
                 <Star className="h-4 w-4" />
                 Avaliar Chamados
-                <Badge className="ml-auto bg-amber-500 text-white hover:bg-amber-500">
-                  {pendingSurveys.length}
-                </Badge>
+                <Badge className="ml-auto bg-amber-500 text-white hover:bg-amber-500">{pendingSurveys.length}</Badge>
               </Button>
             )}
           </SidebarGroupContent>
