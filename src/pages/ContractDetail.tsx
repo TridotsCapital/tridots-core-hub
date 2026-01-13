@@ -28,6 +28,7 @@ import {
   ShieldCheck,
   Loader2,
   Shield,
+  StickyNote,
 } from 'lucide-react';
 import { useContract } from '@/hooks/useContracts';
 import { useTicketCountByAnalysis, useTicketsByAnalysis } from '@/hooks/useTickets';
@@ -37,6 +38,7 @@ import { ContractActions } from '@/components/contracts';
 import { ContractDocumentsSection } from '@/components/contracts/ContractDocumentsSection';
 import { ContractTicketSheet } from '@/components/contracts/ContractTicketSheet';
 import { TicketDetailSheet } from '@/components/tickets/TicketDetailSheet';
+import { InternalNotesTab } from '@/components/shared/InternalNotesTab';
 import { formatCurrency, PROPERTY_TYPES } from '@/lib/validators';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -386,11 +388,15 @@ export default function ContractDetail() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList>
-            <TabsTrigger value="overview">Visão Geral</TabsTrigger>
-            <TabsTrigger value="docs">Docs</TabsTrigger>
-            <TabsTrigger value="timeline">Timeline</TabsTrigger>
-            <TabsTrigger value="financial">Financeiro</TabsTrigger>
+          <TabsList className="overflow-x-auto scrollbar-hide">
+            <TabsTrigger value="overview" className="whitespace-nowrap shrink-0">Visão Geral</TabsTrigger>
+            <TabsTrigger value="docs" className="whitespace-nowrap shrink-0">Docs</TabsTrigger>
+            <TabsTrigger value="timeline" className="whitespace-nowrap shrink-0">Timeline</TabsTrigger>
+            <TabsTrigger value="financial" className="whitespace-nowrap shrink-0">Financeiro</TabsTrigger>
+            <TabsTrigger value="notas" className="flex items-center gap-2 whitespace-nowrap shrink-0">
+              <StickyNote className="h-4 w-4" />
+              Notas
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6 mt-6">
@@ -728,6 +734,24 @@ export default function ContractDetail() {
                     </p>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Notas Tab */}
+          <TabsContent value="notas" className="space-y-6 mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <StickyNote className="h-4 w-4" />
+                  Notas Internas
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <InternalNotesTab 
+                  referenceType="contract" 
+                  referenceId={contract.id} 
+                />
               </CardContent>
             </Card>
           </TabsContent>

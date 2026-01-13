@@ -53,6 +53,10 @@ const categoryConfig: Record<TicketCategory, { label: string; className: string 
     label: "Urgente",
     className: "bg-red-50 text-red-700 border-red-200 hover:bg-red-50",
   },
+  solicitacao_link: {
+    label: "Solicitação de Link",
+    className: "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-50",
+  },
 };
 
 type StatusFilterValue = TicketStatus | "all" | "unread";

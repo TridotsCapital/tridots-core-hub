@@ -154,24 +154,24 @@ export function AgencyAnalysisDrawer({ analysis, open, onOpenChange }: AgencyAna
         </SheetHeader>
 
         <Tabs defaultValue="resumo" className="flex flex-col h-[calc(100vh-120px)]">
-          <TabsList className="w-full justify-start rounded-none border-b bg-transparent px-6 h-12">
-            <TabsTrigger value="resumo" className="gap-1.5">
+          <TabsList className="w-full justify-start rounded-none border-b bg-transparent px-6 h-12 overflow-x-auto scrollbar-hide">
+            <TabsTrigger value="resumo" className="gap-1.5 whitespace-nowrap shrink-0">
               <Clock className="h-4 w-4" />
               Resumo
             </TabsTrigger>
-            <TabsTrigger value="inquilino" className="gap-1.5">
+            <TabsTrigger value="inquilino" className="gap-1.5 whitespace-nowrap shrink-0">
               <User className="h-4 w-4" />
               Inquilino
             </TabsTrigger>
-            <TabsTrigger value="imovel" className="gap-1.5">
+            <TabsTrigger value="imovel" className="gap-1.5 whitespace-nowrap shrink-0">
               <Home className="h-4 w-4" />
               Imóvel
             </TabsTrigger>
-            <TabsTrigger value="documentos" className="gap-1.5">
+            <TabsTrigger value="documentos" className="gap-1.5 whitespace-nowrap shrink-0">
               <FileText className="h-4 w-4" />
               Docs
             </TabsTrigger>
-            <TabsTrigger value="chat" className="gap-1.5">
+            <TabsTrigger value="chat" className="gap-1.5 whitespace-nowrap shrink-0">
               <MessageSquare className="h-4 w-4" />
               Chamados
             </TabsTrigger>

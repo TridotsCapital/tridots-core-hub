@@ -1,4 +1,4 @@
-export type TicketCategory = 'financeiro' | 'tecnico' | 'comercial' | 'urgente';
+export type TicketCategory = 'financeiro' | 'tecnico' | 'comercial' | 'urgente' | 'solicitacao_link';
 export type TicketStatus = 'aberto' | 'em_atendimento' | 'aguardando_cliente' | 'resolvido';
 export type TicketPriority = 'baixa' | 'media' | 'alta';
 export type NotificationType = 'new_message' | 'status_change' | 'ticket_escalated' | 'ticket_assigned';
@@ -110,6 +110,7 @@ export const ticketCategoryConfig: Record<TicketCategory, { label: string; color
   tecnico: { label: 'Técnico', color: 'bg-blue-500/10 text-blue-500 border-blue-500/20' },
   comercial: { label: 'Comercial', color: 'bg-purple-500/10 text-purple-500 border-purple-500/20' },
   urgente: { label: 'Urgente', color: 'bg-red-500/10 text-red-500 border-red-500/20' },
+  solicitacao_link: { label: 'Solicitação de Link', color: 'bg-amber-500/10 text-amber-500 border-amber-500/20' },
 };
 
 export const ticketStatusConfig: Record<TicketStatus, { label: string; color: string }> = {

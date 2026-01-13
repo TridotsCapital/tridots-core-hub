@@ -17,7 +17,8 @@ import {
   FileText,
   Clock,
   DollarSign,
-  FileCheck
+  FileCheck,
+  StickyNote
 } from "lucide-react";
 import { useClaimDetail, useUpdateClaimStatus } from "@/hooks/useClaims";
 import { useClaimItems } from "@/hooks/useClaimItems";
@@ -31,6 +32,7 @@ import {
 import { ClaimItemsSection, ClaimFilesSection } from "@/components/agency/claims";
 import { ClaimTimeline, ClaimTicketsTab, ClaimContractTab } from "@/components/claims";
 import { InternalClaimTicketSheet } from "@/components/claims";
+import { InternalNotesTab } from "@/components/shared/InternalNotesTab";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
@@ -282,26 +284,30 @@ export default function ClaimDetail() {
             <Card>
               <Tabs defaultValue="items" className="w-full">
                 <CardHeader className="pb-0">
-                  <TabsList className="grid w-full grid-cols-5">
-                    <TabsTrigger value="items" className="flex items-center gap-2">
+                  <TabsList className="grid w-full grid-cols-6 overflow-x-auto scrollbar-hide">
+                    <TabsTrigger value="items" className="flex items-center gap-2 whitespace-nowrap shrink-0">
                       <DollarSign className="h-4 w-4" />
                       Itens ({items?.length || 0})
                     </TabsTrigger>
-                    <TabsTrigger value="files" className="flex items-center gap-2">
+                    <TabsTrigger value="files" className="flex items-center gap-2 whitespace-nowrap shrink-0">
                       <FileText className="h-4 w-4" />
                       Arquivos
                     </TabsTrigger>
-                    <TabsTrigger value="tickets" className="flex items-center gap-2">
+                    <TabsTrigger value="tickets" className="flex items-center gap-2 whitespace-nowrap shrink-0">
                       <MessageSquare className="h-4 w-4" />
                       Chamados ({tickets?.length || 0})
                     </TabsTrigger>
-                    <TabsTrigger value="contract" className="flex items-center gap-2">
+                    <TabsTrigger value="contract" className="flex items-center gap-2 whitespace-nowrap shrink-0">
                       <FileCheck className="h-4 w-4" />
                       Contrato
                     </TabsTrigger>
-                    <TabsTrigger value="timeline" className="flex items-center gap-2">
+                    <TabsTrigger value="timeline" className="flex items-center gap-2 whitespace-nowrap shrink-0">
                       <Clock className="h-4 w-4" />
                       Timeline
+                    </TabsTrigger>
+                    <TabsTrigger value="notas" className="flex items-center gap-2 whitespace-nowrap shrink-0">
+                      <StickyNote className="h-4 w-4" />
+                      Notas
                     </TabsTrigger>
                   </TabsList>
                 </CardHeader>
@@ -327,6 +333,12 @@ export default function ClaimDetail() {
                   </TabsContent>
                   <TabsContent value="timeline" className="mt-0">
                     <ClaimTimeline claimId={claim.id} />
+                  </TabsContent>
+                  <TabsContent value="notas" className="mt-0">
+                    <InternalNotesTab 
+                      referenceType="claim" 
+                      referenceId={claim.id} 
+                    />
                   </TabsContent>
                 </CardContent>
               </Tabs>

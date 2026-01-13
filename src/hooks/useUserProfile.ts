@@ -166,9 +166,22 @@ export function useUploadUserAvatar() {
       queryClient.invalidateQueries({ queryKey: ['profile'] });
     },
     onError: (error: Error) => {
+      console.error('Avatar upload error:', error);
+      
+      let errorMessage = error.message;
+      if (error.message.includes('Bucket not found')) {
+        errorMessage = 'Bucket de armazenamento não encontrado. Contate o suporte.';
+      } else if (error.message.includes('Permission denied') || error.message.includes('policy')) {
+        errorMessage = 'Sem permissão para fazer upload. Verifique se está logado corretamente.';
+      } else if (error.message.includes('File too large') || error.message.includes('size')) {
+        errorMessage = 'Arquivo muito grande. Máximo permitido: 5MB.';
+      } else if (error.message.includes('Invalid file type') || error.message.includes('type')) {
+        errorMessage = 'Formato de arquivo não suportado. Use JPG, PNG ou WebP.';
+      }
+      
       toast({
         title: "Erro ao enviar foto",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
     },
