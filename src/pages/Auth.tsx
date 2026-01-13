@@ -147,7 +147,7 @@ export default function Auth() {
     if (isTeamSignup) return 'Cadastro de Membro da Equipe';
     if (isAgencyPortal) return 'Portal de Imobiliárias Parceiras';
     if (isInternalPortal) return 'Portal Interno Tridots';
-    return 'Sistema de Gestão de Análises de Crédito';
+    return 'A garantia locatícia mais segura e completa do Brasil.';
   };
 
   return (
