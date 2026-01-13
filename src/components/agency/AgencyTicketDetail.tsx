@@ -77,6 +77,7 @@ const categoryConfig: Record<TicketCategory, { label: string; className: string 
 };
 
 export function AgencyTicketDetail({ ticketId, onClose }: AgencyTicketDetailProps) {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [message, setMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -136,7 +137,7 @@ export function AgencyTicketDetail({ ticketId, onClose }: AgencyTicketDetailProp
             <SheetHeader className="p-6 pb-4 border-b">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
                     <span className="text-xs font-mono text-muted-foreground">
                       #{ticket.id.slice(0, 8).toUpperCase()}
                     </span>
@@ -146,6 +147,37 @@ export function AgencyTicketDetail({ ticketId, onClose }: AgencyTicketDetailProp
                     >
                       {categoryConfig[ticket.category as TicketCategory].label}
                     </Badge>
+                    {/* Navigable link badges */}
+                    {ticket.claim_id && (
+                      <Badge 
+                        variant="outline" 
+                        className="cursor-pointer hover:bg-amber-100 border-amber-300 text-amber-700 text-xs"
+                        onClick={() => navigate(`/agency/claims/${ticket.claim_id}`)}
+                      >
+                        <Shield className="h-3 w-3 mr-1" />
+                        Garantia
+                      </Badge>
+                    )}
+                    {ticket.contract_id && !ticket.claim_id && (
+                      <Badge 
+                        variant="outline" 
+                        className="cursor-pointer hover:bg-green-100 border-green-300 text-green-700 text-xs"
+                        onClick={() => navigate(`/agency/contracts/${ticket.contract_id}`)}
+                      >
+                        <FileCheck className="h-3 w-3 mr-1" />
+                        Contrato
+                      </Badge>
+                    )}
+                    {ticket.analysis_id && !ticket.contract_id && !ticket.claim_id && (
+                      <Badge 
+                        variant="outline" 
+                        className="cursor-pointer hover:bg-blue-100 border-blue-300 text-blue-700 text-xs"
+                        onClick={() => navigate(`/agency/analyses?open=${ticket.analysis_id}`)}
+                      >
+                        <FileText className="h-3 w-3 mr-1" />
+                        Análise
+                      </Badge>
+                    )}
                   </div>
                   <SheetTitle className="text-left text-lg">
                     {ticket.subject}

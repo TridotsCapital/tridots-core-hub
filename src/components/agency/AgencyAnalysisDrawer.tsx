@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Analysis, statusConfig } from '@/types/database';
 import {
   Sheet,
@@ -13,6 +14,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { AnalysisTimeline } from '@/components/kanban/AnalysisTimeline';
 import { DocumentSection } from '@/components/kanban/DocumentSection';
 import { AnalysisTicketSection } from '@/components/kanban/AnalysisTicketSection';
+import { useLinkedEntitiesForAnalysis } from '@/hooks/useLinkedEntities';
+import { useTicketCountByAnalysis } from '@/hooks/useTickets';
 import { 
   User, 
   Home, 
@@ -29,8 +32,9 @@ import {
   CheckCircle2,
   AlertTriangle,
   Timer,
-  RefreshCw,
   Loader2,
+  FileCheck,
+  Shield,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -93,8 +97,14 @@ const getAcceptanceStatus = (analysis: Analysis) => {
 };
 
 export function AgencyAnalysisDrawer({ analysis, open, onOpenChange }: AgencyAnalysisDrawerProps) {
-  const [regeneratingLink, setRegeneratingLink] = useState(false);
+  const [requestingLink, setRequestingLink] = useState(false);
   const queryClient = useQueryClient();
+
+  // Fetch linked entities
+  const { data: linkedEntities = [] } = useLinkedEntitiesForAnalysis(analysis?.id);
+  
+  // Fetch ticket count
+  const { data: ticketCount = 0 } = useTicketCountByAnalysis(analysis?.id);
 
   if (!analysis) return null;
 
@@ -108,28 +118,62 @@ export function AgencyAnalysisDrawer({ analysis, open, onOpenChange }: AgencyAna
     toast.success('Link copiado para a área de transferência!');
   };
 
-  const handleRegenerateLink = async () => {
-    setRegeneratingLink(true);
+  const handleRequestNewLink = async () => {
+    setRequestingLink(true);
     try {
-      const { data, error } = await supabase.functions.invoke('generate-acceptance-link', {
-        body: { 
-          analysisId: analysis.id,
-          setupPaymentLink: analysis.setup_payment_link,
-          guaranteePaymentLink: analysis.guarantee_payment_link,
-        }
-      });
-      
-      if (error) throw error;
-      
-      queryClient.invalidateQueries({ queryKey: ['agency-analyses'] });
-      toast.success('Novo link gerado com sucesso!');
+      // Create automatic ticket with solicitacao_link category
+      const { data: ticket, error: ticketError } = await supabase
+        .from('tickets')
+        .insert({
+          subject: 'Solicitação de Novo Link de Aceite',
+          description: `Solicitação automática de regeneração do link de aceite para a análise #${analysis.id.slice(0, 8).toUpperCase()}.`,
+          category: 'solicitacao_link',
+          analysis_id: analysis.id,
+          agency_id: analysis.agency_id,
+          status: 'aberto',
+          priority: 'media',
+          created_by: (await supabase.auth.getUser()).data.user?.id,
+        })
+        .select()
+        .single();
+
+      if (ticketError) throw ticketError;
+
+      // Create notifications for all Masters
+      const { data: masters } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'master');
+
+      if (masters && masters.length > 0) {
+        const notifications = masters.map(m => ({
+          user_id: m.user_id,
+          title: 'Solicitação de Novo Link',
+          message: `Imobiliária solicitou novo link de aceite para análise #${analysis.id.slice(0, 8).toUpperCase()}`,
+          type: 'info',
+          source: 'ticket',
+          reference_id: ticket.id,
+        }));
+
+        await supabase.from('notifications').insert(notifications);
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['tickets'] });
+      queryClient.invalidateQueries({ queryKey: ['ticket-count-by-analysis'] });
+      toast.success('Solicitação enviada! Nossa equipe irá gerar um novo link em breve.');
     } catch (error) {
-      console.error('Error regenerating link:', error);
-      toast.error('Erro ao gerar novo link');
+      console.error('Error requesting new link:', error);
+      toast.error('Erro ao enviar solicitação');
     } finally {
-      setRegeneratingLink(false);
+      setRequestingLink(false);
     }
   };
+
+  const navigate = useNavigate();
+
+  // Find contract and claim from linked entities
+  const contractEntity = linkedEntities.find(e => e.type === 'contract');
+  const claimEntity = linkedEntities.find(e => e.type === 'claim');
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -138,10 +182,38 @@ export function AgencyAnalysisDrawer({ analysis, open, onOpenChange }: AgencyAna
           <div className="flex items-start justify-between">
             <div>
               <SheetTitle className="text-xl">{analysis.inquilino_nome}</SheetTitle>
-              <SheetDescription className="mt-1">
-                <span className="font-mono font-semibold">#{analysis.id.slice(0, 8).toUpperCase()}</span>
-                {' • '}
-                Criada em {formatDate(analysis.created_at)}
+              <SheetDescription className="mt-1 flex flex-wrap items-center gap-2">
+                <span>
+                  <span className="font-mono font-semibold">#{analysis.id.slice(0, 8).toUpperCase()}</span>
+                  {' • '}
+                  Criada em {formatDate(analysis.created_at)}
+                </span>
+                {/* Inline linked entities */}
+                {(contractEntity || claimEntity) && (
+                  <>
+                    <span className="text-muted-foreground">•</span>
+                    {contractEntity && (
+                      <Badge 
+                        variant="outline" 
+                        className="cursor-pointer hover:bg-green-50 border-green-300 text-green-700 text-xs"
+                        onClick={() => navigate(`/agency/contracts/${contractEntity.id}`)}
+                      >
+                        <FileCheck className="h-3 w-3 mr-1" />
+                        Contrato
+                      </Badge>
+                    )}
+                    {claimEntity && (
+                      <Badge 
+                        variant="outline" 
+                        className="cursor-pointer hover:bg-amber-50 border-amber-300 text-amber-700 text-xs"
+                        onClick={() => navigate(`/agency/claims/${claimEntity.id}`)}
+                      >
+                        <Shield className="h-3 w-3 mr-1" />
+                        Garantia
+                      </Badge>
+                    )}
+                  </>
+                )}
               </SheetDescription>
             </div>
             <Badge 
@@ -173,7 +245,7 @@ export function AgencyAnalysisDrawer({ analysis, open, onOpenChange }: AgencyAna
             </TabsTrigger>
             <TabsTrigger value="chat" className="gap-1.5 whitespace-nowrap shrink-0">
               <MessageSquare className="h-4 w-4" />
-              Chamados
+              Chamados ({ticketCount})
             </TabsTrigger>
           </TabsList>
 
@@ -214,21 +286,21 @@ export function AgencyAnalysisDrawer({ analysis, open, onOpenChange }: AgencyAna
                       <Button 
                         size="sm" 
                         variant="outline"
-                        onClick={handleRegenerateLink}
-                        disabled={regeneratingLink}
-                        title="Gerar novo link"
+                        onClick={handleRequestNewLink}
+                        disabled={requestingLink}
+                        title="Solicitar novo link"
                       >
-                        {regeneratingLink ? (
+                        {requestingLink ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
-                          <RefreshCw className="h-4 w-4" />
+                          <MessageSquare className="h-4 w-4" />
                         )}
                       </Button>
                     </div>
                     
                     {acceptanceStatus?.status === 'expired' && (
                       <p className="text-xs text-muted-foreground mt-2">
-                        Este link expirou. Clique no botão de atualizar para gerar um novo link.
+                        Este link expirou. Clique no botão para solicitar um novo link.
                       </p>
                     )}
                   </div>

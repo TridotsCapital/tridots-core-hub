@@ -34,7 +34,9 @@ import { useMoveAnalysis } from '@/hooks/useAnalysesKanban';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useLinkedEntitiesForAnalysis } from '@/hooks/useLinkedEntities';
+import { useTicketCountByAnalysis } from '@/hooks/useTickets';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 import { 
   Building2, 
   User, 
@@ -59,6 +61,8 @@ import {
   Loader2,
   Eye,
   StickyNote,
+  FileCheck,
+  Shield,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -105,7 +109,9 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
   const [guaranteePaymentDate, setGuaranteePaymentDate] = useState('');
   const moveAnalysis = useMoveAnalysis();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { data: linkedEntities = [] } = useLinkedEntitiesForAnalysis(analysis?.id);
+  const { data: ticketCount = 0 } = useTicketCountByAnalysis(analysis?.id);
 
   // Calculate acceptance link status
   const acceptanceStatus = useMemo(() => {
@@ -255,10 +261,41 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
             <div className="flex items-start justify-between">
               <div>
                 <SheetTitle className="text-xl">{analysis.inquilino_nome}</SheetTitle>
-                <SheetDescription className="mt-1">
-                  <span className="font-mono font-semibold">#{analysis.id.slice(0, 8).toUpperCase()}</span>
-                  {' • '}
-                  Criada em {formatDate(analysis.created_at)}
+                <SheetDescription className="mt-1 flex flex-wrap items-center gap-2">
+                  <span>
+                    <span className="font-mono font-semibold">#{analysis.id.slice(0, 8).toUpperCase()}</span>
+                    {' • '}
+                    Criada em {formatDate(analysis.created_at)}
+                  </span>
+                  {/* Inline linked entities */}
+                  {linkedEntities.length > 0 && (
+                    <>
+                      <span className="text-muted-foreground">•</span>
+                      {linkedEntities.map((entity) => (
+                        entity.type === 'contract' ? (
+                          <Badge 
+                            key={entity.id}
+                            variant="outline" 
+                            className="cursor-pointer hover:bg-green-50 border-green-300 text-green-700 text-xs"
+                            onClick={() => navigate(`/contracts/${entity.id}`)}
+                          >
+                            <FileCheck className="h-3 w-3 mr-1" />
+                            Contrato
+                          </Badge>
+                        ) : entity.type === 'claim' ? (
+                          <Badge 
+                            key={entity.id}
+                            variant="outline" 
+                            className="cursor-pointer hover:bg-amber-50 border-amber-300 text-amber-700 text-xs"
+                            onClick={() => navigate(`/claims/${entity.id}`)}
+                          >
+                            <Shield className="h-3 w-3 mr-1" />
+                            Garantia
+                          </Badge>
+                        ) : null
+                      ))}
+                    </>
+                  )}
                 </SheetDescription>
               </div>
               <Badge 
@@ -329,7 +366,7 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
               </TabsTrigger>
               <TabsTrigger value="chat" className="gap-1.5 whitespace-nowrap shrink-0">
                 <MessageSquare className="h-4 w-4" />
-                Chamados
+                Chamados ({ticketCount})
               </TabsTrigger>
               <TabsTrigger value="notas" className="gap-1.5 whitespace-nowrap shrink-0">
                 <StickyNote className="h-4 w-4" />
@@ -431,11 +468,6 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
                       <p className="text-2xl font-bold">{formatCurrency(analysis.valor_total)}</p>
                     </div>
                   </div>
-
-                  {/* Linked Entities */}
-                  {linkedEntities.length > 0 && (
-                    <LinkedEntitiesCard entities={linkedEntities} isAgencyPortal={false} />
-                  )}
 
                   {/* Rate adjustment info */}
                   {analysis.rate_adjusted_by_tridots && (
