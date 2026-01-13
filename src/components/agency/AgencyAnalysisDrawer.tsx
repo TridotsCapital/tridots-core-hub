@@ -99,6 +99,7 @@ const getAcceptanceStatus = (analysis: Analysis) => {
 export function AgencyAnalysisDrawer({ analysis, open, onOpenChange }: AgencyAnalysisDrawerProps) {
   const [requestingLink, setRequestingLink] = useState(false);
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   // Fetch linked entities
   const { data: linkedEntities = [] } = useLinkedEntitiesForAnalysis(analysis?.id);
@@ -168,8 +169,6 @@ export function AgencyAnalysisDrawer({ analysis, open, onOpenChange }: AgencyAna
       setRequestingLink(false);
     }
   };
-
-  const navigate = useNavigate();
 
   // Find contract and claim from linked entities
   const contractEntity = linkedEntities.find(e => e.type === 'contract');
