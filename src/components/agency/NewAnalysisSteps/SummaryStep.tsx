@@ -188,7 +188,7 @@ export function SummaryStep({ form }: SummaryStepProps) {
               <p className="font-medium">{formatCurrency(totalEncargos)}</p>
             </div>
             <div>
-              <span className="text-muted-foreground">Taxa Garantia ({values.taxaGarantiaPercentual || 8}%):</span>
+              <span className="text-muted-foreground">Taxa Mensal Garantia ({values.taxaGarantiaPercentual || 8}%):</span>
               <p className="font-medium">{formatCurrency(taxaMensal)}</p>
             </div>
           </div>
