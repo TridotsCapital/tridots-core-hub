@@ -26,6 +26,7 @@ export type Database = {
           endereco: string | null
           estado: string | null
           id: string
+          internal_observations: string | null
           logo_url: string | null
           nome_fantasia: string | null
           percentual_comissao_recorrente: number
@@ -48,6 +49,7 @@ export type Database = {
           endereco?: string | null
           estado?: string | null
           id?: string
+          internal_observations?: string | null
           logo_url?: string | null
           nome_fantasia?: string | null
           percentual_comissao_recorrente?: number
@@ -70,6 +72,7 @@ export type Database = {
           endereco?: string | null
           estado?: string | null
           id?: string
+          internal_observations?: string | null
           logo_url?: string | null
           nome_fantasia?: string | null
           percentual_comissao_recorrente?: number
@@ -1290,6 +1293,41 @@ export type Database = {
             columns: ["analysis_id"]
             isOneToOne: false
             referencedRelation: "analyses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      internal_notes: {
+        Row: {
+          content: string
+          created_at: string | null
+          created_by: string | null
+          id: string
+          reference_id: string
+          reference_type: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          reference_id: string
+          reference_type: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          reference_id?: string
+          reference_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "internal_notes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]

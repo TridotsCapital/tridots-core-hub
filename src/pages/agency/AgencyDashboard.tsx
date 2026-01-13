@@ -11,8 +11,10 @@ import {
   DraftBanner
 } from "@/components/agency";
 import { ClaimDraftBanner } from "@/components/agency/claims/ClaimDraftBanner";
+import { PendingDocsContractsBanner } from "@/components/agency/PendingDocsContractsBanner";
 import { useAnalysisDraft } from "@/hooks/useAnalysisDraft";
 import { useClaimDraft } from "@/hooks/useClaimDraft";
+import { useContractsPendingDocs } from "@/hooks/useContractsPendingDocs";
 import {
   useAgencyDashboard, 
   useAgencyRanking, 
@@ -31,6 +33,7 @@ export default function AgencyDashboard() {
   const { data: agencyId } = useCurrentAgencyId();
   const { hasDraft: hasAnalysisDraft, getLastSavedTime: getAnalysisDraftTime, clearDraft: clearAnalysisDraft } = useAnalysisDraft();
   const { hasDraft: hasClaimDraft, getLastSavedTime: getClaimDraftTime, clearDraft: clearClaimDraft } = useClaimDraft();
+  const { data: pendingDocsCount = 0 } = useContractsPendingDocs(agencyId);
   const { data: dashboardData, isLoading: loadingDashboard } = useAgencyDashboard(agencyId, period);
   const { data: ranking, isLoading: loadingRanking } = useAgencyRanking(agencyId);
   const { data: projection, isLoading: loadingProjection } = useAgencyProjection(agencyId);
@@ -93,6 +96,9 @@ export default function AgencyDashboard() {
             onDiscard={clearClaimDraft} 
           />
         )}
+
+        {/* Pending Docs Contracts Banner */}
+        <PendingDocsContractsBanner count={pendingDocsCount} />
 
         {/* Period Filter */}
         <div className="flex justify-end">

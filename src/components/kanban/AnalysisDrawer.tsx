@@ -28,9 +28,12 @@ import { StartAnalysisModal } from './StartAnalysisModal';
 import { RejectionModal } from './RejectionModal';
 import { ApprovalModal } from './ApprovalModal';
 import { AnalysisTicketSection } from './AnalysisTicketSection';
+import { LinkedEntitiesCard } from '@/components/shared/LinkedEntitiesCard';
+import { InternalNotesTab } from '@/components/shared/InternalNotesTab';
 import { useMoveAnalysis } from '@/hooks/useAnalysesKanban';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
+import { useLinkedEntitiesForAnalysis } from '@/hooks/useLinkedEntities';
 import { toast } from 'sonner';
 import { 
   Building2, 
@@ -55,6 +58,7 @@ import {
   Receipt,
   Loader2,
   Eye,
+  StickyNote,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -101,6 +105,7 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
   const [guaranteePaymentDate, setGuaranteePaymentDate] = useState('');
   const moveAnalysis = useMoveAnalysis();
   const queryClient = useQueryClient();
+  const { data: linkedEntities = [] } = useLinkedEntitiesForAnalysis(analysis?.id);
 
   // Calculate acceptance link status
   const acceptanceStatus = useMemo(() => {
@@ -326,6 +331,10 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
                 <MessageSquare className="h-4 w-4" />
                 Chamados
               </TabsTrigger>
+              <TabsTrigger value="notas" className="gap-1.5">
+                <StickyNote className="h-4 w-4" />
+                Notas
+              </TabsTrigger>
             </TabsList>
 
             <ScrollArea className="flex-1">
@@ -422,6 +431,11 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
                       <p className="text-2xl font-bold">{formatCurrency(analysis.valor_total)}</p>
                     </div>
                   </div>
+
+                  {/* Linked Entities */}
+                  {linkedEntities.length > 0 && (
+                    <LinkedEntitiesCard entities={linkedEntities} isAgencyPortal={false} />
+                  )}
 
                   {/* Rate adjustment info */}
                   {analysis.rate_adjusted_by_tridots && (
@@ -664,6 +678,14 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
                   agencyId={analysis.agency_id}
                   tenantName={analysis.inquilino_nome}
                   isAgencyPortal={false}
+                />
+              </TabsContent>
+
+              {/* Notas Tab */}
+              <TabsContent value="notas" className="m-0 h-[calc(100vh-200px)]">
+                <InternalNotesTab 
+                  referenceType="analysis"
+                  referenceId={analysis.id}
                 />
               </TabsContent>
             </ScrollArea>
