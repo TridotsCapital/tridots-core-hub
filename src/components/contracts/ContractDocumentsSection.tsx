@@ -54,7 +54,7 @@ interface ContractDocumentsSectionProps {
   onUpdate?: () => void;
 }
 
-type DocType = 'contrato_locacao' | 'vistoria_inicial' | 'seguro_incendio';
+type DocType = 'contrato_locacao' | 'vistoria_inicial' | 'seguro_incendio' | 'contrato_administrativo';
 
 interface DocConfig {
   key: DocType;
@@ -80,6 +80,12 @@ const DOC_CONFIGS: DocConfig[] = [
     key: 'seguro_incendio', 
     label: 'Seguro Incêndio', 
     description: 'Apólice de seguro contra incêndio',
+    required: true 
+  },
+  { 
+    key: 'contrato_administrativo', 
+    label: 'Contrato Administrativo', 
+    description: 'Contrato administrativo de gestão',
     required: true 
   },
 ];

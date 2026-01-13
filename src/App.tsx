@@ -8,6 +8,7 @@ import { SubdomainProvider, useSubdomain } from "@/contexts/SubdomainContext";
 import { GlobalNotificationListener } from "@/components/notifications/GlobalNotificationListener";
 import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
+import ResetPassword from "./pages/ResetPassword";
 import Agencies from "./pages/Agencies";
 import AgencyForm from "./pages/AgencyForm";
 import Analyses from "./pages/Analyses";
@@ -62,6 +63,7 @@ function InternalRoutes() {
     <>
       <Route path="/" element={<Dashboard />} />
       <Route path="/auth" element={<Auth />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/agencies" element={<Agencies />} />
       <Route path="/agencies/new" element={<AgencyForm />} />
       <Route path="/agencies/:id" element={<AgencyForm />} />
@@ -149,6 +151,7 @@ function AppRoutes() {
       {isAgencyPortal && (
         <>
           <Route path="/auth" element={<Auth />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           {AgencyRoutes({ atRoot: true })}
           <Route path="*" element={<NotFound />} />
         </>

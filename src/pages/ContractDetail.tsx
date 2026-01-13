@@ -133,7 +133,8 @@ export default function ContractDetail() {
   const allDocsApproved = 
     contract.doc_contrato_locacao_status === 'aprovado' &&
     contract.doc_vistoria_inicial_status === 'aprovado' &&
-    contract.doc_seguro_incendio_status === 'aprovado';
+    contract.doc_seguro_incendio_status === 'aprovado' &&
+    (contract as any).doc_contrato_administrativo_status === 'aprovado';
   
   const readyForActivation = contract.status === 'documentacao_pendente' && allDocsApproved;
 

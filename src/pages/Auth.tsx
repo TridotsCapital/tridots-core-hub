@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { LoginForm } from '@/components/auth/LoginForm';
+import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm';
 import { TeamSignupForm } from '@/components/auth/TeamSignupForm';
 import { AgencySignupForm, AgencySignupData } from '@/components/auth/AgencySignupForm';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,6 +15,7 @@ import { isCorrectPortalForRole, getPortalUrlForRole } from '@/lib/subdomain';
 
 export default function Auth() {
   const [loading, setLoading] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const { signIn, signUp, user, role } = useAuth();
   const { isInternalPortal, isAgencyPortal, isProduction } = useSubdomain();
   const navigate = useNavigate();
@@ -170,9 +172,20 @@ export default function Auth() {
         </CardHeader>
         
         <CardContent className="pt-4">
-          {showOnlyLogin ? (
+          {showForgotPassword ? (
+            <ForgotPasswordForm onBack={() => setShowForgotPassword(false)} />
+          ) : showOnlyLogin ? (
             // Internal portal without team param - login only
-            <LoginForm onSubmit={handleLogin} loading={loading} />
+            <div className="space-y-4">
+              <LoginForm onSubmit={handleLogin} loading={loading} />
+              <button 
+                type="button"
+                onClick={() => setShowForgotPassword(true)}
+                className="text-sm text-primary hover:underline w-full text-center"
+              >
+                Esqueci minha senha
+              </button>
+            </div>
           ) : showTeamSignup ? (
             // Team signup - simplified form
             <Tabs defaultValue="signup" className="w-full">
@@ -182,7 +195,16 @@ export default function Auth() {
               </TabsList>
               
               <TabsContent value="login">
-                <LoginForm onSubmit={handleLogin} loading={loading} />
+                <div className="space-y-4">
+                  <LoginForm onSubmit={handleLogin} loading={loading} />
+                  <button 
+                    type="button"
+                    onClick={() => setShowForgotPassword(true)}
+                    className="text-sm text-primary hover:underline w-full text-center"
+                  >
+                    Esqueci minha senha
+                  </button>
+                </div>
               </TabsContent>
               
               <TabsContent value="signup">
@@ -198,7 +220,16 @@ export default function Auth() {
               </TabsList>
               
               <TabsContent value="login">
-                <LoginForm onSubmit={handleLogin} loading={loading} />
+                <div className="space-y-4">
+                  <LoginForm onSubmit={handleLogin} loading={loading} />
+                  <button 
+                    type="button"
+                    onClick={() => setShowForgotPassword(true)}
+                    className="text-sm text-primary hover:underline w-full text-center"
+                  >
+                    Esqueci minha senha
+                  </button>
+                </div>
               </TabsContent>
               
               <TabsContent value="signup">

@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useUnreadItemIds } from "@/hooks/useUnreadItemIds";
 import { useNotificationSound } from "@/hooks/useNotificationSound";
+import { NewTicketDialog } from "@/components/tickets/NewTicketDialog";
 
 const TicketCenter = () => {
   const location = useLocation();
@@ -32,6 +33,7 @@ const TicketCenter = () => {
     priority: 'all',
     unread_only: false,
   });
+  const [newTicketDialogOpen, setNewTicketDialogOpen] = useState(false);
 
   const { data: tickets = [], isLoading } = useTickets(filters as any);
   const { data: notifications } = useTicketNotifications();
@@ -227,11 +229,17 @@ const TicketCenter = () => {
             </SelectContent>
           </Select>
 
-          <Button size="sm" className="ml-auto h-9">
+          <Button size="sm" className="ml-auto h-9" onClick={() => setNewTicketDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Novo Chamado
           </Button>
         </div>
+
+        {/* New Ticket Dialog */}
+        <NewTicketDialog 
+          open={newTicketDialogOpen} 
+          onOpenChange={setNewTicketDialogOpen}
+        />
 
         {/* Main content - WhatsApp style layout */}
         <div className="flex-1 flex overflow-hidden min-h-0">
