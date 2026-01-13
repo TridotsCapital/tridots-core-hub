@@ -130,7 +130,9 @@ export default function Auth() {
         console.error('Error creating agency:', agencyError);
         toast.error('Conta criada, mas houve um erro ao cadastrar a imobiliária. Entre em contato com o suporte.');
       } else {
-        toast.success('Cadastro realizado! Seu perfil está em análise.');
+        toast.success('Bem-vindo à Tridots! Seu cadastro foi realizado com sucesso.');
+        // Auto-login: signUp already authenticates the user, navigate to dashboard
+        navigate('/agency/dashboard');
       }
     }
     

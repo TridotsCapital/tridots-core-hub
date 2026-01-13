@@ -86,102 +86,101 @@ export default function Analyses() {
 
   return (
     <DashboardLayout title="Análises" description="Gestão de análises de crédito">
-      <div className="space-y-6 animate-fade-in">
-        {/* Header Actions */}
-        <div className="flex flex-col lg:flex-row gap-4 justify-between">
-          <div className="flex flex-col sm:flex-row gap-4 flex-1">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por nome, CPF ou endereço..."
-                className="pl-10"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
+      <div className="space-y-4 animate-fade-in">
+        {/* Line 1: Search + View Toggle + New Analysis Button */}
+        <div className="flex gap-4 items-center">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nome, CPF, ID, imobiliária, analista, telefone, email..."
+              className="pl-10"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
 
-            <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as AnalysisStatus | 'all')}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os status</SelectItem>
-                <SelectItem value="pendente">Pendente</SelectItem>
-                <SelectItem value="em_analise">Em Análise</SelectItem>
-                <SelectItem value="aprovada">Aprovada</SelectItem>
-                <SelectItem value="aguardando_pagamento">Aguardando Pagamento</SelectItem>
-                <SelectItem value="ativo">Ativo</SelectItem>
-                <SelectItem value="reprovada">Reprovada</SelectItem>
-                <SelectItem value="cancelada">Cancelada</SelectItem>
-              </SelectContent>
-            </Select>
+          <ToggleGroup 
+            type="single" 
+            value={viewMode} 
+            onValueChange={(v) => v && setViewMode(v as ViewMode)}
+            className="border rounded-lg p-1"
+          >
+            <ToggleGroupItem value="kanban" aria-label="Visualização Kanban" className="px-3">
+              <LayoutGrid className="h-4 w-4" />
+            </ToggleGroupItem>
+            <ToggleGroupItem value="table" aria-label="Visualização Tabela" className="px-3">
+              <List className="h-4 w-4" />
+            </ToggleGroupItem>
+          </ToggleGroup>
 
-            <Select value={unreadFilter} onValueChange={(v) => setUnreadFilter(v as 'all' | 'unread')}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Leitura" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="unread">
-                  <div className="flex items-center gap-2">
-                    <span className="h-2 w-2 rounded-full bg-red-500"></span>
-                    Não lidos
-                  </div>
+          <Button asChild>
+            <Link to="/analyses/new">
+              <Plus className="h-4 w-4 mr-2" />
+              Nova Análise
+            </Link>
+          </Button>
+        </div>
+
+        {/* Line 2: Filters */}
+        <div className="flex flex-wrap gap-3">
+          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as AnalysisStatus | 'all')}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os status</SelectItem>
+              <SelectItem value="pendente">Pendente</SelectItem>
+              <SelectItem value="em_analise">Em Análise</SelectItem>
+              <SelectItem value="aprovada">Aprovada</SelectItem>
+              <SelectItem value="aguardando_pagamento">Aguardando Pagamento</SelectItem>
+              <SelectItem value="ativo">Ativo</SelectItem>
+              <SelectItem value="reprovada">Reprovada</SelectItem>
+              <SelectItem value="cancelada">Cancelada</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={unreadFilter} onValueChange={(v) => setUnreadFilter(v as 'all' | 'unread')}>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue placeholder="Leitura" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="unread">
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-red-500"></span>
+                  Não lidos
+                </div>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={agencyFilter} onValueChange={setAgencyFilter}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Imobiliária" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as imobiliárias</SelectItem>
+              {agencies?.map((agency) => (
+                <SelectItem key={agency.id} value={agency.id}>
+                  {agency.razao_social}
                 </SelectItem>
-              </SelectContent>
-            </Select>
+              ))}
+            </SelectContent>
+          </Select>
 
-            <Select value={agencyFilter} onValueChange={setAgencyFilter}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Imobiliária" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas as imobiliárias</SelectItem>
-                {agencies?.map((agency) => (
-                  <SelectItem key={agency.id} value={agency.id}>
-                    {agency.razao_social}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={analystFilter} onValueChange={setAnalystFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Analista" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os analistas</SelectItem>
-                {teamMembers?.map((member) => (
-                  <SelectItem key={member.id} value={member.id}>
-                    {member.full_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <ToggleGroup 
-              type="single" 
-              value={viewMode} 
-              onValueChange={(v) => v && setViewMode(v as ViewMode)}
-              className="border rounded-lg p-1"
-            >
-              <ToggleGroupItem value="kanban" aria-label="Visualização Kanban" className="px-3">
-                <LayoutGrid className="h-4 w-4" />
-              </ToggleGroupItem>
-              <ToggleGroupItem value="table" aria-label="Visualização Tabela" className="px-3">
-                <List className="h-4 w-4" />
-              </ToggleGroupItem>
-            </ToggleGroup>
-
-            <Button asChild>
-              <Link to="/analyses/new">
-                <Plus className="h-4 w-4 mr-2" />
-                Nova Análise
-              </Link>
-            </Button>
-          </div>
+          <Select value={analystFilter} onValueChange={setAnalystFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Analista" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os analistas</SelectItem>
+              {teamMembers?.map((member) => (
+                <SelectItem key={member.id} value={member.id}>
+                  {member.full_name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Content */}
@@ -191,6 +190,7 @@ export default function Analyses() {
               agency_id: agencyFilter !== 'all' ? agencyFilter : undefined,
               analyst_id: analystFilter !== 'all' ? analystFilter : undefined,
               unread_only: unreadFilter === 'unread',
+              searchTerm: search,
             }}
             autoOpenAnalysisId={autoOpenAnalysisId}
             onAutoOpenHandled={() => setAutoOpenAnalysisId(null)}

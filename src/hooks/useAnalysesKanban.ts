@@ -18,7 +18,7 @@ export function useAnalysesKanban(filters?: KanbanFilters) {
     queryFn: async () => {
       let q = supabase
         .from('analyses')
-        .select(`*, agency:agencies(*)`)
+        .select(`*, agency:agencies(*), analyst:profiles!analyses_analyst_id_fkey(id, full_name)`)
         .order('created_at', { ascending: true }); // Oldest first for urgency
 
       if (filters?.agency_id) {
@@ -36,7 +36,8 @@ export function useAnalysesKanban(filters?: KanbanFilters) {
 
       const { data, error } = await q;
       if (error) throw error;
-      return data as Analysis[];
+      // Type cast through unknown since analyst is a join that doesn't match the base type
+      return data as unknown as Analysis[];
     },
   });
 

@@ -26,6 +26,7 @@ interface KanbanBoardProps {
     agency_id?: string;
     analyst_id?: string;
     unread_only?: boolean;
+    searchTerm?: string;
   };
   autoOpenAnalysisId?: string | null;
   onAutoOpenHandled?: () => void;
@@ -76,7 +77,7 @@ export function KanbanBoard({ filters, autoOpenAnalysisId, onAutoOpenHandled }: 
     })
   );
 
-  // Group analyses by status
+  // Group analyses by status with search filtering
   const analysesByStatus = useMemo(() => {
     const grouped: Record<AnalysisStatus, Analysis[]> = {
       pendente: [],
@@ -90,10 +91,29 @@ export function KanbanBoard({ filters, autoOpenAnalysisId, onAutoOpenHandled }: 
 
     if (!analyses) return grouped;
 
+    // Start with all analyses
+    let filteredAnalyses = [...analyses];
+
+    // Apply search filter
+    if (filters?.searchTerm) {
+      const term = filters.searchTerm.toLowerCase();
+      filteredAnalyses = filteredAnalyses.filter(a => 
+        a.id.toLowerCase().includes(term) ||
+        a.inquilino_nome?.toLowerCase().includes(term) ||
+        a.inquilino_cpf?.includes(term) ||
+        a.inquilino_telefone?.includes(term) ||
+        a.inquilino_email?.toLowerCase().includes(term) ||
+        a.agency?.razao_social?.toLowerCase().includes(term) ||
+        a.agency?.nome_fantasia?.toLowerCase().includes(term) ||
+        a.imovel_endereco?.toLowerCase().includes(term) ||
+        (a as any).analyst?.full_name?.toLowerCase().includes(term)
+      );
+    }
+
     // Filter by unread if needed
-    const filteredAnalyses = filters?.unread_only && unreadIds?.analises
-      ? analyses.filter(a => unreadIds.analises.has(a.id))
-      : analyses;
+    if (filters?.unread_only && unreadIds?.analises) {
+      filteredAnalyses = filteredAnalyses.filter(a => unreadIds.analises.has(a.id));
+    }
 
     filteredAnalyses.forEach((analysis) => {
       if (grouped[analysis.status]) {
@@ -102,7 +122,7 @@ export function KanbanBoard({ filters, autoOpenAnalysisId, onAutoOpenHandled }: 
     });
 
     return grouped;
-  }, [analyses, filters?.unread_only, unreadIds]);
+  }, [analyses, filters?.searchTerm, filters?.unread_only, unreadIds]);
 
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;

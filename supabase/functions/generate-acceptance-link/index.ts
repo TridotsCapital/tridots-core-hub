@@ -44,7 +44,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Generate unique token
     const token = crypto.randomUUID();
     const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + 72); // 72 hours expiration
+    expiresAt.setHours(expiresAt.getHours() + 48); // 48 hours expiration
 
     // Update analysis with token and payment links
     // Reset ALL step-by-step fields so tenant must repeat entire flow
@@ -105,13 +105,36 @@ const handler = async (req: Request): Promise<Response> => {
     await supabase.rpc("log_analysis_timeline_event", {
       _analysis_id: analysisId,
       _event_type: "acceptance_link_generated",
-      _description: "Link de aceite gerado com validade de 72 horas",
+      _description: "Link de aceite gerado com validade de 48 horas",
       _metadata: { 
         expires_at: expiresAt.toISOString(),
         has_setup_link: !!setupPaymentLink,
         has_guarantee_link: !!guaranteePaymentLink,
       },
     });
+
+    // Notify all agency collaborators about the new link
+    const { data: agencyUsers } = await supabase
+      .from('agency_users')
+      .select('user_id')
+      .eq('agency_id', analysis.agency_id);
+
+    if (agencyUsers && agencyUsers.length > 0) {
+      const notifications = agencyUsers.map((au: { user_id: string }) => ({
+        user_id: au.user_id,
+        type: 'acceptance_link_generated',
+        source: 'analises',
+        reference_id: analysisId,
+        title: 'Novo link de aceite gerado',
+        message: `O link de aceite para ${analysis.inquilino_nome} foi atualizado. Válido por 48 horas.`,
+        metadata: {
+          tenant_name: analysis.inquilino_nome,
+          expires_at: expiresAt.toISOString(),
+        },
+      }));
+
+      await supabase.from('notifications').insert(notifications);
+    }
 
     // Build acceptance URL
     const baseUrl = Deno.env.get("SITE_URL") || "https://hsyjtujcedwafcviourl.lovable.app";
