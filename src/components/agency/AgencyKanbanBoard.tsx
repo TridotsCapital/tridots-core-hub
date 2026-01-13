@@ -123,8 +123,8 @@ export function AgencyKanbanBoard({ analyses, isLoading, autoOpenAnalysisId, onA
                 </div>
 
                 {/* Column Content */}
-                <ScrollArea className="flex-1 p-2">
-                  <div className="space-y-2 min-h-[200px]">
+                <div className="flex-1 p-2 overflow-y-auto overflow-x-visible">
+                  <div className="space-y-2 min-h-[200px] pt-1 pr-1">
                     {columnAnalyses.length === 0 ? (
                       <div className="flex items-center justify-center h-24 text-xs text-muted-foreground">
                         Nenhuma análise
@@ -145,7 +145,7 @@ export function AgencyKanbanBoard({ analyses, isLoading, autoOpenAnalysisId, onA
                       ))
                     )}
                   </div>
-                </ScrollArea>
+                </div>
               </div>
             );
           })}
