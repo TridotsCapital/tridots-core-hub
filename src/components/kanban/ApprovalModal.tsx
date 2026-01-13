@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
-import { CheckCircle, Link as LinkIcon, Loader2, AlertTriangle, Percent, ExternalLink, Home, Receipt } from 'lucide-react';
+import { CheckCircle, Link as LinkIcon, Loader2, AlertTriangle, Percent, ExternalLink, Home, Receipt, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -22,21 +22,24 @@ interface ApprovalModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: (additionalData?: Record<string, unknown>) => void;
+  mode?: 'approval' | 'regenerate';
 }
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 };
 
-export function ApprovalModal({ analysis, open, onOpenChange, onConfirm }: ApprovalModalProps) {
+export function ApprovalModal({ analysis, open, onOpenChange, onConfirm, mode = 'approval' }: ApprovalModalProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [taxaGarantia, setTaxaGarantia] = useState(analysis?.taxa_garantia_percentual || 8);
   const [observacoes, setObservacoes] = useState('');
   const [isRateAdjusted, setIsRateAdjusted] = useState(false);
   
-  // Payment links
+  // Payment links - always empty for regenerate mode
   const [setupPaymentLink, setSetupPaymentLink] = useState('');
   const [guaranteePaymentLink, setGuaranteePaymentLink] = useState('');
+
+  const isRegenerateMode = mode === 'regenerate';
 
   // Reset state when analysis changes
   useEffect(() => {
@@ -103,7 +106,10 @@ export function ApprovalModal({ analysis, open, onOpenChange, onConfirm }: Appro
       }
 
       onConfirm(updateData);
-      toast.success('Análise aprovada! Link de aceite gerado com sucesso.');
+      toast.success(isRegenerateMode 
+        ? 'Novo link de aceite gerado com sucesso!' 
+        : 'Análise aprovada! Link de aceite gerado com sucesso.'
+      );
     } catch (error) {
       console.error('Error generating acceptance link:', error);
       toast.error('Erro ao gerar link de aceite. Tente novamente.');
@@ -128,11 +134,23 @@ export function ApprovalModal({ analysis, open, onOpenChange, onConfirm }: Appro
       <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col">
         <DialogHeader className="shrink-0">
           <DialogTitle className="flex items-center gap-2">
-            <CheckCircle className="h-5 w-5 text-success" />
-            Aprovar Análise
+            {isRegenerateMode ? (
+              <>
+                <RefreshCw className="h-5 w-5 text-primary" />
+                Gerar Novo Link de Aceite
+              </>
+            ) : (
+              <>
+                <CheckCircle className="h-5 w-5 text-success" />
+                Aprovar Análise
+              </>
+            )}
           </DialogTitle>
           <DialogDescription>
-            Confirme os dados, insira os links de pagamento e ajuste a taxa se necessário.
+            {isRegenerateMode 
+              ? 'Atualize os links de pagamento e ajuste a taxa se necessário para gerar um novo link.'
+              : 'Confirme os dados, insira os links de pagamento e ajuste a taxa se necessário.'
+            }
           </DialogDescription>
         </DialogHeader>
 
@@ -294,6 +312,11 @@ export function ApprovalModal({ analysis, open, onOpenChange, onConfirm }: Appro
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 Gerando link...
+              </>
+            ) : isRegenerateMode ? (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Gerar Novo Link
               </>
             ) : (
               <>
