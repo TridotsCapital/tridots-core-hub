@@ -142,18 +142,18 @@ export function AgencyLayout({ children, title, description, actions }: AgencyLa
         <SidebarProvider>
           <div className="min-h-screen flex w-full bg-background">
             <AgencySidebar />
-            <SidebarInset className="flex-1">
+            <SidebarInset className="flex-1 flex flex-col overflow-hidden">
               <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-4 border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-6">
                 <SidebarTrigger className="-ml-2" />
-                <div className="flex-1">
-                  <h1 className="text-lg font-semibold">{title}</h1>
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-lg font-semibold truncate">{title}</h1>
                   {description && (
-                    <p className="text-sm text-muted-foreground">{description}</p>
+                    <p className="text-sm text-muted-foreground truncate">{description}</p>
                   )}
                 </div>
-                {actions && <div className="flex items-center gap-2">{actions}</div>}
+                {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
                 {agencyName && (
-                  <div className="text-right">
+                  <div className="text-right shrink-0">
                     <p className="text-sm font-medium">{agencyName}</p>
                     {profile?.full_name && (
                       <p className="text-xs text-muted-foreground">{profile.full_name}</p>
@@ -167,7 +167,7 @@ export function AgencyLayout({ children, title, description, actions }: AgencyLa
                   </div>
                 )}
               </header>
-              <main className="flex-1 p-6">
+              <main className="flex-1 p-6 overflow-x-auto overflow-y-auto">
                 {!isAgencyActive && (
                   <PendingApprovalBanner className="mb-6" />
                 )}
