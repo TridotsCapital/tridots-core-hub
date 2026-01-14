@@ -464,23 +464,11 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
                     garantiaAnualSalva={(analysis as any).garantia_anual}
                   />
 
-                  {/* 3 Cards: Aluguel, Garantia Anual, Valor Total */}
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="rounded-lg bg-muted/50 p-4">
-                      <p className="text-xs text-muted-foreground">Aluguel</p>
-                      <p className="text-2xl font-bold text-primary">{formatCurrency(analysis.valor_aluguel)}</p>
-                      <p className="text-xs text-muted-foreground">/mês</p>
-                    </div>
-                    <div className="rounded-lg bg-muted/50 p-4">
-                      <p className="text-xs text-muted-foreground">Garantia Anual</p>
-                      <p className="text-2xl font-bold">{formatCurrency((analysis as any).garantia_anual || (analysis.valor_total || 0) * (analysis.taxa_garantia_percentual / 100) * 12)}</p>
-                      <p className="text-xs text-muted-foreground">/ano</p>
-                    </div>
-                    <div className="rounded-lg bg-muted/50 p-4">
-                      <p className="text-xs text-muted-foreground">Valor Total</p>
-                      <p className="text-2xl font-bold">{formatCurrency(analysis.valor_total)}</p>
-                      <p className="text-xs text-muted-foreground">/mês</p>
-                    </div>
+                  {/* Placeholder for future coverages */}
+                  <div className="rounded-lg border-2 border-dashed border-muted-foreground/20 bg-muted/30 p-8 text-center">
+                    <p className="text-muted-foreground text-sm">
+                      Em breve aqui você verá as coberturas contratadas
+                    </p>
                   </div>
 
                   {/* Rate adjustment info */}
