@@ -58,6 +58,7 @@ interface AnalysisData {
   setup_payment_confirmed_at: string | null;
   guarantee_payment_confirmed_at: string | null;
   forma_pagamento_preferida: string | null;
+  desconto_pix: number;
 }
 
 interface AgencyData {
@@ -624,16 +625,12 @@ export default function TenantAcceptance() {
                 
                 <div className="border-t pt-3 space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Valor Mensal do Imóvel</span>
-                    <span className="font-medium">{formatCurrency(analysis?.valor_total || 0)}</span>
+                    <span className="text-muted-foreground">Valor total locatício</span>
+                    <span className="font-medium">{formatCurrency(analysis?.valor_total || 0)} /mês</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Taxa de Garantia ({analysis?.taxa_garantia_percentual}%)</span>
+                    <span className="text-muted-foreground">Taxa anual de Garantia ({analysis?.taxa_garantia_percentual}%)</span>
                     <span>{formatCurrency(analysis?.garantia_anual || 0)}/ano</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Garantia Mensal</span>
-                    <span>{formatCurrency(analysis?.garantia_mensal || 0)}/mês</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Taxa Setup</span>
@@ -641,9 +638,38 @@ export default function TenantAcceptance() {
                       {analysis?.setup_fee_exempt ? 'ISENTA' : formatCurrency(analysis?.setup_fee || 0)}
                     </span>
                   </div>
-                  <div className="flex justify-between text-base font-semibold pt-2 border-t">
-                    <span>Total 1ª Parcela</span>
-                    <span className="text-primary">{formatCurrency(analysis?.primeira_parcela || 0)}</span>
+                </div>
+                
+                {/* Forma de pagamento destacada */}
+                <div className="border-t pt-3">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="font-semibold">Forma de pagamento Garantia:</span>
+                    <span className="font-bold text-primary">
+                      {(() => {
+                        const method = analysis?.forma_pagamento_preferida;
+                        const valorAnual = analysis?.garantia_anual || 0;
+                        const descontoPix = analysis?.desconto_pix || 5;
+                        
+                        if (!method) {
+                          return 'Não definida';
+                        }
+                        
+                        if (method === 'pix') {
+                          // Para PIX, o garantia_anual já vem com desconto do banco
+                          const valorSemDesconto = valorAnual / (1 - descontoPix / 100);
+                          return `PIX (${descontoPix}% off): ${formatCurrency(valorAnual)} (de ${formatCurrency(valorSemDesconto)})`;
+                        }
+                        
+                        const match = method.match(/card_(\d+)x/);
+                        if (match) {
+                          const parcelas = parseInt(match[1]);
+                          const valorParcela = valorAnual / parcelas;
+                          return `${parcelas}x de ${formatCurrency(valorParcela)} (Total: ${formatCurrency(valorAnual)})`;
+                        }
+                        
+                        return 'Não definida';
+                      })()}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -1103,21 +1129,27 @@ export default function TenantAcceptance() {
                 <p className="text-3xl font-bold text-primary">{formatCurrency(analysis?.garantia_anual || 0)}</p>
                 <p className="text-sm text-muted-foreground mt-2">
                   {(() => {
-                    const method = analysis?.forma_pagamento_preferida || 'card_12x';
+                    const method = analysis?.forma_pagamento_preferida;
                     const valorAnual = analysis?.garantia_anual || 0;
+                    const descontoPix = analysis?.desconto_pix || 5;
+                    
+                    if (!method) {
+                      return 'Forma de pagamento não definida';
+                    }
                     
                     if (method === 'pix') {
-                      return 'PIX (5% off) - Pagamento à vista';
+                      const valorSemDesconto = valorAnual / (1 - descontoPix / 100);
+                      return `PIX (${descontoPix}% off): ${formatCurrency(valorAnual)} (de ${formatCurrency(valorSemDesconto)})`;
                     }
                     
                     const match = method.match(/card_(\d+)x/);
                     if (match) {
                       const parcelas = parseInt(match[1]);
                       const valorParcela = valorAnual / parcelas;
-                      return `${parcelas}x de ${formatCurrency(valorParcela)}`;
+                      return `${parcelas}x de ${formatCurrency(valorParcela)} (Total: ${formatCurrency(valorAnual)})`;
                     }
                     
-                    return `12x de ${formatCurrency(valorAnual / 12)}`;
+                    return 'Forma de pagamento não definida';
                   })()}
                 </p>
               </div>

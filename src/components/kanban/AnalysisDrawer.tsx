@@ -372,6 +372,46 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
               {/* Resumo Tab */}
               <TabsContent value="resumo" className="m-0 p-6">
                 <div className="space-y-6">
+                  {/* Acceptance Link Section - PRIMEIRO quando aguardando_pagamento */}
+                  {analysis.status === 'aguardando_pagamento' && analysis.acceptance_token && (
+                    <div className="rounded-lg border border-primary/30 bg-primary/5 p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <Link className="h-4 w-4 text-primary" />
+                          <span className="font-medium">Link de Aceite</span>
+                        </div>
+                        <Badge variant={acceptanceStatus?.status === 'active' ? 'default' : acceptanceStatus?.status === 'used' ? 'secondary' : 'destructive'}>
+                          {acceptanceStatus?.label}
+                        </Badge>
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        <Input 
+                          value={`${window.location.origin}/aceite/${analysis.acceptance_token}`}
+                          readOnly 
+                          className="text-xs font-mono"
+                        />
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={handleCopyLink}
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className="mt-3 w-full"
+                        onClick={() => setRegenerateModalOpen(true)}
+                      >
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Gerar Novo Link
+                      </Button>
+                    </div>
+                  )}
+
                   {/* Payment Validation Section */}
                   {paymentsPendingValidation && (
                     <div className="rounded-lg border-2 border-warning bg-warning/10 p-4">
@@ -490,46 +530,6 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
                         Taxa original: {analysis.original_taxa_garantia_percentual}% → 
                         Nova taxa: {analysis.taxa_garantia_percentual}%
                       </p>
-                    </div>
-                  )}
-
-                  {/* Acceptance Link Section */}
-                  {analysis.status === 'aguardando_pagamento' && analysis.acceptance_token && (
-                    <div className="rounded-lg border border-primary/30 bg-primary/5 p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <Link className="h-4 w-4 text-primary" />
-                          <span className="font-medium">Link de Aceite</span>
-                        </div>
-                        <Badge variant={acceptanceStatus?.status === 'active' ? 'default' : acceptanceStatus?.status === 'used' ? 'secondary' : 'destructive'}>
-                          {acceptanceStatus?.label}
-                        </Badge>
-                      </div>
-                      
-                      <div className="flex gap-2">
-                        <Input 
-                          value={`${window.location.origin}/aceite/${analysis.acceptance_token}`}
-                          readOnly 
-                          className="text-xs font-mono"
-                        />
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={handleCopyLink}
-                        >
-                          <Copy className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        className="mt-3 w-full"
-                        onClick={() => setRegenerateModalOpen(true)}
-                      >
-                        <RefreshCw className="h-4 w-4 mr-2" />
-                        Gerar Novo Link
-                      </Button>
                     </div>
                   )}
 
