@@ -74,22 +74,20 @@ export function GuaranteeCostsSection({
         
         {/* Forma de Pagamento */}
         <div className="pt-2 border-t">
-          <div className="flex items-start gap-2">
-            <span className="text-sm text-muted-foreground whitespace-nowrap">Forma de Pagamento:</span>
-            <div className="flex-1">
-              {formaPagamentoPreferida ? (
-                <PaymentMethodDisplay
-                  method={formaPagamentoPreferida}
-                  garantiaAnual={garantiaAnualBase}
-                  descontoPix={pixDiscount}
-                  showDiscount={true}
-                />
-              ) : (
-                <span className="text-sm text-muted-foreground italic">
-                  Não definida
-                </span>
-              )}
-            </div>
+          <p className="text-sm text-muted-foreground mb-2">Forma de Pagamento:</p>
+          <div>
+            {formaPagamentoPreferida ? (
+              <PaymentMethodDisplay
+                method={formaPagamentoPreferida}
+                garantiaAnual={garantiaAnualBase}
+                descontoPix={pixDiscount}
+                showDiscount={true}
+              />
+            ) : (
+              <span className="text-sm text-muted-foreground italic">
+                Não definida
+              </span>
+            )}
           </div>
         </div>
       </div>
