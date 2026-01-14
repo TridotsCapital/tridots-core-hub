@@ -18,7 +18,11 @@ export function useAnalysesKanban(filters?: KanbanFilters) {
     queryFn: async () => {
       let q = supabase
         .from('analyses')
-        .select(`*, agency:agencies(*), analyst:profiles!analyses_analyst_id_fkey(id, full_name)`)
+        .select(`
+          *,
+          agency:agencies(id, razao_social, nome_fantasia, desconto_pix_percentual),
+          analyst:profiles(id, full_name)
+        `)
         .order('created_at', { ascending: true }); // Oldest first for urgency
 
       if (filters?.agency_id) {

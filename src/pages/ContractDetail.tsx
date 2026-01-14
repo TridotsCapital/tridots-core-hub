@@ -39,6 +39,7 @@ import { ContractDocumentsSection } from '@/components/contracts/ContractDocumen
 import { ContractTicketSheet } from '@/components/contracts/ContractTicketSheet';
 import { TicketDetailSheet } from '@/components/tickets/TicketDetailSheet';
 import { InternalNotesTab } from '@/components/shared/InternalNotesTab';
+import { GuaranteeCostsSection } from '@/components/payment/GuaranteeCostsSection';
 import { formatCurrency, PROPERTY_TYPES } from '@/lib/validators';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -400,6 +401,18 @@ export default function ContractDetail() {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6 mt-6">
+            {/* Custos da Garantia Tridots - NO TOPO */}
+            <GuaranteeCostsSection
+              valorAluguel={analysis.valor_aluguel}
+              valorCondominio={analysis.valor_condominio}
+              valorIptu={analysis.valor_iptu}
+              taxaGarantiaPercentual={analysis.taxa_garantia_percentual}
+              setupFee={analysis.setup_fee}
+              setupFeeExempt={analysis.setup_fee_exempt}
+              formaPagamentoPreferida={(analysis as any).forma_pagamento_preferida}
+              descontoPix={(analysis.agency as any)?.desconto_pix_percentual}
+            />
+
             {/* Agency Info */}
             <Card>
               <CardHeader className="pb-3">

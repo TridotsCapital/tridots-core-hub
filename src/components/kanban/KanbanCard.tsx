@@ -90,6 +90,17 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
       console.log('Send notification for analysis:', analysis.id);
     };
 
+    // Get payment method badge label
+    const getPaymentBadgeLabel = (method: string | null | undefined): string | null => {
+      if (!method) return null;
+      if (method === 'pix') return 'PIX';
+      const match = method.match(/card_(\d+)x/);
+      if (match) return `${match[1]}x`;
+      return null;
+    };
+
+    const paymentBadge = getPaymentBadgeLabel(analysis.forma_pagamento_preferida);
+
     // Combine refs
     const handleRef = (node: HTMLDivElement | null) => {
       setNodeRef(node);
@@ -215,6 +226,15 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
         </div>
 
         <div className="flex items-center gap-1">
+          {paymentBadge && (
+            <Badge 
+              variant="outline" 
+              className="text-[10px] px-1.5 py-0 h-5 border-primary/30 text-primary"
+            >
+              {paymentBadge}
+            </Badge>
+          )}
+
           {ticketData && ticketData.count > 0 && (
             <Badge 
               variant={ticketData.hasOpen ? "destructive" : "secondary"} 

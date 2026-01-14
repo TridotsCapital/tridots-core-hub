@@ -102,6 +102,7 @@ export interface Analysis {
   valor_total: number;
   setup_fee: number;
   taxa_garantia_percentual: number;
+  forma_pagamento_preferida: string | null;
   
   observacoes: string | null;
   

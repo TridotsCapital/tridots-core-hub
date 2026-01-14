@@ -30,6 +30,7 @@ import { ApprovalModal } from './ApprovalModal';
 import { AnalysisTicketSection } from './AnalysisTicketSection';
 import { LinkedEntitiesCard } from '@/components/shared/LinkedEntitiesCard';
 import { InternalNotesTab } from '@/components/shared/InternalNotesTab';
+import { GuaranteeCostsSection } from '@/components/payment/GuaranteeCostsSection';
 import { useMoveAnalysis } from '@/hooks/useAnalysesKanban';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
@@ -448,6 +449,18 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
                       <p className="text-sm">{analysis.payments_rejection_reason}</p>
                     </div>
                   )}
+
+                  {/* Custos da Garantia Tridots - NO TOPO */}
+                  <GuaranteeCostsSection
+                    valorAluguel={analysis.valor_aluguel}
+                    valorCondominio={analysis.valor_condominio}
+                    valorIptu={analysis.valor_iptu}
+                    taxaGarantiaPercentual={analysis.taxa_garantia_percentual}
+                    setupFee={analysis.setup_fee}
+                    setupFeeExempt={analysis.setup_fee_exempt}
+                    formaPagamentoPreferida={(analysis as any).forma_pagamento_preferida}
+                    descontoPix={(analysis as any).agency?.desconto_pix_percentual}
+                  />
 
                   {/* Quick stats */}
                   <div className="grid grid-cols-2 gap-4">

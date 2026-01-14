@@ -16,6 +16,7 @@ import { AgencyTicketDetail } from './AgencyTicketDetail';
 import { ContractRenewalModal } from './ContractRenewalModal';
 import { ContractRenewalStatus } from './ContractRenewalStatus';
 import { ContractRenewalHistory } from './ContractRenewalHistory';
+import { GuaranteeCostsSection } from '@/components/payment/GuaranteeCostsSection';
 import { useTicketCountByAnalysis, useTicketsByAnalysis } from '@/hooks/useTickets';
 import { useActiveClaimByContract } from '@/hooks/useActiveClaimByContract';
 import { usePendingRenewal } from '@/hooks/useContractRenewal';
@@ -421,6 +422,18 @@ export function AgencyContractDetail() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6 mt-6">
+          {/* Custos da Garantia Tridots - NO TOPO */}
+          <GuaranteeCostsSection
+            valorAluguel={analysis.valor_aluguel}
+            valorCondominio={analysis.valor_condominio}
+            valorIptu={analysis.valor_iptu}
+            taxaGarantiaPercentual={analysis.taxa_garantia_percentual}
+            setupFee={analysis.setup_fee}
+            setupFeeExempt={analysis.setup_fee_exempt}
+            formaPagamentoPreferida={analysis.forma_pagamento_preferida}
+            descontoPix={null} // Agency doesn't have agency object in this context
+          />
+
           {/* Property Info */}
           <Card>
             <CardHeader className="pb-3">
