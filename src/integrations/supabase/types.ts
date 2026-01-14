@@ -171,6 +171,7 @@ export type Database = {
           conjuge_rg: string | null
           created_at: string
           forma_pagamento_preferida: string | null
+          garantia_anual: number | null
           guarantee_payment_confirmed_at: string | null
           guarantee_payment_date: string | null
           guarantee_payment_link: string | null
@@ -257,6 +258,7 @@ export type Database = {
           conjuge_rg?: string | null
           created_at?: string
           forma_pagamento_preferida?: string | null
+          garantia_anual?: number | null
           guarantee_payment_confirmed_at?: string | null
           guarantee_payment_date?: string | null
           guarantee_payment_link?: string | null
@@ -343,6 +345,7 @@ export type Database = {
           conjuge_rg?: string | null
           created_at?: string
           forma_pagamento_preferida?: string | null
+          garantia_anual?: number | null
           guarantee_payment_confirmed_at?: string | null
           guarantee_payment_date?: string | null
           guarantee_payment_link?: string | null

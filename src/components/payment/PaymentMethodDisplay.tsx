@@ -15,7 +15,7 @@ const formatCurrency = (value: number) =>
 export function PaymentMethodDisplay({
   method,
   garantiaAnual,
-  descontoPix = 0,
+  descontoPix = 5,
   showDiscount = true,
   size = 'md',
 }: PaymentMethodDisplayProps) {
@@ -38,17 +38,17 @@ export function PaymentMethodDisplay({
     const valorComDesconto = garantiaAnual * (1 - descontoPix / 100);
     return (
       <div className="flex flex-wrap items-center gap-2">
-        <QrCode className={`${iconSize[size]} text-primary`} />
+        <QrCode className={`${iconSize[size]} text-primary shrink-0`} />
         <span className={`font-semibold ${sizeClasses[size]}`}>
-          PIX: {formatCurrency(valorComDesconto)}
+          PIX ({descontoPix}% off): {formatCurrency(valorComDesconto)}
         </span>
-        <span className="text-sm text-muted-foreground">
-          (de {formatCurrency(garantiaAnual)})
+        <span className="text-sm text-muted-foreground line-through">
+          {formatCurrency(garantiaAnual)}
         </span>
         {showDiscount && descontoPix > 0 && (
           <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200">
             <Sparkles className="h-3 w-3 mr-1" />
-            {descontoPix}% OFF
+            Economia de {formatCurrency(garantiaAnual - valorComDesconto)}
           </Badge>
         )}
       </div>
@@ -63,7 +63,7 @@ export function PaymentMethodDisplay({
 
     return (
       <div className="flex flex-wrap items-center gap-2">
-        <CreditCard className={`${iconSize[size]} text-primary`} />
+        <CreditCard className={`${iconSize[size]} text-primary shrink-0`} />
         <span className={`font-semibold ${sizeClasses[size]}`}>
           {parcelas}x de {formatCurrency(valorParcela)}
         </span>
@@ -79,7 +79,7 @@ export function PaymentMethodDisplay({
   // Fallback for unknown payment methods
   return (
     <div className="flex items-center gap-2">
-      <CreditCard className={`${iconSize[size]} text-muted-foreground`} />
+      <CreditCard className={`${iconSize[size]} text-muted-foreground shrink-0`} />
       <span className={`${sizeClasses[size]} text-muted-foreground`}>{method}</span>
     </div>
   );

@@ -4,8 +4,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { FormField, FormItem, FormControl, FormMessage } from '@/components/ui/form';
 import { formatCurrency, PROPERTY_TYPES, BRAZILIAN_STATES } from '@/lib/validators';
-import { FileCheck, Home, User, Users, DollarSign, MessageSquare } from 'lucide-react';
-import { PaymentOptionsDisplay, PaymentMethod } from '@/components/payment/PaymentOptionsDisplay';
+import { FileCheck, Home, User, Users, DollarSign, MessageSquare, Shield } from 'lucide-react';
+import { GuaranteeCostsSection } from '@/components/payment/GuaranteeCostsSection';
+import { ComposicaoAnaliseCard } from '@/components/payment/ComposicaoAnaliseCard';
 
 interface SummaryStepProps {
   form: UseFormReturn<any>;
@@ -19,8 +20,11 @@ export function SummaryStep({ form }: SummaryStepProps) {
   
   const totalEncargos = (values.valorAluguel || 0) + (values.valorCondominio || 0) + (values.valorIptu || 0);
   const taxaMensal = totalEncargos * ((values.taxaGarantiaPercentual || 8) / 100);
-  const garantiaAnual = taxaMensal * 12;
-  const custoMensalTotal = totalEncargos + taxaMensal;
+  const garantiaAnualBase = taxaMensal * 12;
+  const PIX_DISCOUNT = 5;
+  const garantiaAnual = values.formaPagamentoPreferida === 'pix'
+    ? garantiaAnualBase * (1 - PIX_DISCOUNT / 100)
+    : garantiaAnualBase;
 
   return (
     <div className="space-y-6">
@@ -158,71 +162,44 @@ export function SummaryStep({ form }: SummaryStepProps) {
         </Card>
       )}
 
-      {/* Financial Summary */}
-      <Card className="border-primary/30 bg-primary/5">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <DollarSign className="h-4 w-4" />
-            Resumo Financeiro
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm">
-          <div className="grid gap-2 md:grid-cols-3">
-            <div>
-              <span className="text-muted-foreground">Aluguel:</span>
-              <p className="font-medium">{formatCurrency(values.valorAluguel || 0)}</p>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Condomínio:</span>
-              <p className="font-medium">{formatCurrency(values.valorCondominio || 0)}</p>
-            </div>
-            <div>
-              <span className="text-muted-foreground">IPTU:</span>
-              <p className="font-medium">{formatCurrency(values.valorIptu || 0)}</p>
-            </div>
-          </div>
-          
-          <div className="h-px bg-border" />
-          
-          <div className="grid gap-2 md:grid-cols-2">
-            <div>
-              <span className="text-muted-foreground">Total Encargos:</span>
-              <p className="font-medium">{formatCurrency(totalEncargos)}</p>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Taxa Mensal Garantia ({values.taxaGarantiaPercentual || 8}%):</span>
-              <p className="font-medium">{formatCurrency(taxaMensal)}</p>
-            </div>
-          </div>
-          
-          <div className="h-px bg-border" />
-          
-          <div className="grid gap-2 md:grid-cols-2">
-            <div>
-              <span className="text-muted-foreground">Custo Mensal Total:</span>
-              <p className="font-semibold text-primary text-lg">{formatCurrency(custoMensalTotal)}</p>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Setup Fee:</span>
-              <p className="font-semibold">{formatCurrency(values.setupFee || 0)}</p>
-            </div>
-          </div>
+      {/* 3 Cards: Aluguel, Garantia Anual, Valor Total */}
+      <div className="grid grid-cols-3 gap-4">
+        <div className="rounded-lg bg-muted/50 p-4">
+          <p className="text-xs text-muted-foreground">Aluguel</p>
+          <p className="text-2xl font-bold text-primary">{formatCurrency(values.valorAluguel || 0)}</p>
+          <p className="text-xs text-muted-foreground">/mês</p>
+        </div>
+        <div className="rounded-lg bg-muted/50 p-4">
+          <p className="text-xs text-muted-foreground">Garantia Anual</p>
+          <p className="text-2xl font-bold">{formatCurrency(garantiaAnual)}</p>
+          <p className="text-xs text-muted-foreground">/ano</p>
+        </div>
+        <div className="rounded-lg bg-muted/50 p-4">
+          <p className="text-xs text-muted-foreground">Valor Total</p>
+          <p className="text-2xl font-bold">{formatCurrency(totalEncargos)}</p>
+          <p className="text-xs text-muted-foreground">/mês</p>
+        </div>
+      </div>
 
-          {/* Payment Method Display */}
-          {values.formaPagamentoPreferida && (
-            <>
-              <div className="h-px bg-border" />
-              <PaymentOptionsDisplay
-                garantiaAnual={garantiaAnual}
-                descontoPix={5}
-                formaEscolhida={values.formaPagamentoPreferida as PaymentMethod}
-                readOnly={true}
-                compact={true}
-              />
-            </>
-          )}
-        </CardContent>
-      </Card>
+      {/* Custos da Garantia Tridots */}
+      <GuaranteeCostsSection
+        valorAluguel={values.valorAluguel || 0}
+        valorCondominio={values.valorCondominio}
+        valorIptu={values.valorIptu}
+        taxaGarantiaPercentual={values.taxaGarantiaPercentual || 8}
+        setupFee={values.setupFee || 0}
+        setupFeeExempt={values.setupFee === 0}
+        formaPagamentoPreferida={values.formaPagamentoPreferida}
+        descontoPix={5}
+        garantiaAnualSalva={garantiaAnual}
+      />
+
+      {/* Composição da Análise */}
+      <ComposicaoAnaliseCard
+        valorAluguel={values.valorAluguel || 0}
+        valorCondominio={values.valorCondominio}
+        valorIptu={values.valorIptu}
+      />
 
       {/* Observations */}
       <Card>

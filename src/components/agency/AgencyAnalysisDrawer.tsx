@@ -9,6 +9,7 @@ import { AnalysisTimeline } from '@/components/kanban/AnalysisTimeline';
 import { DocumentSection } from '@/components/kanban/DocumentSection';
 import { AnalysisTicketSection } from '@/components/kanban/AnalysisTicketSection';
 import { GuaranteeCostsSection } from '@/components/payment/GuaranteeCostsSection';
+import { ComposicaoAnaliseCard } from '@/components/payment/ComposicaoAnaliseCard';
 import { useLinkedEntitiesForAnalysis } from '@/hooks/useLinkedEntities';
 import { useTicketCountByAnalysis } from '@/hooks/useTickets';
 import { User, Home, MessageSquare, FileText, Clock, Phone, Mail, MapPin, Briefcase, DollarSign, Link, Copy, CheckCircle2, AlertTriangle, Timer, Loader2, FileCheck, Shield } from 'lucide-react';
@@ -249,17 +250,34 @@ export function AgencyAnalysisDrawer({
                   </div>}
 
                 {/* Custos da Garantia Tridots - NO TOPO */}
-                <GuaranteeCostsSection valorAluguel={analysis.valor_aluguel} valorCondominio={analysis.valor_condominio} valorIptu={analysis.valor_iptu} taxaGarantiaPercentual={analysis.taxa_garantia_percentual} setupFee={analysis.setup_fee} setupFeeExempt={analysis.setup_fee_exempt} formaPagamentoPreferida={(analysis as any).forma_pagamento_preferida} descontoPix={(analysis as any).agency?.desconto_pix_percentual} />
+                <GuaranteeCostsSection 
+                  valorAluguel={analysis.valor_aluguel} 
+                  valorCondominio={analysis.valor_condominio} 
+                  valorIptu={analysis.valor_iptu} 
+                  taxaGarantiaPercentual={analysis.taxa_garantia_percentual} 
+                  setupFee={analysis.setup_fee} 
+                  setupFeeExempt={analysis.setup_fee_exempt} 
+                  formaPagamentoPreferida={(analysis as any).forma_pagamento_preferida} 
+                  descontoPix={(analysis as any).agency?.desconto_pix_percentual || 5}
+                  garantiaAnualSalva={(analysis as any).garantia_anual}
+                />
 
-                {/* Quick stats */}
-                <div className="grid grid-cols-2 gap-4">
+                {/* 3 Cards: Aluguel, Garantia Anual, Valor Total */}
+                <div className="grid grid-cols-3 gap-4">
                   <div className="rounded-lg bg-muted/50 p-4">
-                    <p className="text-xs text-muted-foreground">Valor do Aluguel</p>
+                    <p className="text-xs text-muted-foreground">Aluguel</p>
                     <p className="text-2xl font-bold text-primary">{formatCurrency(analysis.valor_aluguel)}</p>
+                    <p className="text-xs text-muted-foreground">/mês</p>
                   </div>
                   <div className="rounded-lg bg-muted/50 p-4">
-                    <p className="text-xs text-muted-foreground">Valor Total (Aluguel + Encargos)</p>
+                    <p className="text-xs text-muted-foreground">Garantia Anual</p>
+                    <p className="text-2xl font-bold">{formatCurrency((analysis as any).garantia_anual || (analysis.valor_total || 0) * (analysis.taxa_garantia_percentual / 100) * 12)}</p>
+                    <p className="text-xs text-muted-foreground">/ano</p>
+                  </div>
+                  <div className="rounded-lg bg-muted/50 p-4">
+                    <p className="text-xs text-muted-foreground">Valor Total</p>
                     <p className="text-2xl font-bold">{formatCurrency(analysis.valor_total)}</p>
+                    <p className="text-xs text-muted-foreground">/mês</p>
                   </div>
                 </div>
 
@@ -269,28 +287,13 @@ export function AgencyAnalysisDrawer({
                   <AnalysisTimeline analysis={analysis} />
                 </div>
 
-                {/* Additional costs */}
-                <div className="rounded-lg border p-4">
-                  <h4 className="text-sm font-semibold mb-3">Custos Adicionais</h4>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Condomínio</span>
-                      <span>{formatCurrency(analysis.valor_condominio)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">IPTU</span>
-                      <span>{formatCurrency(analysis.valor_iptu)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Outros Encargos</span>
-                      <span>{formatCurrency(analysis.valor_outros_encargos)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm pt-2 border-t">
-                      <span className="font-medium">Taxa de Setup</span>
-                      <span className="font-medium">{formatCurrency(analysis.setup_fee)}</span>
-                    </div>
-                  </div>
-                </div>
+                {/* Composição da Análise */}
+                <ComposicaoAnaliseCard
+                  valorAluguel={analysis.valor_aluguel}
+                  valorCondominio={analysis.valor_condominio}
+                  valorIptu={analysis.valor_iptu}
+                  valorOutrosEncargos={analysis.valor_outros_encargos}
+                />
 
                 {/* Observations */}
                 {analysis.observacoes && <div className="rounded-lg border p-4">
