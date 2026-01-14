@@ -33,6 +33,7 @@ import { ClaimItemsSection, ClaimFilesSection } from "@/components/agency/claims
 import { ClaimTimeline, ClaimTicketsTab, ClaimContractTab } from "@/components/claims";
 import { InternalClaimTicketSheet } from "@/components/claims";
 import { InternalNotesTab } from "@/components/shared/InternalNotesTab";
+import { GuaranteeCostsSection } from "@/components/payment/GuaranteeCostsSection";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
@@ -199,10 +200,23 @@ export default function ClaimDetail() {
           </Card>
         </div>
 
-        {/* Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Info */}
           <div className="space-y-4">
+            {/* Custos da Garantia Tridots - NO TOPO */}
+            {claim.contract?.analysis && (
+              <GuaranteeCostsSection
+                valorAluguel={(claim.contract.analysis as any).valor_aluguel || 0}
+                valorCondominio={(claim.contract.analysis as any).valor_condominio}
+                valorIptu={(claim.contract.analysis as any).valor_iptu}
+                taxaGarantiaPercentual={(claim.contract.analysis as any).taxa_garantia_percentual || 10}
+                setupFee={(claim.contract.analysis as any).setup_fee || 0}
+                setupFeeExempt={(claim.contract.analysis as any).setup_fee_exempt}
+                formaPagamentoPreferida={(claim.contract.analysis as any).forma_pagamento_preferida}
+                descontoPix={(claim.agency as any)?.desconto_pix_percentual}
+              />
+            )}
+
             {/* Value Card */}
             <Card className="bg-gradient-to-br from-amber-500/10 to-amber-600/5 border-amber-500/20">
               <CardContent className="p-4">

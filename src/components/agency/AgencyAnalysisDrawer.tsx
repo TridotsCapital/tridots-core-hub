@@ -14,6 +14,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { AnalysisTimeline } from '@/components/kanban/AnalysisTimeline';
 import { DocumentSection } from '@/components/kanban/DocumentSection';
 import { AnalysisTicketSection } from '@/components/kanban/AnalysisTicketSection';
+import { GuaranteeCostsSection } from '@/components/payment/GuaranteeCostsSection';
 import { useLinkedEntitiesForAnalysis } from '@/hooks/useLinkedEntities';
 import { useTicketCountByAnalysis } from '@/hooks/useTickets';
 import { 
@@ -304,6 +305,18 @@ export function AgencyAnalysisDrawer({ analysis, open, onOpenChange }: AgencyAna
                     )}
                   </div>
                 )}
+
+                {/* Custos da Garantia Tridots - NO TOPO */}
+                <GuaranteeCostsSection
+                  valorAluguel={analysis.valor_aluguel}
+                  valorCondominio={analysis.valor_condominio}
+                  valorIptu={analysis.valor_iptu}
+                  taxaGarantiaPercentual={analysis.taxa_garantia_percentual}
+                  setupFee={analysis.setup_fee}
+                  setupFeeExempt={analysis.setup_fee_exempt}
+                  formaPagamentoPreferida={(analysis as any).forma_pagamento_preferida}
+                  descontoPix={(analysis as any).agency?.desconto_pix_percentual}
+                />
 
                 {/* Quick stats */}
                 <div className="grid grid-cols-2 gap-4">

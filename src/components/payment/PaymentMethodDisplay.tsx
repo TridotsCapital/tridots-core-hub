@@ -42,6 +42,9 @@ export function PaymentMethodDisplay({
         <span className={`font-semibold ${sizeClasses[size]}`}>
           PIX: {formatCurrency(valorComDesconto)}
         </span>
+        <span className="text-sm text-muted-foreground">
+          (de {formatCurrency(garantiaAnual)})
+        </span>
         {showDiscount && descontoPix > 0 && (
           <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200">
             <Sparkles className="h-3 w-3 mr-1" />

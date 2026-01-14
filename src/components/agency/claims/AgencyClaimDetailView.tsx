@@ -31,6 +31,7 @@ import { useCancelClaim } from "@/hooks/useClaims";
 import { ClaimItemsSection } from "./ClaimItemsSection";
 import { ClaimFilesSection } from "./ClaimFilesSection";
 import { ClaimTimeline, ClaimTicketsTab } from "@/components/claims";
+import { GuaranteeCostsSection } from "@/components/payment/GuaranteeCostsSection";
 import { MessageSquare, Clock } from "lucide-react";
 import { useClaimTickets } from "@/hooks/useClaimTickets";
 
@@ -64,6 +65,20 @@ export function AgencyClaimDetailView({ claim, onUpdate }: AgencyClaimDetailView
 
   return (
     <div className="space-y-6">
+      {/* Custos da Garantia Tridots - NO TOPO */}
+      {claim.contract?.analysis && (
+        <GuaranteeCostsSection
+          valorAluguel={(claim.contract.analysis as any).valor_aluguel || 0}
+          valorCondominio={(claim.contract.analysis as any).valor_condominio}
+          valorIptu={(claim.contract.analysis as any).valor_iptu}
+          taxaGarantiaPercentual={(claim.contract.analysis as any).taxa_garantia_percentual || 10}
+          setupFee={(claim.contract.analysis as any).setup_fee || 0}
+          setupFeeExempt={(claim.contract.analysis as any).setup_fee_exempt}
+          formaPagamentoPreferida={(claim.contract.analysis as any).forma_pagamento_preferida}
+          descontoPix={null}
+        />
+      )}
+
       {/* Header Card */}
       <Card>
         <CardHeader className="flex flex-row items-start justify-between">

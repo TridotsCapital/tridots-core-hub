@@ -33,7 +33,14 @@ interface KanbanBoardProps {
 }
 
 export function KanbanBoard({ filters, autoOpenAnalysisId, onAutoOpenHandled }: KanbanBoardProps) {
-  const { data: analyses, isLoading } = useAnalysesKanban(filters);
+  const { data: analyses, isLoading, isError, error } = useAnalysesKanban(filters);
+  
+  // Show toast on error
+  useEffect(() => {
+    if (isError && error) {
+      toast.error('Erro ao carregar análises: ' + (error as Error).message);
+    }
+  }, [isError, error]);
   const moveAnalysis = useMoveAnalysis();
   const { data: unreadIds } = useUnreadItemIds();
   const markAsRead = useMarkItemAsRead();
@@ -246,7 +253,7 @@ export function KanbanBoard({ filters, autoOpenAnalysisId, onAutoOpenHandled }: 
     setDrawerOpen(true);
   };
 
-  if (isLoading) {
+  if (isLoading || isError) {
     return (
       <div className="grid grid-cols-5 gap-4">
         {kanbanColumns.map((status) => (

@@ -59,6 +59,7 @@ const formSchema = z.object({
   // Financial
   taxaGarantiaPercentual: z.number().min(5).max(15).default(8),
   setupFee: z.number().default(100),
+  formaPagamentoPreferida: z.string().min(1, 'Forma de pagamento obrigatória'),
   observacoes: z.string().max(500).optional(),
   // Confirmation
   confirmacao: z.boolean().refine(val => val === true, 'Confirmação obrigatória'),
@@ -96,6 +97,7 @@ export function NewAnalysisForm({ agencyId }: NewAnalysisFormProps) {
       incluirConjuge: false,
       taxaGarantiaPercentual: 8,
       setupFee: 100,
+      formaPagamentoPreferida: '',
       confirmacao: false,
     },
   });
@@ -228,6 +230,7 @@ export function NewAnalysisForm({ agencyId }: NewAnalysisFormProps) {
           conjuge_renda_mensal: data.incluirConjuge ? data.conjugeRendaMensal : null,
           taxa_garantia_percentual: data.taxaGarantiaPercentual,
           setup_fee: data.setupFee,
+          forma_pagamento_preferida: data.formaPagamentoPreferida,
           observacoes: data.observacoes || null,
         })
         .select('id')
