@@ -108,49 +108,6 @@ export function PaymentOptionsDisplay({
             </div>
           </div>
         </div>
-        
-        {compact && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowAll(!showAll)}
-            className="w-full"
-          >
-            {showAll ? (
-              <>
-                <ChevronUp className="h-4 w-4 mr-2" />
-                Ocultar opções
-              </>
-            ) : (
-              <>
-                <ChevronDown className="h-4 w-4 mr-2" />
-                Ver todas as opções
-              </>
-            )}
-          </Button>
-        )}
-        
-        {showAll && (
-          <div className="space-y-2 mt-2 pt-2 border-t">
-            <p className="text-xs text-muted-foreground font-medium">Outras opções disponíveis:</p>
-            <div className="grid gap-2">
-              {allOptions.filter(opt => opt.id !== formaEscolhida).map((option) => (
-                <div key={option.id} className="flex items-center justify-between text-sm p-2 rounded bg-muted/30">
-                  <span className="flex items-center gap-2">
-                    {option.id === 'pix' ? <QrCode className="h-3.5 w-3.5" /> : <CreditCard className="h-3.5 w-3.5" />}
-                    {option.label}
-                    {option.discount && (
-                      <Badge variant="outline" className="text-xs">
-                        {option.discount}% OFF
-                      </Badge>
-                    )}
-                  </span>
-                  <span className="text-muted-foreground">{option.description}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     );
   }

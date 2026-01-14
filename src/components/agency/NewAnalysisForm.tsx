@@ -196,6 +196,15 @@ export function NewAnalysisForm({ agencyId }: NewAnalysisFormProps) {
 
     setIsSubmitting(true);
     try {
+      // Calculate garantia anual with PIX discount if applicable
+      const valorTotal = data.valorAluguel + (data.valorCondominio || 0) + (data.valorIptu || 0);
+      const garantiaMensal = valorTotal * (data.taxaGarantiaPercentual / 100);
+      const garantiaAnualBase = garantiaMensal * 12;
+      const PIX_DISCOUNT = 5; // 5% off for PIX payments
+      const garantiaAnual = data.formaPagamentoPreferida === 'pix'
+        ? garantiaAnualBase * (1 - PIX_DISCOUNT / 100)
+        : garantiaAnualBase;
+
       const { data: analysis, error } = await supabase
         .from('analyses')
         .insert({
@@ -232,6 +241,7 @@ export function NewAnalysisForm({ agencyId }: NewAnalysisFormProps) {
           taxa_garantia_percentual: data.taxaGarantiaPercentual,
           setup_fee: data.setupFee,
           forma_pagamento_preferida: data.formaPagamentoPreferida,
+          garantia_anual: garantiaAnual,
           observacoes: data.observacoes || null,
         })
         .select('id')
