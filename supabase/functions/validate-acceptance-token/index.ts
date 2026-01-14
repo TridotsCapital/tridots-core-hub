@@ -57,6 +57,8 @@ const handler = async (req: Request): Promise<Response> => {
         taxa_garantia_percentual,
         setup_fee,
         setup_fee_exempt,
+        garantia_anual,
+        forma_pagamento_preferida,
         terms_accepted_at,
         payer_name,
         payer_cpf,
@@ -66,7 +68,7 @@ const handler = async (req: Request): Promise<Response> => {
         guarantee_payment_confirmed_at,
         acceptance_token_expires_at,
         acceptance_token_used_at,
-        agency:agencies(id, nome_fantasia, razao_social, logo_url)
+        agency:agencies(id, nome_fantasia, razao_social, logo_url, desconto_pix_percentual)
       `)
       .eq("acceptance_token", token)
       .single();
@@ -98,14 +100,25 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Calculate values
+    // Use persisted garantia_anual from database (single source of truth)
     const valorTotal = analysis.valor_total || analysis.valor_aluguel;
+    const garantiaAnualPersistida = analysis.garantia_anual;
+    
+    // Fallback calculation only if not persisted (old analyses)
     const garantiaMensal = valorTotal * analysis.taxa_garantia_percentual / 100;
-    const garantiaAnual = garantiaMensal * 12;
+    const garantiaAnualCalculada = garantiaMensal * 12;
+    const garantiaAnual = garantiaAnualPersistida || garantiaAnualCalculada;
+    
     const setupFee = analysis.setup_fee_exempt ? 0 : analysis.setup_fee;
-    const primeiraParcela = setupFee + garantiaMensal;
+    const primeiraParcela = setupFee + (garantiaAnual / 12);
+    const descontoPix = analysis.agency?.desconto_pix_percentual || 5;
 
-    console.log("Token is valid:", { analysisId: analysis.id });
+    console.log("Token is valid:", { 
+      analysisId: analysis.id, 
+      forma_pagamento: analysis.forma_pagamento_preferida,
+      garantia_anual_persistida: garantiaAnualPersistida,
+      garantia_anual_final: garantiaAnual
+    });
 
     return new Response(
       JSON.stringify({
@@ -134,9 +147,11 @@ const handler = async (req: Request): Promise<Response> => {
           taxa_garantia_percentual: analysis.taxa_garantia_percentual,
           setup_fee: analysis.setup_fee,
           setup_fee_exempt: analysis.setup_fee_exempt,
-          garantia_mensal: garantiaMensal,
+          garantia_mensal: garantiaAnual / 12,
           garantia_anual: garantiaAnual,
           primeira_parcela: primeiraParcela,
+          forma_pagamento_preferida: analysis.forma_pagamento_preferida,
+          desconto_pix: descontoPix,
           terms_accepted_at: analysis.terms_accepted_at,
           payer_name: analysis.payer_name,
           payer_cpf: analysis.payer_cpf,
