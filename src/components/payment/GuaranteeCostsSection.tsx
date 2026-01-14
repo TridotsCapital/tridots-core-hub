@@ -53,6 +53,12 @@ export function GuaranteeCostsSection({
       </h4>
       
       <div className="space-y-2">
+        {/* Valor Total - base de cálculo (sem destaque) */}
+        <div className="flex justify-between items-center text-sm">
+          <span className="text-muted-foreground">Valor Total (com encargos)</span>
+          <span>{formatCurrency(valorTotal)}</span>
+        </div>
+        
         {/* Garantia Anual - DESTAQUE */}
         <div className="flex justify-between items-center">
           <span className="text-sm font-medium">
