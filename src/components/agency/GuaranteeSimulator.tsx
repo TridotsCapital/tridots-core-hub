@@ -21,6 +21,7 @@ export interface SimulatorValues {
   iptu: number;
   taxaGarantia: number;
   setupFee: number;
+  formaPagamento: string;
 }
 
 export function GuaranteeSimulator({ onStartAnalysis, initialValues, descontoPix = 5 }: GuaranteeSimulatorProps) {
@@ -37,6 +38,7 @@ export function GuaranteeSimulator({ onStartAnalysis, initialValues, descontoPix
   const [setupFee, setSetupFee] = useState<number | null>(
     initialValues?.setupFee !== undefined ? initialValues.setupFee : null
   );
+  const [formaPagamento, setFormaPagamento] = useState<string>('');
 
   const aluguel = parseCurrencyInput(aluguelInput);
   const condominio = parseCurrencyInput(condominioInput);
@@ -57,17 +59,19 @@ export function GuaranteeSimulator({ onStartAnalysis, initialValues, descontoPix
   };
 
   const handleStartAnalysis = () => {
-    if (setupFee === null) return;
+    if (setupFee === null || !formaPagamento) return;
     onStartAnalysis({
       aluguel,
       condominio,
       iptu,
       taxaGarantia,
       setupFee,
+      formaPagamento,
     });
   };
 
   const isValid = aluguel > 0 && iptu > 0 && setupFee !== null;
+  const canStartAnalysis = isValid && formaPagamento !== '';
 
   return (
     <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-background">
@@ -237,6 +241,8 @@ export function GuaranteeSimulator({ onStartAnalysis, initialValues, descontoPix
               <PaymentOptionsDisplay
                 garantiaAnual={garantiaAnual}
                 descontoPix={descontoPix}
+                formaEscolhida={formaPagamento as any}
+                onSelect={setFormaPagamento}
                 compact={true}
               />
             </div>
@@ -246,7 +252,7 @@ export function GuaranteeSimulator({ onStartAnalysis, initialValues, descontoPix
         {/* Start Analysis Button */}
         <Button
           onClick={handleStartAnalysis}
-          disabled={!isValid}
+          disabled={!canStartAnalysis}
           className="w-full"
           size="lg"
         >

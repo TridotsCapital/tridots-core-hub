@@ -146,6 +146,7 @@ export function NewAnalysisForm({ agencyId }: NewAnalysisFormProps) {
     form.setValue('valorIptuDisplay', values.iptu.toLocaleString('pt-BR', { minimumFractionDigits: 2 }));
     form.setValue('taxaGarantiaPercentual', values.taxaGarantia);
     form.setValue('setupFee', values.setupFee);
+    form.setValue('formaPagamentoPreferida', values.formaPagamento);
     setShowSimulator(false);
   };
 
