@@ -464,6 +464,14 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
                     garantiaAnualSalva={(analysis as any).garantia_anual}
                   />
 
+                  {/* Composição da Análise - logo após custos */}
+                  <ComposicaoAnaliseCard
+                    valorAluguel={analysis.valor_aluguel}
+                    valorCondominio={analysis.valor_condominio}
+                    valorIptu={analysis.valor_iptu}
+                    valorOutrosEncargos={analysis.valor_outros_encargos}
+                  />
+
                   {/* Placeholder for future coverages */}
                   <div className="rounded-lg border-2 border-dashed border-muted-foreground/20 bg-muted/30 p-8 text-center">
                     <p className="text-muted-foreground text-sm">
@@ -541,14 +549,6 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
                     <h3 className="text-sm font-semibold mb-4">Timeline de Eventos</h3>
                     <AnalysisTimeline analysis={analysis} />
                   </div>
-
-                  {/* Composição da Análise */}
-                  <ComposicaoAnaliseCard
-                    valorAluguel={analysis.valor_aluguel}
-                    valorCondominio={analysis.valor_condominio}
-                    valorIptu={analysis.valor_iptu}
-                    valorOutrosEncargos={analysis.valor_outros_encargos}
-                  />
 
                   {/* Observations */}
                   {analysis.observacoes && (
