@@ -5,6 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { FormField, FormItem, FormControl, FormMessage } from '@/components/ui/form';
 import { formatCurrency, PROPERTY_TYPES, BRAZILIAN_STATES } from '@/lib/validators';
 import { FileCheck, Home, User, Users, DollarSign, MessageSquare } from 'lucide-react';
+import { PaymentOptionsDisplay, PaymentMethod } from '@/components/payment/PaymentOptionsDisplay';
 
 interface SummaryStepProps {
   form: UseFormReturn<any>;
@@ -18,6 +19,7 @@ export function SummaryStep({ form }: SummaryStepProps) {
   
   const totalEncargos = (values.valorAluguel || 0) + (values.valorCondominio || 0) + (values.valorIptu || 0);
   const taxaMensal = totalEncargos * ((values.taxaGarantiaPercentual || 8) / 100);
+  const garantiaAnual = taxaMensal * 12;
   const custoMensalTotal = totalEncargos + taxaMensal;
 
   return (
@@ -205,6 +207,20 @@ export function SummaryStep({ form }: SummaryStepProps) {
               <p className="font-semibold">{formatCurrency(values.setupFee || 0)}</p>
             </div>
           </div>
+
+          {/* Payment Method Display */}
+          {values.formaPagamentoPreferida && (
+            <>
+              <div className="h-px bg-border" />
+              <PaymentOptionsDisplay
+                garantiaAnual={garantiaAnual}
+                descontoPix={5}
+                formaEscolhida={values.formaPagamentoPreferida as PaymentMethod}
+                readOnly={true}
+                compact={true}
+              />
+            </>
+          )}
         </CardContent>
       </Card>
 
