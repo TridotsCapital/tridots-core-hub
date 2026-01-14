@@ -675,15 +675,29 @@ export default function ContractDetail() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="financial" className="mt-6">
-            <Card className="border-primary/20 bg-primary/5">
+          <TabsContent value="financial" className="mt-6 space-y-6">
+            {/* Custos da Garantia Tridots */}
+            <GuaranteeCostsSection
+              valorAluguel={analysis.valor_aluguel}
+              valorCondominio={analysis.valor_condominio}
+              valorIptu={analysis.valor_iptu}
+              taxaGarantiaPercentual={analysis.taxa_garantia_percentual}
+              setupFee={analysis.setup_fee}
+              setupFeeExempt={analysis.setup_fee_exempt}
+              formaPagamentoPreferida={(analysis as any).forma_pagamento_preferida}
+              descontoPix={(analysis.agency as any)?.desconto_pix_percentual}
+              garantiaAnualSalva={(analysis as any).garantia_anual}
+            />
+
+            {/* Composição do Valor Total */}
+            <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   <DollarSign className="h-4 w-4" />
-                  Resumo Financeiro
+                  Composição do Valor Total
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4 text-sm">
+              <CardContent className="space-y-3 text-sm">
                 <div className="grid gap-3 md:grid-cols-3">
                   <div>
                     <span className="text-muted-foreground">Aluguel:</span>
@@ -701,35 +715,25 @@ export default function ContractDetail() {
                 
                 <Separator />
                 
-                <div className="grid gap-3 md:grid-cols-2">
-                  <div>
-                    <span className="text-muted-foreground">Total Encargos:</span>
-                    <p className="font-medium">{formatCurrency(totalEncargos)}</p>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Taxa Garantia ({analysis.taxa_garantia_percentual}%):</span>
-                    <p className="font-medium">{formatCurrency(taxaMensal)}</p>
-                  </div>
+                <div className="flex justify-between items-center pt-2">
+                  <span className="text-muted-foreground">Total Encargos:</span>
+                  <p className="font-semibold">{formatCurrency(totalEncargos)}</p>
                 </div>
-                
-                <Separator />
-                
+              </CardContent>
+            </Card>
+
+            {/* Comissões Imobiliária */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Building2 className="h-4 w-4" />
+                  Comissões Imobiliária
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm">
                 <div className="grid gap-3 md:grid-cols-2">
                   <div>
-                    <span className="text-muted-foreground">Custo Mensal Total:</span>
-                    <p className="font-semibold text-primary text-lg">{formatCurrency(totalEncargos + taxaMensal)}</p>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Setup Fee:</span>
-                    <p className="font-semibold">{formatCurrency(analysis.setup_fee || 0)}</p>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div className="grid gap-3 md:grid-cols-2">
-                  <div>
-                    <span className="text-muted-foreground">Comissão Imobiliária (Recorrente):</span>
+                    <span className="text-muted-foreground">Comissão Recorrente:</span>
                     <p className="font-medium">
                       {formatCurrency(taxaMensal * ((analysis.agency?.percentual_comissao_recorrente || 0) / 100))}
                       <span className="text-xs text-muted-foreground ml-1">
@@ -738,7 +742,7 @@ export default function ContractDetail() {
                     </p>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Comissão Imobiliária (Setup):</span>
+                    <span className="text-muted-foreground">Comissão Setup:</span>
                     <p className="font-medium">
                       {formatCurrency((analysis.setup_fee || 0) * ((analysis.agency?.percentual_comissao_setup || 0) / 100))}
                       <span className="text-xs text-muted-foreground ml-1">

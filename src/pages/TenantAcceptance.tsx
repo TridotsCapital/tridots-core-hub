@@ -57,6 +57,7 @@ interface AnalysisData {
   guarantee_payment_link: string | null;
   setup_payment_confirmed_at: string | null;
   guarantee_payment_confirmed_at: string | null;
+  forma_pagamento_preferida: string | null;
 }
 
 interface AgencyData {
@@ -1101,7 +1102,23 @@ export default function TenantAcceptance() {
                 <p className="text-sm text-muted-foreground mb-1">Valor da Garantia Anual</p>
                 <p className="text-3xl font-bold text-primary">{formatCurrency(analysis?.garantia_anual || 0)}</p>
                 <p className="text-sm text-muted-foreground mt-2">
-                  12x de {formatCurrency(analysis?.garantia_mensal || 0)}
+                  {(() => {
+                    const method = analysis?.forma_pagamento_preferida || 'card_12x';
+                    const valorAnual = analysis?.garantia_anual || 0;
+                    
+                    if (method === 'pix') {
+                      return 'PIX (5% off) - Pagamento à vista';
+                    }
+                    
+                    const match = method.match(/card_(\d+)x/);
+                    if (match) {
+                      const parcelas = parseInt(match[1]);
+                      const valorParcela = valorAnual / parcelas;
+                      return `${parcelas}x de ${formatCurrency(valorParcela)}`;
+                    }
+                    
+                    return `12x de ${formatCurrency(valorAnual / 12)}`;
+                  })()}
                 </p>
               </div>
 

@@ -128,6 +128,25 @@ export function ApprovalModal({ analysis, open, onOpenChange, onConfirm, mode = 
   const garantiaMensal = valorTotal * taxaGarantia / 100;
   const garantiaAnual = garantiaMensal * 12;
   const setupFee = analysis.setup_fee_exempt ? 0 : analysis.setup_fee;
+  const formaPagamento = (analysis as any).forma_pagamento_preferida || 'card_12x';
+
+  // Helper to format payment method display
+  const getPaymentMethodDisplay = (method: string, valorAnual: number) => {
+    if (method === 'pix') {
+      const desconto = 5; // 5% discount for PIX
+      const valorComDesconto = valorAnual * (1 - desconto / 100);
+      return `PIX (${desconto}% off): ${formatCurrency(valorComDesconto)} (de ${formatCurrency(valorAnual)})`;
+    }
+    
+    const match = method.match(/card_(\d+)x/);
+    if (match) {
+      const parcelas = parseInt(match[1]);
+      const valorParcela = valorAnual / parcelas;
+      return `${parcelas}x de ${formatCurrency(valorParcela)} (Total: ${formatCurrency(valorAnual)})`;
+    }
+    
+    return `12x de ${formatCurrency(valorAnual / 12)} (Total: ${formatCurrency(valorAnual)})`;
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -175,30 +194,29 @@ export function ApprovalModal({ analysis, open, onOpenChange, onConfirm, mode = 
             </h4>
             
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Valor Mensal do Imóvel</span>
-              <span className="font-bold text-primary">{formatCurrency(valorTotal)}</span>
+              <span className="text-muted-foreground">Total Garantido (com encargos)</span>
+              <span className="font-medium">{formatCurrency(valorTotal)} /mês</span>
             </div>
             
-            <div className="flex justify-between text-sm border-t pt-2">
-              <span className="text-muted-foreground">Taxa de Garantia ({taxaGarantia}%)</span>
-              <span>{formatCurrency(garantiaAnual)}/ano</span>
+            <div className="border-t pt-2 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Taxa de Garantia Anual ({taxaGarantia}%)</span>
+                <span>{formatCurrency(garantiaAnual)} /ano</span>
+              </div>
+              
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Taxa Setup</span>
+                <span className={analysis.setup_fee_exempt ? 'text-success font-medium' : ''}>
+                  {analysis.setup_fee_exempt ? 'ISENTA' : formatCurrency(setupFee)}
+                </span>
+              </div>
             </div>
             
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Garantia Mensal</span>
-              <span>{formatCurrency(garantiaMensal)}/mês</span>
-            </div>
-            
-            <div className="flex justify-between text-sm border-t pt-2">
-              <span className="text-muted-foreground">Taxa Setup</span>
-              <span className={analysis.setup_fee_exempt ? 'text-success font-medium' : ''}>
-                {analysis.setup_fee_exempt ? 'ISENTA' : formatCurrency(setupFee)}
-              </span>
-            </div>
-            
-            <div className="flex justify-between text-base pt-2 border-t bg-primary/5 -mx-4 px-4 py-2 rounded-b-lg -mb-4">
-              <span className="font-semibold">Total a Pagar (1º mês)</span>
-              <span className="font-bold text-primary text-lg">{formatCurrency(setupFee + garantiaMensal)}</span>
+            <div className="border-t pt-3">
+              <p className="text-sm text-muted-foreground mb-1">Forma de pagamento:</p>
+              <p className="font-semibold text-primary">
+                {getPaymentMethodDisplay(formaPagamento, garantiaAnual)}
+              </p>
             </div>
           </div>
 
@@ -277,7 +295,7 @@ export function ApprovalModal({ analysis, open, onOpenChange, onConfirm, mode = 
                 className="font-mono text-sm"
               />
               <p className="text-xs text-muted-foreground">
-                Valor: {formatCurrency(garantiaAnual)} (12x de {formatCurrency(garantiaMensal)})
+                Forma de pagamento: {getPaymentMethodDisplay(formaPagamento, garantiaAnual)}
               </p>
             </div>
           </div>
