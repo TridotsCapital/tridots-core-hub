@@ -793,6 +793,28 @@ export default function ContractDetail() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Renovação Tab */}
+          <TabsContent value="renovacao" className="mt-6">
+            <ContractRenewalTab
+              contractId={contract.id}
+              contractStatus={contract.status}
+              dataFimContrato={contract.data_fim_contrato}
+              analysis={{
+                inquilino_nome: analysis.inquilino_nome,
+                inquilino_email: analysis.inquilino_email,
+                inquilino_telefone: analysis.inquilino_telefone,
+                valor_aluguel: analysis.valor_aluguel,
+                valor_condominio: analysis.valor_condominio,
+                valor_iptu: analysis.valor_iptu,
+                valor_outros_encargos: (analysis as any).valor_outros_encargos,
+                taxa_garantia_percentual: analysis.taxa_garantia_percentual,
+                imovel_endereco: analysis.imovel_endereco,
+                imovel_cidade: analysis.imovel_cidade,
+                imovel_estado: analysis.imovel_estado,
+              }}
+            />
+          </TabsContent>
         </Tabs>
       </div>
 

@@ -14,6 +14,7 @@ export interface ContractFilters {
   city?: string;
   state?: string;
   search?: string;
+  renewalPeriod?: boolean; // Filter contracts within renewal period (30 days before expiry)
 }
 
 export function useContracts(filters?: ContractFilters) {
@@ -98,6 +99,19 @@ export function useContracts(filters?: ContractFilters) {
           c.analysis?.inquilino_nome?.toLowerCase().includes(searchLower) ||
           c.analysis?.inquilino_cpf?.includes(filters.search!)
         );
+      }
+
+      // Filter contracts within renewal period (30 days before expiry)
+      if (filters?.renewalPeriod) {
+        const now = new Date();
+        const thirtyDaysFromNow = new Date();
+        thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+        
+        filteredData = filteredData.filter(c => {
+          if (c.status !== 'ativo' || !c.data_fim_contrato) return false;
+          const endDate = new Date(c.data_fim_contrato);
+          return endDate >= now && endDate <= thirtyDaysFromNow;
+        });
       }
 
       return filteredData;

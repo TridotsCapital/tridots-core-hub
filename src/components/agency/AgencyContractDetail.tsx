@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
+import { ContractRenewalTab } from '@/components/contracts/ContractRenewalTab';
 import { ArrowLeft, Home, User, Users, DollarSign, Calendar, CheckCircle, Clock, XCircle, CreditCard, FileText, Loader2, MessageSquare, Eye, ExternalLink, FileCheck, Shield, CalendarSync } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency, PROPERTY_TYPES } from '@/lib/validators';
@@ -420,6 +421,10 @@ export function AgencyContractDetail() {
           <TabsTrigger value="overview">Visão Geral</TabsTrigger>
           <TabsTrigger value="timeline">Timeline</TabsTrigger>
           {showDocsTab && <TabsTrigger value="documents">Documentos</TabsTrigger>}
+          {contract && <TabsTrigger value="renovacao" className="flex items-center gap-2">
+            <CalendarSync className="h-3.5 w-3.5" />
+            Renovação
+          </TabsTrigger>}
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6 mt-6">
@@ -745,6 +750,31 @@ export function AgencyContractDetail() {
               tenantName={analysis.inquilino_nome}
               isAgencyView={true}
               onUpdate={() => fetchData()}
+            />
+          </TabsContent>
+        )}
+
+        {/* Renovação Tab */}
+        {contract && (
+          <TabsContent value="renovacao" className="mt-6">
+            <ContractRenewalTab
+              contractId={contract.id}
+              contractStatus={contract.status}
+              dataFimContrato={contract.data_fim_contrato}
+              analysis={{
+                inquilino_nome: analysis.inquilino_nome,
+                inquilino_email: analysis.inquilino_email,
+                inquilino_telefone: analysis.inquilino_telefone,
+                valor_aluguel: analysis.valor_aluguel,
+                valor_condominio: analysis.valor_condominio,
+                valor_iptu: analysis.valor_iptu,
+                valor_outros_encargos: analysis.valor_outros_encargos,
+                taxa_garantia_percentual: analysis.taxa_garantia_percentual,
+                imovel_endereco: analysis.imovel_endereco,
+                imovel_cidade: analysis.imovel_cidade,
+                imovel_estado: analysis.imovel_estado,
+              }}
+              isAgencyView={true}
             />
           </TabsContent>
         )}
