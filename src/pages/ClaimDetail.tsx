@@ -240,19 +240,6 @@ export default function ClaimDetail() {
               </CardContent>
             </Card>
 
-            {/* Coberturas Contratadas com barra de consumo */}
-            <CoverageCard
-              planoGarantia={(claim.contract?.analysis as any)?.plano_garantia}
-              valorLocaticioTotal={
-                ((claim.contract?.analysis as any)?.valor_aluguel || 0) +
-                ((claim.contract?.analysis as any)?.valor_condominio || 0) +
-                ((claim.contract?.analysis as any)?.valor_iptu || 0)
-              }
-              taxaGarantiaPercentual={(claim.contract?.analysis as any)?.taxa_garantia_percentual || 10}
-              showConsumption={true}
-              contractId={claim.contract_id}
-            />
-
             {/* Tenant Info */}
             <Card>
               <CardHeader className="pb-2">
@@ -376,6 +363,19 @@ export default function ClaimDetail() {
                 </CardContent>
               </Tabs>
             </Card>
+
+            {/* Coberturas Contratadas com barra de consumo - abaixo das abas */}
+            <CoverageCard
+              planoGarantia={(claim.contract?.analysis as any)?.plano_garantia}
+              valorLocaticioTotal={
+                ((claim.contract?.analysis as any)?.valor_aluguel || 0) +
+                ((claim.contract?.analysis as any)?.valor_condominio || 0) +
+                ((claim.contract?.analysis as any)?.valor_iptu || 0)
+              }
+              taxaGarantiaPercentual={(claim.contract?.analysis as any)?.taxa_garantia_percentual || 10}
+              showConsumption={true}
+              contractId={claim.contract_id}
+            />
           </div>
         </div>
       </div>
