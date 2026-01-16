@@ -81,7 +81,7 @@ export function PlanSelector({
             <CardContent className="p-4 space-y-4">
               {/* Plan Badge */}
               <Badge className={cn('font-bold', plan.badgeClass)}>
-                {plan.name}
+                {plan.emoji} {plan.name}
               </Badge>
 
               {/* Features */}
