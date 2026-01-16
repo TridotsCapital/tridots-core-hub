@@ -3,7 +3,9 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { KanbanCard } from './KanbanCard';
 import { Analysis, AnalysisStatus, statusConfig } from '@/types/database';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { formatCurrency } from '@/lib/validators';
 
 interface KanbanColumnProps {
   status: AnalysisStatus;
@@ -38,6 +40,13 @@ export function KanbanColumn({ status, title, analyses, onCardClick, unreadIds }
     id: status,
   });
 
+  // Calculate column totals
+  const totalGarantia = analyses.reduce((sum, a) => sum + ((a as any).garantia_anual || 0), 0);
+  const totalCobertura = analyses.reduce((sum, a) => {
+    const valorTotal = (a.valor_aluguel || 0) + (a.valor_condominio || 0) + (a.valor_iptu || 0);
+    return sum + (valorTotal * 20);
+  }, 0);
+
   return (
     <div
       ref={setNodeRef}
@@ -48,14 +57,39 @@ export function KanbanColumn({ status, title, analyses, onCardClick, unreadIds }
       )}
     >
       <div className="kanban-column-header">
-        <div className="flex items-center gap-2">
-          <h3 className="font-semibold text-sm text-foreground">{title}</h3>
-          <Badge 
-            variant="secondary" 
-            className={cn('text-xs font-bold', headerColors[status])}
-          >
-            {analyses.length}
-          </Badge>
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold text-sm text-foreground">{title}</h3>
+            <Badge 
+              variant="secondary" 
+              className={cn('text-xs font-bold', headerColors[status])}
+            >
+              {analyses.length}
+            </Badge>
+          </div>
+          {analyses.length > 0 && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold text-primary">
+                      {formatCurrency(totalGarantia)}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">
+                      Cob: {formatCurrency(totalCobertura)}
+                    </span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <div className="text-xs space-y-1">
+                    <p><strong>{analyses.length}</strong> análises</p>
+                    <p>Garantia Total: <strong>{formatCurrency(totalGarantia)}</strong></p>
+                    <p>Cobertura (20x): <strong>{formatCurrency(totalCobertura)}</strong></p>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
         </div>
       </div>
 
