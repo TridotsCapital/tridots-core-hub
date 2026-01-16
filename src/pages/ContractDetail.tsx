@@ -29,6 +29,7 @@ import {
   Loader2,
   Shield,
   StickyNote,
+  CalendarSync,
 } from 'lucide-react';
 import { useContract } from '@/hooks/useContracts';
 import { useTicketCountByAnalysis, useTicketsByAnalysis } from '@/hooks/useTickets';
@@ -40,6 +41,7 @@ import { ContractTicketSheet } from '@/components/contracts/ContractTicketSheet'
 import { TicketDetailSheet } from '@/components/tickets/TicketDetailSheet';
 import { InternalNotesTab } from '@/components/shared/InternalNotesTab';
 import { GuaranteeCostsSection } from '@/components/payment/GuaranteeCostsSection';
+import { ContractRenewalTab } from '@/components/contracts/ContractRenewalTab';
 import { CoverageCard } from '@/components/shared/CoverageCard';
 import { formatCurrency, PROPERTY_TYPES } from '@/lib/validators';
 import { format } from 'date-fns';
@@ -398,6 +400,10 @@ export default function ContractDetail() {
             <TabsTrigger value="notas" className="flex items-center gap-2 whitespace-nowrap shrink-0">
               <StickyNote className="h-4 w-4" />
               Notas
+            </TabsTrigger>
+            <TabsTrigger value="renovacao" className="flex items-center gap-2 whitespace-nowrap shrink-0">
+              <CalendarSync className="h-4 w-4" />
+              Renovação
             </TabsTrigger>
           </TabsList>
 

@@ -46,7 +46,6 @@ interface ContractActionsProps {
 
 export function ContractActions({ contract, onEdit }: ContractActionsProps) {
   const queryClient = useQueryClient();
-  const [renewOpen, setRenewOpen] = useState(false);
   const [pendencyOpen, setPendencyOpen] = useState(false);
   const [paymentsOpen, setPaymentsOpen] = useState(false);
   const [commissionsOpen, setCommissionsOpen] = useState(false);
@@ -156,13 +155,6 @@ export function ContractActions({ contract, onEdit }: ContractActionsProps) {
   return (
     <>
       <div className="flex flex-wrap gap-2">
-        {isActive && (
-          <Button variant="outline" size="sm" onClick={() => setRenewOpen(true)}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Renovar Contrato
-          </Button>
-        )}
-        
         <Button variant="outline" size="sm" onClick={() => setPendencyOpen(true)}>
           <AlertTriangle className="h-4 w-4 mr-2" />
           Sinalizar Pendência
@@ -192,23 +184,6 @@ export function ContractActions({ contract, onEdit }: ContractActionsProps) {
           </Button>
         )}
       </div>
-
-      {/* Renewal Modal */}
-      <Dialog open={renewOpen} onOpenChange={setRenewOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Renovar Contrato</DialogTitle>
-            <DialogDescription>
-              Funcionalidade de renovação em desenvolvimento. Em breve você poderá definir nova vigência e valores.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setRenewOpen(false)}>
-              Fechar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Pendency Modal */}
       <Dialog open={pendencyOpen} onOpenChange={setPendencyOpen}>
