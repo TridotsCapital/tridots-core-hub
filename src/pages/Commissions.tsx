@@ -261,8 +261,8 @@ export default function Commissions() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="bg-popover">
-                            {commission.analysis_id && (
-                              <DropdownMenuItem onClick={() => navigate(`/contracts/${commission.analysis_id}`)}>
+                            {(commission.analysis as any)?.contract?.id && (
+                              <DropdownMenuItem onClick={() => navigate(`/contracts/${(commission.analysis as any).contract.id}`)}>
                                 <FileCheck className="h-4 w-4 mr-2" />
                                 Ver Contrato
                               </DropdownMenuItem>
