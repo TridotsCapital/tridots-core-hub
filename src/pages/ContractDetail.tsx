@@ -593,6 +593,11 @@ export default function ContractDetail() {
                 doc_seguro_incendio_status: contract.doc_seguro_incendio_status,
                 doc_seguro_incendio_feedback: contract.doc_seguro_incendio_feedback,
                 doc_seguro_incendio_uploaded_at: contract.doc_seguro_incendio_uploaded_at,
+                doc_contrato_administrativo_path: contract.doc_contrato_administrativo_path,
+                doc_contrato_administrativo_name: contract.doc_contrato_administrativo_name,
+                doc_contrato_administrativo_status: contract.doc_contrato_administrativo_status,
+                doc_contrato_administrativo_feedback: contract.doc_contrato_administrativo_feedback,
+                doc_contrato_administrativo_uploaded_at: contract.doc_contrato_administrativo_uploaded_at,
               }}
               identityPhotoPath={analysis.identity_photo_path}
               tenantName={analysis.inquilino_nome}

@@ -47,6 +47,11 @@ interface ContractDocumentsSectionProps {
     doc_seguro_incendio_status: string | null;
     doc_seguro_incendio_feedback: string | null;
     doc_seguro_incendio_uploaded_at: string | null;
+    doc_contrato_administrativo_path: string | null;
+    doc_contrato_administrativo_name: string | null;
+    doc_contrato_administrativo_status: string | null;
+    doc_contrato_administrativo_feedback: string | null;
+    doc_contrato_administrativo_uploaded_at: string | null;
   };
   identityPhotoPath?: string | null;
   tenantName?: string;
