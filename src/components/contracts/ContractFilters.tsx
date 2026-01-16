@@ -111,41 +111,44 @@ export function ContractFilters({ filters, onFiltersChange, onSearch }: Props) {
         )}
       </div>
 
-      {/* All Filters in Single Row */}
+      {/* Filters Row */}
       <div className="flex flex-wrap items-center gap-3">
         {/* Status Badges */}
-        <div className="flex flex-wrap items-center gap-2">
+        {STATUS_OPTIONS.map(option => (
           <Badge
-            variant={filters.renewalPeriod ? 'default' : 'outline'}
-            className={`cursor-pointer transition-colors ${
-              filters.renewalPeriod 
-                ? 'bg-violet-600 hover:bg-violet-700 text-white' 
-                : 'hover:bg-violet-100 hover:text-violet-700 hover:border-violet-300'
-            }`}
-            onClick={toggleRenewalPeriod}
+            key={option.value}
+            variant={filters.status?.includes(option.value) ? 'default' : 'outline'}
+            className="cursor-pointer"
+            onClick={() => handleStatusChange(option.value)}
           >
-            <CalendarSync className="h-3 w-3 mr-1.5" />
-            No Prazo de Renovação
+            {option.label}
           </Badge>
+        ))}
 
-          {STATUS_OPTIONS.map(option => (
-            <Badge
-              key={option.value}
-              variant={filters.status?.includes(option.value) ? 'default' : 'outline'}
-              className="cursor-pointer"
-              onClick={() => handleStatusChange(option.value)}
-            >
-              {option.label}
-            </Badge>
-          ))}
-        </div>
+        <div className="h-5 w-px bg-border" />
+
+        {/* Special Filter: Renewal Period */}
+        <Badge
+          variant={filters.renewalPeriod ? 'default' : 'outline'}
+          className={`cursor-pointer transition-colors ${
+            filters.renewalPeriod 
+              ? 'bg-violet-600 hover:bg-violet-700 text-white' 
+              : 'hover:bg-violet-100 hover:text-violet-700 hover:border-violet-300'
+          }`}
+          onClick={toggleRenewalPeriod}
+        >
+          <CalendarSync className="h-3 w-3 mr-1.5" />
+          No Prazo de Renovação
+        </Badge>
+
+        <div className="h-5 w-px bg-border" />
 
         {/* Agency Filter */}
         <Select
           value={filters.agencyId || 'all'}
           onValueChange={(v) => onFiltersChange({ ...filters, agencyId: v === 'all' ? undefined : v })}
         >
-          <SelectTrigger className="w-[160px]">
+          <SelectTrigger className="w-[160px] h-9">
             <SelectValue placeholder="Imobiliária" />
           </SelectTrigger>
           <SelectContent>
@@ -157,6 +160,32 @@ export function ContractFilters({ filters, onFiltersChange, onSearch }: Props) {
             ))}
           </SelectContent>
         </Select>
+
+        {/* State Filter */}
+        <Select
+          value={filters.state || 'all'}
+          onValueChange={(v) => onFiltersChange({ ...filters, state: v === 'all' ? undefined : v })}
+        >
+          <SelectTrigger className="w-[100px] h-9">
+            <SelectValue placeholder="Estado" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos UF</SelectItem>
+            {STATES.map(state => (
+              <SelectItem key={state} value={state}>{state}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {/* City Filter */}
+        <Input
+          placeholder="Cidade"
+          value={filters.city || ''}
+          onChange={(e) => onFiltersChange({ ...filters, city: e.target.value || undefined })}
+          className="w-[130px] h-9"
+        />
+
+        <div className="h-5 w-px bg-border" />
 
         {/* Period Filter */}
         <div className="flex items-center gap-1">
@@ -194,30 +223,6 @@ export function ContractFilters({ filters, onFiltersChange, onSearch }: Props) {
           </Popover>
         </div>
 
-        {/* State Filter */}
-        <Select
-          value={filters.state || 'all'}
-          onValueChange={(v) => onFiltersChange({ ...filters, state: v === 'all' ? undefined : v })}
-        >
-          <SelectTrigger className="w-[100px]">
-            <SelectValue placeholder="Estado" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos</SelectItem>
-            {STATES.map(state => (
-              <SelectItem key={state} value={state}>{state}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {/* City Filter */}
-        <Input
-          placeholder="Cidade"
-          value={filters.city || ''}
-          onChange={(e) => onFiltersChange({ ...filters, city: e.target.value || undefined })}
-          className="w-[140px] h-9"
-        />
-
         {/* Rent Range */}
         <div className="flex items-center gap-1">
           <Input
@@ -233,7 +238,7 @@ export function ContractFilters({ filters, onFiltersChange, onSearch }: Props) {
             placeholder="máx"
             value={filters.maxRent || ''}
             onChange={(e) => onFiltersChange({ ...filters, maxRent: e.target.value ? Number(e.target.value) : undefined })}
-            className="w-[80px] h-9"
+            className="w-[70px] h-9"
           />
         </div>
       </div>
