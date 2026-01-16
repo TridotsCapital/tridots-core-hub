@@ -68,16 +68,16 @@ export function AgencyClaimDetailView({ claim, onUpdate }: AgencyClaimDetailView
       {/* Custos da Garantia Tridots - NO TOPO */}
       {claim.contract?.analysis && (
         <GuaranteeCostsSection
-          valorAluguel={(claim.contract.analysis as any).valor_aluguel || 0}
+          valorAluguel={(claim.contract.analysis as any).valor_aluguel}
           valorCondominio={(claim.contract.analysis as any).valor_condominio}
           valorIptu={(claim.contract.analysis as any).valor_iptu}
-          taxaGarantiaPercentual={(claim.contract.analysis as any).taxa_garantia_percentual || 10}
-          setupFee={(claim.contract.analysis as any).setup_fee || 0}
+          taxaGarantiaPercentual={(claim.contract.analysis as any).taxa_garantia_percentual}
+          setupFee={(claim.contract.analysis as any).setup_fee}
           setupFeeExempt={(claim.contract.analysis as any).setup_fee_exempt}
           formaPagamentoPreferida={(claim.contract.analysis as any).forma_pagamento_preferida}
           descontoPix={null}
           garantiaAnualSalva={(claim.contract.analysis as any).garantia_anual}
-          dataInicioContrato={(claim.contract as any).data_inicio_contrato}
+          dataInicioContrato={(claim.contract.analysis as any).guarantee_payment_date}
         />
       )}
 

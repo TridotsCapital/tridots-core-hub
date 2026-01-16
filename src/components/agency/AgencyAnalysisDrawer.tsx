@@ -258,8 +258,9 @@ export function AgencyAnalysisDrawer({
                   setupFee={analysis.setup_fee} 
                   setupFeeExempt={analysis.setup_fee_exempt} 
                   formaPagamentoPreferida={(analysis as any).forma_pagamento_preferida} 
-                  descontoPix={(analysis as any).agency?.desconto_pix_percentual || 5}
+                  descontoPix={(analysis as any).agency?.desconto_pix_percentual}
                   garantiaAnualSalva={(analysis as any).garantia_anual}
+                  dataInicioContrato={(analysis as any).guarantee_payment_date}
                 />
 
                 {/* Composição da Análise - logo após custos */}

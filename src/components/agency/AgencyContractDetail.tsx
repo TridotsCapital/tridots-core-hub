@@ -431,7 +431,9 @@ export function AgencyContractDetail() {
             setupFee={analysis.setup_fee}
             setupFeeExempt={analysis.setup_fee_exempt}
             formaPagamentoPreferida={analysis.forma_pagamento_preferida}
-            descontoPix={null} // Agency doesn't have agency object in this context
+            descontoPix={null}
+            garantiaAnualSalva={analysis.garantia_anual}
+            dataInicioContrato={analysis.guarantee_payment_date}
           />
 
           {/* Property Info */}

@@ -35,12 +35,21 @@ export function useClaims(filters?: {
               imovel_endereco,
               imovel_cidade,
               imovel_estado,
-              valor_aluguel
+              valor_aluguel,
+              valor_condominio,
+              valor_iptu,
+              taxa_garantia_percentual,
+              setup_fee,
+              setup_fee_exempt,
+              garantia_anual,
+              forma_pagamento_preferida,
+              guarantee_payment_date
             )
           ),
           agency:agencies(
             nome_fantasia,
-            razao_social
+            razao_social,
+            desconto_pix_percentual
           ),
           creator:profiles!claims_created_by_fkey(
             full_name,
@@ -88,12 +97,21 @@ export function useClaimDetail(claimId: string | undefined) {
               imovel_endereco,
               imovel_cidade,
               imovel_estado,
-              valor_aluguel
+              valor_aluguel,
+              valor_condominio,
+              valor_iptu,
+              taxa_garantia_percentual,
+              setup_fee,
+              setup_fee_exempt,
+              garantia_anual,
+              forma_pagamento_preferida,
+              guarantee_payment_date
             )
           ),
           agency:agencies(
             nome_fantasia,
-            razao_social
+            razao_social,
+            desconto_pix_percentual
           ),
           creator:profiles!claims_created_by_fkey(
             full_name,
