@@ -153,7 +153,7 @@ export function ClaimItemsSection({ claimId, canEdit, onUpdate }: ClaimItemsSect
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Itens do Sinistro</CardTitle>
+          <CardTitle>Itens Solicitados</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
@@ -172,7 +172,7 @@ export function ClaimItemsSection({ claimId, canEdit, onUpdate }: ClaimItemsSect
         <div>
           <CardTitle className="flex items-center gap-2">
             <Package className="h-5 w-5" />
-            Itens do Sinistro
+            Itens Solicitados
           </CardTitle>
         </div>
         <div className="flex items-center gap-4">

@@ -13,6 +13,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { useClaimTimeline, ClaimTimelineEvent } from '@/hooks/useClaimTimeline';
 import { cn } from '@/lib/utils';
+import { claimPublicStatusConfig, claimInternalStatusConfig } from '@/types/claims';
 
 interface ClaimTimelineProps {
   claimId: string;
@@ -60,29 +61,52 @@ function getEventConfig(eventType: string) {
   return eventTypeConfig[eventType] || eventTypeConfig.default;
 }
 
+// Humanize status in description
+function humanizeDescription(description: string): string {
+  // Replace public status keys with labels
+  Object.entries(claimPublicStatusConfig).forEach(([key, config]) => {
+    const regex = new RegExp(`\\b${key}\\b`, 'gi');
+    description = description.replace(regex, config.label);
+  });
+  
+  // Replace internal status keys with labels
+  Object.entries(claimInternalStatusConfig).forEach(([key, config]) => {
+    const regex = new RegExp(`\\b${key}\\b`, 'gi');
+    description = description.replace(regex, config.label);
+  });
+  
+  return description;
+}
+
 function TimelineEventItem({ event }: { event: ClaimTimelineEvent }) {
   const config = getEventConfig(event.event_type);
   const IconComponent = config.icon;
+  const humanizedDescription = humanizeDescription(event.description);
 
   return (
-    <div className="flex gap-4 relative">
+    <div className={cn(
+      'flex gap-4 relative rounded-lg p-3 -ml-3 transition-colors',
+      event.event_type === 'public_status_changed' && 'bg-blue-50/50 dark:bg-blue-950/20',
+      event.event_type === 'internal_status_changed' && 'bg-purple-50/50 dark:bg-purple-950/20',
+      event.event_type === 'created' && 'bg-green-50/50 dark:bg-green-950/20',
+    )}>
       {/* Icon */}
       <div className={cn('p-2 rounded-full shrink-0', config.bgColor)}>
         <IconComponent className={cn('h-4 w-4', config.color)} />
       </div>
 
       {/* Content */}
-      <div className="flex-1 pb-6">
+      <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
-          <div>
-            <p className="text-sm font-medium">{event.description}</p>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium leading-relaxed">{humanizedDescription}</p>
             {event.creator && (
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="text-xs text-muted-foreground mt-1">
                 por {event.creator.full_name}
               </p>
             )}
           </div>
-          <span className="text-xs text-muted-foreground whitespace-nowrap">
+          <span className="text-xs text-muted-foreground whitespace-nowrap shrink-0">
             {format(new Date(event.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
           </span>
         </div>
@@ -98,8 +122,8 @@ export function ClaimTimeline({ claimId }: ClaimTimelineProps) {
     return (
       <div className="space-y-4">
         {[...Array(5)].map((_, i) => (
-          <div key={i} className="flex gap-4">
-            <Skeleton className="h-8 w-8 rounded-full" />
+          <div key={i} className="flex gap-4 p-3">
+            <Skeleton className="h-8 w-8 rounded-full shrink-0" />
             <div className="flex-1 space-y-2">
               <Skeleton className="h-4 w-3/4" />
               <Skeleton className="h-3 w-1/4" />
@@ -131,10 +155,10 @@ export function ClaimTimeline({ claimId }: ClaimTimelineProps) {
   return (
     <div className="relative">
       {/* Vertical line */}
-      <div className="absolute left-4 top-8 bottom-0 w-0.5 bg-border" />
+      <div className="absolute left-[22px] top-10 bottom-4 w-0.5 bg-border" />
 
       {/* Events */}
-      <div className="space-y-0">
+      <div className="space-y-2">
         {events.map((event) => (
           <TimelineEventItem key={event.id} event={event} />
         ))}

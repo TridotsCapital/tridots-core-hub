@@ -1,5 +1,7 @@
-import { Shield } from 'lucide-react';
+import { Shield, Calendar } from 'lucide-react';
 import { PaymentMethodDisplay } from './PaymentMethodDisplay';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -15,6 +17,8 @@ interface GuaranteeCostsSectionProps {
   descontoPix?: number | null;
   /** Use this if garantia_anual is saved in the DB */
   garantiaAnualSalva?: number | null;
+  /** Contract start date (data_inicio_contrato) */
+  dataInicioContrato?: string | null;
 }
 
 export function GuaranteeCostsSection({
@@ -27,6 +31,7 @@ export function GuaranteeCostsSection({
   formaPagamentoPreferida,
   descontoPix,
   garantiaAnualSalva,
+  dataInicioContrato,
 }: GuaranteeCostsSectionProps) {
   const valorTotal = valorAluguel + (valorCondominio || 0) + (valorIptu || 0);
   const garantiaMensal = valorTotal * (taxaGarantiaPercentual / 100);
@@ -59,14 +64,14 @@ export function GuaranteeCostsSection({
           <span>{formatCurrency(valorTotal)}</span>
         </div>
         
-        {/* Garantia Anual - DESTAQUE */}
-        <div className="flex justify-between items-center">
-          <span className="text-sm font-medium">
+        {/* Garantia Anual - SEM destaque exagerado */}
+        <div className="flex justify-between items-center text-sm">
+          <span className="text-muted-foreground">
             Garantia Anual ({taxaGarantiaPercentual}%)
           </span>
-          <span className="text-lg font-bold text-primary">
+          <span>
             {formatCurrency(garantiaAnualFinal)}
-            <span className="text-xs font-normal text-muted-foreground"> /ano</span>
+            <span className="text-xs text-muted-foreground"> /ano</span>
           </span>
         </div>
         
@@ -78,10 +83,10 @@ export function GuaranteeCostsSection({
           </span>
         </div>
         
-        {/* Forma de Pagamento */}
+        {/* Forma de Pagamento - DESTACADA */}
         <div className="pt-2 border-t">
           <p className="text-sm text-muted-foreground mb-2">Forma de Pagamento:</p>
-          <div>
+          <div className="font-medium text-primary">
             {formaPagamentoPreferida ? (
               <PaymentMethodDisplay
                 method={formaPagamentoPreferida}
@@ -90,12 +95,25 @@ export function GuaranteeCostsSection({
                 showDiscount={true}
               />
             ) : (
-              <span className="text-sm text-muted-foreground italic">
+              <span className="text-sm text-muted-foreground italic font-normal">
                 Não definida
               </span>
             )}
           </div>
         </div>
+
+        {/* Data de início do contrato */}
+        {dataInicioContrato && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground pt-2">
+            <Calendar className="h-3.5 w-3.5" />
+            <span>
+              Contrato iniciado em:{' '}
+              <span className="font-medium text-foreground">
+                {format(new Date(dataInicioContrato), 'dd/MM/yyyy', { locale: ptBR })}
+              </span>
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -142,6 +142,19 @@ export function ClaimContractTab({ contractId }: ClaimContractTabProps) {
 
   return (
     <div className="space-y-6">
+      {/* Coberturas Contratadas Placeholder */}
+      <Card className="border-dashed border-2 border-primary/30 bg-primary/5">
+        <CardContent className="flex flex-col items-center justify-center py-8 text-center">
+          <div className="p-3 rounded-full bg-primary/10 mb-4">
+            <FileCheck className="h-8 w-8 text-primary" />
+          </div>
+          <h3 className="font-semibold text-lg mb-2">Coberturas Contratadas</h3>
+          <p className="text-sm text-muted-foreground max-w-md">
+            Em breve aqui você verá as coberturas contratadas para este contrato.
+          </p>
+        </CardContent>
+      </Card>
+
       {/* Contract Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
