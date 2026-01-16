@@ -61,6 +61,9 @@ interface Contract {
     imovel_cidade: string;
     imovel_estado: string;
     valor_aluguel: number;
+    valor_total: number | null;
+    taxa_garantia_percentual: number;
+    garantia_anual: number | null;
     approved_at: string | null;
   } | null;
   agency: {
@@ -109,7 +112,9 @@ export function ContractList({ contracts, isLoading, onRenew, onFlagPendency, on
         Imobiliária: c.agency?.nome_fantasia || c.agency?.razao_social || '-',
         Cidade: c.analysis?.imovel_cidade || '-',
         Estado: c.analysis?.imovel_estado || '-',
-        Aluguel: c.analysis?.valor_aluguel || 0,
+        'Valor Locatício': c.analysis?.valor_total || c.analysis?.valor_aluguel || 0,
+        Cobertura: c.analysis?.garantia_anual || 0,
+        'Taxa %': c.analysis?.taxa_garantia_percentual || 0,
         Status: STATUS_CONFIG[c.status]?.label || c.status,
         'Data Criação': format(new Date(c.created_at), 'dd/MM/yyyy'),
       }));
@@ -177,7 +182,9 @@ export function ContractList({ contracts, isLoading, onRenew, onFlagPendency, on
               <TableHead>Inquilino</TableHead>
               <TableHead>Imobiliária</TableHead>
               <TableHead>Localização</TableHead>
-              <TableHead>Aluguel</TableHead>
+              <TableHead className="text-right">Valor Locatício</TableHead>
+              <TableHead className="text-right">Cobertura</TableHead>
+              <TableHead className="text-center">Taxa %</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Criação</TableHead>
               <TableHead className="w-12"></TableHead>
@@ -241,8 +248,21 @@ export function ContractList({ contracts, isLoading, onRenew, onFlagPendency, on
                   <TableCell>
                     {contract.analysis?.imovel_cidade}, {contract.analysis?.imovel_estado}
                   </TableCell>
-                  <TableCell className="font-medium">
-                    {contract.analysis?.valor_aluguel ? formatCurrency(contract.analysis.valor_aluguel) : '-'}
+                  <TableCell className="text-right font-medium">
+                    {contract.analysis?.valor_total ? formatCurrency(contract.analysis.valor_total) : formatCurrency(contract.analysis?.valor_aluguel || 0)}
+                  </TableCell>
+                  <TableCell className="text-right font-medium text-primary">
+                    {contract.analysis?.garantia_anual 
+                      ? formatCurrency(contract.analysis.garantia_anual)
+                      : contract.analysis?.valor_total && contract.analysis?.taxa_garantia_percentual
+                        ? formatCurrency(contract.analysis.valor_total * 12 * (contract.analysis.taxa_garantia_percentual / 100))
+                        : '-'
+                    }
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <Badge variant="outline" className="font-mono">
+                      {contract.analysis?.taxa_garantia_percentual?.toFixed(1) || '-'}%
+                    </Badge>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2 flex-wrap">
