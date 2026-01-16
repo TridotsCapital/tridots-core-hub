@@ -19,6 +19,12 @@ import { useAgencyCommissions, useAgencyCommissionsSummary } from "@/hooks/useCo
 import { commissionStatusConfig } from "@/types/database";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { 
   Wallet, 
   Clock, 
@@ -28,7 +34,7 @@ import {
   Loader2,
   Receipt,
   FileCheck,
-  ExternalLink
+  MoreHorizontal
 } from "lucide-react";
 import { GUARANTEE_PLANS, type PlanType } from '@/lib/plans';
 
@@ -70,11 +76,6 @@ export default function AgencyCommissions() {
   const [selectedMonth, setSelectedMonth] = useState<string>('all');
   const [selectedYear, setSelectedYear] = useState<string>(currentYear.toString());
 
-  const getContractId = (commission: typeof commissions extends (infer T)[] | undefined ? T : never) => {
-    const analysis = commission?.analysis as any;
-    return analysis?.contract?.id || null;
-  };
-  
   const { data: commissions, isLoading } = useAgencyCommissions(agencyId || undefined);
   const { data: summary } = useAgencyCommissionsSummary(agencyId || undefined);
 
@@ -201,7 +202,7 @@ export default function AgencyCommissions() {
                         <TableHead>Vencimento</TableHead>
                         <TableHead>Valor</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead>Contrato</TableHead>
+                        <TableHead className="w-[80px]">Ações</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -241,20 +242,21 @@ export default function AgencyCommissions() {
                               </Badge>
                             </TableCell>
                             <TableCell>
-                              {getContractId(commission) ? (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-7 gap-1.5 text-xs text-primary hover:text-primary"
-                                  onClick={() => navigate(`/agency/contracts/${getContractId(commission)}`)}
-                                >
-                                  <FileCheck className="h-3.5 w-3.5" />
-                                  Ver
-                                  <ExternalLink className="h-3 w-3" />
-                                </Button>
-                              ) : (
-                                <span className="text-xs text-muted-foreground">-</span>
-                              )}
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="bg-popover">
+                                  {commission.analysis_id && (
+                                    <DropdownMenuItem onClick={() => navigate(`/agency/contracts/${commission.analysis_id}`)}>
+                                      <FileCheck className="h-4 w-4 mr-2" />
+                                      Ver Contrato
+                                    </DropdownMenuItem>
+                                  )}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </TableCell>
                           </TableRow>
                         ))
@@ -276,7 +278,7 @@ export default function AgencyCommissions() {
                         <TableHead>Endereço</TableHead>
                         <TableHead>Valor</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead>Contrato</TableHead>
+                        <TableHead className="w-[80px]">Ações</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -310,20 +312,21 @@ export default function AgencyCommissions() {
                               </Badge>
                             </TableCell>
                             <TableCell>
-                              {getContractId(commission) ? (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-7 gap-1.5 text-xs text-primary hover:text-primary"
-                                  onClick={() => navigate(`/agency/contracts/${getContractId(commission)}`)}
-                                >
-                                  <FileCheck className="h-3.5 w-3.5" />
-                                  Ver
-                                  <ExternalLink className="h-3 w-3" />
-                                </Button>
-                              ) : (
-                                <span className="text-xs text-muted-foreground">-</span>
-                              )}
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="bg-popover">
+                                  {commission.analysis_id && (
+                                    <DropdownMenuItem onClick={() => navigate(`/agency/contracts/${commission.analysis_id}`)}>
+                                      <FileCheck className="h-4 w-4 mr-2" />
+                                      Ver Contrato
+                                    </DropdownMenuItem>
+                                  )}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </TableCell>
                           </TableRow>
                         ))
