@@ -277,7 +277,7 @@ export function KanbanBoard({ filters, autoOpenAnalysisId, onAutoOpenHandled }: 
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className="grid grid-cols-5 gap-4 min-h-[600px]">
+        <div className="grid grid-cols-5 gap-4 min-h-[600px]" style={{ gridTemplateColumns: 'repeat(5, minmax(320px, 1fr))' }}>
           {kanbanColumns.map((status) => (
             <KanbanColumn
               key={status}

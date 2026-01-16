@@ -19,6 +19,7 @@ import { ContractRenewalStatus } from './ContractRenewalStatus';
 import { ContractRenewalHistory } from './ContractRenewalHistory';
 import { GuaranteeCostsSection } from '@/components/payment/GuaranteeCostsSection';
 import { CoverageCard } from '@/components/shared/CoverageCard';
+import { ContractCommissionsTab } from '@/components/shared/ContractCommissionsTab';
 import { useTicketCountByAnalysis, useTicketsByAnalysis } from '@/hooks/useTickets';
 import { useActiveClaimByContract } from '@/hooks/useActiveClaimByContract';
 import { usePendingRenewal } from '@/hooks/useContractRenewal';
@@ -421,6 +422,10 @@ export function AgencyContractDetail() {
           <TabsTrigger value="overview">Visão Geral</TabsTrigger>
           <TabsTrigger value="timeline">Timeline</TabsTrigger>
           {showDocsTab && <TabsTrigger value="documents">Documentos</TabsTrigger>}
+          {contract && <TabsTrigger value="comissoes" className="flex items-center gap-2">
+            <DollarSign className="h-3.5 w-3.5" />
+            Comissões
+          </TabsTrigger>}
           {contract && <TabsTrigger value="renovacao" className="flex items-center gap-2">
             <CalendarSync className="h-3.5 w-3.5" />
             Renovação
@@ -750,6 +755,16 @@ export function AgencyContractDetail() {
               tenantName={analysis.inquilino_nome}
               isAgencyView={true}
               onUpdate={() => fetchData()}
+            />
+          </TabsContent>
+        )}
+
+        {/* Comissões Tab */}
+        {contract && (
+          <TabsContent value="comissoes" className="space-y-6 mt-6">
+            <ContractCommissionsTab 
+              analysisId={analysis.id}
+              planoGarantia={analysis.plano_garantia}
             />
           </TabsContent>
         )}

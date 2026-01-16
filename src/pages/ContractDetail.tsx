@@ -43,6 +43,7 @@ import { InternalNotesTab } from '@/components/shared/InternalNotesTab';
 import { GuaranteeCostsSection } from '@/components/payment/GuaranteeCostsSection';
 import { ContractRenewalTab } from '@/components/contracts/ContractRenewalTab';
 import { CoverageCard } from '@/components/shared/CoverageCard';
+import { ContractCommissionsTab } from '@/components/shared/ContractCommissionsTab';
 import { formatCurrency, PROPERTY_TYPES } from '@/lib/validators';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -397,6 +398,10 @@ export default function ContractDetail() {
             <TabsTrigger value="docs" className="whitespace-nowrap shrink-0">Docs</TabsTrigger>
             <TabsTrigger value="timeline" className="whitespace-nowrap shrink-0">Timeline</TabsTrigger>
             <TabsTrigger value="financial" className="whitespace-nowrap shrink-0">Financeiro</TabsTrigger>
+            <TabsTrigger value="comissoes" className="flex items-center gap-2 whitespace-nowrap shrink-0">
+              <DollarSign className="h-4 w-4" />
+              Comissões
+            </TabsTrigger>
             <TabsTrigger value="notas" className="flex items-center gap-2 whitespace-nowrap shrink-0">
               <StickyNote className="h-4 w-4" />
               Notas
@@ -774,6 +779,14 @@ export default function ContractDetail() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Comissões Tab */}
+          <TabsContent value="comissoes" className="space-y-6 mt-6">
+            <ContractCommissionsTab 
+              analysisId={contract.analysis_id}
+              planoGarantia={(analysis as any).plano_garantia}
+            />
           </TabsContent>
 
           {/* Notas Tab */}
