@@ -40,6 +40,7 @@ import { ContractTicketSheet } from '@/components/contracts/ContractTicketSheet'
 import { TicketDetailSheet } from '@/components/tickets/TicketDetailSheet';
 import { InternalNotesTab } from '@/components/shared/InternalNotesTab';
 import { GuaranteeCostsSection } from '@/components/payment/GuaranteeCostsSection';
+import { CoverageCard } from '@/components/shared/CoverageCard';
 import { formatCurrency, PROPERTY_TYPES } from '@/lib/validators';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -413,6 +414,16 @@ export default function ContractDetail() {
               descontoPix={(analysis.agency as any)?.desconto_pix_percentual}
               garantiaAnualSalva={(analysis as any).garantia_anual}
               dataInicioContrato={(analysis as any).guarantee_payment_date}
+              planoGarantia={(analysis as any).plano_garantia}
+              showCommission={true}
+              commissionLabel="internal"
+            />
+
+            {/* Coberturas Contratadas */}
+            <CoverageCard
+              planoGarantia={(analysis as any).plano_garantia}
+              valorLocaticioTotal={analysis.valor_aluguel + (analysis.valor_condominio || 0) + (analysis.valor_iptu || 0)}
+              taxaGarantiaPercentual={analysis.taxa_garantia_percentual}
             />
 
             {/* Agency Info */}

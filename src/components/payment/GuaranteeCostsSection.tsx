@@ -1,9 +1,9 @@
-import { Shield, Calendar, CheckCircle } from 'lucide-react';
+import { Shield, Calendar } from 'lucide-react';
 import { PaymentMethodDisplay } from './PaymentMethodDisplay';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { GUARANTEE_PLANS, type PlanType, calculateCoverage } from '@/lib/plans';
+import { GUARANTEE_PLANS, type PlanType, getPlanByRate } from '@/lib/plans';
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -22,9 +22,11 @@ interface GuaranteeCostsSectionProps {
   /** Contract start date (data_inicio_contrato) */
   dataInicioContrato?: string | null;
   /** Plan type (start, prime, exclusive) */
-  planoGarantia?: PlanType | null;
-  /** Show commission info (for agency portals) */
+  planoGarantia?: PlanType | string | null;
+  /** Show commission info */
   showCommission?: boolean;
+  /** Commission label type: 'agency' = "Sua Comissão" | 'internal' = "Comissão Imobiliária" */
+  commissionLabel?: 'agency' | 'internal';
 }
 
 export function GuaranteeCostsSection({
@@ -40,6 +42,7 @@ export function GuaranteeCostsSection({
   dataInicioContrato,
   planoGarantia,
   showCommission = false,
+  commissionLabel = 'agency',
 }: GuaranteeCostsSectionProps) {
   const valorTotal = valorAluguel + (valorCondominio || 0) + (valorIptu || 0);
   const garantiaMensal = valorTotal * (taxaGarantiaPercentual / 100);
@@ -58,10 +61,13 @@ export function GuaranteeCostsSection({
 
   const isSetupExempt = setupFeeExempt || setupFee === 0;
   
-  // Get plan info
-  const plan = planoGarantia ? GUARANTEE_PLANS[planoGarantia] : null;
-  const coverage = calculateCoverage(valorTotal);
+  // Get plan info - derive from rate if not provided
+  const effectivePlan: PlanType = (planoGarantia as PlanType) || getPlanByRate(taxaGarantiaPercentual);
+  const plan = effectivePlan ? GUARANTEE_PLANS[effectivePlan] : null;
   const commissionAmount = plan ? garantiaAnualFinal * (plan.commissionRate / 100) / 12 : 0;
+  
+  // Commission text based on portal
+  const commissionText = commissionLabel === 'agency' ? 'Sua Comissão' : 'Comissão Imobiliária';
 
   return (
     <div className="rounded-lg border-2 border-primary/30 bg-primary/5 p-4">
@@ -72,7 +78,7 @@ export function GuaranteeCostsSection({
         </h4>
         {plan && (
           <Badge className={plan.badgeClass}>
-            {plan.name}
+            {plan.emoji} {plan.name}
           </Badge>
         )}
       </div>
@@ -135,29 +141,15 @@ export function GuaranteeCostsSection({
           </div>
         )}
 
-        {/* Plan Coverage & Commission - only shown when plan is available */}
-        {plan && (
-          <div className="pt-3 mt-2 border-t space-y-2">
-            <div className="flex items-start gap-2 text-sm">
-              <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-              <span>
-                Cobertura total: <span className="font-medium">{formatCurrency(coverage)}</span> (20x)
+        {/* Commission - only shown when requested and plan is available */}
+        {showCommission && plan && (
+          <div className="pt-3 mt-2 border-t">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">{commissionText}:</span>
+              <span className="font-medium text-primary">
+                {plan.commissionRate}% (~{formatCurrency(commissionAmount)}/mês)
               </span>
             </div>
-            <div className="flex items-start gap-2 text-sm">
-              <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-              <span>
-                Limite custos de saída: <span className="font-medium">até {formatCurrency(plan.exitCostsLimit)}</span>
-              </span>
-            </div>
-            {showCommission && (
-              <div className="flex items-start gap-2 text-sm">
-                <CheckCircle className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-                <span>
-                  Sua comissão: <span className="font-medium text-primary">{plan.commissionRate}% (~{formatCurrency(commissionAmount)}/mês)</span>
-                </span>
-              </div>
-            )}
           </div>
         )}
       </div>

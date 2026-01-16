@@ -17,6 +17,7 @@ import { ContractRenewalModal } from './ContractRenewalModal';
 import { ContractRenewalStatus } from './ContractRenewalStatus';
 import { ContractRenewalHistory } from './ContractRenewalHistory';
 import { GuaranteeCostsSection } from '@/components/payment/GuaranteeCostsSection';
+import { CoverageCard } from '@/components/shared/CoverageCard';
 import { useTicketCountByAnalysis, useTicketsByAnalysis } from '@/hooks/useTickets';
 import { useActiveClaimByContract } from '@/hooks/useActiveClaimByContract';
 import { usePendingRenewal } from '@/hooks/useContractRenewal';
@@ -434,6 +435,16 @@ export function AgencyContractDetail() {
             descontoPix={null}
             garantiaAnualSalva={analysis.garantia_anual}
             dataInicioContrato={analysis.guarantee_payment_date}
+            planoGarantia={analysis.plano_garantia}
+            showCommission={true}
+            commissionLabel="agency"
+          />
+
+          {/* Coberturas Contratadas */}
+          <CoverageCard
+            planoGarantia={analysis.plano_garantia}
+            valorLocaticioTotal={analysis.valor_aluguel + (analysis.valor_condominio || 0) + (analysis.valor_iptu || 0)}
+            taxaGarantiaPercentual={analysis.taxa_garantia_percentual}
           />
 
           {/* Property Info */}

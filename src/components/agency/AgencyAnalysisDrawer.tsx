@@ -10,6 +10,7 @@ import { DocumentSection } from '@/components/kanban/DocumentSection';
 import { AnalysisTicketSection } from '@/components/kanban/AnalysisTicketSection';
 import { GuaranteeCostsSection } from '@/components/payment/GuaranteeCostsSection';
 import { ComposicaoAnaliseCard } from '@/components/payment/ComposicaoAnaliseCard';
+import { CoverageCard } from '@/components/shared/CoverageCard';
 import { useLinkedEntitiesForAnalysis } from '@/hooks/useLinkedEntities';
 import { useTicketCountByAnalysis } from '@/hooks/useTickets';
 import { User, Home, MessageSquare, FileText, Clock, Phone, Mail, MapPin, Briefcase, DollarSign, Link, Copy, CheckCircle2, AlertTriangle, Timer, Loader2, FileCheck, Shield } from 'lucide-react';
@@ -263,6 +264,7 @@ export function AgencyAnalysisDrawer({
                   dataInicioContrato={(analysis as any).guarantee_payment_date}
                   planoGarantia={analysis.plano_garantia}
                   showCommission={true}
+                  commissionLabel="agency"
                 />
 
                 {/* Composição da Análise - logo após custos */}
@@ -273,29 +275,12 @@ export function AgencyAnalysisDrawer({
                   valorOutrosEncargos={analysis.valor_outros_encargos}
                 />
 
-                {/* Coverages section - shown when plan is available */}
-                {analysis.plano_garantia && (
-                  <div className="rounded-lg border bg-card p-4">
-                    <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                      <Shield className="h-4 w-4 text-primary" />
-                      Coberturas Contratadas
-                    </h4>
-                    <ul className="space-y-2 text-sm">
-                      <li className="flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-green-600" />
-                        Inadimplência de aluguel
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-green-600" />
-                        Encargos (condomínio, IPTU)
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-green-600" />
-                        Custos de saída
-                      </li>
-                    </ul>
-                  </div>
-                )}
+                {/* Coberturas Contratadas - card separado */}
+                <CoverageCard
+                  planoGarantia={analysis.plano_garantia}
+                  valorLocaticioTotal={analysis.valor_aluguel + (analysis.valor_condominio || 0) + (analysis.valor_iptu || 0)}
+                  taxaGarantiaPercentual={analysis.taxa_garantia_percentual}
+                />
 
                 {/* Timeline */}
                 <div>

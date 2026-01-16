@@ -32,6 +32,7 @@ import { ClaimItemsSection } from "./ClaimItemsSection";
 import { ClaimFilesSection } from "./ClaimFilesSection";
 import { ClaimTimeline, ClaimTicketsTab } from "@/components/claims";
 import { GuaranteeCostsSection } from "@/components/payment/GuaranteeCostsSection";
+import { CoverageCard } from "@/components/shared/CoverageCard";
 import { MessageSquare, Clock } from "lucide-react";
 import { useClaimTickets } from "@/hooks/useClaimTickets";
 
@@ -63,6 +64,12 @@ export function AgencyClaimDetailView({ claim, onUpdate }: AgencyClaimDetailView
     onUpdate();
   };
 
+  const valorTotal = claim.contract?.analysis 
+    ? ((claim.contract.analysis as any).valor_aluguel || 0) + 
+      ((claim.contract.analysis as any).valor_condominio || 0) + 
+      ((claim.contract.analysis as any).valor_iptu || 0)
+    : 0;
+
   return (
     <div className="space-y-6">
       {/* Custos da Garantia Tridots - NO TOPO */}
@@ -78,8 +85,20 @@ export function AgencyClaimDetailView({ claim, onUpdate }: AgencyClaimDetailView
           descontoPix={null}
           garantiaAnualSalva={(claim.contract.analysis as any).garantia_anual}
           dataInicioContrato={(claim.contract.analysis as any).guarantee_payment_date}
+          planoGarantia={(claim.contract.analysis as any).plano_garantia}
+          showCommission={true}
+          commissionLabel="agency"
         />
       )}
+
+      {/* Coberturas Contratadas com barra de consumo */}
+      <CoverageCard
+        planoGarantia={(claim.contract?.analysis as any)?.plano_garantia}
+        valorLocaticioTotal={valorTotal}
+        taxaGarantiaPercentual={(claim.contract?.analysis as any)?.taxa_garantia_percentual || 10}
+        showConsumption={true}
+        contractId={claim.contract_id}
+      />
 
       {/* Header Card */}
       <Card>

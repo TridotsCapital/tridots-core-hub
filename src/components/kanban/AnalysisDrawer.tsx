@@ -32,6 +32,7 @@ import { LinkedEntitiesCard } from '@/components/shared/LinkedEntitiesCard';
 import { InternalNotesTab } from '@/components/shared/InternalNotesTab';
 import { GuaranteeCostsSection } from '@/components/payment/GuaranteeCostsSection';
 import { ComposicaoAnaliseCard } from '@/components/payment/ComposicaoAnaliseCard';
+import { CoverageCard } from '@/components/shared/CoverageCard';
 import { useMoveAnalysis } from '@/hooks/useAnalysesKanban';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
@@ -503,6 +504,9 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
                     descontoPix={(analysis as any).agency?.desconto_pix_percentual}
                     garantiaAnualSalva={(analysis as any).garantia_anual}
                     dataInicioContrato={(analysis as any).guarantee_payment_date}
+                    planoGarantia={(analysis as any).plano_garantia}
+                    showCommission={true}
+                    commissionLabel="internal"
                   />
 
                   {/* Composição da Análise - logo após custos */}
@@ -513,12 +517,12 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
                     valorOutrosEncargos={analysis.valor_outros_encargos}
                   />
 
-                  {/* Placeholder for future coverages */}
-                  <div className="rounded-lg border-2 border-dashed border-muted-foreground/20 bg-muted/30 p-8 text-center">
-                    <p className="text-muted-foreground text-sm">
-                      Em breve aqui você verá as coberturas contratadas
-                    </p>
-                  </div>
+                  {/* Coberturas Contratadas */}
+                  <CoverageCard
+                    planoGarantia={(analysis as any).plano_garantia}
+                    valorLocaticioTotal={analysis.valor_aluguel + (analysis.valor_condominio || 0) + (analysis.valor_iptu || 0)}
+                    taxaGarantiaPercentual={analysis.taxa_garantia_percentual}
+                  />
 
                   {/* Rate adjustment info */}
                   {analysis.rate_adjusted_by_tridots && (
