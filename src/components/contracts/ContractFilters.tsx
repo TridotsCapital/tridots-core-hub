@@ -37,6 +37,16 @@ const STATES = [
   'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
 ];
 
+const RENT_RANGES = [
+  { value: 'all', label: 'Qualquer valor' },
+  { value: '0-1500', label: 'Até R$ 1.500' },
+  { value: '1500-3000', label: 'R$ 1.500 - R$ 3.000' },
+  { value: '3000-5000', label: 'R$ 3.000 - R$ 5.000' },
+  { value: '5000-8000', label: 'R$ 5.000 - R$ 8.000' },
+  { value: '8000-15000', label: 'R$ 8.000 - R$ 15.000' },
+  { value: '15000+', label: 'Acima de R$ 15.000' },
+];
+
 interface Props {
   filters: ContractFiltersType;
   onFiltersChange: (filters: ContractFiltersType) => void;
@@ -223,24 +233,37 @@ export function ContractFilters({ filters, onFiltersChange, onSearch }: Props) {
           </Popover>
         </div>
 
-        {/* Rent Range */}
-        <div className="flex items-center gap-1">
-          <Input
-            type="number"
-            placeholder="Aluguel mín"
-            value={filters.minRent || ''}
-            onChange={(e) => onFiltersChange({ ...filters, minRent: e.target.value ? Number(e.target.value) : undefined })}
-            className="w-[100px] h-9"
-          />
-          <span className="text-muted-foreground text-sm">-</span>
-          <Input
-            type="number"
-            placeholder="máx"
-            value={filters.maxRent || ''}
-            onChange={(e) => onFiltersChange({ ...filters, maxRent: e.target.value ? Number(e.target.value) : undefined })}
-            className="w-[70px] h-9"
-          />
-        </div>
+        {/* Rent Range Dropdown */}
+        <Select
+          value={
+            filters.minRent === undefined && filters.maxRent === undefined
+              ? 'all'
+              : filters.maxRent === undefined
+              ? '15000+'
+              : `${filters.minRent || 0}-${filters.maxRent}`
+          }
+          onValueChange={(v) => {
+            if (v === 'all') {
+              onFiltersChange({ ...filters, minRent: undefined, maxRent: undefined });
+            } else if (v === '15000+') {
+              onFiltersChange({ ...filters, minRent: 15000, maxRent: undefined });
+            } else {
+              const [min, max] = v.split('-').map(Number);
+              onFiltersChange({ ...filters, minRent: min || undefined, maxRent: max });
+            }
+          }}
+        >
+          <SelectTrigger className="w-[170px] h-9">
+            <SelectValue placeholder="Valor do contrato" />
+          </SelectTrigger>
+          <SelectContent>
+            {RENT_RANGES.map(range => (
+              <SelectItem key={range.value} value={range.value}>
+                {range.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
     </div>
   );
