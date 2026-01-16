@@ -35,6 +35,7 @@ export function useContracts(filters?: ContractFilters) {
             valor_aluguel,
             valor_total,
             taxa_garantia_percentual,
+            garantia_anual,
             imovel_endereco,
             imovel_cidade,
             imovel_estado,

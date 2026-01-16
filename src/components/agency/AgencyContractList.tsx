@@ -33,6 +33,8 @@ interface Contract {
     inquilino_cpf: string;
     valor_aluguel: number;
     valor_total: number | null;
+    taxa_garantia_percentual: number | null;
+    garantia_anual: number | null;
     identity_photo_path: string | null;
   } | null;
 }
@@ -187,7 +189,9 @@ export function AgencyContractList({
                     <TableHead>Código</TableHead>
                     <TableHead>Inquilino</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Valor</TableHead>
+                    <TableHead className="text-right">Valor Locatício</TableHead>
+                    <TableHead className="text-right">Cobertura</TableHead>
+                    <TableHead className="text-center">Taxa %</TableHead>
                     <TableHead>Data</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
@@ -259,7 +263,18 @@ export function AgencyContractList({
                           </div>
                         </TableCell>
                         <TableCell className="text-right font-medium">
-                          {formatCurrency(contract.analysis?.valor_aluguel || 0)}
+                          {formatCurrency(contract.analysis?.valor_total || contract.analysis?.valor_aluguel || 0)}
+                        </TableCell>
+                        <TableCell className="text-right font-medium text-primary">
+                          {contract.analysis?.garantia_anual 
+                            ? formatCurrency(contract.analysis.garantia_anual)
+                            : '-'
+                          }
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant="outline" className="font-mono">
+                            {contract.analysis?.taxa_garantia_percentual?.toFixed(1) || '-'}%
+                          </Badge>
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {format(new Date(contract.created_at), 'dd/MM/yyyy', { locale: ptBR })}
