@@ -155,19 +155,9 @@ export function ContractActions({ contract, onEdit }: ContractActionsProps) {
   return (
     <>
       <div className="flex flex-wrap gap-2">
-        <Button variant="outline" size="sm" onClick={() => setPendencyOpen(true)}>
-          <AlertTriangle className="h-4 w-4 mr-2" />
-          Sinalizar Pendência
-        </Button>
-        
         <Button variant="outline" size="sm" onClick={() => setPaymentsOpen(true)}>
           <CreditCard className="h-4 w-4 mr-2" />
           Ver Pagamentos
-        </Button>
-        
-        <Button variant="outline" size="sm" onClick={handleOpenCommissions}>
-          <History className="h-4 w-4 mr-2" />
-          Histórico Comissões
         </Button>
 
         {onEdit && (
