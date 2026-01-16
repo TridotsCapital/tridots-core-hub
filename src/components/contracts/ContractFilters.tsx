@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
-import { CalendarIcon, Filter, Search, X } from 'lucide-react';
+import { CalendarIcon, CalendarSync, Filter, Search, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAgencies } from '@/hooks/useAgencies';
@@ -75,10 +75,36 @@ export function ContractFilters({ filters, onFiltersChange, onSearch }: Props) {
     filters.minRent || filters.maxRent ? 1 : 0,
     filters.city ? 1 : 0,
     filters.state ? 1 : 0,
+    filters.renewalPeriod ? 1 : 0,
   ].reduce((a, b) => a + b, 0);
+
+  const toggleRenewalPeriod = () => {
+    onFiltersChange({ 
+      ...filters, 
+      renewalPeriod: !filters.renewalPeriod,
+      // Clear status filter when enabling renewal period (only active contracts are shown)
+      status: !filters.renewalPeriod ? undefined : filters.status 
+    });
+  };
 
   return (
     <div className="space-y-4">
+      {/* Quick Filter: Renewal Period */}
+      <div className="flex items-center gap-2">
+        <Badge
+          variant={filters.renewalPeriod ? 'default' : 'outline'}
+          className={`cursor-pointer transition-colors ${
+            filters.renewalPeriod 
+              ? 'bg-violet-600 hover:bg-violet-700 text-white' 
+              : 'hover:bg-violet-100 hover:text-violet-700 hover:border-violet-300'
+          }`}
+          onClick={toggleRenewalPeriod}
+        >
+          <CalendarSync className="h-3 w-3 mr-1.5" />
+          No Prazo de Renovação
+        </Badge>
+      </div>
+
       <div className="flex flex-col sm:flex-row gap-3">
         {/* Search */}
         <form onSubmit={handleSearchSubmit} className="flex-1 flex gap-2">

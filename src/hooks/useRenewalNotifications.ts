@@ -26,13 +26,13 @@ export const useRenewalNotifications = (contractId: string | null) => {
       if (!contractId) return [];
 
       const { data, error } = await supabase
-        .from('renewal_notifications' as any)
+        .from('renewal_notifications')
         .select('*')
         .eq('contract_id', contractId)
         .order('sent_at', { ascending: false });
 
       if (error) throw error;
-      return (data || []) as unknown as RenewalNotification[];
+      return (data || []) as RenewalNotification[];
     },
     enabled: !!contractId
   });
@@ -55,7 +55,7 @@ export const useCreateRenewalNotification = () => {
       if (!user) throw new Error('Usuário não autenticado');
 
       const { data: notification, error } = await supabase
-        .from('renewal_notifications' as any)
+        .from('renewal_notifications')
         .insert({
           contract_id: data.contract_id,
           renewal_id: data.renewal_id || null,
