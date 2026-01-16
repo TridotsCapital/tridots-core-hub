@@ -1,111 +1,276 @@
+import { useState } from 'react';
 import { AgencyLayout } from "@/components/layout/AgencyLayout";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
-  Construction, 
-  ArrowLeft, 
-  History, 
-  TrendingUp, 
-  LineChart, 
-  FileSpreadsheet, 
-  Wallet 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useAgencyUser } from "@/hooks/useAgencyUser";
+import { useAgencyCommissions, useAgencyCommissionsSummary } from "@/hooks/useCommissions";
+import { commissionStatusConfig } from "@/types/database";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { 
+  Wallet, 
+  Clock, 
+  CheckCircle2, 
+  TrendingUp,
+  CalendarDays,
+  Loader2,
+  Receipt
 } from "lucide-react";
 
-const features = [
-  {
-    icon: History,
-    title: "Histórico Completo",
-    description: "Visualize todo o histórico de comissões recebidas e pendentes"
-  },
-  {
-    icon: LineChart,
-    title: "Gráficos de Evolução",
-    description: "Acompanhe a evolução mensal dos seus ganhos com gráficos interativos"
-  },
-  {
-    icon: TrendingUp,
-    title: "Projeções Futuras",
-    description: "Veja projeções de rendimentos baseadas no seu portfólio atual"
-  },
-  {
-    icon: FileSpreadsheet,
-    title: "Relatórios Financeiros",
-    description: "Exporte relatórios detalhados para sua contabilidade"
-  },
-  {
-    icon: Wallet,
-    title: "Solicitação de Saques",
-    description: "Solicite saques dos valores disponíveis diretamente pela plataforma"
-  }
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+
+const currentYear = new Date().getFullYear();
+const years = [currentYear - 1, currentYear, currentYear + 1];
+const months = [
+  { value: 1, label: 'Janeiro' },
+  { value: 2, label: 'Fevereiro' },
+  { value: 3, label: 'Março' },
+  { value: 4, label: 'Abril' },
+  { value: 5, label: 'Maio' },
+  { value: 6, label: 'Junho' },
+  { value: 7, label: 'Julho' },
+  { value: 8, label: 'Agosto' },
+  { value: 9, label: 'Setembro' },
+  { value: 10, label: 'Outubro' },
+  { value: 11, label: 'Novembro' },
+  { value: 12, label: 'Dezembro' },
 ];
 
 export default function AgencyCommissions() {
-  const navigate = useNavigate();
+  const { data: agencyUser } = useAgencyUser();
+  const agencyId = agencyUser?.agency_id;
+  const [selectedMonth, setSelectedMonth] = useState<string>('all');
+  const [selectedYear, setSelectedYear] = useState<string>(currentYear.toString());
+  
+  const { data: commissions, isLoading } = useAgencyCommissions(agencyId || undefined);
+  const { data: summary } = useAgencyCommissionsSummary(agencyId || undefined);
+
+  // Filter commissions
+  const filteredCommissions = commissions?.filter(c => {
+    if (selectedMonth !== 'all' && c.mes_referencia !== parseInt(selectedMonth)) return false;
+    if (selectedYear !== 'all' && c.ano_referencia !== parseInt(selectedYear)) return false;
+    return true;
+  }) || [];
+
+  const setupCommissions = filteredCommissions.filter(c => c.type === 'setup');
+  const recurringCommissions = filteredCommissions.filter(c => c.type === 'recorrente');
 
   return (
     <AgencyLayout 
       title="Comissões" 
-      description="Acompanhe e gerencie suas comissões"
+      description="Acompanhe suas comissões"
     >
-      <div className="flex flex-col items-center justify-center py-12 space-y-8">
-        {/* Construction Icon */}
-        <div className="relative">
-          <div className="absolute inset-0 bg-primary/20 rounded-full blur-2xl animate-pulse" />
-          <div className="relative bg-gradient-to-br from-primary/10 to-primary/5 p-8 rounded-full border border-primary/20">
-            <Construction className="h-16 w-16 text-primary animate-bounce" />
+      <div className="space-y-6">
+        {/* Summary Cards */}
+        <div className="grid gap-4 md:grid-cols-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Pendente</CardTitle>
+              <Clock className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{formatCurrency(summary?.pendente || 0)}</div>
+              <p className="text-xs text-muted-foreground">Aguardando vencimento</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="border-primary/30 bg-primary/5">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">A Receber</CardTitle>
+              <Wallet className="h-4 w-4 text-primary" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-primary">{formatCurrency(summary?.a_pagar || 0)}</div>
+              <p className="text-xs text-muted-foreground">Disponível para pagamento</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Recebido</CardTitle>
+              <CheckCircle2 className="h-4 w-4 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">{formatCurrency(summary?.paga || 0)}</div>
+              <p className="text-xs text-muted-foreground">Total já recebido</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Geral</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{formatCurrency(summary?.total || 0)}</div>
+              <p className="text-xs text-muted-foreground">Todas as comissões</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Filters */}
+        <div className="flex flex-wrap gap-4">
+          <div className="flex items-center gap-2">
+            <CalendarDays className="h-4 w-4 text-muted-foreground" />
+            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Mês" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os meses</SelectItem>
+                {months.map(m => (
+                  <SelectItem key={m.value} value={m.value.toString()}>{m.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
+          
+          <Select value={selectedYear} onValueChange={setSelectedYear}>
+            <SelectTrigger className="w-[100px]">
+              <SelectValue placeholder="Ano" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              {years.map(y => (
+                <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
-        {/* Title and Message */}
-        <div className="text-center space-y-3 max-w-lg">
-          <h2 className="text-2xl font-bold text-foreground">
-            Módulo de Comissões em Construção
-          </h2>
-          <p className="text-muted-foreground">
-            Estamos trabalhando para trazer esta funcionalidade em breve. 
-            Enquanto isso, acompanhe suas comissões pelo Dashboard.
-          </p>
-        </div>
+        {/* Commissions Table */}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <Tabs defaultValue="recorrentes" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="recorrentes" className="gap-2">
+                <Receipt className="h-4 w-4" />
+                Recorrentes ({recurringCommissions.length})
+              </TabsTrigger>
+              <TabsTrigger value="setup" className="gap-2">
+                <Wallet className="h-4 w-4" />
+                Setup ({setupCommissions.length})
+              </TabsTrigger>
+            </TabsList>
 
-        {/* Features Preview */}
-        <div className="w-full max-w-3xl">
-          <h3 className="text-sm font-medium text-muted-foreground mb-4 text-center">
-            Em breve você poderá:
-          </h3>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {features.map((feature, index) => (
-              <Card 
-                key={index} 
-                className="bg-muted/30 border-dashed border-muted-foreground/20 hover:border-primary/30 transition-colors"
-              >
-                <CardContent className="p-4 flex items-start gap-3">
-                  <div className="p-2 bg-primary/10 rounded-lg shrink-0">
-                    <feature.icon className="h-4 w-4 text-primary" />
-                  </div>
-                  <div className="space-y-1">
-                    <h4 className="text-sm font-medium text-foreground">
-                      {feature.title}
-                    </h4>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      {feature.description}
-                    </p>
-                  </div>
+            <TabsContent value="recorrentes">
+              <Card>
+                <CardContent className="p-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Inquilino</TableHead>
+                        <TableHead>Referência</TableHead>
+                        <TableHead>Vencimento</TableHead>
+                        <TableHead>Valor</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {recurringCommissions.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                            Nenhuma comissão recorrente encontrada
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        recurringCommissions.map(commission => (
+                          <TableRow key={commission.id}>
+                            <TableCell className="font-medium">
+                              {(commission.analysis as any)?.inquilino_nome || '-'}
+                            </TableCell>
+                            <TableCell>
+                              {commission.mes_referencia && commission.ano_referencia 
+                                ? `${months.find(m => m.value === commission.mes_referencia)?.label.slice(0, 3)}/${commission.ano_referencia}`
+                                : '-'
+                              }
+                            </TableCell>
+                            <TableCell>
+                              {commission.due_date 
+                                ? format(new Date(commission.due_date), 'dd/MM/yyyy', { locale: ptBR })
+                                : '-'
+                              }
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              {formatCurrency(commission.valor)}
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={commissionStatusConfig[commission.status].class}>
+                                {commissionStatusConfig[commission.status].label}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
                 </CardContent>
               </Card>
-            ))}
-          </div>
-        </div>
+            </TabsContent>
 
-        {/* Back Button */}
-        <Button 
-          variant="outline" 
-          onClick={() => navigate('/agency')}
-          className="mt-4"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Voltar ao Dashboard
-        </Button>
+            <TabsContent value="setup">
+              <Card>
+                <CardContent className="p-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Inquilino</TableHead>
+                        <TableHead>Endereço</TableHead>
+                        <TableHead>Valor</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {setupCommissions.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                            Nenhuma comissão de setup encontrada
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        setupCommissions.map(commission => (
+                          <TableRow key={commission.id}>
+                            <TableCell className="font-medium">
+                              {(commission.analysis as any)?.inquilino_nome || '-'}
+                            </TableCell>
+                            <TableCell>
+                              {(commission.analysis as any)?.imovel_endereco 
+                                ? `${(commission.analysis as any).imovel_endereco}, ${(commission.analysis as any).imovel_cidade}`
+                                : '-'
+                              }
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              {formatCurrency(commission.valor)}
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={commissionStatusConfig[commission.status].class}>
+                                {commissionStatusConfig[commission.status].label}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        )}
       </div>
     </AgencyLayout>
   );

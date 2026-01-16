@@ -1,8 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import type { Commission, CommissionStatus, CommissionType } from '@/types/database';
+import type { Commission, CommissionStatus, CommissionType, PlanType } from '@/types/database';
 import type { TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
+import { GUARANTEE_PLANS } from '@/lib/plans';
 
 export function useCommissions(filters?: { 
   status?: CommissionStatus; 
@@ -18,8 +19,16 @@ export function useCommissions(filters?: {
         .from('commissions')
         .select(`
           *,
-          analysis:analyses(*),
-          agency:agencies(*)
+          analysis:analyses(
+            inquilino_nome,
+            plano_garantia,
+            taxa_garantia_percentual,
+            garantia_anual,
+            valor_aluguel,
+            valor_condominio,
+            valor_iptu
+          ),
+          agency:agencies(razao_social, nome_fantasia)
         `)
         .order('created_at', { ascending: false });
 
@@ -43,6 +52,68 @@ export function useCommissions(filters?: {
       if (error) throw error;
       return data as Commission[];
     },
+  });
+}
+
+export function useAgencyCommissions(agencyId?: string) {
+  return useQuery({
+    queryKey: ['commissions', 'agency', agencyId],
+    queryFn: async () => {
+      if (!agencyId) return [];
+      
+      const { data, error } = await supabase
+        .from('commissions')
+        .select(`
+          *,
+          analysis:analyses(
+            inquilino_nome,
+            plano_garantia,
+            taxa_garantia_percentual,
+            garantia_anual,
+            imovel_endereco,
+            imovel_cidade
+          )
+        `)
+        .eq('agency_id', agencyId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data as Commission[];
+    },
+    enabled: !!agencyId,
+  });
+}
+
+export function useAgencyCommissionsSummary(agencyId?: string) {
+  return useQuery({
+    queryKey: ['commissions', 'summary', agencyId],
+    queryFn: async () => {
+      if (!agencyId) return null;
+      
+      const { data, error } = await supabase
+        .from('commissions')
+        .select('status, valor')
+        .eq('agency_id', agencyId);
+
+      if (error) throw error;
+      
+      const summary = {
+        pendente: 0,
+        a_pagar: 0,
+        paga: 0,
+        total: 0,
+      };
+      
+      data.forEach(c => {
+        summary.total += c.valor;
+        if (c.status === 'pendente') summary.pendente += c.valor;
+        else if (c.status === 'a_pagar') summary.a_pagar += c.valor;
+        else if (c.status === 'paga') summary.paga += c.valor;
+      });
+      
+      return summary;
+    },
+    enabled: !!agencyId,
   });
 }
 
@@ -160,23 +231,7 @@ export function useBulkUpdateCommissions() {
   });
 }
 
-// Commission calculation utilities
-export function calculateSetupCommission(setupFee: number): number {
-  // Setup commission is the full setup fee value
-  return setupFee;
-}
-
-export function calculateRecurringCommission(
-  rentValue: number,
-  tridotsGuaranteePercentage: number,
-  agencyCommissionPercentage: number
-): number {
-  // Recurring commission = (Rent × Tridots Fee %) × Agency Commission %
-  const tridotsFee = rentValue * (tridotsGuaranteePercentage / 100);
-  return tridotsFee * (agencyCommissionPercentage / 100);
-}
-
-// Generate commissions when a contract is activated
+// Generate commissions when a contract is activated (payment validated)
 export function useGenerateContractCommissions() {
   const queryClient = useQueryClient();
 
@@ -185,54 +240,56 @@ export function useGenerateContractCommissions() {
       analysisId,
       agencyId,
       setupFee,
-      rentValue,
-      tridotsGuaranteePercentage,
-      agencyCommissionPercentage,
-      contractMonths = 12,
+      garantiaAnual,
+      planoGarantia,
+      validationDate,
     }: {
       analysisId: string;
       agencyId: string;
       setupFee: number;
-      rentValue: number;
-      tridotsGuaranteePercentage: number;
-      agencyCommissionPercentage: number;
-      contractMonths?: number;
+      garantiaAnual: number;
+      planoGarantia: PlanType;
+      validationDate: string;
     }) => {
-      const commissions: TablesInsert<'commissions'>[] = [];
-      const now = new Date();
-      const currentMonth = now.getMonth() + 1;
-      const currentYear = now.getFullYear();
+      const plan = GUARANTEE_PLANS[planoGarantia];
+      const comissaoAnual = garantiaAnual * (plan.commissionRate / 100);
+      const comissaoMensal = comissaoAnual / 12;
+      const startDate = new Date(validationDate);
 
-      // Setup commission (one-time)
+      const commissions: TablesInsert<'commissions'>[] = [];
+
+      // Setup commission (one-time) - if not exempt
       if (setupFee > 0) {
         commissions.push({
           analysis_id: analysisId,
           agency_id: agencyId,
           type: 'setup',
           status: 'pendente',
-          valor: calculateSetupCommission(setupFee),
-          mes_referencia: currentMonth,
-          ano_referencia: currentYear,
+          valor: setupFee,
+          base_calculo: setupFee,
+          percentual_comissao: 100,
+          due_date: startDate.toISOString().split('T')[0],
+          mes_referencia: startDate.getMonth() + 1,
+          ano_referencia: startDate.getFullYear(),
         });
       }
 
-      // Recurring commissions (12 months by default)
-      const recurringValue = calculateRecurringCommission(
-        rentValue,
-        tridotsGuaranteePercentage,
-        agencyCommissionPercentage
-      );
+      // 12 recurring commissions
+      for (let i = 0; i < 12; i++) {
+        const dueDate = new Date(startDate);
+        dueDate.setMonth(dueDate.getMonth() + i + 1); // Start from next month
 
-      for (let i = 0; i < contractMonths; i++) {
-        const date = new Date(currentYear, currentMonth - 1 + i, 1);
         commissions.push({
           analysis_id: analysisId,
           agency_id: agencyId,
           type: 'recorrente',
           status: 'pendente',
-          valor: recurringValue,
-          mes_referencia: date.getMonth() + 1,
-          ano_referencia: date.getFullYear(),
+          valor: comissaoMensal,
+          base_calculo: garantiaAnual,
+          percentual_comissao: plan.commissionRate,
+          due_date: dueDate.toISOString().split('T')[0],
+          mes_referencia: dueDate.getMonth() + 1,
+          ano_referencia: dueDate.getFullYear(),
         });
       }
 
