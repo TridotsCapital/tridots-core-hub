@@ -27,11 +27,23 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Search, DollarSign, MoreHorizontal, CheckCircle, XCircle, RotateCcw } from 'lucide-react';
+import { Search, DollarSign, MoreHorizontal, CheckCircle, XCircle, RotateCcw, Clock, Wallet } from 'lucide-react';
 import { commissionStatusConfig, CommissionStatus } from '@/types/database';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAuth } from '@/contexts/AuthContext';
+import { GUARANTEE_PLANS, type PlanType } from '@/lib/plans';
+
+const getPlanBadge = (plano: string | null | undefined) => {
+  if (!plano) return null;
+  const plan = GUARANTEE_PLANS[plano as PlanType];
+  if (!plan) return null;
+  return (
+    <Badge className={plan.badgeClass}>
+      {plan.emoji} {plan.name}
+    </Badge>
+  );
+};
 
 export default function Commissions() {
   const [search, setSearch] = useState('');
@@ -56,6 +68,7 @@ export default function Commissions() {
   };
 
   const totalPending = filteredCommissions?.filter(c => c.status === 'pendente').reduce((acc, c) => acc + c.valor, 0) || 0;
+  const totalToPay = filteredCommissions?.filter(c => c.status === 'a_pagar').reduce((acc, c) => acc + c.valor, 0) || 0;
   const totalPaid = filteredCommissions?.filter(c => c.status === 'paga').reduce((acc, c) => acc + c.valor, 0) || 0;
 
   const handleStatusChange = async (id: string, status: CommissionStatus) => {
@@ -66,15 +79,27 @@ export default function Commissions() {
     <DashboardLayout title="Comissões" description="Gestão de comissões das imobiliárias">
       <div className="space-y-6 animate-fade-in">
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <CardContent className="flex items-center gap-4 p-6">
-              <div className="w-12 h-12 rounded-full bg-warning/15 flex items-center justify-center">
-                <DollarSign className="h-6 w-6 text-warning" />
+              <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                <Clock className="h-6 w-6 text-muted-foreground" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Pendentes</p>
                 <p className="text-2xl font-bold">{formatCurrency(totalPending)}</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-warning/30 bg-warning/5">
+            <CardContent className="flex items-center gap-4 p-6">
+              <div className="w-12 h-12 rounded-full bg-warning/15 flex items-center justify-center">
+                <Wallet className="h-6 w-6 text-warning" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">A Pagar</p>
+                <p className="text-2xl font-bold text-warning">{formatCurrency(totalToPay)}</p>
               </div>
             </CardContent>
           </Card>
@@ -86,7 +111,7 @@ export default function Commissions() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Pagas</p>
-                <p className="text-2xl font-bold">{formatCurrency(totalPaid)}</p>
+                <p className="text-2xl font-bold text-success">{formatCurrency(totalPaid)}</p>
               </div>
             </CardContent>
           </Card>
@@ -98,7 +123,7 @@ export default function Commissions() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total (filtrado)</p>
-                <p className="text-2xl font-bold">{formatCurrency(totalPending + totalPaid)}</p>
+                <p className="text-2xl font-bold">{formatCurrency(totalPending + totalToPay + totalPaid)}</p>
               </div>
             </CardContent>
           </Card>
@@ -123,6 +148,7 @@ export default function Commissions() {
             <SelectContent>
               <SelectItem value="all">Todos os status</SelectItem>
               <SelectItem value="pendente">Pendente</SelectItem>
+              <SelectItem value="a_pagar">A Pagar</SelectItem>
               <SelectItem value="paga">Paga</SelectItem>
               <SelectItem value="cancelada">Cancelada</SelectItem>
               <SelectItem value="estornada">Estornada</SelectItem>
@@ -163,10 +189,12 @@ export default function Commissions() {
                     <TableHead>Tipo</TableHead>
                     <TableHead>Inquilino</TableHead>
                     <TableHead>Imobiliária</TableHead>
-                    <TableHead>Referência</TableHead>
+                    <TableHead>Plano</TableHead>
+                    <TableHead>Base Cálculo</TableHead>
+                    <TableHead>Taxa</TableHead>
                     <TableHead>Valor</TableHead>
+                    <TableHead>Vencimento</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Data Pgto</TableHead>
                     {isMaster && <TableHead className="w-[80px]">Ações</TableHead>}
                   </TableRow>
                 </TableHeader>
@@ -189,18 +217,31 @@ export default function Commissions() {
                         </span>
                       </TableCell>
                       <TableCell>
-                        {commission.mes_referencia && commission.ano_referencia ? (
-                          <span className="text-sm text-muted-foreground">
-                            {String(commission.mes_referencia).padStart(2, '0')}/{commission.ano_referencia}
-                          </span>
-                        ) : (
-                          '-'
-                        )}
+                        {getPlanBadge((commission.analysis as any)?.plano_garantia)}
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm text-muted-foreground">
+                          {commission.base_calculo ? formatCurrency(commission.base_calculo) : '-'}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm">
+                          {commission.percentual_comissao ? `${commission.percentual_comissao}%` : '-'}
+                        </span>
                       </TableCell>
                       <TableCell>
                         <span className="font-medium text-primary">
                           {formatCurrency(commission.valor)}
                         </span>
+                      </TableCell>
+                      <TableCell>
+                        {commission.due_date ? (
+                          <span className="text-sm text-muted-foreground">
+                            {format(new Date(commission.due_date), "dd/MM/yyyy", { locale: ptBR })}
+                          </span>
+                        ) : (
+                          '-'
+                        )}
                       </TableCell>
                       <TableCell>
                         <Badge 
@@ -209,15 +250,6 @@ export default function Commissions() {
                         >
                           {commissionStatusConfig[commission.status].label}
                         </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {commission.data_pagamento ? (
-                          <span className="text-sm text-muted-foreground">
-                            {format(new Date(commission.data_pagamento), "dd/MM/yyyy", { locale: ptBR })}
-                          </span>
-                        ) : (
-                          '-'
-                        )}
                       </TableCell>
                       {isMaster && (
                         <TableCell>
@@ -228,7 +260,7 @@ export default function Commissions() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              {commission.status === 'pendente' && (
+                              {(commission.status === 'pendente' || commission.status === 'a_pagar') && (
                                 <DropdownMenuItem onClick={() => handleStatusChange(commission.id, 'paga')}>
                                   <CheckCircle className="h-4 w-4 mr-2 text-success" />
                                   Marcar como paga

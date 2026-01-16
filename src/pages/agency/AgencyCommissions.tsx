@@ -26,6 +26,7 @@ import {
   Loader2,
   Receipt
 } from "lucide-react";
+import { GUARANTEE_PLANS, type PlanType } from '@/lib/plans';
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -46,6 +47,17 @@ const months = [
   { value: 11, label: 'Novembro' },
   { value: 12, label: 'Dezembro' },
 ];
+
+const getPlanBadge = (plano: string | null | undefined) => {
+  if (!plano) return null;
+  const plan = GUARANTEE_PLANS[plano as PlanType];
+  if (!plan) return null;
+  return (
+    <Badge className={plan.badgeClass} variant="secondary">
+      {plan.emoji} {plan.name}
+    </Badge>
+  );
+};
 
 export default function AgencyCommissions() {
   const { data: agencyUser } = useAgencyUser();
@@ -174,6 +186,7 @@ export default function AgencyCommissions() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Inquilino</TableHead>
+                        <TableHead>Plano</TableHead>
                         <TableHead>Referência</TableHead>
                         <TableHead>Vencimento</TableHead>
                         <TableHead>Valor</TableHead>
@@ -183,7 +196,7 @@ export default function AgencyCommissions() {
                     <TableBody>
                       {recurringCommissions.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                          <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                             Nenhuma comissão recorrente encontrada
                           </TableCell>
                         </TableRow>
@@ -192,6 +205,9 @@ export default function AgencyCommissions() {
                           <TableRow key={commission.id}>
                             <TableCell className="font-medium">
                               {(commission.analysis as any)?.inquilino_nome || '-'}
+                            </TableCell>
+                            <TableCell>
+                              {getPlanBadge((commission.analysis as any)?.plano_garantia)}
                             </TableCell>
                             <TableCell>
                               {commission.mes_referencia && commission.ano_referencia 
@@ -229,6 +245,7 @@ export default function AgencyCommissions() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Inquilino</TableHead>
+                        <TableHead>Plano</TableHead>
                         <TableHead>Endereço</TableHead>
                         <TableHead>Valor</TableHead>
                         <TableHead>Status</TableHead>
@@ -237,7 +254,7 @@ export default function AgencyCommissions() {
                     <TableBody>
                       {setupCommissions.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                          <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                             Nenhuma comissão de setup encontrada
                           </TableCell>
                         </TableRow>
@@ -246,6 +263,9 @@ export default function AgencyCommissions() {
                           <TableRow key={commission.id}>
                             <TableCell className="font-medium">
                               {(commission.analysis as any)?.inquilino_nome || '-'}
+                            </TableCell>
+                            <TableCell>
+                              {getPlanBadge((commission.analysis as any)?.plano_garantia)}
                             </TableCell>
                             <TableCell>
                               {(commission.analysis as any)?.imovel_endereco 
