@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -16,7 +15,7 @@ import {
 } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
-import { CalendarIcon, CalendarSync, Filter, Search, X } from 'lucide-react';
+import { CalendarIcon, CalendarSync, Search, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAgencies } from '@/hooks/useAgencies';
@@ -46,7 +45,6 @@ interface Props {
 
 export function ContractFilters({ filters, onFiltersChange, onSearch }: Props) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
   const { data: agencies } = useAgencies();
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -82,7 +80,6 @@ export function ContractFilters({ filters, onFiltersChange, onSearch }: Props) {
     onFiltersChange({ 
       ...filters, 
       renewalPeriod: !filters.renewalPeriod,
-      // Clear status filter when enabling renewal period (only active contracts are shown)
       status: !filters.renewalPeriod ? undefined : filters.status 
     });
   };
@@ -106,171 +103,140 @@ export function ContractFilters({ filters, onFiltersChange, onSearch }: Props) {
           </Button>
         </form>
 
-        {/* Filter Toggle */}
-        <Button
-          variant="outline"
-          onClick={() => setShowFilters(!showFilters)}
-          className="relative"
-        >
-          <Filter className="h-4 w-4 mr-2" />
-          Filtros
-          {activeFilterCount > 0 && (
-            <Badge variant="destructive" className="ml-2 h-5 w-5 p-0 flex items-center justify-center">
-              {activeFilterCount}
-            </Badge>
-          )}
-        </Button>
-
         {activeFilterCount > 0 && (
           <Button variant="ghost" size="sm" onClick={clearFilters}>
             <X className="h-4 w-4 mr-1" />
-            Limpar
+            Limpar Filtros
           </Button>
         )}
       </div>
 
-      {/* Status Badges Row - Always Visible */}
-      <div className="flex flex-wrap items-center gap-2">
-        {/* Renewal Period Badge */}
-        <Badge
-          variant={filters.renewalPeriod ? 'default' : 'outline'}
-          className={`cursor-pointer transition-colors ${
-            filters.renewalPeriod 
-              ? 'bg-violet-600 hover:bg-violet-700 text-white' 
-              : 'hover:bg-violet-100 hover:text-violet-700 hover:border-violet-300'
-          }`}
-          onClick={toggleRenewalPeriod}
-        >
-          <CalendarSync className="h-3 w-3 mr-1.5" />
-          No Prazo de Renovação
-        </Badge>
-
+      {/* All Filters in Single Row */}
+      <div className="flex flex-wrap items-center gap-3">
         {/* Status Badges */}
-        {STATUS_OPTIONS.map(option => (
+        <div className="flex flex-wrap items-center gap-2">
           <Badge
-            key={option.value}
-            variant={filters.status?.includes(option.value) ? 'default' : 'outline'}
-            className="cursor-pointer"
-            onClick={() => handleStatusChange(option.value)}
+            variant={filters.renewalPeriod ? 'default' : 'outline'}
+            className={`cursor-pointer transition-colors ${
+              filters.renewalPeriod 
+                ? 'bg-violet-600 hover:bg-violet-700 text-white' 
+                : 'hover:bg-violet-100 hover:text-violet-700 hover:border-violet-300'
+            }`}
+            onClick={toggleRenewalPeriod}
           >
-            {option.label}
+            <CalendarSync className="h-3 w-3 mr-1.5" />
+            No Prazo de Renovação
           </Badge>
-        ))}
-      </div>
 
-      {/* Expanded Filters */}
-      {showFilters && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 bg-muted/50 rounded-lg border">
-          {/* Agency Filter */}
-          <div className="space-y-2">
-            <Label>Imobiliária</Label>
-            <Select
-              value={filters.agencyId || 'all'}
-              onValueChange={(v) => onFiltersChange({ ...filters, agencyId: v === 'all' ? undefined : v })}
+          {STATUS_OPTIONS.map(option => (
+            <Badge
+              key={option.value}
+              variant={filters.status?.includes(option.value) ? 'default' : 'outline'}
+              className="cursor-pointer"
+              onClick={() => handleStatusChange(option.value)}
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Todas" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas</SelectItem>
-                {agencies?.map(agency => (
-                  <SelectItem key={agency.id} value={agency.id}>
-                    {agency.nome_fantasia || agency.razao_social}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Period Filter */}
-          <div className="space-y-2">
-            <Label>Período (Criação)</Label>
-            <div className="flex gap-2">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="flex-1 justify-start text-left font-normal">
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {filters.startDate ? format(filters.startDate, 'dd/MM/yy') : 'De'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={filters.startDate}
-                    onSelect={(date) => onFiltersChange({ ...filters, startDate: date || undefined })}
-                    locale={ptBR}
-                  />
-                </PopoverContent>
-              </Popover>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="flex-1 justify-start text-left font-normal">
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {filters.endDate ? format(filters.endDate, 'dd/MM/yy') : 'Até'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={filters.endDate}
-                    onSelect={(date) => onFiltersChange({ ...filters, endDate: date || undefined })}
-                    locale={ptBR}
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-          </div>
-
-          {/* State Filter */}
-          <div className="space-y-2">
-            <Label>Estado</Label>
-            <Select
-              value={filters.state || 'all'}
-              onValueChange={(v) => onFiltersChange({ ...filters, state: v === 'all' ? undefined : v })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Todos" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                {STATES.map(state => (
-                  <SelectItem key={state} value={state}>{state}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* City Filter */}
-          <div className="space-y-2">
-            <Label>Cidade</Label>
-            <Input
-              placeholder="Nome da cidade"
-              value={filters.city || ''}
-              onChange={(e) => onFiltersChange({ ...filters, city: e.target.value || undefined })}
-            />
-          </div>
-
-          {/* Rent Range */}
-          <div className="space-y-2 sm:col-span-2">
-            <Label>Faixa de Aluguel</Label>
-            <div className="flex gap-2 items-center">
-              <Input
-                type="number"
-                placeholder="Mín"
-                value={filters.minRent || ''}
-                onChange={(e) => onFiltersChange({ ...filters, minRent: e.target.value ? Number(e.target.value) : undefined })}
-              />
-              <span className="text-muted-foreground">até</span>
-              <Input
-                type="number"
-                placeholder="Máx"
-                value={filters.maxRent || ''}
-                onChange={(e) => onFiltersChange({ ...filters, maxRent: e.target.value ? Number(e.target.value) : undefined })}
-              />
-            </div>
-          </div>
+              {option.label}
+            </Badge>
+          ))}
         </div>
-      )}
+
+        {/* Agency Filter */}
+        <Select
+          value={filters.agencyId || 'all'}
+          onValueChange={(v) => onFiltersChange({ ...filters, agencyId: v === 'all' ? undefined : v })}
+        >
+          <SelectTrigger className="w-[160px]">
+            <SelectValue placeholder="Imobiliária" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas Imobiliárias</SelectItem>
+            {agencies?.map(agency => (
+              <SelectItem key={agency.id} value={agency.id}>
+                {agency.nome_fantasia || agency.razao_social}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {/* Period Filter */}
+        <div className="flex items-center gap-1">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="h-9">
+                <CalendarIcon className="mr-1.5 h-3.5 w-3.5" />
+                {filters.startDate ? format(filters.startDate, 'dd/MM/yy') : 'De'}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <Calendar
+                mode="single"
+                selected={filters.startDate}
+                onSelect={(date) => onFiltersChange({ ...filters, startDate: date || undefined })}
+                locale={ptBR}
+              />
+            </PopoverContent>
+          </Popover>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="h-9">
+                <CalendarIcon className="mr-1.5 h-3.5 w-3.5" />
+                {filters.endDate ? format(filters.endDate, 'dd/MM/yy') : 'Até'}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <Calendar
+                mode="single"
+                selected={filters.endDate}
+                onSelect={(date) => onFiltersChange({ ...filters, endDate: date || undefined })}
+                locale={ptBR}
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        {/* State Filter */}
+        <Select
+          value={filters.state || 'all'}
+          onValueChange={(v) => onFiltersChange({ ...filters, state: v === 'all' ? undefined : v })}
+        >
+          <SelectTrigger className="w-[100px]">
+            <SelectValue placeholder="Estado" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos</SelectItem>
+            {STATES.map(state => (
+              <SelectItem key={state} value={state}>{state}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {/* City Filter */}
+        <Input
+          placeholder="Cidade"
+          value={filters.city || ''}
+          onChange={(e) => onFiltersChange({ ...filters, city: e.target.value || undefined })}
+          className="w-[140px] h-9"
+        />
+
+        {/* Rent Range */}
+        <div className="flex items-center gap-1">
+          <Input
+            type="number"
+            placeholder="Aluguel mín"
+            value={filters.minRent || ''}
+            onChange={(e) => onFiltersChange({ ...filters, minRent: e.target.value ? Number(e.target.value) : undefined })}
+            className="w-[100px] h-9"
+          />
+          <span className="text-muted-foreground text-sm">-</span>
+          <Input
+            type="number"
+            placeholder="máx"
+            value={filters.maxRent || ''}
+            onChange={(e) => onFiltersChange({ ...filters, maxRent: e.target.value ? Number(e.target.value) : undefined })}
+            className="w-[80px] h-9"
+          />
+        </div>
+      </div>
     </div>
   );
 }
