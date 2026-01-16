@@ -411,6 +411,8 @@ export default function ContractDetail() {
               setupFeeExempt={analysis.setup_fee_exempt}
               formaPagamentoPreferida={(analysis as any).forma_pagamento_preferida}
               descontoPix={(analysis.agency as any)?.desconto_pix_percentual}
+              garantiaAnualSalva={(analysis as any).garantia_anual}
+              dataInicioContrato={(analysis as any).guarantee_payment_date}
             />
 
             {/* Agency Info */}
