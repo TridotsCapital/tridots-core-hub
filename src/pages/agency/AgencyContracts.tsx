@@ -78,6 +78,8 @@ export default function AgencyContracts() {
             inquilino_cpf,
             valor_aluguel,
             valor_total,
+            taxa_garantia_percentual,
+            garantia_anual,
             identity_photo_path
           )
         `)
