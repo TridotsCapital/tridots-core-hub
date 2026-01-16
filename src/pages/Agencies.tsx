@@ -76,7 +76,6 @@ export default function Agencies() {
                     <TableHead>Imobiliária</TableHead>
                     <TableHead>CNPJ</TableHead>
                     <TableHead>Responsável</TableHead>
-                    <TableHead>Comissão</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="w-[100px]">Ações</TableHead>
                   </TableRow>
@@ -111,11 +110,6 @@ export default function Agencies() {
                             )}
                           </div>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className="font-medium text-primary">
-                          {agency.percentual_comissao_recorrente}%
-                        </span>
                       </TableCell>
                       <TableCell>
                         <Badge variant={agency.active ? 'default' : 'secondary'}>

@@ -12,7 +12,9 @@ export interface AgencyUser {
 
 export type AnalysisStatus = 'pendente' | 'em_analise' | 'aprovada' | 'reprovada' | 'cancelada' | 'aguardando_pagamento' | 'ativo';
 
-export type CommissionStatus = 'pendente' | 'paga' | 'cancelada' | 'estornada';
+export type CommissionStatus = 'pendente' | 'a_pagar' | 'paga' | 'cancelada' | 'estornada';
+
+export type PlanType = 'start' | 'prime' | 'exclusive';
 
 export type CommissionType = 'setup' | 'recorrente';
 
@@ -47,7 +49,6 @@ export interface Agency {
   responsavel_nome: string;
   responsavel_email: string | null;
   responsavel_telefone: string | null;
-  percentual_comissao_recorrente: number;
   percentual_comissao_setup: number;
   desconto_pix_percentual: number | null;
   active: boolean;
@@ -103,6 +104,8 @@ export interface Analysis {
   setup_fee: number;
   taxa_garantia_percentual: number;
   forma_pagamento_preferida: string | null;
+  plano_garantia: PlanType | null;
+  garantia_anual: number | null;
   
   observacoes: string | null;
   
@@ -170,6 +173,9 @@ export interface Commission {
   data_pagamento: string | null;
   data_estorno: string | null;
   observacoes: string | null;
+  base_calculo: number | null;
+  percentual_comissao: number | null;
+  due_date: string | null;
   created_at: string;
   updated_at: string;
   
@@ -326,6 +332,7 @@ export interface AnalysisDocument {
 
 export const commissionStatusConfig: Record<CommissionStatus, { label: string; class: string }> = {
   pendente: { label: 'Pendente', class: 'status-pendente' },
+  a_pagar: { label: 'A Pagar', class: 'status-aguardando_pagamento' },
   paga: { label: 'Paga', class: 'status-aprovada' },
   cancelada: { label: 'Cancelada', class: 'status-cancelada' },
   estornada: { label: 'Estornada', class: 'status-reprovada' },

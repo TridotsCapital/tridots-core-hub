@@ -16,7 +16,8 @@ interface AgencyUserData {
     cnpj: string;
     email: string;
     active: boolean;
-    percentual_comissao_recorrente: number;
+    percentual_comissao_setup: number;
+    desconto_pix_percentual: number | null;
     responsavel_nome: string;
     responsavel_email: string | null;
     responsavel_telefone: string | null;

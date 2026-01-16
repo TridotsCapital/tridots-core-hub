@@ -29,7 +29,6 @@ export type Database = {
           internal_observations: string | null
           logo_url: string | null
           nome_fantasia: string | null
-          percentual_comissao_recorrente: number
           percentual_comissao_setup: number
           razao_social: string
           responsavel_email: string | null
@@ -52,7 +51,6 @@ export type Database = {
           internal_observations?: string | null
           logo_url?: string | null
           nome_fantasia?: string | null
-          percentual_comissao_recorrente?: number
           percentual_comissao_setup?: number
           razao_social: string
           responsavel_email?: string | null
@@ -75,7 +73,6 @@ export type Database = {
           internal_observations?: string | null
           logo_url?: string | null
           nome_fantasia?: string | null
-          percentual_comissao_recorrente?: number
           percentual_comissao_setup?: number
           razao_social?: string
           responsavel_email?: string | null
@@ -219,6 +216,7 @@ export type Database = {
           payments_rejection_reason: string | null
           payments_validated_at: string | null
           payments_validated_by: string | null
+          plano_garantia: string | null
           rate_adjusted_by_tridots: boolean | null
           rejected_at: string | null
           rejection_reason: string | null
@@ -306,6 +304,7 @@ export type Database = {
           payments_rejection_reason?: string | null
           payments_validated_at?: string | null
           payments_validated_by?: string | null
+          plano_garantia?: string | null
           rate_adjusted_by_tridots?: boolean | null
           rejected_at?: string | null
           rejection_reason?: string | null
@@ -393,6 +392,7 @@ export type Database = {
           payments_rejection_reason?: string | null
           payments_validated_at?: string | null
           payments_validated_by?: string | null
+          plano_garantia?: string | null
           rate_adjusted_by_tridots?: boolean | null
           rejected_at?: string | null
           rejection_reason?: string | null
@@ -882,12 +882,15 @@ export type Database = {
           agency_id: string
           analysis_id: string
           ano_referencia: number | null
+          base_calculo: number | null
           created_at: string
           data_estorno: string | null
           data_pagamento: string | null
+          due_date: string | null
           id: string
           mes_referencia: number | null
           observacoes: string | null
+          percentual_comissao: number | null
           status: Database["public"]["Enums"]["commission_status"]
           type: Database["public"]["Enums"]["commission_type"]
           updated_at: string
@@ -897,12 +900,15 @@ export type Database = {
           agency_id: string
           analysis_id: string
           ano_referencia?: number | null
+          base_calculo?: number | null
           created_at?: string
           data_estorno?: string | null
           data_pagamento?: string | null
+          due_date?: string | null
           id?: string
           mes_referencia?: number | null
           observacoes?: string | null
+          percentual_comissao?: number | null
           status?: Database["public"]["Enums"]["commission_status"]
           type: Database["public"]["Enums"]["commission_type"]
           updated_at?: string
@@ -912,12 +918,15 @@ export type Database = {
           agency_id?: string
           analysis_id?: string
           ano_referencia?: number | null
+          base_calculo?: number | null
           created_at?: string
           data_estorno?: string | null
           data_pagamento?: string | null
+          due_date?: string | null
           id?: string
           mes_referencia?: number | null
           observacoes?: string | null
+          percentual_comissao?: number | null
           status?: Database["public"]["Enums"]["commission_status"]
           type?: Database["public"]["Enums"]["commission_type"]
           updated_at?: string
@@ -1981,7 +1990,12 @@ export type Database = {
         | "em_analise_tecnica"
         | "pagamento_programado"
         | "finalizado"
-      commission_status: "pendente" | "paga" | "cancelada" | "estornada"
+      commission_status:
+        | "pendente"
+        | "paga"
+        | "cancelada"
+        | "estornada"
+        | "a_pagar"
       commission_type: "setup" | "recorrente"
       contract_status:
         | "documentacao_pendente"
@@ -2180,7 +2194,13 @@ export const Constants = {
         "pagamento_programado",
         "finalizado",
       ],
-      commission_status: ["pendente", "paga", "cancelada", "estornada"],
+      commission_status: [
+        "pendente",
+        "paga",
+        "cancelada",
+        "estornada",
+        "a_pagar",
+      ],
       commission_type: ["setup", "recorrente"],
       contract_status: [
         "documentacao_pendente",

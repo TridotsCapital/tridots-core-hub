@@ -431,8 +431,8 @@ export default function ContractDetail() {
                   </p>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">% Comissão Recorrente:</span>
-                  <p className="font-medium">{analysis.agency?.percentual_comissao_recorrente || 0}%</p>
+                  <span className="text-muted-foreground">% Comissão Setup:</span>
+                  <p className="font-medium">{analysis.agency?.percentual_comissao_setup || 100}%</p>
                 </div>
               </CardContent>
             </Card>
@@ -735,12 +735,9 @@ export default function ContractDetail() {
               <CardContent className="space-y-3 text-sm">
                 <div className="grid gap-3 md:grid-cols-2">
                   <div>
-                    <span className="text-muted-foreground">Comissão Recorrente:</span>
-                    <p className="font-medium">
-                      {formatCurrency(taxaMensal * ((analysis.agency?.percentual_comissao_recorrente || 0) / 100))}
-                      <span className="text-xs text-muted-foreground ml-1">
-                        ({analysis.agency?.percentual_comissao_recorrente || 0}%)
-                      </span>
+                    <span className="text-muted-foreground">Comissão Recorrente (Plano):</span>
+                    <p className="font-medium text-muted-foreground text-xs">
+                      Definida pelo plano de garantia
                     </p>
                   </div>
                   <div>

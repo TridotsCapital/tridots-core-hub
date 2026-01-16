@@ -596,8 +596,8 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
 
                     <div className="rounded-lg bg-muted/50 p-4">
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">Comissão Recorrente</span>
-                        <span className="font-bold text-lg">{analysis.agency.percentual_comissao_recorrente}%</span>
+                        <span className="text-sm text-muted-foreground">Comissão Setup</span>
+                        <span className="font-bold text-lg">{analysis.agency.percentual_comissao_setup}%</span>
                       </div>
                     </div>
                   </div>
