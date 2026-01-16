@@ -1416,6 +1416,69 @@ export type Database = {
         }
         Relationships: []
       }
+      renewal_notifications: {
+        Row: {
+          channel: string
+          contract_id: string
+          created_at: string | null
+          id: string
+          message_preview: string | null
+          metadata: Json | null
+          recipient_email: string | null
+          recipient_name: string | null
+          recipient_phone: string | null
+          renewal_id: string | null
+          sent_at: string | null
+          sent_by: string
+          status: string | null
+        }
+        Insert: {
+          channel: string
+          contract_id: string
+          created_at?: string | null
+          id?: string
+          message_preview?: string | null
+          metadata?: Json | null
+          recipient_email?: string | null
+          recipient_name?: string | null
+          recipient_phone?: string | null
+          renewal_id?: string | null
+          sent_at?: string | null
+          sent_by: string
+          status?: string | null
+        }
+        Update: {
+          channel?: string
+          contract_id?: string
+          created_at?: string | null
+          id?: string
+          message_preview?: string | null
+          metadata?: Json | null
+          recipient_email?: string | null
+          recipient_name?: string | null
+          recipient_phone?: string | null
+          renewal_id?: string | null
+          sent_at?: string | null
+          sent_by?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "renewal_notifications_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "renewal_notifications_renewal_id_fkey"
+            columns: ["renewal_id"]
+            isOneToOne: false
+            referencedRelation: "contract_renewals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       satisfaction_surveys: {
         Row: {
           agency_id: string
