@@ -28,7 +28,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Search, DollarSign, MoreHorizontal, CheckCircle, XCircle, RotateCcw, Clock, Wallet, FileCheck, ExternalLink } from 'lucide-react';
+import { Search, DollarSign, MoreHorizontal, CheckCircle, XCircle, RotateCcw, Clock, Wallet, FileCheck } from 'lucide-react';
 import { commissionStatusConfig, CommissionStatus } from '@/types/database';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -60,12 +60,7 @@ export default function Commissions() {
   });
   const updateStatus = useUpdateCommissionStatus();
 
-  const getContractId = (commission: typeof commissions extends (infer T)[] | undefined ? T : never) => {
-    const analysis = commission?.analysis as any;
-    return analysis?.contract?.id || null;
-  };
-
-  const filteredCommissions = commissions?.filter(commission => 
+  const filteredCommissions = commissions?.filter(commission =>
     commission.analysis?.inquilino_nome?.toLowerCase().includes(search.toLowerCase()) ||
     commission.agency?.razao_social?.toLowerCase().includes(search.toLowerCase())
   );
@@ -202,8 +197,7 @@ export default function Commissions() {
                     <TableHead>Valor</TableHead>
                     <TableHead>Vencimento</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Contrato</TableHead>
-                    {isMaster && <TableHead className="w-[80px]">Ações</TableHead>}
+                    <TableHead className="w-[80px]">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -260,52 +254,40 @@ export default function Commissions() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {getContractId(commission) ? (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 gap-1.5 text-xs text-primary hover:text-primary"
-                            onClick={() => navigate(`/contracts/${getContractId(commission)}`)}
-                          >
-                            <FileCheck className="h-3.5 w-3.5" />
-                            Ver contrato
-                            <ExternalLink className="h-3 w-3" />
-                          </Button>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">-</span>
-                        )}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" disabled={updateStatus.isPending}>
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="bg-popover">
+                            {commission.analysis_id && (
+                              <DropdownMenuItem onClick={() => navigate(`/contracts/${commission.analysis_id}`)}>
+                                <FileCheck className="h-4 w-4 mr-2" />
+                                Ver Contrato
+                              </DropdownMenuItem>
+                            )}
+                            {isMaster && (commission.status === 'pendente' || commission.status === 'a_pagar') && (
+                              <DropdownMenuItem onClick={() => handleStatusChange(commission.id, 'paga')}>
+                                <CheckCircle className="h-4 w-4 mr-2 text-success" />
+                                Marcar como paga
+                              </DropdownMenuItem>
+                            )}
+                            {isMaster && commission.status === 'paga' && (
+                              <DropdownMenuItem onClick={() => handleStatusChange(commission.id, 'estornada')}>
+                                <RotateCcw className="h-4 w-4 mr-2 text-destructive" />
+                                Estornar
+                              </DropdownMenuItem>
+                            )}
+                            {isMaster && commission.status !== 'cancelada' && (
+                              <DropdownMenuItem onClick={() => handleStatusChange(commission.id, 'cancelada')}>
+                                <XCircle className="h-4 w-4 mr-2" />
+                                Cancelar
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
-                      {isMaster && (
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" disabled={updateStatus.isPending}>
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              {(commission.status === 'pendente' || commission.status === 'a_pagar') && (
-                                <DropdownMenuItem onClick={() => handleStatusChange(commission.id, 'paga')}>
-                                  <CheckCircle className="h-4 w-4 mr-2 text-success" />
-                                  Marcar como paga
-                                </DropdownMenuItem>
-                              )}
-                              {commission.status === 'paga' && (
-                                <DropdownMenuItem onClick={() => handleStatusChange(commission.id, 'estornada')}>
-                                  <RotateCcw className="h-4 w-4 mr-2 text-destructive" />
-                                  Estornar
-                                </DropdownMenuItem>
-                              )}
-                              {commission.status !== 'cancelada' && (
-                                <DropdownMenuItem onClick={() => handleStatusChange(commission.id, 'cancelada')}>
-                                  <XCircle className="h-4 w-4 mr-2" />
-                                  Cancelar
-                                </DropdownMenuItem>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      )}
                     </TableRow>
                   ))}
                 </TableBody>
