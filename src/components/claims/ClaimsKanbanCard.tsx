@@ -89,9 +89,10 @@ export function ClaimsKanbanCard({ claim, onViewDetails, onOpenTicket }: ClaimsK
         'cursor-grab active:cursor-grabbing',
         isDragging && 'opacity-50 z-50'
       )}
+      onClick={() => onViewDetails(claim)}
     >
       <Card className={cn(
-        'transition-all duration-200 hover:shadow-md bg-card',
+        'transition-all duration-200 hover:shadow-md bg-card cursor-pointer',
         getBorderClass(),
         isDragging && 'shadow-lg ring-2 ring-primary'
       )}>

@@ -214,6 +214,8 @@ export default function ClaimDetail() {
                 setupFeeExempt={(claim.contract.analysis as any).setup_fee_exempt}
                 formaPagamentoPreferida={(claim.contract.analysis as any).forma_pagamento_preferida}
                 descontoPix={(claim.agency as any)?.desconto_pix_percentual}
+                garantiaAnualSalva={(claim.contract.analysis as any).garantia_anual}
+                dataInicioContrato={(claim.contract as any).data_inicio_contrato}
               />
             )}
 

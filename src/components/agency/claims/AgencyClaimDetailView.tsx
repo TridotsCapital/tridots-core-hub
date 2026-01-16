@@ -76,6 +76,8 @@ export function AgencyClaimDetailView({ claim, onUpdate }: AgencyClaimDetailView
           setupFeeExempt={(claim.contract.analysis as any).setup_fee_exempt}
           formaPagamentoPreferida={(claim.contract.analysis as any).forma_pagamento_preferida}
           descontoPix={null}
+          garantiaAnualSalva={(claim.contract.analysis as any).garantia_anual}
+          dataInicioContrato={(claim.contract as any).data_inicio_contrato}
         />
       )}
 
