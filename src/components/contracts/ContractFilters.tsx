@@ -89,24 +89,8 @@ export function ContractFilters({ filters, onFiltersChange, onSearch }: Props) {
 
   return (
     <div className="space-y-4">
-      {/* Quick Filter: Renewal Period */}
-      <div className="flex items-center gap-2">
-        <Badge
-          variant={filters.renewalPeriod ? 'default' : 'outline'}
-          className={`cursor-pointer transition-colors ${
-            filters.renewalPeriod 
-              ? 'bg-violet-600 hover:bg-violet-700 text-white' 
-              : 'hover:bg-violet-100 hover:text-violet-700 hover:border-violet-300'
-          }`}
-          onClick={toggleRenewalPeriod}
-        >
-          <CalendarSync className="h-3 w-3 mr-1.5" />
-          No Prazo de Renovação
-        </Badge>
-      </div>
-
+      {/* Search Bar */}
       <div className="flex flex-col sm:flex-row gap-3">
-        {/* Search */}
         <form onSubmit={handleSearchSubmit} className="flex-1 flex gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -145,26 +129,38 @@ export function ContractFilters({ filters, onFiltersChange, onSearch }: Props) {
         )}
       </div>
 
+      {/* Status Badges Row - Always Visible */}
+      <div className="flex flex-wrap items-center gap-2">
+        {/* Renewal Period Badge */}
+        <Badge
+          variant={filters.renewalPeriod ? 'default' : 'outline'}
+          className={`cursor-pointer transition-colors ${
+            filters.renewalPeriod 
+              ? 'bg-violet-600 hover:bg-violet-700 text-white' 
+              : 'hover:bg-violet-100 hover:text-violet-700 hover:border-violet-300'
+          }`}
+          onClick={toggleRenewalPeriod}
+        >
+          <CalendarSync className="h-3 w-3 mr-1.5" />
+          No Prazo de Renovação
+        </Badge>
+
+        {/* Status Badges */}
+        {STATUS_OPTIONS.map(option => (
+          <Badge
+            key={option.value}
+            variant={filters.status?.includes(option.value) ? 'default' : 'outline'}
+            className="cursor-pointer"
+            onClick={() => handleStatusChange(option.value)}
+          >
+            {option.label}
+          </Badge>
+        ))}
+      </div>
+
       {/* Expanded Filters */}
       {showFilters && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 bg-muted/50 rounded-lg border">
-          {/* Status Filter */}
-          <div className="space-y-2">
-            <Label>Status</Label>
-            <div className="flex flex-wrap gap-2">
-              {STATUS_OPTIONS.map(option => (
-                <Badge
-                  key={option.value}
-                  variant={filters.status?.includes(option.value) ? 'default' : 'outline'}
-                  className="cursor-pointer"
-                  onClick={() => handleStatusChange(option.value)}
-                >
-                  {option.label}
-                </Badge>
-              ))}
-            </div>
-          </div>
-
           {/* Agency Filter */}
           <div className="space-y-2">
             <Label>Imobiliária</Label>
