@@ -257,10 +257,12 @@ export function AgencyAnalysisDrawer({
                   taxaGarantiaPercentual={analysis.taxa_garantia_percentual} 
                   setupFee={analysis.setup_fee} 
                   setupFeeExempt={analysis.setup_fee_exempt} 
-                  formaPagamentoPreferida={(analysis as any).forma_pagamento_preferida} 
-                  descontoPix={(analysis as any).agency?.desconto_pix_percentual}
-                  garantiaAnualSalva={(analysis as any).garantia_anual}
+                  formaPagamentoPreferida={analysis.forma_pagamento_preferida} 
+                  descontoPix={analysis.agency?.desconto_pix_percentual}
+                  garantiaAnualSalva={analysis.garantia_anual}
                   dataInicioContrato={(analysis as any).guarantee_payment_date}
+                  planoGarantia={analysis.plano_garantia}
+                  showCommission={true}
                 />
 
                 {/* Composição da Análise - logo após custos */}
@@ -271,12 +273,29 @@ export function AgencyAnalysisDrawer({
                   valorOutrosEncargos={analysis.valor_outros_encargos}
                 />
 
-                {/* Placeholder for future coverages */}
-                <div className="rounded-lg border-2 border-dashed border-muted-foreground/20 bg-muted/30 p-8 text-center">
-                  <p className="text-muted-foreground text-sm">
-                    Em breve aqui você verá as coberturas contratadas
-                  </p>
-                </div>
+                {/* Coverages section - shown when plan is available */}
+                {analysis.plano_garantia && (
+                  <div className="rounded-lg border bg-card p-4">
+                    <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-primary" />
+                      Coberturas Contratadas
+                    </h4>
+                    <ul className="space-y-2 text-sm">
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                        Inadimplência de aluguel
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                        Encargos (condomínio, IPTU)
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                        Custos de saída
+                      </li>
+                    </ul>
+                  </div>
+                )}
 
                 {/* Timeline */}
                 <div>

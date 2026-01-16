@@ -1,7 +1,9 @@
-import { Shield, Calendar } from 'lucide-react';
+import { Shield, Calendar, CheckCircle } from 'lucide-react';
 import { PaymentMethodDisplay } from './PaymentMethodDisplay';
+import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { GUARANTEE_PLANS, type PlanType, calculateCoverage } from '@/lib/plans';
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -19,6 +21,10 @@ interface GuaranteeCostsSectionProps {
   garantiaAnualSalva?: number | null;
   /** Contract start date (data_inicio_contrato) */
   dataInicioContrato?: string | null;
+  /** Plan type (start, prime, exclusive) */
+  planoGarantia?: PlanType | null;
+  /** Show commission info (for agency portals) */
+  showCommission?: boolean;
 }
 
 export function GuaranteeCostsSection({
@@ -32,6 +38,8 @@ export function GuaranteeCostsSection({
   descontoPix,
   garantiaAnualSalva,
   dataInicioContrato,
+  planoGarantia,
+  showCommission = false,
 }: GuaranteeCostsSectionProps) {
   const valorTotal = valorAluguel + (valorCondominio || 0) + (valorIptu || 0);
   const garantiaMensal = valorTotal * (taxaGarantiaPercentual / 100);
@@ -49,13 +57,25 @@ export function GuaranteeCostsSection({
       : garantiaAnualBase;
 
   const isSetupExempt = setupFeeExempt || setupFee === 0;
+  
+  // Get plan info
+  const plan = planoGarantia ? GUARANTEE_PLANS[planoGarantia] : null;
+  const coverage = calculateCoverage(valorTotal);
+  const commissionAmount = plan ? garantiaAnualFinal * (plan.commissionRate / 100) / 12 : 0;
 
   return (
     <div className="rounded-lg border-2 border-primary/30 bg-primary/5 p-4">
-      <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-        <Shield className="h-4 w-4 text-primary" />
-        Custos da Garantia Tridots
-      </h4>
+      <div className="flex items-center justify-between mb-3">
+        <h4 className="text-sm font-semibold flex items-center gap-2">
+          <Shield className="h-4 w-4 text-primary" />
+          Custos da Garantia Tridots
+        </h4>
+        {plan && (
+          <Badge className={plan.badgeClass}>
+            {plan.name}
+          </Badge>
+        )}
+      </div>
       
       <div className="space-y-2">
         {/* Valor Total - base de cálculo (sem destaque) */}
@@ -112,6 +132,32 @@ export function GuaranteeCostsSection({
                 {format(new Date(dataInicioContrato), 'dd/MM/yyyy', { locale: ptBR })}
               </span>
             </span>
+          </div>
+        )}
+
+        {/* Plan Coverage & Commission - only shown when plan is available */}
+        {plan && (
+          <div className="pt-3 mt-2 border-t space-y-2">
+            <div className="flex items-start gap-2 text-sm">
+              <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+              <span>
+                Cobertura total: <span className="font-medium">{formatCurrency(coverage)}</span> (20x)
+              </span>
+            </div>
+            <div className="flex items-start gap-2 text-sm">
+              <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+              <span>
+                Limite custos de saída: <span className="font-medium">até {formatCurrency(plan.exitCostsLimit)}</span>
+              </span>
+            </div>
+            {showCommission && (
+              <div className="flex items-start gap-2 text-sm">
+                <CheckCircle className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                <span>
+                  Sua comissão: <span className="font-medium text-primary">{plan.commissionRate}% (~{formatCurrency(commissionAmount)}/mês)</span>
+                </span>
+              </div>
+            )}
           </div>
         )}
       </div>

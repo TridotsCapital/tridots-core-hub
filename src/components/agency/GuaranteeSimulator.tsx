@@ -3,11 +3,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calculator, ArrowRight, TrendingUp, Shield } from 'lucide-react';
 import { formatCurrency, formatCurrencyInput, parseCurrencyInput, SETUP_FEE_OPTIONS } from '@/lib/validators';
 import { PaymentOptionsDisplay } from '@/components/payment/PaymentOptionsDisplay';
+import { PlanSelector } from './PlanSelector';
+import { GUARANTEE_PLANS, type PlanType, getPlanByRate } from '@/lib/plans';
 
 interface GuaranteeSimulatorProps {
   onStartAnalysis: (values: SimulatorValues) => void;
@@ -20,6 +21,7 @@ export interface SimulatorValues {
   condominio: number;
   iptu: number;
   taxaGarantia: number;
+  planoGarantia: PlanType;
   setupFee: number;
   formaPagamento: string;
 }
@@ -34,7 +36,9 @@ export function GuaranteeSimulator({ onStartAnalysis, initialValues, descontoPix
   const [iptuInput, setIptuInput] = useState(
     initialValues?.iptu ? formatCurrencyInput((initialValues.iptu * 100).toString()) : ''
   );
-  const [taxaGarantia, setTaxaGarantia] = useState(initialValues?.taxaGarantia || 10);
+  const initialPlan = initialValues?.planoGarantia || (initialValues?.taxaGarantia ? getPlanByRate(initialValues.taxaGarantia) : 'start');
+  const [selectedPlan, setSelectedPlan] = useState<PlanType>(initialPlan);
+  const [taxaGarantia, setTaxaGarantia] = useState(initialValues?.taxaGarantia || GUARANTEE_PLANS[initialPlan].minRate);
   const [setupFee, setSetupFee] = useState<number | null>(
     initialValues?.setupFee !== undefined ? initialValues.setupFee : null
   );
@@ -58,6 +62,11 @@ export function GuaranteeSimulator({ onStartAnalysis, initialValues, descontoPix
     setter(formatted);
   };
 
+  const handlePlanChange = (plan: PlanType, rate: number) => {
+    setSelectedPlan(plan);
+    setTaxaGarantia(rate);
+  };
+
   const handleStartAnalysis = () => {
     if (setupFee === null || !formaPagamento) return;
     onStartAnalysis({
@@ -65,6 +74,7 @@ export function GuaranteeSimulator({ onStartAnalysis, initialValues, descontoPix
       condominio,
       iptu,
       taxaGarantia,
+      planoGarantia: selectedPlan,
       setupFee,
       formaPagamento,
     });
@@ -140,25 +150,14 @@ export function GuaranteeSimulator({ onStartAnalysis, initialValues, descontoPix
           </div>
         </div>
 
-        {/* Taxa de Garantia Slider */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <Label>Taxa de Garantia</Label>
-            <span className="text-lg font-semibold text-primary">{taxaGarantia}%</span>
-          </div>
-          <Slider
-            value={[taxaGarantia]}
-            onValueChange={([value]) => setTaxaGarantia(value)}
-            min={10}
-            max={15}
-            step={0.5}
-            className="w-full"
-          />
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>10%</span>
-            <span>15%</span>
-          </div>
-        </div>
+        {/* Plan Selector */}
+        <PlanSelector
+          valorLocaticioTotal={totalEncargos}
+          selectedPlan={selectedPlan}
+          selectedRate={taxaGarantia}
+          onPlanChange={handlePlanChange}
+          garantiaAnual={garantiaAnual}
+        />
 
         {/* Setup Fee Select */}
         <div className="space-y-2">
