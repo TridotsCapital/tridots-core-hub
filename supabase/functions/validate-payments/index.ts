@@ -14,6 +14,13 @@ interface ValidatePaymentsRequest {
   guaranteePaymentDate?: string;
 }
 
+// Plan commission rates (duplicated from frontend to avoid import issues)
+const PLAN_COMMISSION_RATES: Record<string, number> = {
+  start: 5,
+  prime: 10,
+  exclusive: 15,
+};
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -95,6 +102,15 @@ const handler = async (req: Request): Promise<Response> => {
 
       if (contractError) {
         console.error("Error creating contract:", contractError);
+        // Don't fail the whole operation, log it
+      }
+
+      // Generate commissions
+      try {
+        await generateCommissions(supabase, analysis, guaranteePaymentDate!);
+        console.log("Commissions generated successfully for analysis:", analysisId);
+      } catch (commissionError) {
+        console.error("Error generating commissions:", commissionError);
         // Don't fail the whole operation, log it
       }
 
@@ -221,5 +237,65 @@ const handler = async (req: Request): Promise<Response> => {
     );
   }
 };
+
+// Generate commissions for the agency
+async function generateCommissions(supabase: any, analysis: any, validationDate: string) {
+  const planoGarantia = analysis.plano_garantia || 'start';
+  const commissionRate = PLAN_COMMISSION_RATES[planoGarantia] || 5;
+  const garantiaAnual = analysis.garantia_anual || (analysis.valor_total * (analysis.taxa_garantia_percentual / 100) * 12);
+  const comissaoAnual = garantiaAnual * (commissionRate / 100);
+  const comissaoMensal = comissaoAnual / 12;
+  const setupFee = analysis.setup_fee_exempt ? 0 : (analysis.setup_fee || 0);
+  
+  const startDate = new Date(validationDate);
+  const commissions: any[] = [];
+
+  // Setup commission (if not exempt and has fee)
+  if (setupFee > 0) {
+    commissions.push({
+      analysis_id: analysis.id,
+      agency_id: analysis.agency_id,
+      type: 'setup',
+      status: 'a_pagar', // Setup is immediately payable
+      valor: setupFee * (analysis.agency?.percentual_comissao_setup || 100) / 100,
+      base_calculo: setupFee,
+      percentual_comissao: analysis.agency?.percentual_comissao_setup || 100,
+      due_date: startDate.toISOString().split('T')[0],
+      mes_referencia: startDate.getMonth() + 1,
+      ano_referencia: startDate.getFullYear(),
+    });
+  }
+
+  // 12 recurring monthly commissions
+  for (let i = 0; i < 12; i++) {
+    const dueDate = new Date(startDate);
+    dueDate.setMonth(dueDate.getMonth() + i + 1); // Start from next month
+
+    commissions.push({
+      analysis_id: analysis.id,
+      agency_id: analysis.agency_id,
+      type: 'recorrente',
+      status: 'pendente', // Recurring starts as pending until due date
+      valor: comissaoMensal,
+      base_calculo: garantiaAnual,
+      percentual_comissao: commissionRate,
+      due_date: dueDate.toISOString().split('T')[0],
+      mes_referencia: dueDate.getMonth() + 1,
+      ano_referencia: dueDate.getFullYear(),
+    });
+  }
+
+  console.log(`Inserting ${commissions.length} commissions for analysis ${analysis.id}`);
+  
+  const { error } = await supabase
+    .from('commissions')
+    .insert(commissions);
+
+  if (error) {
+    throw error;
+  }
+
+  console.log(`Successfully created ${commissions.length} commissions`);
+}
 
 serve(handler);
