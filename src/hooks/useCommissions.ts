@@ -20,13 +20,15 @@ export function useCommissions(filters?: {
         .select(`
           *,
           analysis:analyses(
+            id,
             inquilino_nome,
             plano_garantia,
             taxa_garantia_percentual,
             garantia_anual,
             valor_aluguel,
             valor_condominio,
-            valor_iptu
+            valor_iptu,
+            contract:contracts(id)
           ),
           agency:agencies(razao_social, nome_fantasia)
         `)
@@ -50,7 +52,7 @@ export function useCommissions(filters?: {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data as Commission[];
+      return data;
     },
   });
 }
@@ -66,19 +68,21 @@ export function useAgencyCommissions(agencyId?: string) {
         .select(`
           *,
           analysis:analyses(
+            id,
             inquilino_nome,
             plano_garantia,
             taxa_garantia_percentual,
             garantia_anual,
             imovel_endereco,
-            imovel_cidade
+            imovel_cidade,
+            contract:contracts(id)
           )
         `)
         .eq('agency_id', agencyId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as Commission[];
+      return data;
     },
     enabled: !!agencyId,
   });
