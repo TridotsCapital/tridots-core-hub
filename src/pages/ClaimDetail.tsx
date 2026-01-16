@@ -34,6 +34,7 @@ import { ClaimTimeline, ClaimTicketsTab, ClaimContractTab } from "@/components/c
 import { InternalClaimTicketSheet } from "@/components/claims";
 import { InternalNotesTab } from "@/components/shared/InternalNotesTab";
 import { GuaranteeCostsSection } from "@/components/payment/GuaranteeCostsSection";
+import { CoverageCard } from "@/components/shared/CoverageCard";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
@@ -216,8 +217,24 @@ export default function ClaimDetail() {
                 descontoPix={(claim.agency as any)?.desconto_pix_percentual}
                 garantiaAnualSalva={(claim.contract.analysis as any).garantia_anual}
                 dataInicioContrato={(claim.contract.analysis as any).guarantee_payment_date}
+                planoGarantia={(claim.contract.analysis as any).plano_garantia}
+                showCommission={true}
+                commissionLabel="internal"
               />
             )}
+
+            {/* Coberturas Contratadas com barra de consumo */}
+            <CoverageCard
+              planoGarantia={(claim.contract?.analysis as any)?.plano_garantia}
+              valorLocaticioTotal={
+                ((claim.contract?.analysis as any)?.valor_aluguel || 0) +
+                ((claim.contract?.analysis as any)?.valor_condominio || 0) +
+                ((claim.contract?.analysis as any)?.valor_iptu || 0)
+              }
+              taxaGarantiaPercentual={(claim.contract?.analysis as any)?.taxa_garantia_percentual || 10}
+              showConsumption={true}
+              contractId={claim.contract_id}
+            />
 
             {/* Value Card */}
             <Card className="bg-gradient-to-br from-amber-500/10 to-amber-600/5 border-amber-500/20">

@@ -109,12 +109,19 @@ export function getValidRatesForPlan(plan: PlanType): number[] {
   return [...GUARANTEE_PLANS[plan].steps];
 }
 
-// Coverage items for display
-export const COVERAGE_ITEMS = [
-  { key: 'inadimplencia', label: 'Inadimplência de aluguel' },
-  { key: 'encargos', label: 'Encargos (condomínio, IPTU)' },
-  { key: 'custos_saida', label: 'Custos de saída' },
+// Coverage items for display (comprehensive list)
+export const PLAN_COVERAGES = [
+  { id: 'inadimplencia', label: 'Inadimplência de aluguel' },
+  { id: 'encargos', label: 'Encargos (condomínio, IPTU)' },
+  { id: 'custos_saida', label: 'Custos de saída', showLimit: true },
+  { id: 'danos_imovel', label: 'Danos ao imóvel' },
+  { id: 'multa_rescisoria', label: 'Multa rescisória (10%)' },
+  { id: 'pintura', label: 'Pintura do imóvel' },
+  { id: 'despesas_judiciais', label: 'Despesas judiciais e honorários advocatícios' },
 ] as const;
+
+// Legacy coverage items (deprecated, use PLAN_COVERAGES instead)
+export const COVERAGE_ITEMS = PLAN_COVERAGES;
 
 // Format currency
 export function formatCurrency(value: number): string {
