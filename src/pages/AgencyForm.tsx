@@ -54,7 +54,6 @@ export default function AgencyForm() {
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<AgencyFormData>({
     defaultValues: {
       active: true,
-      percentual_comissao_recorrente: 0,
       percentual_comissao_setup: 100,
     },
     values: agency ? {
@@ -70,7 +69,6 @@ export default function AgencyForm() {
       responsavel_nome: agency.responsavel_nome,
       responsavel_email: agency.responsavel_email,
       responsavel_telefone: agency.responsavel_telefone,
-      percentual_comissao_recorrente: agency.percentual_comissao_recorrente,
       percentual_comissao_setup: agency.percentual_comissao_setup,
       desconto_pix_percentual: agency.desconto_pix_percentual,
       active: agency.active,
@@ -187,33 +185,11 @@ export default function AgencyForm() {
         <Card>
           <CardHeader>
             <CardTitle>Configurações de Comissão e Pagamento</CardTitle>
+            <CardDescription>
+              A comissão recorrente agora é definida automaticamente pelo plano escolhido (START: 5%, PRIME: 10%, EXCLUSIVE: 15%)
+            </CardDescription>
           </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="percentual_comissao_recorrente">
-                % Comissão Recorrente sobre Taxa Tridots *
-              </Label>
-              <div className="relative">
-                <Input
-                  id="percentual_comissao_recorrente"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  max="100"
-                  placeholder="0.00"
-                  className="pr-8"
-                  {...register('percentual_comissao_recorrente', { 
-                    required: 'Percentual é obrigatório',
-                    valueAsNumber: true 
-                  })}
-                />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Percentual que a imobiliária recebe sobre a taxa de garantia cobrada pela Tridots
-              </p>
-            </div>
-
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="percentual_comissao_setup">
                 % Comissão sobre Setup Fee *

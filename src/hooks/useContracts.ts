@@ -117,7 +117,7 @@ export function useContract(id: string | undefined) {
           *,
           analysis:analyses(
             *,
-            agency:agencies(id, razao_social, nome_fantasia, percentual_comissao_recorrente, percentual_comissao_setup)
+            agency:agencies(id, razao_social, nome_fantasia, percentual_comissao_setup, desconto_pix_percentual)
           )
         `)
         .eq('id', id)

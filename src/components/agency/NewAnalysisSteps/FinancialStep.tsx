@@ -1,12 +1,13 @@
 import { UseFormReturn } from 'react-hook-form';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { SETUP_FEE_OPTIONS, formatCurrency } from '@/lib/validators';
 import { Settings, TrendingUp, Wallet } from 'lucide-react';
 import { PaymentOptionsDisplay, PaymentOption } from '@/components/payment/PaymentOptionsDisplay';
+import { PlanSelector } from '@/components/agency/PlanSelector';
+import { getPlanByRate, GUARANTEE_PLANS, type PlanType } from '@/lib/plans';
 
 interface FinancialStepProps {
   form: UseFormReturn<any>;
@@ -15,6 +16,7 @@ interface FinancialStepProps {
 
 export function FinancialStep({ form, descontoPix = 5 }: FinancialStepProps) {
   const taxaGarantia = form.watch('taxaGarantiaPercentual') || 10;
+  const planoGarantia = form.watch('planoGarantia') as PlanType | null;
   const setupFee = form.watch('setupFee') || 100;
   const valorAluguel = form.watch('valorAluguel') || 0;
   const valorCondominio = form.watch('valorCondominio') || 0;
@@ -27,6 +29,14 @@ export function FinancialStep({ form, descontoPix = 5 }: FinancialStepProps) {
   const garantiaAnual = taxaMensal * 12;
   const custoMensalTotal = totalEncargos + taxaMensal;
 
+  // Derive plan from rate if not set
+  const currentPlan = planoGarantia || getPlanByRate(taxaGarantia);
+
+  const handlePlanChange = (plan: PlanType, rate: number) => {
+    form.setValue('planoGarantia', plan, { shouldValidate: true });
+    form.setValue('taxaGarantiaPercentual', rate, { shouldValidate: true });
+  };
+
   const handlePaymentOptionSelect = (option: PaymentOption) => {
     form.setValue('formaPagamentoPreferida', option, { shouldValidate: true });
   };
@@ -38,31 +48,24 @@ export function FinancialStep({ form, descontoPix = 5 }: FinancialStepProps) {
         Configuração Financeira
       </div>
 
-      {/* Taxa de Garantia */}
+      {/* Plan Selection */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <FormLabel>Taxa de Garantia</FormLabel>
-          <span className="text-lg font-semibold text-primary">{taxaGarantia}%</span>
-        </div>
+        <FormLabel>Plano de Garantia *</FormLabel>
         <FormField
           control={form.control}
-          name="taxaGarantiaPercentual"
-          render={({ field }) => (
+          name="planoGarantia"
+          render={() => (
             <FormItem>
               <FormControl>
-                <Slider
-                  value={[field.value || 10]}
-                  onValueChange={([value]) => field.onChange(value)}
-                  min={10}
-                  max={15}
-                  step={0.5}
-                  className="w-full"
+                <PlanSelector
+                  valorLocaticioTotal={totalEncargos}
+                  selectedPlan={currentPlan}
+                  selectedRate={taxaGarantia}
+                  onPlanChange={handlePlanChange}
+                  garantiaAnual={garantiaAnual}
+                  showCommission={true}
                 />
               </FormControl>
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>10%</span>
-                <span>15%</span>
-              </div>
               <FormMessage />
             </FormItem>
           )}
