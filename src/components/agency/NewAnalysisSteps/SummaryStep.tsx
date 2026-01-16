@@ -4,7 +4,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { FormField, FormItem, FormControl, FormMessage } from '@/components/ui/form';
 import { formatCurrency, PROPERTY_TYPES, BRAZILIAN_STATES } from '@/lib/validators';
-import { FileCheck, Home, User, Users, DollarSign, MessageSquare, Shield } from 'lucide-react';
+import { FileCheck, Home, User, Users, MessageSquare } from 'lucide-react';
+import { GUARANTEE_PLANS, getPlanByRate, calculateCoverage, PlanType } from '@/lib/plans';
 import { GuaranteeCostsSection } from '@/components/payment/GuaranteeCostsSection';
 import { ComposicaoAnaliseCard } from '@/components/payment/ComposicaoAnaliseCard';
 
@@ -162,24 +163,39 @@ export function SummaryStep({ form }: SummaryStepProps) {
         </Card>
       )}
 
-      {/* 3 Cards: Aluguel, Garantia Anual, Valor Total */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="rounded-lg bg-muted/50 p-4">
-          <p className="text-xs text-muted-foreground">Aluguel</p>
-          <p className="text-2xl font-bold text-primary">{formatCurrency(values.valorAluguel || 0)}</p>
-          <p className="text-xs text-muted-foreground">/mês</p>
-        </div>
-        <div className="rounded-lg bg-muted/50 p-4">
-          <p className="text-xs text-muted-foreground">Garantia Anual</p>
-          <p className="text-2xl font-bold">{formatCurrency(garantiaAnual)}</p>
-          <p className="text-xs text-muted-foreground">/ano</p>
-        </div>
-        <div className="rounded-lg bg-muted/50 p-4">
-          <p className="text-xs text-muted-foreground">Valor Total</p>
-          <p className="text-2xl font-bold">{formatCurrency(totalEncargos)}</p>
-          <p className="text-xs text-muted-foreground">/mês</p>
-        </div>
-      </div>
+      {/* 3 Cards: Cobertura Total, Custos de Saída, Taxa Garantia */}
+      {(() => {
+        const planoGarantia: PlanType = values.planoGarantia || getPlanByRate(values.taxaGarantiaPercentual || 10);
+        const coberturaTotal = calculateCoverage(totalEncargos);
+        const limiteCustosSaida = GUARANTEE_PLANS[planoGarantia].exitCostsLimit;
+        
+        return (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* 1° Cobertura Total - DESTACADO */}
+            <div className="rounded-lg bg-primary/10 p-4 border border-primary/20">
+              <p className="text-xs text-primary font-medium">🛡️ Cobertura Total</p>
+              <p className="text-2xl font-bold text-primary">{formatCurrency(coberturaTotal)}</p>
+              <p className="text-xs text-muted-foreground">(20x valor locatício)</p>
+            </div>
+            
+            {/* 2° Custos de Saída - Não destacado + Observação */}
+            <div className="rounded-lg bg-muted/50 p-4">
+              <p className="text-xs text-muted-foreground">Custos de Saída</p>
+              <p className="text-2xl font-bold">até {formatCurrency(limiteCustosSaida)}</p>
+              <p className="text-[10px] text-muted-foreground/70 mt-2 leading-tight">
+                OBS: O limite disponível para os custos de saída está dentro da cobertura global da garantia de 20x o valor do pacote locatício, não sendo um valor adicional.
+              </p>
+            </div>
+            
+            {/* 3° Taxa Garantia - Não destacado */}
+            <div className="rounded-lg bg-muted/50 p-4">
+              <p className="text-xs text-muted-foreground">Taxa Garantia</p>
+              <p className="text-2xl font-bold">{values.taxaGarantiaPercentual || 10}%</p>
+              <p className="text-xs text-muted-foreground">/ano</p>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Custos da Garantia Tridots */}
       <GuaranteeCostsSection

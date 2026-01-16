@@ -3,6 +3,7 @@
 export const GUARANTEE_PLANS = {
   start: {
     name: 'START',
+    emoji: '🚀',
     minRate: 10,
     maxRate: 12.5,
     steps: [10, 10.5, 11, 11.5, 12, 12.5],
@@ -19,6 +20,7 @@ export const GUARANTEE_PLANS = {
   },
   prime: {
     name: 'PRIME',
+    emoji: '⭐',
     minRate: 13,
     maxRate: 14.5,
     steps: [13, 13.5, 14, 14.5],
@@ -34,6 +36,7 @@ export const GUARANTEE_PLANS = {
   },
   exclusive: {
     name: 'EXCLUSIVE',
+    emoji: '💎',
     minRate: 15,
     maxRate: 15,
     steps: [15],
