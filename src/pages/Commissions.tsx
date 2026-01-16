@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useCommissions, useUpdateCommissionStatus } from '@/hooks/useCommissions';
 import { useAgencies } from '@/hooks/useAgencies';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
@@ -27,7 +28,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Search, DollarSign, MoreHorizontal, CheckCircle, XCircle, RotateCcw, Clock, Wallet } from 'lucide-react';
+import { Search, DollarSign, MoreHorizontal, CheckCircle, XCircle, RotateCcw, Clock, Wallet, FileCheck, ExternalLink } from 'lucide-react';
 import { commissionStatusConfig, CommissionStatus } from '@/types/database';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -46,6 +47,7 @@ const getPlanBadge = (plano: string | null | undefined) => {
 };
 
 export default function Commissions() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<CommissionStatus | 'all'>('all');
   const [agencyFilter, setAgencyFilter] = useState<string>('all');
@@ -57,6 +59,11 @@ export default function Commissions() {
     agency_id: agencyFilter !== 'all' ? agencyFilter : undefined,
   });
   const updateStatus = useUpdateCommissionStatus();
+
+  const getContractId = (commission: typeof commissions extends (infer T)[] | undefined ? T : never) => {
+    const analysis = commission?.analysis as any;
+    return analysis?.contract?.id || null;
+  };
 
   const filteredCommissions = commissions?.filter(commission => 
     commission.analysis?.inquilino_nome?.toLowerCase().includes(search.toLowerCase()) ||
@@ -195,6 +202,7 @@ export default function Commissions() {
                     <TableHead>Valor</TableHead>
                     <TableHead>Vencimento</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Contrato</TableHead>
                     {isMaster && <TableHead className="w-[80px]">Ações</TableHead>}
                   </TableRow>
                 </TableHeader>
@@ -250,6 +258,22 @@ export default function Commissions() {
                         >
                           {commissionStatusConfig[commission.status].label}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {getContractId(commission) ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 gap-1.5 text-xs text-primary hover:text-primary"
+                            onClick={() => navigate(`/contracts/${getContractId(commission)}`)}
+                          >
+                            <FileCheck className="h-3.5 w-3.5" />
+                            Ver contrato
+                            <ExternalLink className="h-3 w-3" />
+                          </Button>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">-</span>
+                        )}
                       </TableCell>
                       {isMaster && (
                         <TableCell>

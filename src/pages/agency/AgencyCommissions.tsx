@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AgencyLayout } from "@/components/layout/AgencyLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Table, 
@@ -24,7 +26,9 @@ import {
   TrendingUp,
   CalendarDays,
   Loader2,
-  Receipt
+  Receipt,
+  FileCheck,
+  ExternalLink
 } from "lucide-react";
 import { GUARANTEE_PLANS, type PlanType } from '@/lib/plans';
 
@@ -60,10 +64,16 @@ const getPlanBadge = (plano: string | null | undefined) => {
 };
 
 export default function AgencyCommissions() {
+  const navigate = useNavigate();
   const { data: agencyUser } = useAgencyUser();
   const agencyId = agencyUser?.agency_id;
   const [selectedMonth, setSelectedMonth] = useState<string>('all');
   const [selectedYear, setSelectedYear] = useState<string>(currentYear.toString());
+
+  const getContractId = (commission: typeof commissions extends (infer T)[] | undefined ? T : never) => {
+    const analysis = commission?.analysis as any;
+    return analysis?.contract?.id || null;
+  };
   
   const { data: commissions, isLoading } = useAgencyCommissions(agencyId || undefined);
   const { data: summary } = useAgencyCommissionsSummary(agencyId || undefined);
@@ -191,12 +201,13 @@ export default function AgencyCommissions() {
                         <TableHead>Vencimento</TableHead>
                         <TableHead>Valor</TableHead>
                         <TableHead>Status</TableHead>
+                        <TableHead>Contrato</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {recurringCommissions.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                          <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                             Nenhuma comissão recorrente encontrada
                           </TableCell>
                         </TableRow>
@@ -229,6 +240,22 @@ export default function AgencyCommissions() {
                                 {commissionStatusConfig[commission.status].label}
                               </Badge>
                             </TableCell>
+                            <TableCell>
+                              {getContractId(commission) ? (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 gap-1.5 text-xs text-primary hover:text-primary"
+                                  onClick={() => navigate(`/agency/contracts/${getContractId(commission)}`)}
+                                >
+                                  <FileCheck className="h-3.5 w-3.5" />
+                                  Ver
+                                  <ExternalLink className="h-3 w-3" />
+                                </Button>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">-</span>
+                              )}
+                            </TableCell>
                           </TableRow>
                         ))
                       )}
@@ -249,12 +276,13 @@ export default function AgencyCommissions() {
                         <TableHead>Endereço</TableHead>
                         <TableHead>Valor</TableHead>
                         <TableHead>Status</TableHead>
+                        <TableHead>Contrato</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {setupCommissions.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                          <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                             Nenhuma comissão de setup encontrada
                           </TableCell>
                         </TableRow>
@@ -280,6 +308,22 @@ export default function AgencyCommissions() {
                               <Badge className={commissionStatusConfig[commission.status].class}>
                                 {commissionStatusConfig[commission.status].label}
                               </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {getContractId(commission) ? (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 gap-1.5 text-xs text-primary hover:text-primary"
+                                  onClick={() => navigate(`/agency/contracts/${getContractId(commission)}`)}
+                                >
+                                  <FileCheck className="h-3.5 w-3.5" />
+                                  Ver
+                                  <ExternalLink className="h-3 w-3" />
+                                </Button>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">-</span>
+                              )}
                             </TableCell>
                           </TableRow>
                         ))
