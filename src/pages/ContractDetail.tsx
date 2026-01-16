@@ -30,12 +30,14 @@ import {
   Shield,
   StickyNote,
   CalendarSync,
+  Edit,
+  XCircle as XCircleAction,
+  Loader2 as Loader2Action,
 } from 'lucide-react';
 import { useContract } from '@/hooks/useContracts';
 import { useTicketCountByAnalysis, useTicketsByAnalysis } from '@/hooks/useTickets';
 import { useActiveClaimByContract } from '@/hooks/useActiveClaimByContract';
 import { useQuery } from '@tanstack/react-query';
-import { ContractActions } from '@/components/contracts';
 import { ContractDocumentsSection } from '@/components/contracts/ContractDocumentsSection';
 import { ContractTicketSheet } from '@/components/contracts/ContractTicketSheet';
 import { TicketDetailSheet } from '@/components/tickets/TicketDetailSheet';
@@ -44,6 +46,8 @@ import { GuaranteeCostsSection } from '@/components/payment/GuaranteeCostsSectio
 import { ContractRenewalTab } from '@/components/contracts/ContractRenewalTab';
 import { CoverageCard } from '@/components/shared/CoverageCard';
 import { ContractCommissionsTab } from '@/components/shared/ContractCommissionsTab';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { formatCurrency, PROPERTY_TYPES } from '@/lib/validators';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -83,6 +87,9 @@ export default function ContractDetail() {
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [activationModalOpen, setActivationModalOpen] = useState(false);
   const [isActivating, setIsActivating] = useState(false);
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [isCanceling, setIsCanceling] = useState(false);
 
   const { data: contract, isLoading, refetch } = useContract(id);
   const analysisId = contract?.analysis_id;
@@ -170,6 +177,40 @@ export default function ContractDetail() {
       setIsActivating(false);
     }
   };
+
+  const handleCancelContract = async () => {
+    if (!cancelReason.trim()) {
+      toast.error('Informe o motivo do cancelamento');
+      return;
+    }
+
+    setIsCanceling(true);
+    try {
+      const { error } = await supabase
+        .from('contracts')
+        .update({
+          status: 'cancelado' as ContractStatus,
+          canceled_at: new Date().toISOString(),
+          cancellation_reason: cancelReason,
+        })
+        .eq('id', contract.id);
+
+      if (error) throw error;
+
+      toast.success('Contrato cancelado com sucesso');
+      setCancelOpen(false);
+      setCancelReason('');
+      refetch();
+      queryClient.invalidateQueries({ queryKey: ['contracts'] });
+    } catch (error) {
+      console.error('Error canceling contract:', error);
+      toast.error('Erro ao cancelar contrato');
+    } finally {
+      setIsCanceling(false);
+    }
+  };
+
+  const canCancel = ['ativo', 'documentacao_pendente'].includes(contract.status);
 
   // Build timeline events
   const timelineEvents: TimelineEvent[] = [
@@ -291,16 +332,14 @@ export default function ContractDetail() {
             </Badge>
           </div>
           <div className="flex items-center gap-2">
-            {ticketCount > 0 && (
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => navigate(`/tickets?contract=${contract.analysis_id}`)}
-              >
-                <Eye className="h-4 w-4 mr-2" />
-                Ver Chamados ({ticketCount})
-              </Button>
-            )}
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => navigate(`/analyses/${contract.analysis_id}`)}
+            >
+              <Edit className="h-4 w-4 mr-2" />
+              Editar
+            </Button>
             <Button 
               variant="outline" 
               size="sm"
@@ -309,6 +348,16 @@ export default function ContractDetail() {
               <MessageSquare className="h-4 w-4 mr-2" />
               Abrir Chamado
             </Button>
+            {canCancel && (
+              <Button 
+                variant="destructive" 
+                size="sm"
+                onClick={() => setCancelOpen(true)}
+              >
+                <XCircleAction className="h-4 w-4 mr-2" />
+                Cancelar Contrato
+              </Button>
+            )}
           </div>
         </div>
 
@@ -373,23 +422,37 @@ export default function ContractDetail() {
           </div>
         )}
 
-        {/* Quick Actions */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Ações Rápidas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ContractActions
-              contract={{
-                id: contract.id,
-                status: contract.status,
-                agency_id: contract.agency_id,
-                analysis_id: contract.analysis_id,
-              }}
-              onEdit={() => navigate(`/analyses/${contract.analysis_id}`)}
-            />
-          </CardContent>
-        </Card>
+        {/* Cancel Contract Modal */}
+        <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="text-destructive">Cancelar Contrato</DialogTitle>
+              <DialogDescription>
+                Esta ação é irreversível. O contrato será cancelado.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Motivo do Cancelamento *</Label>
+                <Textarea
+                  placeholder="Informe o motivo do cancelamento..."
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  rows={4}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setCancelOpen(false)}>
+                Voltar
+              </Button>
+              <Button variant="destructive" onClick={handleCancelContract} disabled={isCanceling}>
+                {isCanceling && <Loader2Action className="h-4 w-4 mr-2 animate-spin" />}
+                Confirmar Cancelamento
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -398,6 +461,10 @@ export default function ContractDetail() {
             <TabsTrigger value="docs" className="whitespace-nowrap shrink-0">Docs</TabsTrigger>
             <TabsTrigger value="timeline" className="whitespace-nowrap shrink-0">Timeline</TabsTrigger>
             <TabsTrigger value="financial" className="whitespace-nowrap shrink-0">Financeiro</TabsTrigger>
+            <TabsTrigger value="pagamentos" className="flex items-center gap-2 whitespace-nowrap shrink-0">
+              <CreditCard className="h-4 w-4" />
+              Pagamentos
+            </TabsTrigger>
             <TabsTrigger value="comissoes" className="flex items-center gap-2 whitespace-nowrap shrink-0">
               <DollarSign className="h-4 w-4" />
               Comissões
@@ -776,6 +843,27 @@ export default function ContractDetail() {
                       </span>
                     </p>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Pagamentos Tab */}
+          <TabsContent value="pagamentos" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <CreditCard className="h-4 w-4" />
+                  Histórico de Pagamentos
+                </CardTitle>
+                <CardDescription>
+                  Pagamentos relacionados a este contrato
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8 text-muted-foreground">
+                  <CreditCard className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Integração com sistema de pagamentos em desenvolvimento.</p>
                 </div>
               </CardContent>
             </Card>
