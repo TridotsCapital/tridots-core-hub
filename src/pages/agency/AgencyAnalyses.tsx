@@ -184,12 +184,8 @@ export default function AgencyAnalyses() {
                       </Button>
                     </span>
                   </TooltipTrigger>
-                  <TooltipContent>
-                    <p>
-                      {isAgencyStatusLoading
-                        ? "Carregando status da imobiliária..."
-                        : "Disponível após aprovação do cadastro"}
-                    </p>
+                  <TooltipContent side="bottom">
+                    <p>Disponível após aprovação do cadastro</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
