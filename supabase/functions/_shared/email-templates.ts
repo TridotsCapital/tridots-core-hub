@@ -23,12 +23,13 @@ interface EmailTemplateData {
   [key: string]: unknown;
 }
 
-// Interface para attachments inline (camelCase conforme API Resend)
+// Interface para attachments inline
 interface InlineAttachment {
   filename: string;
   content: string; // base64
-  contentType?: string;
-  contentId?: string;
+  content_type: string;
+  disposition?: 'inline';
+  content_id?: string;
 }
 
 export function generateEmailWrapper(content: string, preheader?: string, heroImage?: string): string {
@@ -531,8 +532,9 @@ export function getLogoAttachment(): InlineAttachment {
   return {
     filename: 'tridots-logo.png',
     content: LOGO_BASE64,
-    contentType: 'image/png',
-    contentId: 'tridots-logo'
+    content_type: 'image/png',
+    disposition: 'inline',
+    content_id: 'tridots-logo'
   };
 }
 
@@ -561,13 +563,15 @@ export async function sendEmail(
       },
       body: JSON.stringify({
         from: 'Tridots Capital <naoresponder@tridotscapital.com>',
-        to: [recipientEmail],
+        to: recipientEmail,
         subject: testMode ? `[TESTE] ${subject}` : subject,
         html,
         attachments: allAttachments.map(att => ({
           filename: att.filename,
           content: att.content,
-          contentId: att.contentId
+          content_type: att.content_type,
+          disposition: att.disposition || 'inline',
+          content_id: att.content_id
         }))
       })
     });
