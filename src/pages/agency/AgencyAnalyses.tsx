@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { AgencyLayout, useAgencyStatus } from "@/components/layout/AgencyLayout";
+import { useSubdomain } from "@/contexts/SubdomainContext";
 import { AgencyKanbanBoard } from "@/components/agency/AgencyKanbanBoard";
 import { AgencyAnalysisList } from "@/components/agency/AgencyAnalysisList";
 import { useAgencyAnalyses } from "@/hooks/useAgencyAnalyses";
@@ -26,7 +27,8 @@ const VIEW_MODE_KEY = "agency-analyses-view-mode";
 
 export default function AgencyAnalyses() {
   const location = useLocation();
-  const { isAgencyActive } = useAgencyStatus();
+  const { isAgencyPortal } = useSubdomain();
+  const { isAgencyActive, isAgencyStatusLoading } = useAgencyStatus();
   const queryClient = useQueryClient();
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     const saved = localStorage.getItem(VIEW_MODE_KEY);
@@ -164,9 +166,9 @@ export default function AgencyAnalyses() {
             </ToggleGroup>
 
             {/* New Analysis Button */}
-            {isAgencyActive ? (
+            {isAgencyActive && !isAgencyStatusLoading ? (
               <Button asChild>
-                <Link to="/agency/new-analysis">
+                <Link to={isAgencyPortal ? "/analyses/new" : "/agency/analyses/new"}>
                   <Plus className="h-4 w-4 mr-2" />
                   Nova Análise
                 </Link>
@@ -183,7 +185,11 @@ export default function AgencyAnalyses() {
                     </span>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Disponível após aprovação do cadastro</p>
+                    <p>
+                      {isAgencyStatusLoading
+                        ? "Carregando status da imobiliária..."
+                        : "Disponível após aprovação do cadastro"}
+                    </p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
