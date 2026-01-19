@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { AgencyLayout } from "@/components/layout/AgencyLayout";
+import { AgencyLayout, useAgencyStatus } from "@/components/layout/AgencyLayout";
 import { AgencyKanbanBoard } from "@/components/agency/AgencyKanbanBoard";
 import { AgencyAnalysisList } from "@/components/agency/AgencyAnalysisList";
 import { useAgencyAnalyses } from "@/hooks/useAgencyAnalyses";
@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Search, Plus, LayoutGrid, List } from "lucide-react";
 import { AnalysisStatus, statusConfig } from "@/types/database";
 import { useQueryClient } from "@tanstack/react-query";
@@ -25,6 +26,7 @@ const VIEW_MODE_KEY = "agency-analyses-view-mode";
 
 export default function AgencyAnalyses() {
   const location = useLocation();
+  const { isAgencyActive } = useAgencyStatus();
   const queryClient = useQueryClient();
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     const saved = localStorage.getItem(VIEW_MODE_KEY);
@@ -162,12 +164,30 @@ export default function AgencyAnalyses() {
             </ToggleGroup>
 
             {/* New Analysis Button */}
-            <Button asChild>
-              <Link to="/agency/new-analysis">
-                <Plus className="h-4 w-4 mr-2" />
-                Nova Análise
-              </Link>
-            </Button>
+            {isAgencyActive ? (
+              <Button asChild>
+                <Link to="/agency/new-analysis">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nova Análise
+                </Link>
+              </Button>
+            ) : (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span>
+                      <Button disabled>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Nova Análise
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Disponível após aprovação do cadastro</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
           </div>
         </div>
 
