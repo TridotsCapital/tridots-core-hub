@@ -114,10 +114,26 @@ export function AgencyDocumentsTab() {
     }
 
     try {
-      const url = await downloadTemplate.mutateAsync(termTemplate.file_path);
-      window.open(url, '_blank');
+      const signedUrl = await downloadTemplate.mutateAsync(termTemplate.file_path);
+      
+      // Download via fetch para evitar bloqueios do navegador
+      const response = await fetch(signedUrl);
+      if (!response.ok) throw new Error('Erro ao baixar arquivo');
+      
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = termTemplate.file_name || 'termo_adesao.pdf';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+      
+      toast.success('Download iniciado');
     } catch (error) {
-      toast.error('Erro ao baixar termo de aceite');
+      console.error('Erro ao baixar termo:', error);
+      toast.error('Erro ao baixar termo de aceite. Tente novamente.');
     }
   };
 
