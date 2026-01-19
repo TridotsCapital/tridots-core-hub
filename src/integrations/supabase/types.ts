@@ -966,6 +966,7 @@ export type Database = {
           mes_referencia: number | null
           observacoes: string | null
           percentual_comissao: number | null
+          report_sent_at: string | null
           status: Database["public"]["Enums"]["commission_status"]
           type: Database["public"]["Enums"]["commission_type"]
           updated_at: string
@@ -984,6 +985,7 @@ export type Database = {
           mes_referencia?: number | null
           observacoes?: string | null
           percentual_comissao?: number | null
+          report_sent_at?: string | null
           status?: Database["public"]["Enums"]["commission_status"]
           type: Database["public"]["Enums"]["commission_type"]
           updated_at?: string
@@ -1002,6 +1004,7 @@ export type Database = {
           mes_referencia?: number | null
           observacoes?: string | null
           percentual_comissao?: number | null
+          report_sent_at?: string | null
           status?: Database["public"]["Enums"]["commission_status"]
           type?: Database["public"]["Enums"]["commission_type"]
           updated_at?: string
@@ -1342,6 +1345,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      email_logs: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          recipient_email: string
+          recipient_original: string | null
+          sent_at: string | null
+          status: string
+          subject: string
+          template_type: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          recipient_email: string
+          recipient_original?: string | null
+          sent_at?: string | null
+          status?: string
+          subject: string
+          template_type: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          recipient_email?: string
+          recipient_original?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string
+          template_type?: string
+        }
+        Relationships: []
       }
       internal_chat: {
         Row: {
