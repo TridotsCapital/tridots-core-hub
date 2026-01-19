@@ -174,7 +174,7 @@ export default function AgencyAnalyses() {
                 </Link>
               </Button>
             ) : (
-              <TooltipProvider>
+              <TooltipProvider delayDuration={100}>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <span>
