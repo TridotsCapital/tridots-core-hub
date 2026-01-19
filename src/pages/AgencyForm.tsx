@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { useAgency, useCreateAgency, useUpdateAgency } from '@/hooks/useAgencies';
+import { useAgency, useCreateAgency, useUpdateAgency, useDeleteAgency } from '@/hooks/useAgencies';
 import { useAgencyCollaborators } from '@/hooks/useAgencyCollaborators';
 import { useAdminResetPassword } from '@/hooks/useAdminResetPassword';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
@@ -26,8 +26,19 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { GeneratePasswordDialog } from '@/components/users/GeneratePasswordDialog';
-import { ArrowLeft, Save, Users, Key, Loader2, FileText } from 'lucide-react';
+import { ArrowLeft, Save, Users, Key, Loader2, FileText, Trash2 } from 'lucide-react';
 import { AgencyActivationDocuments } from '@/components/agency/AgencyActivationDocuments';
 import type { TablesInsert } from '@/integrations/supabase/types';
 
@@ -48,9 +59,17 @@ export default function AgencyForm() {
   const { data: collaborators, isLoading: loadingCollaborators } = useAgencyCollaborators(id);
   const createAgency = useCreateAgency();
   const updateAgency = useUpdateAgency();
+  const deleteAgency = useDeleteAgency();
   const { resetPassword, generatedPassword, isLoading: isGeneratingPassword, showPasswordDialog, closeDialog, copyToClipboard } = useAdminResetPassword();
 
   const [targetUserName, setTargetUserName] = useState('');
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
+  const handleDeleteAgency = async () => {
+    if (!id) return;
+    await deleteAgency.mutateAsync(id);
+    navigate('/agencies');
+  };
 
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<AgencyFormData>({
     defaultValues: {
@@ -464,13 +483,48 @@ export default function AgencyForm() {
               </Label>
             </div>
 
-            <Button 
-              type="submit" 
-              disabled={createAgency.isPending || updateAgency.isPending}
-            >
-              <Save className="h-4 w-4 mr-2" />
-              {createAgency.isPending || updateAgency.isPending ? 'Salvando...' : 'Salvar'}
-            </Button>
+            <div className="flex items-center gap-3">
+              {isEditing && (
+                <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                  <AlertDialogTrigger asChild>
+                    <Button 
+                      type="button" 
+                      variant="destructive"
+                      disabled={deleteAgency.isPending}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Excluir
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Excluir imobiliária?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Esta ação não pode ser desfeita. Todos os dados da imobiliária serão removidos permanentemente, 
+                        incluindo colaboradores e documentos. Análises e contratos vinculados podem ficar órfãos.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={handleDeleteAgency}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        {deleteAgency.isPending ? 'Excluindo...' : 'Sim, excluir'}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+
+              <Button 
+                type="submit" 
+                disabled={createAgency.isPending || updateAgency.isPending}
+              >
+                <Save className="h-4 w-4 mr-2" />
+                {createAgency.isPending || updateAgency.isPending ? 'Salvando...' : 'Salvar'}
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </form>
