@@ -22,14 +22,40 @@ export function usePaymentInterestMetrics() {
       // Fetch all clicks
       const { data: clicks, error } = await supabase
         .from('payment_option_interest_clicks')
-        .select('id, agency_id, created_at')
+        .select('id, agency_id, user_id, created_at')
         .eq('option_key', 'boleto_imobiliaria')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
+      // Get user IDs that have null agency_id to look up their agency
+      const userIdsWithNullAgency = clicks
+        ?.filter(c => !c.agency_id && c.user_id)
+        .map(c => c.user_id) || [];
+      
+      const uniqueUserIds = [...new Set(userIdsWithNullAgency)];
+
+      // Fetch agency_id for users that had null agency_id
+      let userToAgencyMap: Record<string, string> = {};
+      if (uniqueUserIds.length > 0) {
+        const { data: agencyUsers } = await supabase
+          .from('agency_users')
+          .select('user_id, agency_id')
+          .in('user_id', uniqueUserIds);
+
+        agencyUsers?.forEach(au => {
+          userToAgencyMap[au.user_id] = au.agency_id;
+        });
+      }
+
+      // Resolve agency_id for each click (use stored agency_id or lookup from user)
+      const resolvedClicks = clicks?.map(click => ({
+        ...click,
+        resolved_agency_id: click.agency_id || userToAgencyMap[click.user_id || ''] || null,
+      })) || [];
+
       // Get unique agency IDs (excluding nulls for count)
-      const agencyIds = [...new Set(clicks?.filter(c => c.agency_id).map(c => c.agency_id))];
+      const agencyIds = [...new Set(resolvedClicks.filter(c => c.resolved_agency_id).map(c => c.resolved_agency_id))];
 
       // Fetch agency names
       let agencyMap: Record<string, string> = {};
@@ -37,18 +63,18 @@ export function usePaymentInterestMetrics() {
         const { data: agencies } = await supabase
           .from('agencies')
           .select('id, nome_fantasia, razao_social')
-          .in('id', agencyIds);
+          .in('id', agencyIds as string[]);
 
         agencies?.forEach(a => {
           agencyMap[a.id] = a.nome_fantasia || a.razao_social;
         });
       }
 
-      // Group clicks by agency
+      // Group clicks by resolved agency
       const clicksByAgencyMap: Record<string, { clicks: number; last_click: string }> = {};
       
-      clicks?.forEach(click => {
-        const key = click.agency_id || 'unknown';
+      resolvedClicks.forEach(click => {
+        const key = click.resolved_agency_id || 'unknown';
         if (!clicksByAgencyMap[key]) {
           clicksByAgencyMap[key] = { clicks: 0, last_click: click.created_at };
         }
