@@ -381,7 +381,7 @@ export async function sendEmail(
   subject: string,
   html: string,
   testMode: boolean = false,
-  testEmail: string = 'testes@tridots.com.br'
+  testEmail: string = 'testes@tridotscapital.com'
 ): Promise<{ success: boolean; messageId?: string; error?: string; originalRecipient?: string }> {
   const recipientEmail = testMode ? testEmail : to;
   
@@ -393,7 +393,7 @@ export async function sendEmail(
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        from: 'Tridots Garantias <noreply@tridots.com.br>',
+        from: 'Tridots Garantias <noreply@tridotscapital.com>',
         to: recipientEmail,
         subject: testMode ? `[TESTE] ${subject}` : subject,
         html
