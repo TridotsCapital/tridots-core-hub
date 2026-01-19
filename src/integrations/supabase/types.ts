@@ -1665,6 +1665,7 @@ export type Database = {
           updated_at: string
           uploaded_by: string
           version: number
+          visible_in_agency_drive: boolean
         }
         Insert: {
           created_at?: string
@@ -1679,6 +1680,7 @@ export type Database = {
           updated_at?: string
           uploaded_by: string
           version?: number
+          visible_in_agency_drive?: boolean
         }
         Update: {
           created_at?: string
@@ -1693,6 +1695,7 @@ export type Database = {
           updated_at?: string
           uploaded_by?: string
           version?: number
+          visible_in_agency_drive?: boolean
         }
         Relationships: []
       }
