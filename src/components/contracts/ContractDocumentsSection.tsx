@@ -89,7 +89,7 @@ const DOC_CONFIGS: DocConfig[] = [
   },
   { 
     key: 'contrato_administrativo', 
-    label: 'Contrato Administrativo', 
+    label: 'Contrato de Administração do Imóvel', 
     description: 'Contrato administrativo de gestão',
     required: true 
   },
