@@ -15,3 +15,5 @@ export { ContractRenewalModal } from './ContractRenewalModal';
 export { ContractRenewalStatus } from './ContractRenewalStatus';
 export { ContractRenewalHistory } from './ContractRenewalHistory';
 export { PlanSelector } from './PlanSelector';
+export { AgencyDocumentsTab } from './AgencyDocumentsTab';
+export { AgencyActivationDocuments } from './AgencyActivationDocuments';
