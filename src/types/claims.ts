@@ -6,6 +6,7 @@
 export type ClaimPublicStatus = 
   | 'solicitado'
   | 'em_analise_tecnica'
+  | 'exoneracao_despejo'
   | 'pagamento_programado'
   | 'finalizado';
 
@@ -14,6 +15,7 @@ export type ClaimInternalStatus =
   | 'aguardando_analise'
   | 'cobranca_amigavel'
   | 'notificacao_extrajudicial'
+  | 'exoneracao_despejo_interno'
   | 'acordo_realizado'
   | 'juridico_acionado'
   | 'encerrado';
@@ -184,6 +186,11 @@ export const claimPublicStatusConfig: Record<ClaimPublicStatus, { label: string;
     color: 'text-blue-700', 
     bgColor: 'bg-blue-100' 
   },
+  exoneracao_despejo: { 
+    label: 'Exoneração e Despejo', 
+    color: 'text-rose-700', 
+    bgColor: 'bg-rose-100' 
+  },
   pagamento_programado: { 
     label: 'Pagamento Programado', 
     color: 'text-purple-700', 
@@ -208,9 +215,14 @@ export const claimInternalStatusConfig: Record<ClaimInternalStatus, { label: str
     bgColor: 'bg-orange-100' 
   },
   notificacao_extrajudicial: { 
-    label: 'Notificação Extrajudicial', 
+    label: 'Em Negociação', 
     color: 'text-red-700', 
     bgColor: 'bg-red-100' 
+  },
+  exoneracao_despejo_interno: { 
+    label: 'Exoneração e Despejo', 
+    color: 'text-rose-700', 
+    bgColor: 'bg-rose-100' 
   },
   acordo_realizado: { 
     label: 'Acordo Realizado', 

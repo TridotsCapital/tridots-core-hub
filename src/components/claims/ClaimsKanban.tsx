@@ -43,7 +43,8 @@ const STAGNATION_DAYS = 7;
 const KANBAN_COLUMNS: { status: ClaimInternalStatus; title: string }[] = [
   { status: 'aguardando_analise', title: 'Aguardando Análise' },
   { status: 'cobranca_amigavel', title: 'Cobrança Amigável' },
-  { status: 'notificacao_extrajudicial', title: 'Notificação Extrajudicial' },
+  { status: 'notificacao_extrajudicial', title: 'Em Negociação' },
+  { status: 'exoneracao_despejo_interno', title: 'Exoneração e Despejo' },
   { status: 'acordo_realizado', title: 'Acordo Realizado' },
   { status: 'juridico_acionado', title: 'Jurídico Acionado' },
 ];
