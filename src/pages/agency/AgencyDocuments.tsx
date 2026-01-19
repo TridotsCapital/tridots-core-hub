@@ -44,6 +44,7 @@ export default function AgencyDocuments() {
   const { data: templates, isLoading } = useActiveTermTemplates();
   const downloadMutation = useDownloadTermTemplate();
   const [selectedTemplate, setSelectedTemplate] = useState<TermTemplate | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   const handleOpenInNewTab = async (template: TermTemplate) => {
     const { data } = await supabase.storage
@@ -55,8 +56,34 @@ export default function AgencyDocuments() {
     }
   };
 
-  const handleDownload = (template: TermTemplate) => {
-    downloadMutation.mutate(template);
+  const handleDownload = async (template: TermTemplate) => {
+    setDownloadingId(template.id);
+    try {
+      // Gerar URL assinada
+      const { data, error } = await supabase.storage
+        .from("term-templates")
+        .createSignedUrl(template.file_path, 3600);
+
+      if (error || !data?.signedUrl) throw new Error('Erro ao gerar link');
+
+      // Download via fetch para evitar bloqueios do navegador
+      const response = await fetch(data.signedUrl);
+      if (!response.ok) throw new Error('Erro ao baixar arquivo');
+
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = template.file_name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      console.error('Erro ao baixar documento:', error);
+    } finally {
+      setDownloadingId(null);
+    }
   };
 
   if (isLoading) {
@@ -143,7 +170,7 @@ export default function AgencyDocuments() {
                   variant="ghost" 
                   className="flex-1"
                   onClick={() => handleDownload(template)}
-                  disabled={downloadMutation.isPending}
+                  disabled={downloadingId === template.id}
                 >
                   <Download className="h-4 w-4" />
                 </Button>
@@ -176,7 +203,7 @@ export default function AgencyDocuments() {
                   variant="outline" 
                   className="flex-1"
                   onClick={() => handleDownload(template)}
-                  disabled={downloadMutation.isPending}
+                  disabled={downloadingId === template.id}
                 >
                   <Download className="h-4 w-4 mr-1" />
                   Baixar
@@ -211,7 +238,7 @@ export default function AgencyDocuments() {
             </Button>
             <Button 
               onClick={() => selectedTemplate && handleDownload(selectedTemplate)}
-              disabled={downloadMutation.isPending}
+              disabled={downloadingId === selectedTemplate?.id}
             >
               <Download className="h-4 w-4 mr-2" />
               Baixar
