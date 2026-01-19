@@ -92,3 +92,42 @@ export function useUpdateAgency() {
     },
   });
 }
+
+export function useDeleteAgency() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      // First, delete related agency_users records
+      const { error: agencyUsersError } = await supabase
+        .from('agency_users')
+        .delete()
+        .eq('agency_id', id);
+
+      if (agencyUsersError) throw agencyUsersError;
+
+      // Delete agency_documents
+      const { error: docsError } = await supabase
+        .from('agency_documents')
+        .delete()
+        .eq('agency_id', id);
+
+      if (docsError) throw docsError;
+
+      // Finally, delete the agency
+      const { error } = await supabase
+        .from('agencies')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agencies'] });
+      toast.success('Imobiliária excluída com sucesso!');
+    },
+    onError: (error: Error) => {
+      toast.error('Erro ao excluir imobiliária: ' + error.message);
+    },
+  });
+}
