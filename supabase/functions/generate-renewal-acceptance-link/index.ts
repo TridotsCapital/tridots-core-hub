@@ -64,8 +64,8 @@ const handler = async (req: Request): Promise<Response> => {
       throw updateError;
     }
 
-    // Build acceptance URL
-    const baseUrl = Deno.env.get("SITE_URL") || "https://hsyjtujcedwafcviourl.lovable.app";
+    // Build acceptance URL - usar subdomínio oficial de aceite
+    const baseUrl = Deno.env.get("ACCEPTANCE_BASE_URL") || "https://aceite.tridotscapital.com";
     const acceptanceUrl = `${baseUrl}/aceite-renovacao/${token}`;
 
     console.log("Generated renewal acceptance link:", {
