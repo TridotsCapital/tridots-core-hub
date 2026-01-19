@@ -243,6 +243,30 @@ export function AgencySignupForm({ onSubmit, loading }: AgencySignupFormProps) {
         }
         return true;
       case 4:
+        if (!formData.cep || formData.cep.replace(/\D/g, '').length !== 8) {
+          toast.error('Preencha um CEP válido');
+          return false;
+        }
+        if (!formData.endereco?.trim()) {
+          toast.error('Preencha o endereço (rua/logradouro)');
+          return false;
+        }
+        if (!formData.numero?.trim()) {
+          toast.error('Preencha o número do endereço');
+          return false;
+        }
+        if (!formData.bairro?.trim()) {
+          toast.error('Preencha o bairro');
+          return false;
+        }
+        if (!formData.estado) {
+          toast.error('Selecione o estado');
+          return false;
+        }
+        if (!formData.cidade) {
+          toast.error('Selecione a cidade');
+          return false;
+        }
         return true;
       default:
         return true;
@@ -469,7 +493,7 @@ export function AgencySignupForm({ onSubmit, loading }: AgencySignupFormProps) {
       {currentStep === 4 && (
         <div className="space-y-4 animate-fade-in">
           <div className="space-y-2">
-            <Label htmlFor="agency-cep" className="font-medium">CEP</Label>
+            <Label htmlFor="agency-cep" className="font-medium">CEP *</Label>
             <div className="relative">
               <Input
                 id="agency-cep"
@@ -486,7 +510,7 @@ export function AgencySignupForm({ onSubmit, loading }: AgencySignupFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="agency-endereco" className="font-medium">Rua / Logradouro</Label>
+            <Label htmlFor="agency-endereco" className="font-medium">Rua / Logradouro *</Label>
             <Input
               id="agency-endereco"
               type="text"
@@ -499,7 +523,7 @@ export function AgencySignupForm({ onSubmit, loading }: AgencySignupFormProps) {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="agency-numero" className="font-medium">Número</Label>
+              <Label htmlFor="agency-numero" className="font-medium">Número *</Label>
               <Input
                 id="agency-numero"
                 type="text"
@@ -524,7 +548,7 @@ export function AgencySignupForm({ onSubmit, loading }: AgencySignupFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="agency-bairro" className="font-medium">Bairro</Label>
+            <Label htmlFor="agency-bairro" className="font-medium">Bairro *</Label>
             <Input
               id="agency-bairro"
               type="text"
@@ -537,7 +561,7 @@ export function AgencySignupForm({ onSubmit, loading }: AgencySignupFormProps) {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="agency-estado" className="font-medium">Estado (UF)</Label>
+              <Label htmlFor="agency-estado" className="font-medium">Estado (UF) *</Label>
               <Select
                 value={formData.estado}
                 onValueChange={(value) => {
@@ -559,7 +583,7 @@ export function AgencySignupForm({ onSubmit, loading }: AgencySignupFormProps) {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="agency-cidade" className="font-medium">Cidade</Label>
+              <Label htmlFor="agency-cidade" className="font-medium">Cidade *</Label>
               <Select
                 value={formData.cidade}
                 onValueChange={(value) => updateField('cidade', value)}
