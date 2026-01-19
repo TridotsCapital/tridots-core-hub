@@ -4,8 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { ChevronDown, ChevronUp, CreditCard, QrCode, Sparkles } from 'lucide-react';
+import { ChevronDown, ChevronUp, CreditCard, QrCode, Sparkles, Lock, Building2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -16,12 +18,13 @@ export type PaymentMethod = 'pix' | 'card_1x' | 'card_2x' | 'card_3x' | 'card_4x
 export type PaymentOption = PaymentMethod;
 
 interface PaymentOptionItem {
-  id: PaymentMethod;
+  id: PaymentMethod | 'boleto_imobiliaria';
   label: string;
   description: string;
   value: number;
   discount?: number;
   highlighted?: boolean;
+  blocked?: boolean;
 }
 
 interface PaymentOptionsDisplayProps {
@@ -32,6 +35,7 @@ interface PaymentOptionsDisplayProps {
   readOnly?: boolean;
   compact?: boolean;
   showAllByDefault?: boolean;
+  agencyId?: string;
 }
 
 export function PaymentOptionsDisplay({
@@ -42,12 +46,42 @@ export function PaymentOptionsDisplay({
   readOnly = false,
   compact = false,
   showAllByDefault = false,
+  agencyId,
 }: PaymentOptionsDisplayProps) {
   const [showAll, setShowAll] = useState(showAllByDefault);
+  const { toast } = useToast();
 
   const pixValue = garantiaAnual * (1 - descontoPix / 100);
 
+  const handleBlockedOptionClick = async () => {
+    // Log interest in the blocked option
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      await supabase.from('payment_option_interest_clicks').insert({
+        agency_id: agencyId || null,
+        user_id: user?.id || null,
+        option_key: 'boleto_imobiliaria',
+      });
+    } catch (error) {
+      console.error('Error logging interest click:', error);
+    }
+
+    toast({
+      title: "Em breve!",
+      description: "Esta opção de pagamento estará disponível em breve. Registramos seu interesse!",
+    });
+  };
+
   const allOptions: PaymentOptionItem[] = [
+    // Blocked option first
+    {
+      id: 'boleto_imobiliaria',
+      label: 'Pagamento via Imobiliária',
+      description: 'Boleto Mensal Unificado',
+      value: 0,
+      blocked: true,
+    },
+    // PIX option
     {
       id: 'pix',
       label: 'PIX à vista',
@@ -74,11 +108,14 @@ export function PaymentOptionsDisplay({
     }),
   ];
 
+  // Filter out blocked options for visible options
+  const selectableOptions = allOptions.filter(opt => !opt.blocked);
+
   const visibleOptions = compact && !showAll 
-    ? [allOptions[0], allOptions[1], allOptions[12]] // PIX, 1x, 12x
+    ? [allOptions[0], allOptions[1], allOptions[2], allOptions[13]] // Blocked, PIX, 1x, 12x
     : allOptions;
 
-  const selectedOption = allOptions.find(opt => opt.id === formaEscolhida);
+  const selectedOption = selectableOptions.find(opt => opt.id === formaEscolhida);
 
   if (readOnly && selectedOption) {
     return (
@@ -125,45 +162,76 @@ export function PaymentOptionsDisplay({
         disabled={readOnly}
         className="gap-2"
       >
-        {visibleOptions.map((option) => (
-          <Label
-            key={option.id}
-            htmlFor={option.id}
-            className={cn(
-              'flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all',
-              formaEscolhida === option.id
-                ? 'border-primary bg-primary/5'
-                : 'border-border hover:border-primary/50',
-              option.highlighted && 'border-green-500/50 bg-green-50 dark:bg-green-950/20',
-              readOnly && 'cursor-default'
-            )}
-          >
-            <div className="flex items-center gap-3">
-              <RadioGroupItem value={option.id} id={option.id} />
-              {option.id === 'pix' ? (
-                <QrCode className={cn('h-4 w-4', option.highlighted ? 'text-green-600' : 'text-muted-foreground')} />
-              ) : (
-                <CreditCard className="h-4 w-4 text-muted-foreground" />
+        {visibleOptions.map((option) => {
+          // Render blocked option differently
+          if (option.blocked) {
+            return (
+              <div
+                key={option.id}
+                onClick={handleBlockedOptionClick}
+                className={cn(
+                  'flex items-center justify-between p-3 rounded-lg border-2 cursor-pointer transition-all',
+                  'border-orange-400 bg-orange-50 dark:bg-orange-950/20',
+                  'hover:bg-orange-100 dark:hover:bg-orange-950/30'
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-4 h-4 rounded-full border-2 border-orange-400 flex items-center justify-center">
+                    <Lock className="h-2.5 w-2.5 text-orange-500" />
+                  </div>
+                  <Building2 className="h-4 w-4 text-orange-600" />
+                  <div>
+                    <span className="font-medium text-orange-700 dark:text-orange-400">{option.label}</span>
+                    <Badge variant="secondary" className="ml-2 bg-orange-200 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300 text-xs">
+                      Em Breve
+                    </Badge>
+                  </div>
+                </div>
+                <span className="text-sm text-orange-600 dark:text-orange-400">{option.description}</span>
+              </div>
+            );
+          }
+
+          return (
+            <Label
+              key={option.id}
+              htmlFor={option.id}
+              className={cn(
+                'flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all',
+                formaEscolhida === option.id
+                  ? 'border-primary bg-primary/5'
+                  : 'border-border hover:border-primary/50',
+                option.highlighted && 'border-green-500/50 bg-green-50 dark:bg-green-950/20',
+                readOnly && 'cursor-default'
               )}
-              <div>
-                <span className="font-medium">{option.label}</span>
-                {option.discount && (
-                  <Badge variant="secondary" className="ml-2 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs">
-                    {option.discount}% OFF
-                  </Badge>
+            >
+              <div className="flex items-center gap-3">
+                <RadioGroupItem value={option.id} id={option.id} />
+                {option.id === 'pix' ? (
+                  <QrCode className={cn('h-4 w-4', option.highlighted ? 'text-green-600' : 'text-muted-foreground')} />
+                ) : (
+                  <CreditCard className="h-4 w-4 text-muted-foreground" />
+                )}
+                <div>
+                  <span className="font-medium">{option.label}</span>
+                  {option.discount && (
+                    <Badge variant="secondary" className="ml-2 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs">
+                      {option.discount}% OFF
+                    </Badge>
+                  )}
+                </div>
+              </div>
+              <div className="text-right">
+                <span className={cn('font-semibold', option.highlighted && 'text-green-600')}>
+                  {option.description}
+                </span>
+                {option.id !== 'pix' && option.id !== 'card_1x' && (
+                  <p className="text-xs text-muted-foreground">(Total: {formatCurrency(garantiaAnual)})</p>
                 )}
               </div>
-            </div>
-            <div className="text-right">
-              <span className={cn('font-semibold', option.highlighted && 'text-green-600')}>
-                {option.description}
-              </span>
-              {option.id !== 'pix' && option.id !== 'card_1x' && (
-                <p className="text-xs text-muted-foreground">(Total: {formatCurrency(garantiaAnual)})</p>
-              )}
-            </div>
-          </Label>
-        ))}
+            </Label>
+          );
+        })}
       </RadioGroup>
 
       {compact && !showAll && (

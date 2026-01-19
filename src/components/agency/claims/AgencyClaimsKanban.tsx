@@ -18,6 +18,7 @@ interface AgencyClaimsKanbanProps {
 const columns: ClaimPublicStatus[] = [
   'solicitado',
   'em_analise_tecnica',
+  'exoneracao_despejo',
   'pagamento_programado',
   'finalizado',
 ];

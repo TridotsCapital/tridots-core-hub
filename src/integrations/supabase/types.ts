@@ -1383,6 +1383,38 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_option_interest_clicks: {
+        Row: {
+          agency_id: string | null
+          created_at: string | null
+          id: string
+          option_key: string
+          user_id: string | null
+        }
+        Insert: {
+          agency_id?: string | null
+          created_at?: string | null
+          id?: string
+          option_key?: string
+          user_id?: string | null
+        }
+        Update: {
+          agency_id?: string | null
+          created_at?: string | null
+          id?: string
+          option_key?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_option_interest_clicks_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           active: boolean
@@ -2036,6 +2068,7 @@ export type Database = {
         | "acordo_realizado"
         | "juridico_acionado"
         | "encerrado"
+        | "exoneracao_despejo_interno"
       claim_item_category:
         | "aluguel"
         | "condominio"
@@ -2053,6 +2086,7 @@ export type Database = {
         | "em_analise_tecnica"
         | "pagamento_programado"
         | "finalizado"
+        | "exoneracao_despejo"
       commission_status:
         | "pendente"
         | "paga"
@@ -2237,6 +2271,7 @@ export const Constants = {
         "acordo_realizado",
         "juridico_acionado",
         "encerrado",
+        "exoneracao_despejo_interno",
       ],
       claim_item_category: [
         "aluguel",
@@ -2256,6 +2291,7 @@ export const Constants = {
         "em_analise_tecnica",
         "pagamento_programado",
         "finalizado",
+        "exoneracao_despejo",
       ],
       commission_status: [
         "pendente",
