@@ -16,6 +16,9 @@ interface AgencyRegistrationData {
   responsavel_email?: string;
   responsavel_telefone?: string;
   endereco?: string;
+  numero?: string;
+  complemento?: string;
+  bairro?: string;
   cidade?: string;
   estado?: string;
   cep?: string;
@@ -37,6 +40,14 @@ Deno.serve(async (req) => {
     
     console.log("Registering agency for user:", data.user_id);
 
+    // Build full address from components
+    const enderecoCompleto = [
+      data.endereco,
+      data.numero ? `nº ${data.numero}` : null,
+      data.complemento,
+      data.bairro,
+    ].filter(Boolean).join(', ');
+
     // 1. Create agency record (active = false, percentual_comissao = 0)
     const { data: agency, error: agencyError } = await supabase
       .from("agencies")
@@ -49,7 +60,7 @@ Deno.serve(async (req) => {
         responsavel_nome: data.responsavel_nome,
         responsavel_email: data.responsavel_email || null,
         responsavel_telefone: data.responsavel_telefone || null,
-        endereco: data.endereco || null,
+        endereco: enderecoCompleto || null,
         cidade: data.cidade || null,
         estado: data.estado || null,
         cep: data.cep || null,

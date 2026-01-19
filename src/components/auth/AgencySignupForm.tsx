@@ -1,8 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Eye, EyeOff, Building2, User, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Eye, EyeOff, Building2, User, MapPin, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -22,6 +29,9 @@ export interface AgencySignupData {
   // Address
   cep: string;
   endereco: string;
+  numero: string;
+  complemento: string;
+  bairro: string;
   cidade: string;
   estado: string;
 }
@@ -38,9 +48,47 @@ const STEPS = [
   { id: 4, title: 'Endereço', icon: MapPin },
 ];
 
+const ESTADOS_BRASIL = [
+  { uf: 'AC', nome: 'Acre' },
+  { uf: 'AL', nome: 'Alagoas' },
+  { uf: 'AP', nome: 'Amapá' },
+  { uf: 'AM', nome: 'Amazonas' },
+  { uf: 'BA', nome: 'Bahia' },
+  { uf: 'CE', nome: 'Ceará' },
+  { uf: 'DF', nome: 'Distrito Federal' },
+  { uf: 'ES', nome: 'Espírito Santo' },
+  { uf: 'GO', nome: 'Goiás' },
+  { uf: 'MA', nome: 'Maranhão' },
+  { uf: 'MT', nome: 'Mato Grosso' },
+  { uf: 'MS', nome: 'Mato Grosso do Sul' },
+  { uf: 'MG', nome: 'Minas Gerais' },
+  { uf: 'PA', nome: 'Pará' },
+  { uf: 'PB', nome: 'Paraíba' },
+  { uf: 'PR', nome: 'Paraná' },
+  { uf: 'PE', nome: 'Pernambuco' },
+  { uf: 'PI', nome: 'Piauí' },
+  { uf: 'RJ', nome: 'Rio de Janeiro' },
+  { uf: 'RN', nome: 'Rio Grande do Norte' },
+  { uf: 'RS', nome: 'Rio Grande do Sul' },
+  { uf: 'RO', nome: 'Rondônia' },
+  { uf: 'RR', nome: 'Roraima' },
+  { uf: 'SC', nome: 'Santa Catarina' },
+  { uf: 'SP', nome: 'São Paulo' },
+  { uf: 'SE', nome: 'Sergipe' },
+  { uf: 'TO', nome: 'Tocantins' },
+];
+
+interface CidadeIBGE {
+  id: number;
+  nome: string;
+}
+
 export function AgencySignupForm({ onSubmit, loading }: AgencySignupFormProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
+  const [loadingCep, setLoadingCep] = useState(false);
+  const [loadingCidades, setLoadingCidades] = useState(false);
+  const [cidades, setCidades] = useState<CidadeIBGE[]>([]);
   
   const [formData, setFormData] = useState<AgencySignupData>({
     email: '',
@@ -54,6 +102,9 @@ export function AgencySignupForm({ onSubmit, loading }: AgencySignupFormProps) {
     responsavel_telefone: '',
     cep: '',
     endereco: '',
+    numero: '',
+    complemento: '',
+    bairro: '',
     cidade: '',
     estado: '',
   });
@@ -62,6 +113,62 @@ export function AgencySignupForm({ onSubmit, loading }: AgencySignupFormProps) {
 
   const updateField = (field: keyof AgencySignupData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  // Fetch cities when estado changes
+  useEffect(() => {
+    if (formData.estado) {
+      fetchCidadesPorUF(formData.estado);
+    } else {
+      setCidades([]);
+    }
+  }, [formData.estado]);
+
+  const fetchCidadesPorUF = async (uf: string) => {
+    setLoadingCidades(true);
+    try {
+      const response = await fetch(
+        `https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios?orderBy=nome`
+      );
+      if (response.ok) {
+        const data: CidadeIBGE[] = await response.json();
+        setCidades(data);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar cidades:', error);
+    } finally {
+      setLoadingCidades(false);
+    }
+  };
+
+  const buscarCEP = async (cep: string) => {
+    const cepNumeros = cep.replace(/\D/g, '');
+    if (cepNumeros.length !== 8) return;
+
+    setLoadingCep(true);
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cepNumeros}/json/`);
+      const data = await response.json();
+
+      if (data.erro) {
+        toast.error('CEP não encontrado');
+        return;
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        endereco: data.logradouro || '',
+        bairro: data.bairro || '',
+        cidade: data.localidade || '',
+        estado: data.uf || '',
+      }));
+
+      toast.success('Endereço preenchido automaticamente');
+    } catch (error) {
+      toast.error('Erro ao buscar CEP');
+    } finally {
+      setLoadingCep(false);
+    }
   };
 
   const formatCNPJ = (value: string) => {
@@ -91,6 +198,16 @@ export function AgencySignupForm({ onSubmit, loading }: AgencySignupFormProps) {
   const formatCEP = (value: string) => {
     const numbers = value.replace(/\D/g, '');
     return numbers.replace(/^(\d{5})(\d)/, '$1-$2').slice(0, 9);
+  };
+
+  const handleCepChange = (value: string) => {
+    const formatted = formatCEP(value);
+    updateField('cep', formatted);
+    
+    // Auto-fetch when CEP is complete
+    if (formatted.replace(/\D/g, '').length === 8) {
+      buscarCEP(formatted);
+    }
   };
 
   const validateStep = (step: number): boolean => {
@@ -144,9 +261,7 @@ export function AgencySignupForm({ onSubmit, loading }: AgencySignupFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Only submit if on the final step (step 4)
     if (currentStep !== 4) {
-      // If not on final step, just advance to next step
       handleNext();
       return;
     }
@@ -355,52 +470,119 @@ export function AgencySignupForm({ onSubmit, loading }: AgencySignupFormProps) {
         <div className="space-y-4 animate-fade-in">
           <div className="space-y-2">
             <Label htmlFor="agency-cep" className="font-medium">CEP</Label>
-            <Input
-              id="agency-cep"
-              type="text"
-              placeholder="00000-000"
-              value={formData.cep}
-              onChange={(e) => updateField('cep', formatCEP(e.target.value))}
-              className="h-11"
-            />
+            <div className="relative">
+              <Input
+                id="agency-cep"
+                type="text"
+                placeholder="00000-000"
+                value={formData.cep}
+                onChange={(e) => handleCepChange(e.target.value)}
+                className="h-11 pr-10"
+              />
+              {loadingCep && (
+                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+              )}
+            </div>
           </div>
-          
+
           <div className="space-y-2">
-            <Label htmlFor="agency-endereco" className="font-medium">Endereço</Label>
+            <Label htmlFor="agency-endereco" className="font-medium">Rua / Logradouro</Label>
             <Input
               id="agency-endereco"
               type="text"
-              placeholder="Rua, número, complemento"
+              placeholder="Nome da rua"
               value={formData.endereco}
               onChange={(e) => updateField('endereco', e.target.value)}
               className="h-11"
             />
           </div>
-          
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="agency-cidade" className="font-medium">Cidade</Label>
+              <Label htmlFor="agency-numero" className="font-medium">Número</Label>
               <Input
-                id="agency-cidade"
+                id="agency-numero"
                 type="text"
-                placeholder="Cidade"
-                value={formData.cidade}
-                onChange={(e) => updateField('cidade', e.target.value)}
+                placeholder="Nº"
+                value={formData.numero}
+                onChange={(e) => updateField('numero', e.target.value)}
                 className="h-11"
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="agency-estado" className="font-medium">Estado</Label>
+              <Label htmlFor="agency-complemento" className="font-medium">Complemento</Label>
               <Input
-                id="agency-estado"
+                id="agency-complemento"
                 type="text"
-                placeholder="UF"
-                value={formData.estado}
-                onChange={(e) => updateField('estado', e.target.value.toUpperCase().slice(0, 2))}
-                maxLength={2}
+                placeholder="Sala, Andar..."
+                value={formData.complemento}
+                onChange={(e) => updateField('complemento', e.target.value)}
                 className="h-11"
               />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="agency-bairro" className="font-medium">Bairro</Label>
+            <Input
+              id="agency-bairro"
+              type="text"
+              placeholder="Bairro"
+              value={formData.bairro}
+              onChange={(e) => updateField('bairro', e.target.value)}
+              className="h-11"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="agency-estado" className="font-medium">Estado (UF)</Label>
+              <Select
+                value={formData.estado}
+                onValueChange={(value) => {
+                  updateField('estado', value);
+                  updateField('cidade', ''); // Reset city when state changes
+                }}
+              >
+                <SelectTrigger className="h-11 bg-background">
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  {ESTADOS_BRASIL.map((estado) => (
+                    <SelectItem key={estado.uf} value={estado.uf}>
+                      {estado.uf} - {estado.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="agency-cidade" className="font-medium">Cidade</Label>
+              <Select
+                value={formData.cidade}
+                onValueChange={(value) => updateField('cidade', value)}
+                disabled={!formData.estado || loadingCidades}
+              >
+                <SelectTrigger className="h-11 bg-background">
+                  {loadingCidades ? (
+                    <span className="flex items-center gap-2 text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Carregando...
+                    </span>
+                  ) : (
+                    <SelectValue placeholder={formData.estado ? "Selecione" : "Selecione UF primeiro"} />
+                  )}
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-50 max-h-60">
+                  {cidades.map((cidade) => (
+                    <SelectItem key={cidade.id} value={cidade.nome}>
+                      {cidade.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>
