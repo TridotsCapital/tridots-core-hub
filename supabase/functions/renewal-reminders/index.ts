@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
+import { renewalReminderTemplate, sendEmail } from "../_shared/email-templates.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -17,6 +18,10 @@ interface Contract {
     inquilino_nome: string;
     inquilino_email: string | null;
     imovel_endereco: string;
+  };
+  agency: {
+    razao_social: string;
+    nome_fantasia: string | null;
   };
 }
 
@@ -39,6 +44,7 @@ const handler = async (req: Request): Promise<Response> => {
     const results = {
       processed: 0,
       reminders_sent: 0,
+      emails_sent: 0,
       errors: [] as string[],
     };
 
@@ -61,6 +67,10 @@ const handler = async (req: Request): Promise<Response> => {
             inquilino_nome,
             inquilino_email,
             imovel_endereco
+          ),
+          agency:agencies!contracts_agency_id_fkey (
+            razao_social,
+            nome_fantasia
           )
         `)
         .eq('status', 'ativo')
@@ -139,32 +149,31 @@ const handler = async (req: Request): Promise<Response> => {
         // Send email notification if Resend is configured and tenant has email
         if (resendApiKey && contract.analysis?.inquilino_email) {
           try {
-            const emailResponse = await fetch("https://api.resend.com/emails", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${resendApiKey}`,
-              },
-              body: JSON.stringify({
-                from: "Tridots <noreply@tridots.com.br>",
-                to: [contract.analysis.inquilino_email],
-                subject: `Seu contrato expira em ${days} dias`,
-                html: `
-                  <h2>Olá, ${contract.analysis.inquilino_nome}!</h2>
-                  <p>Gostaríamos de informar que seu contrato de locação expira em <strong>${days} dias</strong>.</p>
-                  <p><strong>Imóvel:</strong> ${contract.analysis.imovel_endereco}</p>
-                  <p><strong>Data de vencimento:</strong> ${new Date(contract.data_fim_contrato).toLocaleDateString('pt-BR')}</p>
-                  <p>Entre em contato com sua imobiliária para discutir a renovação do contrato.</p>
-                  <br>
-                  <p>Atenciosamente,<br>Equipe Tridots</p>
-                `,
-              }),
+            const agencyName = contract.agency?.nome_fantasia || contract.agency?.razao_social || 'sua imobiliária';
+            const contractEndDate = new Date(contract.data_fim_contrato).toLocaleDateString('pt-BR');
+            
+            // Usar o novo template
+            const emailTemplate = renewalReminderTemplate({
+              tenantName: contract.analysis.inquilino_nome,
+              propertyAddress: contract.analysis.imovel_endereco,
+              agencyName: agencyName,
+              contractEndDate: contractEndDate,
+              daysRemaining: days
             });
 
-            if (!emailResponse.ok) {
-              console.error(`Failed to send email for contract ${contract.id}`);
-            } else {
+            const emailResult = await sendEmail(
+              resendApiKey,
+              contract.analysis.inquilino_email,
+              emailTemplate.subject,
+              emailTemplate.html,
+              false
+            );
+
+            if (emailResult.success) {
+              results.emails_sent++;
               console.log(`Email sent to tenant for contract ${contract.id}`);
+            } else {
+              console.error(`Failed to send email for contract ${contract.id}:`, emailResult.error);
             }
           } catch (emailError) {
             console.error(`Email error for contract ${contract.id}:`, emailError);

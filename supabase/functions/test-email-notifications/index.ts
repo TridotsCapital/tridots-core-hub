@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
+  acceptanceDigitalTemplate,
+  renewalReminderTemplate,
   paymentConfirmationTemplate,
   contractActivatedTenantTemplate,
   contractActivatedAgencyTemplate,
@@ -33,33 +35,58 @@ serve(async (req) => {
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    const { scenario, test_email = 'testes@tridots.com.br', dry_run = false }: TestScenarioRequest = await req.json();
+    const { scenario, test_email = 'testes@tridotscapital.com', dry_run = false }: TestScenarioRequest = await req.json();
 
     let emailData: { subject: string; html: string };
     let recipientOriginal = 'exemplo@email.com';
     let templateType = '';
     let metadata: Record<string, unknown> = {};
 
+    // Data de expiração simulada (48h a partir de agora)
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 48);
+    const expiresAtFormatted = expiresAt.toLocaleString('pt-BR', { 
+      day: '2-digit', 
+      month: '2-digit', 
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
     switch (scenario) {
       case 'T1': {
-        // Link de Aceite - apenas simula, o fluxo real está em generate-acceptance-link
+        // Aceite Digital - Template completo
         templateType = 'acceptance_link';
-        emailData = {
-          subject: 'Aceite Digital - Tridots Capital',
-          html: '<p>Este cenário usa a edge function generate-acceptance-link existente.</p>'
+        emailData = acceptanceDigitalTemplate({
+          tenantName: 'João Silva (Teste)',
+          propertyAddress: 'Rua das Flores, 123 - Centro, São Paulo/SP',
+          agencyName: 'Imobiliária Exemplo Ltda',
+          acceptanceUrl: 'https://tridots-core-hub.lovable.app/aceite/abc123-token-teste',
+          expiresAt: expiresAtFormatted
+        });
+        recipientOriginal = 'inquilino.teste@email.com';
+        metadata = { 
+          note: 'Template completo de aceite digital',
+          expires_at: expiresAt.toISOString()
         };
-        metadata = { note: 'Testar via fluxo real de aprovação de análise' };
         break;
       }
       
       case 'T2': {
-        // Lembrete de Renovação - apenas simula, o fluxo real está em renewal-reminders
+        // Lembrete de Renovação - Template completo
         templateType = 'renewal_reminder';
-        emailData = {
-          subject: 'Lembrete de Renovação - Tridots Capital',
-          html: '<p>Este cenário usa a edge function renewal-reminders existente.</p>'
+        emailData = renewalReminderTemplate({
+          tenantName: 'Maria Santos (Teste)',
+          propertyAddress: 'Av. Brasil, 456 - Jardins, São Paulo/SP',
+          agencyName: 'Imobiliária Premium',
+          contractEndDate: '15/02/2026',
+          daysRemaining: 15
+        });
+        recipientOriginal = 'inquilino.renovacao@email.com';
+        metadata = { 
+          note: 'Template completo de lembrete de renovação',
+          days_remaining: 15
         };
-        metadata = { note: 'Testar via fluxo real de contratos próximos do vencimento' };
         break;
       }
       
@@ -157,7 +184,7 @@ serve(async (req) => {
       }
       
       case 'T7': {
-        // Nova Imobiliária Pendente (Tridots)
+        // Nova Imobiliária Pendente (Tridots Capital)
         templateType = 'new_agency_pending';
         emailData = newAgencyPendingTemplate({
           agencyName: 'Imobiliária Recém Cadastrada Ltda',
@@ -167,7 +194,7 @@ serve(async (req) => {
           city: 'São Paulo',
           state: 'SP'
         });
-        recipientOriginal = Deno.env.get('TRIDOTS_NOTIFICATIONS_EMAIL') || 'cadastros@tridots.com.br';
+        recipientOriginal = Deno.env.get('TRIDOTS_NOTIFICATIONS_EMAIL') || 'cadastros@tridotscapital.com';
         break;
       }
       

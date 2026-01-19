@@ -1,16 +1,34 @@
-// Templates de e-mail com branding Tridots
+// Templates de e-mail com branding Tridots Capital
 // Cores institucionais: azul #1a1a2e, accent #4A90A4
 
 const LOGO_URL = 'https://tridots-core-hub.lovable.app/logo-tridots-white.webp';
 const TRIDOTS_BLUE = '#1a1a2e';
 const TRIDOTS_ACCENT = '#4A90A4';
 
+// Imagens institucionais (Unsplash - uso livre)
+const IMAGES = {
+  keys: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600&h=300&fit=crop&crop=center', // Chaves de imóvel
+  family: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=600&h=300&fit=crop&crop=center', // Casa bonita
+  handshake: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=600&h=300&fit=crop&crop=center', // Profissional
+  celebration: 'https://images.unsplash.com/photo-1521791136064-7986c2920216?w=600&h=300&fit=crop&crop=center', // Aperto de mãos
+  office: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&h=300&fit=crop&crop=center', // Escritório
+};
+
 interface EmailTemplateData {
   recipientName?: string;
   [key: string]: unknown;
 }
 
-export function generateEmailWrapper(content: string, preheader?: string): string {
+export function generateEmailWrapper(content: string, preheader?: string, heroImage?: string): string {
+  const heroSection = heroImage ? `
+          <!-- Hero Image -->
+          <tr>
+            <td style="padding:0;">
+              <img src="${heroImage}" alt="Tridots Capital" style="width:100%;height:200px;object-fit:cover;display:block;" />
+            </td>
+          </tr>
+  ` : '';
+
   return `
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -28,9 +46,13 @@ export function generateEmailWrapper(content: string, preheader?: string): strin
           <!-- Header -->
           <tr>
             <td style="background-color:${TRIDOTS_BLUE};padding:30px 40px;text-align:center;">
-              <img src="${LOGO_URL}" alt="Tridots" style="height:40px;width:auto;" />
+              <img src="${LOGO_URL}" alt="Tridots Capital" style="height:40px;width:auto;max-width:200px;" />
+              <!--[if mso]>
+              <span style="font-family:Arial,sans-serif;font-size:24px;font-weight:bold;color:#ffffff;">TRIDOTS CAPITAL</span>
+              <![endif]-->
             </td>
           </tr>
+          ${heroSection}
           <!-- Content -->
           <tr>
             <td style="padding:40px;">
@@ -45,7 +67,7 @@ export function generateEmailWrapper(content: string, preheader?: string): strin
                   <td style="text-align:center;color:#6b7280;font-size:13px;line-height:1.6;">
                     <p style="margin:0 0 10px 0;">
                       <strong>Tridots Capital</strong><br>
-                      Sua locação protegida
+                      A garantia locatícia mais segura e completa do Brasil
                     </p>
                     <p style="margin:0;color:#9ca3af;font-size:12px;">
                       Este é um e-mail automático, não responda diretamente.<br>
@@ -63,6 +85,123 @@ export function generateEmailWrapper(content: string, preheader?: string): strin
 </body>
 </html>
   `.trim();
+}
+
+// Template: Aceite Digital (Inquilino)
+export function acceptanceDigitalTemplate(data: {
+  tenantName: string;
+  propertyAddress: string;
+  agencyName: string;
+  acceptanceUrl: string;
+  expiresAt: string;
+}): { subject: string; html: string } {
+  const content = `
+    <h1 style="margin:0 0 20px 0;font-size:24px;color:${TRIDOTS_BLUE};font-weight:600;">
+      Seu aceite digital está disponível! 📝
+    </h1>
+    <p style="margin:0 0 20px 0;font-size:16px;color:#374151;line-height:1.6;">
+      Olá, <strong>${data.tenantName}</strong>!
+    </p>
+    <p style="margin:0 0 20px 0;font-size:16px;color:#374151;line-height:1.6;">
+      Sua análise de garantia locatícia foi aprovada pela <strong>${data.agencyName}</strong>! 
+      Agora você precisa concluir o processo de aceite digital para ativar sua garantia.
+    </p>
+    
+    <div style="background-color:#eff6ff;border:1px solid #93c5fd;border-radius:8px;padding:20px;margin:20px 0;">
+      <h3 style="margin:0 0 15px 0;font-size:16px;color:#1e40af;">Dados da Garantia</h3>
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+        <tr>
+          <td style="padding:8px 0;color:#4b5563;font-size:14px;">Imóvel:</td>
+          <td style="padding:8px 0;color:#111827;font-size:14px;text-align:right;font-weight:500;">${data.propertyAddress}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;color:#4b5563;font-size:14px;">Imobiliária:</td>
+          <td style="padding:8px 0;color:#111827;font-size:14px;text-align:right;font-weight:500;">${data.agencyName}</td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="text-align:center;margin:30px 0;">
+      <a href="${data.acceptanceUrl}" style="display:inline-block;background-color:${TRIDOTS_ACCENT};color:#ffffff;font-size:16px;font-weight:600;padding:14px 32px;border-radius:8px;text-decoration:none;">
+        Acessar Aceite Digital
+      </a>
+    </div>
+
+    <div style="background-color:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:15px;margin:20px 0;">
+      <p style="margin:0;font-size:14px;color:#92400e;">
+        ⏰ <strong>Atenção:</strong> Este link é válido até <strong>${data.expiresAt}</strong>. 
+        Após esse prazo, será necessário solicitar um novo link.
+      </p>
+    </div>
+    
+    <p style="margin:20px 0 0 0;font-size:14px;color:#6b7280;line-height:1.6;">
+      Ao concluir o aceite digital, você confirma a contratação da garantia locatícia e 
+      autoriza a cobrança conforme os termos apresentados.
+    </p>
+  `;
+
+  return {
+    subject: `${data.tenantName}, seu aceite digital está disponível - Tridots Capital`,
+    html: generateEmailWrapper(content, 'Complete o aceite digital para ativar sua garantia locatícia', IMAGES.keys)
+  };
+}
+
+// Template: Lembrete de Renovação (Inquilino)
+export function renewalReminderTemplate(data: {
+  tenantName: string;
+  propertyAddress: string;
+  agencyName: string;
+  contractEndDate: string;
+  daysRemaining: number;
+}): { subject: string; html: string } {
+  const urgencyColor = data.daysRemaining <= 5 ? '#dc2626' : data.daysRemaining <= 15 ? '#f59e0b' : '#2563eb';
+  
+  const content = `
+    <h1 style="margin:0 0 20px 0;font-size:24px;color:${TRIDOTS_BLUE};font-weight:600;">
+      Seu contrato expira em breve! ⏰
+    </h1>
+    <p style="margin:0 0 20px 0;font-size:16px;color:#374151;line-height:1.6;">
+      Olá, <strong>${data.tenantName}</strong>!
+    </p>
+    <p style="margin:0 0 20px 0;font-size:16px;color:#374151;line-height:1.6;">
+      Gostaríamos de informar que seu contrato de garantia locatícia está próximo do vencimento. 
+      Para continuar protegido, entre em contato com sua imobiliária para discutir a renovação.
+    </p>
+    
+    <div style="background-color:#fef2f2;border:2px solid ${urgencyColor};border-radius:8px;padding:20px;margin:20px 0;text-align:center;">
+      <p style="margin:0 0 10px 0;font-size:14px;color:#6b7280;">Tempo restante</p>
+      <p style="margin:0;font-size:36px;font-weight:700;color:${urgencyColor};">${data.daysRemaining} dias</p>
+      <p style="margin:10px 0 0 0;font-size:14px;color:#6b7280;">até ${data.contractEndDate}</p>
+    </div>
+
+    <div style="background-color:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:20px;margin:20px 0;">
+      <h3 style="margin:0 0 15px 0;font-size:16px;color:#374151;">Detalhes do Contrato</h3>
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+        <tr>
+          <td style="padding:8px 0;color:#4b5563;font-size:14px;">Imóvel:</td>
+          <td style="padding:8px 0;color:#111827;font-size:14px;text-align:right;font-weight:500;">${data.propertyAddress}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;color:#4b5563;font-size:14px;">Imobiliária:</td>
+          <td style="padding:8px 0;color:#111827;font-size:14px;text-align:right;font-weight:500;">${data.agencyName}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;color:#4b5563;font-size:14px;">Vencimento:</td>
+          <td style="padding:8px 0;color:#111827;font-size:14px;text-align:right;font-weight:500;">${data.contractEndDate}</td>
+        </tr>
+      </table>
+    </div>
+    
+    <p style="margin:20px 0 0 0;font-size:14px;color:#6b7280;line-height:1.6;">
+      Entre em contato com a <strong>${data.agencyName}</strong> para renovar sua garantia 
+      e continuar protegido pela Tridots Capital.
+    </p>
+  `;
+
+  return {
+    subject: `${data.tenantName}, seu contrato expira em ${data.daysRemaining} dias - Tridots Capital`,
+    html: generateEmailWrapper(content, `Seu contrato de garantia expira em ${data.daysRemaining} dias`, IMAGES.family)
+  };
 }
 
 // Template: Confirmação de Pagamento (Inquilino)
@@ -107,8 +246,8 @@ export function paymentConfirmationTemplate(data: {
   `;
 
   return {
-    subject: 'Pagamento Confirmado - Tridots Capital',
-    html: generateEmailWrapper(content, 'Seu pagamento foi validado com sucesso!')
+    subject: `${data.tenantName}, seu pagamento foi confirmado - Tridots Capital`,
+    html: generateEmailWrapper(content, 'Seu pagamento foi validado com sucesso!', IMAGES.celebration)
   };
 }
 
@@ -161,8 +300,8 @@ export function contractActivatedTenantTemplate(data: {
   `;
 
   return {
-    subject: 'Contrato Ativado - Tridots Capital',
-    html: generateEmailWrapper(content, 'Seu contrato de garantia está ativo!')
+    subject: `${data.tenantName}, seu contrato está ativo - Tridots Capital`,
+    html: generateEmailWrapper(content, 'Seu contrato de garantia está ativo!', IMAGES.family)
   };
 }
 
@@ -205,7 +344,7 @@ export function contractActivatedAgencyTemplate(data: {
   `;
 
   return {
-    subject: `Contrato Ativado: ${data.tenantName}`,
+    subject: `${data.tenantName} - Contrato Ativado - Tridots Capital`,
     html: generateEmailWrapper(content, `Contrato de ${data.tenantName} ativado com sucesso`)
   };
 }
@@ -248,12 +387,12 @@ export function agencyActivationTemplate(data: {
   `;
 
   return {
-    subject: 'Cadastro Aprovado - Tridots Capital',
-    html: generateEmailWrapper(content, 'Seu cadastro foi aprovado! Acesse o portal.')
+    subject: `${data.responsibleName}, seu cadastro foi aprovado - Tridots Capital`,
+    html: generateEmailWrapper(content, 'Seu cadastro foi aprovado! Acesse o portal.', IMAGES.handshake)
   };
 }
 
-// Template: Nova Imobiliária Pendente (Tridots)
+// Template: Nova Imobiliária Pendente (Tridots Capital)
 export function newAgencyPendingTemplate(data: {
   agencyName: string;
   cnpj: string;
@@ -304,8 +443,8 @@ export function newAgencyPendingTemplate(data: {
   `;
 
   return {
-    subject: `Nova Imobiliária: ${data.agencyName}`,
-    html: generateEmailWrapper(content, `Nova imobiliária cadastrada: ${data.agencyName}`)
+    subject: `Nova Imobiliária: ${data.agencyName} - Tridots Capital`,
+    html: generateEmailWrapper(content, `Nova imobiliária cadastrada: ${data.agencyName}`, IMAGES.office)
   };
 }
 
@@ -369,7 +508,7 @@ export function weeklyCommissionReportTemplate(data: {
   `;
 
   return {
-    subject: `Comissões Pagas: ${data.weekStart} a ${data.weekEnd}`,
+    subject: `${data.agencyName} - Comissões Pagas: ${data.weekStart} a ${data.weekEnd} - Tridots Capital`,
     html: generateEmailWrapper(content, `Relatório de comissões: ${data.commissions.length} pagamento(s) no valor de ${data.totalValue}`)
   };
 }
