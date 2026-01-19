@@ -16,6 +16,7 @@ import { isCorrectPortalForRole, getPortalUrlForRole } from '@/lib/subdomain';
 export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(false);
   const { signIn, signUp, user, role } = useAuth();
   const { isInternalPortal, isAgencyPortal, isProduction } = useSubdomain();
   const navigate = useNavigate();
@@ -24,9 +25,9 @@ export default function Auth() {
   // Team signup is only available on internal portal or via query param in dev
   const isTeamSignup = searchParams.get('team') === 'tridots' && (isInternalPortal || !isProduction);
 
-  // Redirect if already logged in
+  // Redirect if already logged in (but not during registration)
   useEffect(() => {
-    if (user && role !== null) {
+    if (user && role !== null && !isRegistering) {
       // In production, check if user is on correct portal
       if (isProduction && !isCorrectPortalForRole(isInternalPortal ? 'internal' : 'agency', role)) {
         const correctUrl = getPortalUrlForRole(role);
@@ -38,7 +39,7 @@ export default function Auth() {
       }
       navigate(getDefaultRouteForRole(role));
     }
-  }, [user, role, navigate, isProduction, isInternalPortal]);
+  }, [user, role, navigate, isProduction, isInternalPortal, isRegistering]);
 
   const handleLogin = async (email: string, password: string) => {
     setLoading(true);
@@ -92,6 +93,7 @@ export default function Auth() {
 
   const handleAgencySignup = async (formData: AgencySignupData) => {
     setLoading(true);
+    setIsRegistering(true);
     
     // First create the auth user
     const { error, data: authData } = await signUp(formData.email, formData.password, formData.responsavel_nome);
@@ -103,6 +105,7 @@ export default function Auth() {
         toast.error('Erro ao criar conta: ' + error.message);
       }
       setLoading(false);
+      setIsRegistering(false);
       return;
     }
 
@@ -134,12 +137,13 @@ export default function Auth() {
         toast.error('Conta criada, mas houve um erro ao cadastrar a imobiliária. Entre em contato com o suporte.');
       } else {
         toast.success('Bem-vindo à Tridots! Seu cadastro foi realizado com sucesso.');
-        // Auto-login: signUp already authenticates the user, navigate to dashboard
-        navigate('/agency/dashboard');
+        // Navigate to agency dashboard (correct route is /agency, not /agency/dashboard)
+        navigate('/agency');
       }
     }
     
     setLoading(false);
+    setIsRegistering(false);
   };
 
   // Determine which signup options to show
