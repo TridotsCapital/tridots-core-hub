@@ -138,8 +138,8 @@ const handler = async (req: Request): Promise<Response> => {
       await supabase.from('notifications').insert(notifications);
     }
 
-    // Build acceptance URL
-    const baseUrl = Deno.env.get("SITE_URL") || "https://tridots-core-hub.lovable.app";
+    // Build acceptance URL - usar subdomínio oficial de aceite
+    const baseUrl = Deno.env.get("ACCEPTANCE_BASE_URL") || "https://aceite.tridotscapital.com";
     const acceptanceUrl = `${baseUrl}/aceite/${token}`;
 
     console.log("Generated acceptance link:", {

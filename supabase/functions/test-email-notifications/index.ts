@@ -61,7 +61,7 @@ serve(async (req) => {
           tenantName: 'João Silva (Teste)',
           propertyAddress: 'Rua das Flores, 123 - Centro, São Paulo/SP',
           agencyName: 'Imobiliária Exemplo Ltda',
-          acceptanceUrl: 'https://tridots-core-hub.lovable.app/aceite/abc123-token-teste',
+          acceptanceUrl: 'https://aceite.tridotscapital.com/aceite/abc123-token-teste',
           expiresAt: expiresAtFormatted
         });
         recipientOriginal = 'inquilino.teste@email.com';

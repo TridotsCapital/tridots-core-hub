@@ -1,17 +1,18 @@
 // Templates de e-mail com branding Tridots Capital
 // Cores institucionais: azul #1a1a2e, accent #4A90A4
 
-const LOGO_URL = 'https://tridots-core-hub.lovable.app/logo-tridots-white.webp';
+// Logo em PNG para compatibilidade máxima com clientes de e-mail (Gmail, Outlook, Apple Mail)
+const LOGO_URL = 'https://tridots-core-hub.lovable.app/logo-tridots-white.png';
 const TRIDOTS_BLUE = '#1a1a2e';
 const TRIDOTS_ACCENT = '#4A90A4';
 
-// Imagens institucionais (Unsplash - uso livre, proporção 16:9 para não cortar)
+// Imagens institucionais (Unsplash - uso livre, proporção 3:1 para banner de e-mail)
 const IMAGES = {
-  keys: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&h=400&fit=crop&crop=top', // Chaves de imóvel
-  family: 'https://images.unsplash.com/photo-1581579438747-104c53d7fbc4?w=800&h=400&fit=crop&crop=top', // Família feliz em casa
-  handshake: 'https://images.unsplash.com/photo-1556745757-8d76bdb6984b?w=800&h=400&fit=crop&crop=top', // Profissionais apertando mãos
-  celebration: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=800&h=400&fit=crop&crop=top', // Pessoa satisfeita
-  office: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=800&h=400&fit=crop&crop=top', // Time de negócios
+  keys: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600&h=200&fit=crop&crop=center', // Chaves de imóvel
+  family: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&h=200&fit=crop&crop=center', // Casa bonita
+  handshake: 'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=600&h=200&fit=crop&crop=center', // Profissionais
+  celebration: 'https://images.unsplash.com/photo-1560472355-536de3962603?w=600&h=200&fit=crop&crop=center', // Pessoa satisfeita com chaves
+  office: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&h=200&fit=crop&crop=center', // Escritório
 };
 
 interface EmailTemplateData {
@@ -24,7 +25,7 @@ export function generateEmailWrapper(content: string, preheader?: string, heroIm
           <!-- Hero Image -->
           <tr>
             <td style="padding:0;">
-              <img src="${heroImage}" alt="Tridots Capital" style="width:100%;height:auto;max-height:220px;object-fit:cover;object-position:center top;display:block;" />
+              <img src="${heroImage}" alt="Tridots Capital" style="width:100%;max-width:600px;height:180px;object-fit:cover;object-position:center;display:block;" />
             </td>
           </tr>
   ` : '';
