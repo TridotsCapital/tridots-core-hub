@@ -40,6 +40,25 @@ Deno.serve(async (req) => {
     
     console.log("Registering agency for user:", data.user_id);
 
+    // Validate required address fields
+    if (!data.cep || !data.endereco || !data.numero || !data.bairro || !data.cidade || !data.estado) {
+      console.error("Missing required address fields:", { 
+        cep: !!data.cep, 
+        endereco: !!data.endereco, 
+        numero: !!data.numero, 
+        bairro: !!data.bairro, 
+        cidade: !!data.cidade, 
+        estado: !!data.estado 
+      });
+      return new Response(
+        JSON.stringify({ 
+          error: "Dados de endereço incompletos",
+          details: "CEP, endereço, número, bairro, cidade e estado são obrigatórios"
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Build full address from components
     const enderecoCompleto = [
       data.endereco,
