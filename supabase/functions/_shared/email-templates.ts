@@ -17,7 +17,7 @@ export function generateEmailWrapper(content: string, preheader?: string): strin
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tridots Garantias</title>
+  <title>Tridots Capital</title>
   ${preheader ? `<span style="display:none !important;visibility:hidden;mso-hide:all;font-size:1px;color:#ffffff;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">${preheader}</span>` : ''}
 </head>
 <body style="margin:0;padding:0;background-color:#f5f5f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">
@@ -44,7 +44,7 @@ export function generateEmailWrapper(content: string, preheader?: string): strin
                 <tr>
                   <td style="text-align:center;color:#6b7280;font-size:13px;line-height:1.6;">
                     <p style="margin:0 0 10px 0;">
-                      <strong>Tridots Garantias</strong><br>
+                      <strong>Tridots Capital</strong><br>
                       Sua locação protegida
                     </p>
                     <p style="margin:0;color:#9ca3af;font-size:12px;">
@@ -107,7 +107,7 @@ export function paymentConfirmationTemplate(data: {
   `;
 
   return {
-    subject: 'Pagamento Confirmado - Tridots Garantias',
+    subject: 'Pagamento Confirmado - Tridots Capital',
     html: generateEmailWrapper(content, 'Seu pagamento foi validado com sucesso!')
   };
 }
@@ -122,13 +122,13 @@ export function contractActivatedTenantTemplate(data: {
 }): { subject: string; html: string } {
   const content = `
     <h1 style="margin:0 0 20px 0;font-size:24px;color:${TRIDOTS_BLUE};font-weight:600;">
-      Bem-vindo à Tridots! 🏠
+      Bem-vindo à Tridots Capital! 🏠
     </h1>
     <p style="margin:0 0 20px 0;font-size:16px;color:#374151;line-height:1.6;">
       Olá, <strong>${data.tenantName}</strong>!
     </p>
     <p style="margin:0 0 20px 0;font-size:16px;color:#374151;line-height:1.6;">
-      Seu contrato de garantia locatícia foi ativado com sucesso! Você está protegido pela Tridots Garantias.
+      Seu contrato de garantia locatícia foi ativado com sucesso! Você está protegido pela Tridots Capital.
     </p>
     
     <div style="background-color:#eff6ff;border:1px solid #93c5fd;border-radius:8px;padding:20px;margin:20px 0;">
@@ -161,7 +161,7 @@ export function contractActivatedTenantTemplate(data: {
   `;
 
   return {
-    subject: 'Contrato Ativado - Tridots Garantias',
+    subject: 'Contrato Ativado - Tridots Capital',
     html: generateEmailWrapper(content, 'Seu contrato de garantia está ativo!')
   };
 }
@@ -178,7 +178,7 @@ export function contractActivatedAgencyTemplate(data: {
       Contrato Ativado! ✓
     </h1>
     <p style="margin:0 0 20px 0;font-size:16px;color:#374151;line-height:1.6;">
-      O contrato abaixo foi ativado com sucesso e está sob cobertura da Tridots Garantias.
+      O contrato abaixo foi ativado com sucesso e está sob cobertura da Tridots Capital.
     </p>
     
     <div style="background-color:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:20px;margin:20px 0;">
@@ -248,7 +248,7 @@ export function agencyActivationTemplate(data: {
   `;
 
   return {
-    subject: 'Cadastro Aprovado - Tridots Garantias',
+    subject: 'Cadastro Aprovado - Tridots Capital',
     html: generateEmailWrapper(content, 'Seu cadastro foi aprovado! Acesse o portal.')
   };
 }
@@ -393,7 +393,7 @@ export async function sendEmail(
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        from: 'Tridots Garantias <naoresponder@tridotscapital.com>',
+        from: 'Tridots Capital <naoresponder@tridotscapital.com>',
         to: recipientEmail,
         subject: testMode ? `[TESTE] ${subject}` : subject,
         html
