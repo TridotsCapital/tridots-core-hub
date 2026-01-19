@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
         estado: data.estado || null,
         cep: data.cep || null,
         active: false,
-        percentual_comissao_recorrente: 0,
+        percentual_comissao_setup: 0,
       })
       .select()
       .single();
