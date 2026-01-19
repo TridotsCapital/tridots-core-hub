@@ -170,6 +170,7 @@ export function AgencyActivationDocuments({ agencyId, creciNumero }: AgencyActiv
                 {/* Action Buttons */}
                 <div className="flex items-center gap-2 mt-3 ml-7">
                   <Button
+                    type="button"
                     variant="outline"
                     size="sm"
                     onClick={() => handleView(doc.file_path)}
@@ -188,6 +189,7 @@ export function AgencyActivationDocuments({ agencyId, creciNumero }: AgencyActiv
                   {doc.status === 'enviado' && (
                     <>
                       <Button
+                        type="button"
                         variant="default"
                         size="sm"
                         className="bg-green-600 hover:bg-green-700"
@@ -201,6 +203,7 @@ export function AgencyActivationDocuments({ agencyId, creciNumero }: AgencyActiv
                         Aprovar
                       </Button>
                       <Button
+                        type="button"
                         variant="destructive"
                         size="sm"
                         onClick={() => setReviewModal({ 
@@ -272,10 +275,11 @@ export function AgencyActivationDocuments({ agencyId, creciNumero }: AgencyActiv
           )}
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setReviewModal(null)}>
+            <Button type="button" variant="outline" onClick={() => setReviewModal(null)}>
               Cancelar
             </Button>
             <Button
+              type="button"
               variant={reviewModal?.action === 'approve' ? 'default' : 'destructive'}
               onClick={handleReview}
               disabled={reviewDocument.isPending || (reviewModal?.action === 'reject' && !feedback.trim())}
