@@ -119,10 +119,13 @@ export default function Auth() {
           responsavel_nome: formData.responsavel_nome,
           responsavel_email: formData.responsavel_email || null,
           responsavel_telefone: formData.responsavel_telefone || null,
+          cep: formData.cep?.replace(/\D/g, '') || null,
           endereco: formData.endereco || null,
+          numero: formData.numero || null,
+          complemento: formData.complemento || null,
+          bairro: formData.bairro || null,
           cidade: formData.cidade || null,
           estado: formData.estado || null,
-          cep: formData.cep?.replace(/\D/g, '') || null,
         }
       });
 
