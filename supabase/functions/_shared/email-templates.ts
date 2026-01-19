@@ -2,7 +2,8 @@
 // Cores institucionais: azul #1a1a2e, accent #4A90A4
 
 // Logo em PNG para compatibilidade máxima com clientes de e-mail (Gmail, Outlook, Apple Mail)
-const LOGO_URL = 'https://tridots-core-hub.lovable.app/logo-tridots-white.png';
+// Cache buster para evitar clientes servindo versão antiga
+const LOGO_URL = 'https://tridots-core-hub.lovable.app/logo-tridots-white.png?v=2';
 const TRIDOTS_BLUE = '#1a1a2e';
 const TRIDOTS_ACCENT = '#4A90A4';
 
