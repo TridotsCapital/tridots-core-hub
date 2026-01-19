@@ -567,7 +567,7 @@ export async function sendEmail(
         attachments: allAttachments.map(att => ({
           filename: att.filename,
           content: att.content,
-          content_id: att.contentId
+          contentId: att.contentId
         }))
       })
     });
