@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User, Mail, Phone, Lock, Loader2, Briefcase, Building2, MapPin, FileText, Camera } from "lucide-react";
+import { User, Mail, Phone, Lock, Loader2, Briefcase, Building2, MapPin, FileText, Camera, FolderOpen } from "lucide-react";
 import { AgencyLayout } from "@/components/layout/AgencyLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,12 +17,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { UserAvatarUpload } from "@/components/users/UserAvatarUpload";
 import { AgencyLogoUpload } from "@/components/agency/AgencyLogoUpload";
+import { AgencyDocumentsTab } from "@/components/agency/AgencyDocumentsTab";
 import { 
   useUserProfile, 
   useUpdateUserProfile, 
   type AgencyPosition 
 } from "@/hooks/useUserProfile";
 import { useAgencyProfile, useUpdateAgencyProfile } from "@/hooks/useAgencyProfile";
+import { useAgencyOnboardingStatus } from "@/hooks/useAgencyDocuments";
 
 const positionLabels: Record<AgencyPosition, string> = {
   dono: "Dono da Imobiliária",
@@ -491,6 +493,12 @@ function AgencyProfileTab() {
 }
 
 function AgencyProfileContent() {
+  const { data: agency } = useAgencyProfile();
+  const onboardingStatus = useAgencyOnboardingStatus(agency?.id);
+  
+  // Show documents tab first if agency is not active
+  const showDocsPriority = agency && !agency.active;
+  
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
       <Card>
@@ -504,15 +512,26 @@ function AgencyProfileContent() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="profile" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+          <Tabs defaultValue={showDocsPriority ? "documents" : "profile"} className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="profile" className="flex items-center gap-2">
                 <User className="h-4 w-4" />
-                Meu Perfil
+                <span className="hidden sm:inline">Meu Perfil</span>
+                <span className="sm:hidden">Perfil</span>
               </TabsTrigger>
               <TabsTrigger value="agency" className="flex items-center gap-2">
                 <Building2 className="h-4 w-4" />
-                Imobiliária
+                <span className="hidden sm:inline">Imobiliária</span>
+                <span className="sm:hidden">Dados</span>
+              </TabsTrigger>
+              <TabsTrigger value="documents" className="flex items-center gap-2 relative">
+                <FolderOpen className="h-4 w-4" />
+                <span className="hidden sm:inline">Documentos</span>
+                <span className="sm:hidden">Docs</span>
+                {/* Badge for pending docs */}
+                {showDocsPriority && (onboardingStatus.pendingDocuments.length > 0 || onboardingStatus.rejectedDocuments.length > 0) && (
+                  <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-destructive animate-pulse" />
+                )}
               </TabsTrigger>
             </TabsList>
             
@@ -522,6 +541,10 @@ function AgencyProfileContent() {
             
             <TabsContent value="agency" className="mt-6">
               <AgencyProfileTab />
+            </TabsContent>
+            
+            <TabsContent value="documents" className="mt-6">
+              <AgencyDocumentsTab />
             </TabsContent>
           </Tabs>
         </CardContent>

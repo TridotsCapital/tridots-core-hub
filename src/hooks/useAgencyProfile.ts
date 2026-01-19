@@ -18,6 +18,10 @@ export interface AgencyProfileData {
   responsavel_email: string | null;
   responsavel_telefone: string | null;
   logo_url: string | null;
+  creci_numero: string | null;
+  active: boolean;
+  onboarding_completed: boolean | null;
+  terms_accepted_at: string | null;
 }
 
 export interface UpdateAgencyProfileData {
@@ -68,7 +72,11 @@ export function useAgencyProfile() {
           responsavel_nome,
           responsavel_email,
           responsavel_telefone,
-          logo_url
+          logo_url,
+          creci_numero,
+          active,
+          onboarding_completed,
+          terms_accepted_at
         `)
         .eq("id", agencyUser.agency_id)
         .single();

@@ -21,6 +21,7 @@ export type Database = {
           cidade: string | null
           cnpj: string
           created_at: string
+          creci_numero: string | null
           desconto_pix_percentual: number | null
           email: string
           endereco: string | null
@@ -29,12 +30,14 @@ export type Database = {
           internal_observations: string | null
           logo_url: string | null
           nome_fantasia: string | null
+          onboarding_completed: boolean | null
           percentual_comissao_setup: number
           razao_social: string
           responsavel_email: string | null
           responsavel_nome: string
           responsavel_telefone: string | null
           telefone: string | null
+          terms_accepted_at: string | null
           updated_at: string
         }
         Insert: {
@@ -43,6 +46,7 @@ export type Database = {
           cidade?: string | null
           cnpj: string
           created_at?: string
+          creci_numero?: string | null
           desconto_pix_percentual?: number | null
           email: string
           endereco?: string | null
@@ -51,12 +55,14 @@ export type Database = {
           internal_observations?: string | null
           logo_url?: string | null
           nome_fantasia?: string | null
+          onboarding_completed?: boolean | null
           percentual_comissao_setup?: number
           razao_social: string
           responsavel_email?: string | null
           responsavel_nome: string
           responsavel_telefone?: string | null
           telefone?: string | null
+          terms_accepted_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -65,6 +71,7 @@ export type Database = {
           cidade?: string | null
           cnpj?: string
           created_at?: string
+          creci_numero?: string | null
           desconto_pix_percentual?: number | null
           email?: string
           endereco?: string | null
@@ -73,15 +80,83 @@ export type Database = {
           internal_observations?: string | null
           logo_url?: string | null
           nome_fantasia?: string | null
+          onboarding_completed?: boolean | null
           percentual_comissao_setup?: number
           razao_social?: string
           responsavel_email?: string | null
           responsavel_nome?: string
           responsavel_telefone?: string | null
           telefone?: string | null
+          terms_accepted_at?: string | null
           updated_at?: string
         }
         Relationships: []
+      }
+      agency_documents: {
+        Row: {
+          agency_id: string
+          created_at: string
+          document_type: Database["public"]["Enums"]["agency_document_type"]
+          feedback: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["agency_document_status"]
+          updated_at: string
+          uploaded_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          agency_id: string
+          created_at?: string
+          document_type: Database["public"]["Enums"]["agency_document_type"]
+          feedback?: string | null
+          file_name: string
+          file_path: string
+          file_size?: number
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["agency_document_status"]
+          updated_at?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          agency_id?: string
+          created_at?: string
+          document_type?: Database["public"]["Enums"]["agency_document_type"]
+          feedback?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["agency_document_status"]
+          updated_at?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agency_documents_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agency_documents_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       agency_user_positions: {
         Row: {
@@ -2043,6 +2118,13 @@ export type Database = {
       }
     }
     Enums: {
+      agency_document_status: "pendente" | "enviado" | "aprovado" | "rejeitado"
+      agency_document_type:
+        | "cartao_cnpj"
+        | "certidao_creci"
+        | "documento_socio"
+        | "contrato_social"
+        | "termo_aceite_assinado"
       agency_position: "dono" | "gerente" | "auxiliar"
       analysis_status:
         | "pendente"
@@ -2244,6 +2326,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      agency_document_status: ["pendente", "enviado", "aprovado", "rejeitado"],
+      agency_document_type: [
+        "cartao_cnpj",
+        "certidao_creci",
+        "documento_socio",
+        "contrato_social",
+        "termo_aceite_assinado",
+      ],
       agency_position: ["dono", "gerente", "auxiliar"],
       analysis_status: [
         "pendente",
