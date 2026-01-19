@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
+import { acceptanceDigitalTemplate, sendEmail } from "../_shared/email-templates.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -20,6 +21,7 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const { analysisId, setupPaymentLink, guaranteePaymentLink }: GenerateLinkRequest = await req.json();
@@ -137,7 +139,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Build acceptance URL
-    const baseUrl = Deno.env.get("SITE_URL") || "https://hsyjtujcedwafcviourl.lovable.app";
+    const baseUrl = Deno.env.get("SITE_URL") || "https://tridots-core-hub.lovable.app";
     const acceptanceUrl = `${baseUrl}/aceite/${token}`;
 
     console.log("Generated acceptance link:", {
@@ -147,12 +149,67 @@ const handler = async (req: Request): Promise<Response> => {
       url: acceptanceUrl,
     });
 
+    // Send email to tenant if email is available and Resend is configured
+    let emailSent = false;
+    if (resendApiKey && analysis.inquilino_email) {
+      try {
+        const agencyName = analysis.agency?.nome_fantasia || analysis.agency?.razao_social || 'sua imobiliária';
+        const propertyAddress = `${analysis.imovel_endereco}${analysis.imovel_numero ? `, ${analysis.imovel_numero}` : ''} - ${analysis.imovel_bairro || ''}, ${analysis.imovel_cidade}/${analysis.imovel_estado}`;
+        
+        const expiresAtFormatted = expiresAt.toLocaleString('pt-BR', { 
+          day: '2-digit', 
+          month: '2-digit', 
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+
+        const emailTemplate = acceptanceDigitalTemplate({
+          tenantName: analysis.inquilino_nome,
+          propertyAddress: propertyAddress,
+          agencyName: agencyName,
+          acceptanceUrl: acceptanceUrl,
+          expiresAt: expiresAtFormatted
+        });
+
+        const emailResult = await sendEmail(
+          resendApiKey,
+          analysis.inquilino_email,
+          emailTemplate.subject,
+          emailTemplate.html,
+          false
+        );
+
+        emailSent = emailResult.success;
+        
+        if (emailResult.success) {
+          console.log(`Acceptance email sent to ${analysis.inquilino_email}`);
+          
+          // Log email sent event
+          await supabase.rpc("log_analysis_timeline_event", {
+            _analysis_id: analysisId,
+            _event_type: "acceptance_email_sent",
+            _description: `E-mail de aceite enviado para ${analysis.inquilino_email}`,
+            _metadata: { 
+              email: analysis.inquilino_email,
+              message_id: emailResult.messageId
+            },
+          });
+        } else {
+          console.error(`Failed to send acceptance email:`, emailResult.error);
+        }
+      } catch (emailError) {
+        console.error("Error sending acceptance email:", emailError);
+      }
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
         token,
         expiresAt: expiresAt.toISOString(),
         url: acceptanceUrl,
+        emailSent,
       }),
       {
         status: 200,
