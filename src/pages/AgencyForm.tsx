@@ -466,7 +466,7 @@ export default function AgencyForm() {
 
         {/* Activation Documents - Only when editing */}
         {isEditing && id && (
-          <AgencyActivationDocuments agencyId={id} />
+          <AgencyActivationDocuments agencyId={id} creciNumero={agency?.creci_numero} />
         )}
 
         {/* Status & Submit */}

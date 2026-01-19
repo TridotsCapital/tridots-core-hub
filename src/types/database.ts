@@ -46,6 +46,7 @@ export interface Agency {
   cidade: string | null;
   estado: string | null;
   cep: string | null;
+  creci_numero: string | null;
   responsavel_nome: string;
   responsavel_email: string | null;
   responsavel_telefone: string | null;
