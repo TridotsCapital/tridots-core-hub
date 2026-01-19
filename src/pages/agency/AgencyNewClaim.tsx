@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ArrowLeft, Loader2, Save, Send, Info, User, MapPin, DollarSign, AlertTriangle, Shield } from "lucide-react";
+import { ArrowLeft, Loader2, Save, Send, Info, User, MapPin, DollarSign, AlertTriangle, Shield, Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ClaimDebtTable } from "@/components/agency/claims/ClaimDebtTable";
 import { ClaimFileUploader } from "@/components/agency/claims/ClaimFileUploader";
@@ -72,6 +72,7 @@ export default function AgencyNewClaim() {
   const { toast } = useToast();
   
   const [agencyId, setAgencyId] = useState<string | null>(null);
+  const [isAgencyActive, setIsAgencyActive] = useState<boolean | null>(null);
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -116,6 +117,17 @@ export default function AgencyNewClaim() {
 
         if (agencyError) throw agencyError;
         setAgencyId(agencyUser.agency_id);
+
+        // Check if agency is active
+        const { data: agencyData, error: agencyStatusError } = await supabase
+          .from('agencies')
+          .select('active')
+          .eq('id', agencyUser.agency_id)
+          .single();
+
+        if (!agencyStatusError && agencyData) {
+          setIsAgencyActive(agencyData.active);
+        }
 
         const { data: contractsData, error: contractsError } = await supabase
           .from('contracts')
@@ -288,6 +300,32 @@ export default function AgencyNewClaim() {
         <div className="flex items-center justify-center h-[400px]">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
+      </AgencyLayout>
+    );
+  }
+
+  // Show locked screen for inactive agencies
+  if (isAgencyActive === false) {
+    return (
+      <AgencyLayout title="Solicitar Garantia">
+        <Card className="max-w-2xl mx-auto mt-8">
+          <CardContent className="pt-6">
+            <div className="flex flex-col items-center text-center gap-4 py-8">
+              <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center">
+                <Lock className="h-8 w-8 text-amber-600" />
+              </div>
+              <h3 className="text-xl font-semibold">Funcionalidade Bloqueada</h3>
+              <p className="text-muted-foreground max-w-md">
+                A solicitação de garantias estará disponível após a aprovação do seu cadastro 
+                pela equipe Tridots. Você será notificado quando seu perfil for ativado.
+              </p>
+              <Button variant="outline" onClick={() => navigate('/agency/claims')}>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Voltar para Garantias
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </AgencyLayout>
     );
   }

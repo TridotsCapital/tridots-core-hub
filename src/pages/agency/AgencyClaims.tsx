@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { AgencyLayout } from "@/components/layout/AgencyLayout";
+import { AgencyLayout, useAgencyStatus } from "@/components/layout/AgencyLayout";
 import { AgencyClaimList } from "@/components/agency/claims/AgencyClaimList";
 import { AgencyClaimsKanban } from "@/components/agency/claims/AgencyClaimsKanban";
 import { useAuth } from "@/contexts/AuthContext";
@@ -8,6 +8,7 @@ import { useClaims } from "@/hooks/useClaims";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Plus, Loader2, List, LayoutGrid } from "lucide-react";
 
 type ViewMode = 'list' | 'kanban';
@@ -16,6 +17,7 @@ export default function AgencyClaims() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const { isAgencyActive } = useAgencyStatus();
   const [agencyId, setAgencyId] = useState<string | null>(null);
   const [loadingAgency, setLoadingAgency] = useState(true);
   const [autoOpenClaimId, setAutoOpenClaimId] = useState<string | null>(null);
@@ -102,10 +104,28 @@ export default function AgencyClaims() {
               <List className="h-4 w-4" />
             </ToggleGroupItem>
           </ToggleGroup>
-          <Button onClick={() => navigate('/agency/claims/new')}>
-            <Plus className="h-4 w-4 mr-2" />
-            Solicitar Garantia
-          </Button>
+          {isAgencyActive ? (
+            <Button onClick={() => navigate('/agency/claims/new')}>
+              <Plus className="h-4 w-4 mr-2" />
+              Solicitar Garantia
+            </Button>
+          ) : (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span>
+                    <Button disabled>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Solicitar Garantia
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Disponível após aprovação do cadastro</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
         </div>
       }
     >

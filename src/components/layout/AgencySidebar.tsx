@@ -198,14 +198,34 @@ export function AgencySidebar() {
                 )}
               </Tooltip>
             </TooltipProvider>
-            <Button
-              variant="outline"
-              className="w-full justify-start gap-2 border-amber-300 text-amber-700 hover:bg-amber-50 hover:text-amber-800 mt-2"
-              onClick={() => navigate("/agency/claims/new")}
-            >
-              <Shield className="h-4 w-4" />
-              Solicitar Garantia
-            </Button>
+            {agencyUser?.agency?.active ? (
+              <Button
+                variant="outline"
+                className="w-full justify-start gap-2 border-amber-300 text-amber-700 hover:bg-amber-50 hover:text-amber-800 mt-2"
+                onClick={() => navigate("/agency/claims/new")}
+              >
+                <Shield className="h-4 w-4" />
+                Solicitar Garantia
+              </Button>
+            ) : (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="w-full">
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start gap-2 border-muted text-muted-foreground mt-2"
+                      disabled
+                    >
+                      <Shield className="h-4 w-4" />
+                      Solicitar Garantia
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>Disponível após aprovação do cadastro</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
 
             {hasPendingNps && (
               <Button
