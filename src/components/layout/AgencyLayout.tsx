@@ -17,12 +17,16 @@ interface AgencyLayoutProps {
   actions?: ReactNode;
 }
 
-// Context to share isAgencyActive state
+// Context to share agency status
 interface AgencyStatusContextType {
   isAgencyActive: boolean;
+  isAgencyStatusLoading: boolean;
 }
 
-const AgencyStatusContext = createContext<AgencyStatusContextType>({ isAgencyActive: true });
+const AgencyStatusContext = createContext<AgencyStatusContextType>({
+  isAgencyActive: true,
+  isAgencyStatusLoading: true,
+});
 
 export const useAgencyStatus = () => useContext(AgencyStatusContext);
 
@@ -33,6 +37,7 @@ export function AgencyLayout({ children, title, description, actions }: AgencyLa
   const [agencyName, setAgencyName] = useState<string | null>(null);
   const [isAgencyActive, setIsAgencyActive] = useState(true);
   const [loadingAgency, setLoadingAgency] = useState(true);
+  const [agencyStatusLoading, setAgencyStatusLoading] = useState(true);
 
   useEffect(() => {
     const fetchAgencyInfo = async () => {
@@ -73,6 +78,7 @@ export function AgencyLayout({ children, title, description, actions }: AgencyLa
       }
       
       setLoadingAgency(false);
+      setAgencyStatusLoading(false);
     };
 
     fetchAgencyInfo();
@@ -137,7 +143,7 @@ export function AgencyLayout({ children, title, description, actions }: AgencyLa
   }
 
   return (
-    <AgencyStatusContext.Provider value={{ isAgencyActive }}>
+    <AgencyStatusContext.Provider value={{ isAgencyActive, isAgencyStatusLoading: agencyStatusLoading }}>
       <NpsProvider agencyId={agencyId}>
         <SidebarProvider>
           <div className="min-h-screen flex w-full bg-background">
