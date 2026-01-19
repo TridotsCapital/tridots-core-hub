@@ -393,7 +393,7 @@ export async function sendEmail(
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        from: 'Tridots Garantias <noreply@tridotscapital.com>',
+        from: 'Tridots Garantias <naoresponder@tridotscapital.com>',
         to: recipientEmail,
         subject: testMode ? `[TESTE] ${subject}` : subject,
         html
