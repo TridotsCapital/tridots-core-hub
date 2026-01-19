@@ -15,6 +15,7 @@ import {
   Star,
   KeyRound,
   UserCircle,
+  AlertCircle,
 } from "lucide-react";
 import logoBlack from "@/assets/logo-tridots-black.webp";
 import { NavLink } from "@/components/NavLink";
@@ -24,6 +25,7 @@ import { useAnalysisDraft } from "@/hooks/useAnalysisDraft";
 import { useClaimDraft } from "@/hooks/useClaimDraft";
 import { useNotificationCounts } from "@/hooks/useNotificationCounts";
 import { useRejectedDocumentsCount } from "@/hooks/useRejectedDocumentsCount";
+import { useAgencyOnboardingStatus } from "@/hooks/useAgencyDocuments";
 import { useNps } from "@/contexts/NpsContext";
 import { NotificationCenter } from "@/components/notifications";
 import { Button } from "@/components/ui/button";
@@ -70,9 +72,16 @@ export function AgencySidebar() {
   const { hasDraft: hasClaimDraft } = useClaimDraft();
   const { pendingSurveys, hasPendingNps, showNpsModal } = useNps();
   const { data: rejectedDocsCount } = useRejectedDocumentsCount();
+  const onboardingStatus = useAgencyOnboardingStatus(agencyUser?.agency?.id);
 
   const agencyName = agencyUser?.agency?.nome_fantasia || agencyUser?.agency?.razao_social || "Imobiliária";
   const { data: notificationCounts } = useNotificationCounts();
+  
+  // Check if there are pending onboarding docs
+  const hasPendingOnboardingDocs = !agencyUser?.agency?.active && (
+    onboardingStatus.pendingDocuments.length > 0 || 
+    onboardingStatus.rejectedDocuments.length > 0
+  );
 
   const handleSignOut = async () => {
     await signOut();
@@ -229,10 +238,13 @@ export function AgencySidebar() {
               variant="ghost"
               size="icon"
               onClick={() => navigate("/agency/profile")}
-              className="shrink-0 text-muted-foreground hover:text-foreground hover:bg-muted"
+              className="shrink-0 text-muted-foreground hover:text-foreground hover:bg-muted relative"
               title="Meu Perfil"
             >
               <UserCircle className="h-4 w-4" />
+              {hasPendingOnboardingDocs && (
+                <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-destructive animate-pulse border-2 border-background" />
+              )}
             </Button>
             <Button
               variant="ghost"
