@@ -27,7 +27,8 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { GeneratePasswordDialog } from '@/components/users/GeneratePasswordDialog';
-import { ArrowLeft, Save, Users, Key, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, Users, Key, Loader2, FileText } from 'lucide-react';
+import { AgencyActivationDocuments } from '@/components/agency/AgencyActivationDocuments';
 import type { TablesInsert } from '@/integrations/supabase/types';
 
 type AgencyFormData = Omit<TablesInsert<'agencies'>, 'id' | 'created_at' | 'updated_at'>;
@@ -442,6 +443,11 @@ export default function AgencyForm() {
               )}
             </CardContent>
           </Card>
+        )}
+
+        {/* Activation Documents - Only when editing */}
+        {isEditing && id && (
+          <AgencyActivationDocuments agencyId={id} />
         )}
 
         {/* Status & Submit */}
