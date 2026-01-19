@@ -183,7 +183,7 @@ export function PaymentOptionsDisplay({
                   <div>
                     <span className="font-medium text-orange-700 dark:text-orange-400">{option.label}</span>
                     <Badge variant="secondary" className="ml-2 bg-orange-200 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300 text-xs">
-                      Em Breve
+                      Solicitar
                     </Badge>
                   </div>
                 </div>
