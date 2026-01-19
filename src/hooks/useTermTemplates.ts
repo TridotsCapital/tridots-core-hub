@@ -12,6 +12,7 @@ export interface TermTemplate {
   file_type: string | null;
   version: number;
   is_active: boolean;
+  visible_in_agency_drive: boolean;
   uploaded_by: string;
   created_at: string;
   updated_at: string;
@@ -33,14 +34,16 @@ export const useTermTemplates = () => {
   });
 };
 
+// Hook para listar templates ativos visíveis no Drive de Documentos das imobiliárias
 export const useActiveTermTemplates = () => {
   return useQuery({
-    queryKey: ["term-templates", "active"],
+    queryKey: ["term-templates", "active", "agency-drive"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("term_templates")
         .select("*")
         .eq("is_active", true)
+        .eq("visible_in_agency_drive", true)
         .order("name", { ascending: true });
 
       if (error) throw error;
@@ -85,6 +88,7 @@ export const useUploadTermTemplate = () => {
           file_size: file.size,
           file_type: file.type,
           uploaded_by: userId,
+          visible_in_agency_drive: true,
         })
         .select()
         .single();
@@ -138,7 +142,7 @@ export const useUploadNewVersion = () => {
         .update({ is_active: false })
         .eq("id", originalTemplate.id);
 
-      // Create new version
+      // Create new version - mantém a visibilidade do template original
       const { data, error } = await supabase
         .from("term_templates")
         .insert({
@@ -150,6 +154,7 @@ export const useUploadNewVersion = () => {
           file_type: file.type,
           version: originalTemplate.version + 1,
           uploaded_by: userId,
+          visible_in_agency_drive: originalTemplate.visible_in_agency_drive,
         })
         .select()
         .single();

@@ -50,6 +50,7 @@ import {
   Plus,
   History,
   Loader2,
+  EyeOff,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -256,6 +257,12 @@ const DocumentCenter = () => {
                           <Badge variant="outline" className="gap-1">
                             <History className="h-3 w-3" />
                             {versions.length} versões
+                          </Badge>
+                        )}
+                        {!latestVersion.visible_in_agency_drive && (
+                          <Badge variant="outline" className="gap-1 text-orange-600 border-orange-300">
+                            <EyeOff className="h-3 w-3" />
+                            Oculto do Drive
                           </Badge>
                         )}
                       </div>
