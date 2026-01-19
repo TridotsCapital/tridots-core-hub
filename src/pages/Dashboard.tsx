@@ -2,9 +2,11 @@ import { useAnalyses } from '@/hooks/useAnalyses';
 import { useAgencies } from '@/hooks/useAgencies';
 import { useCommissions } from '@/hooks/useCommissions';
 import { usePendingAgenciesCount } from '@/hooks/usePendingAgencies';
+import { usePaymentInterestMetrics } from '@/hooks/usePaymentInterestMetrics';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { 
   FileSearch, 
   Building2, 
@@ -14,12 +16,15 @@ import {
   XCircle,
   TrendingUp,
   ArrowUpRight,
-  AlertTriangle
+  AlertTriangle,
+  MousePointerClick
 } from 'lucide-react';
 import { statusConfig } from '@/types/database';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 export default function Dashboard() {
   const { user, loading, role } = useAuth();
@@ -59,6 +64,7 @@ export default function Dashboard() {
   const { data: agencies, isLoading: loadingAgencies } = useAgencies();
   const { data: commissions, isLoading: loadingCommissions } = useCommissions();
   const { data: pendingAgenciesCount = 0 } = usePendingAgenciesCount();
+  const { data: paymentInterestMetrics } = usePaymentInterestMetrics();
 
   const pendingAnalyses = analyses?.filter(a => a.status === 'pendente').length || 0;
   const inProgressAnalyses = analyses?.filter(a => a.status === 'em_analise').length || 0;
@@ -264,6 +270,60 @@ export default function Dashboard() {
             )}
           </CardContent>
         </Card>
+
+        {/* Payment Interest Metrics */}
+        {paymentInterestMetrics && paymentInterestMetrics.totalClicks > 0 && (
+          <Card className="animate-slide-up" style={{ animationDelay: '400ms' }}>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900/30">
+                  <MousePointerClick className="h-5 w-5 text-orange-600" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg font-semibold">Interesse: Pagamento via Imobiliária</CardTitle>
+                  <p className="text-sm text-muted-foreground">Cliques na opção "Boleto Mensal Unificado"</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="text-right">
+                  <p className="text-2xl font-bold text-orange-600">{paymentInterestMetrics.totalClicks}</p>
+                  <p className="text-xs text-muted-foreground">cliques totais</p>
+                </div>
+                {paymentInterestMetrics.clicksToday > 0 && (
+                  <Badge variant="secondary" className="bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
+                    +{paymentInterestMetrics.clicksToday} hoje
+                  </Badge>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Imobiliária</TableHead>
+                    <TableHead className="text-center">Cliques</TableHead>
+                    <TableHead className="text-right">Último Clique</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paymentInterestMetrics.clicksByAgency.map((agency, index) => (
+                    <TableRow key={agency.agency_id || index}>
+                      <TableCell className="font-medium">
+                        {agency.agency_name}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant="secondary">{agency.clicks}</Badge>
+                      </TableCell>
+                      <TableCell className="text-right text-muted-foreground">
+                        {format(new Date(agency.last_click), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </DashboardLayout>
   );

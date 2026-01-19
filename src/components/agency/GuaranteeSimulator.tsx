@@ -9,6 +9,7 @@ import { formatCurrency, formatCurrencyInput, parseCurrencyInput, SETUP_FEE_OPTI
 import { PaymentOptionsDisplay } from '@/components/payment/PaymentOptionsDisplay';
 import { PlanSelector } from './PlanSelector';
 import { GUARANTEE_PLANS, type PlanType, getPlanByRate } from '@/lib/plans';
+import { useCurrentAgencyId } from '@/hooks/useAgencyDashboard';
 
 interface GuaranteeSimulatorProps {
   onStartAnalysis: (values: SimulatorValues) => void;
@@ -27,6 +28,8 @@ export interface SimulatorValues {
 }
 
 export function GuaranteeSimulator({ onStartAnalysis, initialValues, descontoPix = 5 }: GuaranteeSimulatorProps) {
+  const { data: currentAgencyId } = useCurrentAgencyId();
+  
   const [aluguelInput, setAluguelInput] = useState(
     initialValues?.aluguel ? formatCurrencyInput((initialValues.aluguel * 100).toString()) : ''
   );
@@ -243,6 +246,7 @@ export function GuaranteeSimulator({ onStartAnalysis, initialValues, descontoPix
                 formaEscolhida={formaPagamento as any}
                 onSelect={setFormaPagamento}
                 compact={true}
+                agencyId={currentAgencyId || undefined}
               />
             </div>
           )}
