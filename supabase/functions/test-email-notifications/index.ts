@@ -45,7 +45,7 @@ serve(async (req) => {
         // Link de Aceite - apenas simula, o fluxo real está em generate-acceptance-link
         templateType = 'acceptance_link';
         emailData = {
-          subject: 'Aceite Digital - Tridots Garantias',
+          subject: 'Aceite Digital - Tridots Capital',
           html: '<p>Este cenário usa a edge function generate-acceptance-link existente.</p>'
         };
         metadata = { note: 'Testar via fluxo real de aprovação de análise' };
@@ -56,7 +56,7 @@ serve(async (req) => {
         // Lembrete de Renovação - apenas simula, o fluxo real está em renewal-reminders
         templateType = 'renewal_reminder';
         emailData = {
-          subject: 'Lembrete de Renovação - Tridots Garantias',
+          subject: 'Lembrete de Renovação - Tridots Capital',
           html: '<p>Este cenário usa a edge function renewal-reminders existente.</p>'
         };
         metadata = { note: 'Testar via fluxo real de contratos próximos do vencimento' };
