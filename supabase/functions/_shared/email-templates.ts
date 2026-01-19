@@ -5,13 +5,13 @@ const LOGO_URL = 'https://tridots-core-hub.lovable.app/logo-tridots-white.webp';
 const TRIDOTS_BLUE = '#1a1a2e';
 const TRIDOTS_ACCENT = '#4A90A4';
 
-// Imagens institucionais (Unsplash - uso livre)
+// Imagens institucionais (Unsplash - uso livre, proporção 16:9 para não cortar)
 const IMAGES = {
-  keys: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600&h=300&fit=crop&crop=center', // Chaves de imóvel
-  family: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=600&h=300&fit=crop&crop=center', // Casa bonita
-  handshake: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=600&h=300&fit=crop&crop=center', // Profissional
-  celebration: 'https://images.unsplash.com/photo-1521791136064-7986c2920216?w=600&h=300&fit=crop&crop=center', // Aperto de mãos
-  office: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&h=300&fit=crop&crop=center', // Escritório
+  keys: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&h=400&fit=crop&crop=top', // Chaves de imóvel
+  family: 'https://images.unsplash.com/photo-1581579438747-104c53d7fbc4?w=800&h=400&fit=crop&crop=top', // Família feliz em casa
+  handshake: 'https://images.unsplash.com/photo-1556745757-8d76bdb6984b?w=800&h=400&fit=crop&crop=top', // Profissionais apertando mãos
+  celebration: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=800&h=400&fit=crop&crop=top', // Pessoa satisfeita
+  office: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=800&h=400&fit=crop&crop=top', // Time de negócios
 };
 
 interface EmailTemplateData {
@@ -24,7 +24,7 @@ export function generateEmailWrapper(content: string, preheader?: string, heroIm
           <!-- Hero Image -->
           <tr>
             <td style="padding:0;">
-              <img src="${heroImage}" alt="Tridots Capital" style="width:100%;height:200px;object-fit:cover;display:block;" />
+              <img src="${heroImage}" alt="Tridots Capital" style="width:100%;height:auto;max-height:220px;object-fit:cover;object-position:center top;display:block;" />
             </td>
           </tr>
   ` : '';
