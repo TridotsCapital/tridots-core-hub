@@ -15,6 +15,7 @@ import { useUnreadItemIds, useMarkItemAsRead } from '@/hooks/useUnreadItemIds';
 import { useContractsWithActiveClaims } from '@/hooks/useContractsWithActiveClaims';
 import { cn } from '@/lib/utils';
 import type { Database } from '@/integrations/supabase/types';
+import { useAgencyPath } from '@/hooks/useAgencyPath';
 
 type ContractStatus = Database['public']['Enums']['contract_status'];
 
@@ -70,6 +71,7 @@ export function AgencyContractList({
   initialRenewalFilter
 }: AgencyContractListProps) {
   const navigate = useNavigate();
+  const { agencyPath } = useAgencyPath();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>(initialStatusFilter || (initialRenewalFilter ? 'renewal' : 'all'));
   const { data: unreadIds } = useUnreadItemIds();
@@ -92,11 +94,11 @@ export function AgencyContractList({
     if (autoOpenContractId && contracts.length > 0) {
       const contract = contracts.find(c => c.id === autoOpenContractId || c.analysis?.id === autoOpenContractId);
       if (contract) {
-        navigate(`/agency/contracts/${contract.analysis?.id || contract.id}`);
+        navigate(agencyPath(`/contracts/${contract.analysis?.id || contract.id}`));
         onAutoOpenHandled?.();
       }
     }
-  }, [autoOpenContractId, contracts, navigate, onAutoOpenHandled]);
+  }, [autoOpenContractId, contracts, navigate, onAutoOpenHandled, agencyPath]);
 
   // Filter contracts
   const now = new Date();
@@ -216,7 +218,7 @@ export function AgencyContractList({
                       if (hasUnread && analysisId) {
                         markAsRead(analysisId, 'contratos');
                       }
-                      navigate(`/agency/contracts/${analysisId}`);
+                      navigate(agencyPath(`/contracts/${analysisId}`));
                     };
 
                     return (
@@ -297,7 +299,7 @@ export function AgencyContractList({
                               <DropdownMenuItem 
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  navigate(`/agency/contracts/${analysisId}`);
+                                  navigate(agencyPath(`/contracts/${analysisId}`));
                                 }}
                               >
                                 <Eye className="mr-2 h-4 w-4" />
@@ -306,7 +308,7 @@ export function AgencyContractList({
                               <DropdownMenuItem 
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  navigate('/agency/support', { 
+                                  navigate(agencyPath('/support'), { 
                                     state: { 
                                       prefillSubject: `Dúvida sobre contrato #${contract.id.slice(0, 8).toUpperCase()}`,
                                       analysisId: analysisId
@@ -320,7 +322,7 @@ export function AgencyContractList({
                               <DropdownMenuItem 
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  navigate(`/agency/contracts/${analysisId}?tab=documents`);
+                                  navigate(agencyPath(`/contracts/${analysisId}?tab=documents`));
                                 }}
                               >
                                 <FileText className="mr-2 h-4 w-4" />

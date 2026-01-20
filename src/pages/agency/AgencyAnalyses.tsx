@@ -45,9 +45,13 @@ export default function AgencyAnalyses() {
     status: statusFilter === "all" ? undefined : statusFilter,
   });
 
-  // Auto-open analysis from notification - reset filters and force kanban view
+  // Auto-open analysis from notification OR apply status filter from MiniKanban navigation
   useEffect(() => {
-    const state = location.state as { analysisId?: string } | null;
+    const state = location.state as { 
+      analysisId?: string;
+      highlightColumns?: string[];
+    } | null;
+    
     if (state?.analysisId) {
       // Reset filters to ensure the analysis is visible
       setStatusFilter('all');
@@ -56,6 +60,15 @@ export default function AgencyAnalyses() {
       setViewMode('kanban');
       setAutoOpenAnalysisId(state.analysisId);
       // Clear state to prevent re-opening on refresh
+      window.history.replaceState({}, document.title);
+    } else if (state?.highlightColumns?.length) {
+      // Apply status filter from Mini Kanban navigation
+      const firstStatus = state.highlightColumns[0] as AnalysisStatus;
+      if (statusConfig[firstStatus]) {
+        setStatusFilter(firstStatus);
+      }
+      setViewMode('kanban');
+      // Clear state to prevent re-applying on refresh
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);

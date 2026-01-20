@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { FileWarning, ArrowRight, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { useAgencyPath } from '@/hooks/useAgencyPath';
 
 interface ClaimDraftBannerProps {
   lastSavedTime: string | null;
@@ -10,6 +11,7 @@ interface ClaimDraftBannerProps {
 
 export function ClaimDraftBanner({ lastSavedTime, onDiscard }: ClaimDraftBannerProps) {
   const navigate = useNavigate();
+  const { agencyPath } = useAgencyPath();
 
   return (
     <Card className="border-orange-200 bg-orange-50/50">
@@ -42,7 +44,7 @@ export function ClaimDraftBanner({ lastSavedTime, onDiscard }: ClaimDraftBannerP
             </Button>
             <Button
               size="sm"
-              onClick={() => navigate('/agency/claims/new')}
+              onClick={() => navigate(agencyPath('/claims/new'))}
               className="bg-orange-600 hover:bg-orange-700 text-white"
             >
               Continuar

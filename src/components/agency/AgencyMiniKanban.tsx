@@ -8,6 +8,7 @@ import {
   FileCheck,
   XCircle
 } from "lucide-react";
+import { useAgencyPath } from "@/hooks/useAgencyPath";
 
 interface AgencyMiniKanbanProps {
   analysesByStatus: Record<string, number>;
@@ -66,9 +67,12 @@ const statusConfig = [
 
 export function AgencyMiniKanban({ analysesByStatus }: AgencyMiniKanbanProps) {
   const navigate = useNavigate();
+  const { agencyPath } = useAgencyPath();
 
   const handleStatusClick = (status: string) => {
-    navigate(`/agency/analyses?status=${status}`);
+    navigate(agencyPath('/analyses'), { 
+      state: { highlightColumns: [status] } 
+    });
   };
 
   return (
