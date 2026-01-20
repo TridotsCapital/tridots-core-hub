@@ -801,8 +801,8 @@ export default function TenantAcceptance() {
                       </div>
                       <div>
                         <p className="font-bold text-foreground">GARANTIDOR</p>
-                        <p className="text-sm mt-1">{analysis?.conjuge_nome || '---'}</p>
-                        <p className="text-xs">CPF: {formatCPF(analysis?.conjuge_cpf || '')}</p>
+                        <p className="text-sm mt-1">TRIDOTS SOLUTIONS LTDA</p>
+                        <p className="text-xs">CNPJ: 54.409.383/0001-85</p>
                       </div>
                     </div>
                   </div>
