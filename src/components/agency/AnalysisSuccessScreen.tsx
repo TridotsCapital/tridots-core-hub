@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { CheckCircle2, Plus, List } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAgencyPath } from '@/hooks/useAgencyPath';
 
 interface AnalysisSuccessScreenProps {
   analysisId: string;
@@ -10,6 +11,7 @@ interface AnalysisSuccessScreenProps {
 
 export function AnalysisSuccessScreen({ analysisId, onNewAnalysis }: AnalysisSuccessScreenProps) {
   const navigate = useNavigate();
+  const { agencyPath } = useAgencyPath();
   const shortId = analysisId.slice(0, 8).toUpperCase();
 
   return (
@@ -41,7 +43,7 @@ export function AnalysisSuccessScreen({ analysisId, onNewAnalysis }: AnalysisSuc
             <Plus className="mr-2 h-4 w-4" />
             Nova Análise
           </Button>
-          <Button onClick={() => navigate('/agency/analyses')}>
+          <Button onClick={() => navigate(agencyPath('/analyses'))}>
             <List className="mr-2 h-4 w-4" />
             Ver Minhas Análises
           </Button>

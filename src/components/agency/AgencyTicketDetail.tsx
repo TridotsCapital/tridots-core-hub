@@ -22,6 +22,7 @@ import {
   useUpdateTicket,
 } from "@/hooks/useTickets";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAgencyPath } from "@/hooks/useAgencyPath";
 import { TicketStatus, TicketCategory } from "@/types/tickets";
 import { cn } from "@/lib/utils";
 
@@ -79,6 +80,7 @@ const categoryConfig: Record<TicketCategory, { label: string; className: string 
 export function AgencyTicketDetail({ ticketId, onClose }: AgencyTicketDetailProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { agencyPath } = useAgencyPath();
   const [message, setMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -152,7 +154,7 @@ export function AgencyTicketDetail({ ticketId, onClose }: AgencyTicketDetailProp
                       <Badge 
                         variant="outline" 
                         className="cursor-pointer hover:bg-amber-100 border-amber-300 text-amber-700 text-xs"
-                        onClick={() => navigate(`/agency/claims/${ticket.claim_id}`)}
+                        onClick={() => navigate(agencyPath(`/claims/${ticket.claim_id}`))}
                       >
                         <Shield className="h-3 w-3 mr-1" />
                         Garantia
@@ -162,7 +164,7 @@ export function AgencyTicketDetail({ ticketId, onClose }: AgencyTicketDetailProp
                       <Badge 
                         variant="outline" 
                         className="cursor-pointer hover:bg-green-100 border-green-300 text-green-700 text-xs"
-                        onClick={() => navigate(`/agency/contracts/${ticket.analysis_id}`)}
+                        onClick={() => navigate(agencyPath(`/contracts/${ticket.analysis_id}`))}
                       >
                         <FileCheck className="h-3 w-3 mr-1" />
                         Contrato
@@ -172,7 +174,7 @@ export function AgencyTicketDetail({ ticketId, onClose }: AgencyTicketDetailProp
                       <Badge 
                         variant="outline" 
                         className="cursor-pointer hover:bg-blue-100 border-blue-300 text-blue-700 text-xs"
-                        onClick={() => navigate('/agency/analyses', { state: { analysisId: ticket.analysis_id } })}
+                        onClick={() => navigate(agencyPath('/analyses'), { state: { analysisId: ticket.analysis_id } })}
                       >
                         <FileText className="h-3 w-3 mr-1" />
                         Análise

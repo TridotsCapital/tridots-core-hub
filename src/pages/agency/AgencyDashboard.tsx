@@ -15,6 +15,7 @@ import { PendingDocsContractsBanner } from "@/components/agency/PendingDocsContr
 import { useAnalysisDraft } from "@/hooks/useAnalysisDraft";
 import { useClaimDraft } from "@/hooks/useClaimDraft";
 import { useContractsPendingDocs } from "@/hooks/useContractsPendingDocs";
+import { useAgencyPath } from "@/hooks/useAgencyPath";
 import {
   useAgencyDashboard, 
   useAgencyRanking, 
@@ -28,6 +29,7 @@ import { AgencyPeriodFilter as PeriodFilterType } from "@/types/agency-portal";
 
 export default function AgencyDashboard() {
   const navigate = useNavigate();
+  const { agencyPath } = useAgencyPath();
   const [period, setPeriod] = useState<PeriodFilterType>('year');
   
   const { data: agencyId } = useCurrentAgencyId();
@@ -47,30 +49,30 @@ export default function AgencyDashboard() {
   const handleKpiClick = (kpiKey: string) => {
     switch (kpiKey) {
       case 'active_contracts':
-        navigate('/agency/contracts', { state: { statusFilter: 'ativo' } });
+        navigate(agencyPath('/contracts'), { state: { statusFilter: 'ativo' } });
         break;
       case 'paid_claims':
-        navigate('/agency/claims', { state: { statusFilter: 'finalizado' } });
+        navigate(agencyPath('/claims'), { state: { statusFilter: 'finalizado' } });
         break;
       case 'contracts_to_renew':
-        navigate('/agency/contracts', { state: { renewalFilter: true } });
+        navigate(agencyPath('/contracts'), { state: { renewalFilter: true } });
         break;
       case 'commissions':
-        navigate('/agency/commissions');
+        navigate(agencyPath('/commissions'));
         break;
       case 'analyses_in_progress':
-        navigate('/agency/analyses', { 
+        navigate(agencyPath('/analyses'), { 
           state: { highlightColumns: ['pendente', 'em_analise', 'aguardando_pagamento'] } 
         });
         break;
       case 'analyses_active':
-        navigate('/agency/analyses', { state: { highlightColumns: ['ativo'] } });
+        navigate(agencyPath('/analyses'), { state: { highlightColumns: ['ativo'] } });
         break;
       case 'canceled_contracts':
-        navigate('/agency/contracts', { state: { statusFilter: 'cancelado' } });
+        navigate(agencyPath('/contracts'), { state: { statusFilter: 'cancelado' } });
         break;
       case 'analyses_rejected':
-        navigate('/agency/analyses', { state: { highlightColumns: ['reprovada'] } });
+        navigate(agencyPath('/analyses'), { state: { highlightColumns: ['reprovada'] } });
         break;
     }
   };

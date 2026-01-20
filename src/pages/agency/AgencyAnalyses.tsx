@@ -45,10 +45,15 @@ export default function AgencyAnalyses() {
     status: statusFilter === "all" ? undefined : statusFilter,
   });
 
-  // Auto-open analysis from notification
+  // Auto-open analysis from notification - reset filters and force kanban view
   useEffect(() => {
     const state = location.state as { analysisId?: string } | null;
     if (state?.analysisId) {
+      // Reset filters to ensure the analysis is visible
+      setStatusFilter('all');
+      setUnreadFilter('all');
+      // Force kanban view so the drawer can open
+      setViewMode('kanban');
       setAutoOpenAnalysisId(state.analysisId);
       // Clear state to prevent re-opening on refresh
       window.history.replaceState({}, document.title);

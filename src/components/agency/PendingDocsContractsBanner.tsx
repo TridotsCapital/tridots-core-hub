@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { FileWarning, ArrowRight } from 'lucide-react';
+import { useAgencyPath } from '@/hooks/useAgencyPath';
 
 interface PendingDocsContractsBannerProps {
   count: number;
@@ -8,11 +9,12 @@ interface PendingDocsContractsBannerProps {
 
 export function PendingDocsContractsBanner({ count }: PendingDocsContractsBannerProps) {
   const navigate = useNavigate();
+  const { agencyPath } = useAgencyPath();
 
   if (count === 0) return null;
 
   const handleClick = () => {
-    navigate('/agency/contracts?status=documentacao_pendente');
+    navigate(agencyPath('/contracts?status=documentacao_pendente'));
   };
 
   return (

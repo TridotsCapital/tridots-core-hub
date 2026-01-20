@@ -27,6 +27,7 @@ import { useNotificationCounts } from "@/hooks/useNotificationCounts";
 import { useRejectedDocumentsCount } from "@/hooks/useRejectedDocumentsCount";
 import { useAgencyOnboardingStatus } from "@/hooks/useAgencyDocuments";
 import { useNps } from "@/contexts/NpsContext";
+import { useAgencyPath } from "@/hooks/useAgencyPath";
 import { NotificationCenter } from "@/components/notifications";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -45,28 +46,30 @@ import {
 } from "@/components/ui/sidebar";
 import { AgencyLogoUpload } from "@/components/agency/AgencyLogoUpload";
 
-// Map paths to notification sources
-const pathToSource: Record<string, "chamados" | "analises" | "contratos" | "garantias"> = {
-  "/agency/support": "chamados",
-  "/agency/analyses": "analises",
-  "/agency/contracts": "contratos",
-  "/agency/claims": "garantias",
+// Map path keys to notification sources - use relative paths without /agency prefix
+const pathToSourceKey: Record<string, "chamados" | "analises" | "contratos" | "garantias"> = {
+  "support": "chamados",
+  "analyses": "analises",
+  "contracts": "contratos",
+  "claims": "garantias",
 };
 
-const menuItems = [
-  { title: "Dashboard", icon: LayoutDashboard, path: "/agency" },
-  { title: "Chamados", icon: HelpCircle, path: "/agency/support" },
-  { title: "Minhas Análises", icon: FileSearch, path: "/agency/analyses" },
-  { title: "Meus Contratos", icon: FileCheck, path: "/agency/contracts" },
-  { title: "Garantias", icon: AlertTriangle, path: "/agency/claims" },
-  { title: "Minhas Comissões", icon: DollarSign, path: "/agency/commissions" },
-  { title: "Drive Documentos", icon: FolderOpen, path: "/agency/documents" },
-  { title: "Colaboradores", icon: Users, path: "/agency/collaborators" },
+// Menu items with relative paths (prefix will be added dynamically)
+const menuItemsConfig = [
+  { title: "Dashboard", icon: LayoutDashboard, pathKey: "" },
+  { title: "Chamados", icon: HelpCircle, pathKey: "support" },
+  { title: "Minhas Análises", icon: FileSearch, pathKey: "analyses" },
+  { title: "Meus Contratos", icon: FileCheck, pathKey: "contracts" },
+  { title: "Garantias", icon: AlertTriangle, pathKey: "claims" },
+  { title: "Minhas Comissões", icon: DollarSign, pathKey: "commissions" },
+  { title: "Drive Documentos", icon: FolderOpen, pathKey: "documents" },
+  { title: "Colaboradores", icon: Users, pathKey: "collaborators" },
 ];
 
 export function AgencySidebar() {
   const navigate = useNavigate();
   const { profile, signOut } = useAuth();
+  const { agencyPath } = useAgencyPath();
   const { data: agencyUser } = useAgencyUser();
   const { hasDraft: hasAnalysisDraft, getLastSavedTime } = useAnalysisDraft();
   const { hasDraft: hasClaimDraft } = useClaimDraft();
@@ -88,11 +91,17 @@ export function AgencySidebar() {
     navigate("/auth");
   };
 
-  const getNotificationCount = (path: string) => {
-    const source = pathToSource[path];
+  const getNotificationCount = (pathKey: string) => {
+    const source = pathToSourceKey[pathKey];
     if (!source || !notificationCounts) return 0;
     return notificationCounts[source];
   };
+
+  // Build menu items with dynamic paths
+  const menuItems = menuItemsConfig.map(item => ({
+    ...item,
+    path: item.pathKey === "" ? agencyPath("/") : agencyPath(`/${item.pathKey}`),
+  }));
 
   return (
     <Sidebar className="border-r border-border/30 bg-white">
@@ -111,15 +120,18 @@ export function AgencySidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => {
-                const count = getNotificationCount(item.path);
-                const showDraftBadge = item.path === "/agency/claims" && hasClaimDraft;
-                const showRejectedBadge = item.path === "/agency/contracts" && (rejectedDocsCount ?? 0) > 0;
+                const count = getNotificationCount(menuItemsConfig.find(c => c.title === item.title)?.pathKey || '');
+                const isClaimsItem = item.title === "Garantias";
+                const isContractsItem = item.title === "Meus Contratos";
+                const showDraftBadge = isClaimsItem && hasClaimDraft;
+                const showRejectedBadge = isContractsItem && (rejectedDocsCount ?? 0) > 0;
+                const isDashboard = item.title === "Dashboard";
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
                       <NavLink
                         to={item.path}
-                        end={item.path === "/agency"}
+                        end={isDashboard}
                         className="flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-primary/5 transition-all"
                         activeClassName="bg-primary/10 text-primary font-semibold shadow-sm"
                       >
@@ -173,7 +185,7 @@ export function AgencySidebar() {
                         ? "bg-amber-600 hover:bg-amber-700 text-white"
                         : "bg-primary hover:bg-primary/90 text-primary-foreground"
                     }`}
-                    onClick={() => navigate("/agency/analyses/new")}
+                    onClick={() => navigate(agencyPath("/analyses/new"))}
                   >
                     {hasAnalysisDraft ? (
                       <>
@@ -202,7 +214,7 @@ export function AgencySidebar() {
               <Button
                 variant="outline"
                 className="w-full justify-start gap-2 border-amber-300 text-amber-700 hover:bg-amber-50 hover:text-amber-800 mt-2"
-                onClick={() => navigate("/agency/claims/new")}
+                onClick={() => navigate(agencyPath("/claims/new"))}
               >
                 <Shield className="h-4 w-4" />
                 Solicitar Garantia
@@ -257,7 +269,7 @@ export function AgencySidebar() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => navigate("/agency/profile")}
+              onClick={() => navigate(agencyPath("/profile"))}
               className="shrink-0 text-muted-foreground hover:text-foreground hover:bg-muted relative"
               title="Meu Perfil"
             >
@@ -269,7 +281,7 @@ export function AgencySidebar() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => navigate("/agency/settings/password")}
+              onClick={() => navigate(agencyPath("/settings/password"))}
               className="shrink-0 text-muted-foreground hover:text-foreground hover:bg-muted"
               title="Alterar senha"
             >
