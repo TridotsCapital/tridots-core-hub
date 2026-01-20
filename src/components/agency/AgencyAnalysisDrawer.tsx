@@ -175,7 +175,7 @@ export function AgencyAnalysisDrawer({
                 {/* Inline linked entities */}
                 {(contractEntity || claimEntity) && <>
                     <span className="text-muted-foreground">•</span>
-                    {contractEntity && <Badge variant="outline" className="cursor-pointer hover:bg-green-50 border-green-300 text-green-700 text-xs" onClick={() => navigate(`/agency/contracts/${contractEntity.id}`)}>
+                    {contractEntity && <Badge variant="outline" className="cursor-pointer hover:bg-green-50 border-green-300 text-green-700 text-xs" onClick={() => navigate(`/agency/contracts/${analysis.id}`)}>
                         <FileCheck className="h-3 w-3 mr-1" />
                         Contrato
                       </Badge>}
