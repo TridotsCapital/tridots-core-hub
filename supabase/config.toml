@@ -38,3 +38,6 @@ verify_jwt = false
 
 [functions.admin-reset-password]
 verify_jwt = false
+
+[functions.upload-manual-document]
+verify_jwt = false
