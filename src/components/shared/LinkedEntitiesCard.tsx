@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { FileText, FileCheck, Shield, Link2 } from 'lucide-react';
+import { useAgencyPath } from '@/hooks/useAgencyPath';
 
 interface LinkedEntity {
   type: 'analysis' | 'contract' | 'claim';
@@ -14,29 +15,32 @@ interface LinkedEntitiesCardProps {
   isAgencyPortal?: boolean;
 }
 
-const ENTITY_CONFIG = {
+// Entity config with path functions that receive the agencyPath function
+const getEntityConfig = (agencyPath: (path: string) => string) => ({
   analysis: {
     label: 'Análise',
     icon: FileText,
     color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-800',
-    path: (id: string, isAgency: boolean) => isAgency ? `/agency/contracts/${id}` : `/analyses/${id}`,
+    path: (id: string, isAgency: boolean) => isAgency ? agencyPath(`/contracts/${id}`) : `/analyses/${id}`,
   },
   contract: {
     label: 'Contrato',
     icon: FileCheck,
     color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 border-green-200 dark:border-green-800',
-    path: (id: string, isAgency: boolean) => isAgency ? `/agency/contracts/${id}` : `/contracts/${id}`,
+    path: (id: string, isAgency: boolean) => isAgency ? agencyPath(`/contracts/${id}`) : `/contracts/${id}`,
   },
   claim: {
     label: 'Garantia',
     icon: Shield,
     color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 border-amber-200 dark:border-amber-800',
-    path: (id: string, isAgency: boolean) => isAgency ? `/agency/claims/${id}` : `/claims/${id}`,
+    path: (id: string, isAgency: boolean) => isAgency ? agencyPath(`/claims/${id}`) : `/claims/${id}`,
   },
-};
+});
 
 export function LinkedEntitiesCard({ entities, isAgencyPortal = false }: LinkedEntitiesCardProps) {
   const navigate = useNavigate();
+  const { agencyPath } = useAgencyPath();
+  const ENTITY_CONFIG = getEntityConfig(agencyPath);
 
   if (!entities || entities.length === 0) {
     return null;

@@ -99,3 +99,26 @@ export function getDefaultRouteForPortal(portal: Portal, role: string | null): s
   
   return '/';
 }
+
+/**
+ * Gets the correct prefix for agency portal routes based on environment
+ * In production (portal.tridotscapital.com), routes don't have /agency prefix
+ * In dev/preview, routes use /agency prefix
+ */
+export function getAgencyPrefix(): string {
+  const portal = getPortalFromSubdomain();
+  // In production agency portal, no prefix needed
+  // In dev/preview (portal === 'unknown'), use /agency prefix
+  return portal === 'agency' ? '' : '/agency';
+}
+
+/**
+ * Constructs a path for the agency portal that works in both production and dev
+ * @param path - The path without the /agency prefix (e.g., '/contracts/123')
+ * @returns The full path with correct prefix for current environment
+ */
+export function agencyPath(path: string): string {
+  const prefix = getAgencyPrefix();
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  return `${prefix}${cleanPath}`;
+}

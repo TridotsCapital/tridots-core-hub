@@ -13,6 +13,7 @@ import { ComposicaoAnaliseCard } from '@/components/payment/ComposicaoAnaliseCar
 import { CoverageCard } from '@/components/shared/CoverageCard';
 import { useLinkedEntitiesForAnalysis } from '@/hooks/useLinkedEntities';
 import { useTicketCountByAnalysis } from '@/hooks/useTickets';
+import { useAgencyPath } from '@/hooks/useAgencyPath';
 import { User, Home, MessageSquare, FileText, Clock, Phone, Mail, MapPin, Briefcase, DollarSign, Link, Copy, CheckCircle2, AlertTriangle, Timer, Loader2, FileCheck, Shield } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -91,6 +92,7 @@ export function AgencyAnalysisDrawer({
   const [requestingLink, setRequestingLink] = useState(false);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { agencyPath } = useAgencyPath();
 
   // Fetch linked entities
   const {
@@ -175,11 +177,11 @@ export function AgencyAnalysisDrawer({
                 {/* Inline linked entities */}
                 {(contractEntity || claimEntity) && <>
                     <span className="text-muted-foreground">•</span>
-                    {contractEntity && <Badge variant="outline" className="cursor-pointer hover:bg-green-50 border-green-300 text-green-700 text-xs" onClick={() => navigate(`/agency/contracts/${analysis.id}`)}>
+                    {contractEntity && <Badge variant="outline" className="cursor-pointer hover:bg-green-50 border-green-300 text-green-700 text-xs" onClick={() => navigate(agencyPath(`/contracts/${analysis.id}`))}>
                         <FileCheck className="h-3 w-3 mr-1" />
                         Contrato
                       </Badge>}
-                    {claimEntity && <Badge variant="outline" className="cursor-pointer hover:bg-amber-50 border-amber-300 text-amber-700 text-xs" onClick={() => navigate(`/agency/claims/${claimEntity.id}`)}>
+                    {claimEntity && <Badge variant="outline" className="cursor-pointer hover:bg-amber-50 border-amber-300 text-amber-700 text-xs" onClick={() => navigate(agencyPath(`/claims/${claimEntity.id}`))}>
                         <Shield className="h-3 w-3 mr-1" />
                         Garantia
                       </Badge>}

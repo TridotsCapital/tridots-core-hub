@@ -21,6 +21,7 @@ import {
 } from '@/hooks/useNotifications';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNotificationSound } from '@/hooks/useNotificationSound';
+import { useAgencyPath } from '@/hooks/useAgencyPath';
 import type { Notification, NotificationSource } from '@/types/notifications';
 
 interface NotificationCenterProps {
@@ -32,6 +33,7 @@ export function NotificationCenter({ isAgencyPortal = false }: NotificationCente
   const [activeTab, setActiveTab] = useState<'all' | NotificationSource>('all');
   const navigate = useNavigate();
   const { role } = useAuth();
+  const { agencyPath } = useAgencyPath();
   const { playSound } = useNotificationSound();
   
   // Callback to play sound when new notification arrives
@@ -60,25 +62,25 @@ export function NotificationCenter({ isAgencyPortal = false }: NotificationCente
     // Navigate based on notification type and portal
     if (notification.source === 'chamados') {
       if (isAgencyPortal) {
-        navigate('/agency/support', { state: { ticketId: notification.reference_id } });
+        navigate(agencyPath('/support'), { state: { ticketId: notification.reference_id } });
       } else {
         navigate('/tickets', { state: { ticketId: notification.reference_id } });
       }
     } else if (notification.source === 'analises') {
       if (isAgencyPortal) {
-        navigate('/agency/analyses', { state: { analysisId: notification.reference_id } });
+        navigate(agencyPath('/analyses'), { state: { analysisId: notification.reference_id } });
       } else {
         navigate('/analyses', { state: { analysisId: notification.reference_id } });
       }
     } else if (notification.source === 'contratos') {
       if (isAgencyPortal) {
-        navigate('/agency/contracts', { state: { contractId: notification.reference_id } });
+        navigate(agencyPath('/contracts'), { state: { contractId: notification.reference_id } });
       } else {
         navigate('/contracts', { state: { contractId: notification.reference_id } });
       }
     } else if (notification.source === 'sinistros') {
       if (isAgencyPortal) {
-        navigate(`/agency/claims/${notification.reference_id}`);
+        navigate(agencyPath(`/claims/${notification.reference_id}`));
       } else {
         navigate(`/claims/${notification.reference_id}`);
       }
