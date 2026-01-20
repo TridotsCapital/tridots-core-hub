@@ -104,7 +104,7 @@ export function useContracts(filters?: ContractFilters) {
         );
       }
 
-      // Filter contracts within renewal period (30 days before expiry)
+      // Filter contracts within renewal period (expiring in next 30 days OR already expired)
       if (filters?.renewalPeriod) {
         const now = new Date();
         const thirtyDaysFromNow = new Date();
@@ -113,7 +113,10 @@ export function useContracts(filters?: ContractFilters) {
         filteredData = filteredData.filter(c => {
           if (c.status !== 'ativo' || !c.data_fim_contrato) return false;
           const endDate = new Date(c.data_fim_contrato);
-          return endDate >= now && endDate <= thirtyDaysFromNow;
+          // Show contracts expiring in next 30 days OR already expired (up to 30 days ago)
+          const thirtyDaysAgo = new Date();
+          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+          return endDate >= thirtyDaysAgo && endDate <= thirtyDaysFromNow;
         });
       }
 
