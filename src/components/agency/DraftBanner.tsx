@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { FileEdit, ArrowRight, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { useAgencyPath } from '@/hooks/useAgencyPath';
 
 interface DraftBannerProps {
   lastSavedTime: string | null;
@@ -10,6 +11,7 @@ interface DraftBannerProps {
 
 export function DraftBanner({ lastSavedTime, onDiscard }: DraftBannerProps) {
   const navigate = useNavigate();
+  const { agencyPath } = useAgencyPath();
 
   return (
     <Card className="border-amber-200 bg-amber-50/50">
@@ -42,7 +44,7 @@ export function DraftBanner({ lastSavedTime, onDiscard }: DraftBannerProps) {
             </Button>
             <Button
               size="sm"
-              onClick={() => navigate('/agency/analyses/new')}
+              onClick={() => navigate(agencyPath('/analyses/new'))}
               className="bg-amber-600 hover:bg-amber-700 text-white"
             >
               Continuar
