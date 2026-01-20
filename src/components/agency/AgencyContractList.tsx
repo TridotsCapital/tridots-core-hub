@@ -109,13 +109,14 @@ export function AgencyContractList({
       contract.analysis.inquilino_nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
       contract.analysis.inquilino_cpf.includes(searchTerm.replace(/\D/g, ''));
     
-    // Handle renewal filter
+    // Handle renewal filter (expiring in next 30 days OR already expired up to 30 days ago)
     if (statusFilter === 'renewal') {
       const hasRenewalDate = contract.data_fim_contrato;
       if (!hasRenewalDate) return false;
       const endDate = parseISO(contract.data_fim_contrato);
+      const thirtyDaysAgo = addDays(now, -30);
       const isRenewalPeriod = contract.status === 'ativo' && 
-        isWithinInterval(endDate, { start: now, end: thirtyDaysFromNow });
+        isWithinInterval(endDate, { start: thirtyDaysAgo, end: thirtyDaysFromNow });
       return matchesSearch && isRenewalPeriod;
     }
     
