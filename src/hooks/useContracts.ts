@@ -41,6 +41,7 @@ export function useContracts(filters?: ContractFilters) {
             imovel_estado,
             imovel_bairro,
             approved_at,
+            payments_validated_at,
             status
           ),
           agency:agencies(id, razao_social, nome_fantasia)

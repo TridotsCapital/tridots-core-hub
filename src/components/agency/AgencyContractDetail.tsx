@@ -19,6 +19,7 @@ import { ContractRenewalStatus } from './ContractRenewalStatus';
 import { ContractRenewalHistory } from './ContractRenewalHistory';
 import { GuaranteeCostsSection } from '@/components/payment/GuaranteeCostsSection';
 import { CoverageCard } from '@/components/shared/CoverageCard';
+import { PayerInfoCard } from '@/components/shared/PayerInfoCard';
 import { ContractCommissionsTab } from '@/components/shared/ContractCommissionsTab';
 import { useTicketCountByAnalysis, useTicketsByAnalysis } from '@/hooks/useTickets';
 import { useActiveClaimByContract } from '@/hooks/useActiveClaimByContract';
@@ -545,6 +546,24 @@ export function AgencyContractDetail() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Payer Info - show if different from tenant */}
+          {contract && (
+            <PayerInfoCard
+              payerIsTenant={analysis.payer_is_tenant}
+              payerName={analysis.payer_name}
+              payerCpf={analysis.payer_cpf}
+              payerEmail={analysis.payer_email}
+              payerPhone={analysis.payer_phone}
+              payerAddress={analysis.payer_address}
+              payerNumber={analysis.payer_number}
+              payerComplement={analysis.payer_complement}
+              payerNeighborhood={analysis.payer_neighborhood}
+              payerCity={analysis.payer_city}
+              payerState={analysis.payer_state}
+              payerCep={analysis.payer_cep}
+            />
+          )}
 
           {/* Spouse Info */}
           {analysis.conjuge_nome && (
