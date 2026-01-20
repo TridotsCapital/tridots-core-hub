@@ -133,9 +133,13 @@ export function ApprovalModal({ analysis, open, onOpenChange, onConfirm, mode = 
   // Helper to format payment method display
   const getPaymentMethodDisplay = (method: string, valorAnual: number) => {
     if (method === 'pix') {
-      const desconto = 5; // 5% discount for PIX
+      // Get discount from agency (via JOIN in analysis data)
+      const desconto = (analysis as any)?.agency?.desconto_pix_percentual ?? 0;
+      if (desconto === 0) {
+        return `PIX: ${formatCurrency(valorAnual)}`;
+      }
       const valorComDesconto = valorAnual * (1 - desconto / 100);
-      return `PIX (${desconto}% off): ${formatCurrency(valorComDesconto)} (de ${formatCurrency(valorAnual)})`;
+      return `PIX (${Math.round(desconto)}% off): ${formatCurrency(valorComDesconto)} (de ${formatCurrency(valorAnual)})`;
     }
     
     const match = method.match(/card_(\d+)x/);

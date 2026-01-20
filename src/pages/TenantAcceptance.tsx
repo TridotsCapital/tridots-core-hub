@@ -650,16 +650,20 @@ export default function TenantAcceptance() {
                       {(() => {
                         const method = analysis?.forma_pagamento_preferida;
                         const valorAnual = analysis?.garantia_anual || 0;
-                        const descontoPix = analysis?.desconto_pix || 5;
+                        const descontoPix = analysis?.desconto_pix ?? 0;
                         
                         if (!method) {
                           return 'Não definida';
                         }
                         
                         if (method === 'pix') {
+                          // Se não tem desconto, mostrar apenas o valor
+                          if (descontoPix === 0) {
+                            return `PIX: ${formatCurrency(valorAnual)}`;
+                          }
                           // Para PIX, o garantia_anual já vem com desconto do banco
                           const valorSemDesconto = valorAnual / (1 - descontoPix / 100);
-                          return `PIX (${descontoPix}% off): ${formatCurrency(valorAnual)} (de ${formatCurrency(valorSemDesconto)})`;
+                          return `PIX (${Math.round(descontoPix)}% off): ${formatCurrency(valorAnual)} (de ${formatCurrency(valorSemDesconto)})`;
                         }
                         
                         const match = method.match(/card_(\d+)x/);
@@ -1254,15 +1258,19 @@ export default function TenantAcceptance() {
                   {(() => {
                     const method = analysis?.forma_pagamento_preferida;
                     const valorAnual = analysis?.garantia_anual || 0;
-                    const descontoPix = analysis?.desconto_pix || 5;
+                    const descontoPix = analysis?.desconto_pix ?? 0;
                     
                     if (!method) {
                       return 'Forma de pagamento não definida';
                     }
                     
                     if (method === 'pix') {
+                      // Se não tem desconto, mostrar apenas o valor
+                      if (descontoPix === 0) {
+                        return `PIX: ${formatCurrency(valorAnual)}`;
+                      }
                       const valorSemDesconto = valorAnual / (1 - descontoPix / 100);
-                      return `PIX (${descontoPix}% off): ${formatCurrency(valorAnual)} (de ${formatCurrency(valorSemDesconto)})`;
+                      return `PIX (${Math.round(descontoPix)}% off): ${formatCurrency(valorAnual)} (de ${formatCurrency(valorSemDesconto)})`;
                     }
                     
                     const match = method.match(/card_(\d+)x/);

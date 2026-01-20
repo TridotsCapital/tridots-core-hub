@@ -14,7 +14,7 @@ import { useCurrentAgencyId } from '@/hooks/useAgencyDashboard';
 interface GuaranteeSimulatorProps {
   onStartAnalysis: (values: SimulatorValues) => void;
   initialValues?: Partial<SimulatorValues>;
-  descontoPix?: number;
+  descontoPix?: number | null;
 }
 
 export interface SimulatorValues {
@@ -27,8 +27,9 @@ export interface SimulatorValues {
   formaPagamento: string;
 }
 
-export function GuaranteeSimulator({ onStartAnalysis, initialValues, descontoPix = 5 }: GuaranteeSimulatorProps) {
+export function GuaranteeSimulator({ onStartAnalysis, initialValues, descontoPix }: GuaranteeSimulatorProps) {
   const { data: currentAgencyId } = useCurrentAgencyId();
+  const pixEnabled = descontoPix !== null && descontoPix !== undefined && descontoPix > 0;
   
   const [aluguelInput, setAluguelInput] = useState(
     initialValues?.aluguel ? formatCurrencyInput((initialValues.aluguel * 100).toString()) : ''

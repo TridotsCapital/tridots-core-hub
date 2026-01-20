@@ -7,6 +7,7 @@ import whatsappIcon from '@/assets/whatsapp-icon.png';
 
 interface TenantStepProps {
   form: UseFormReturn<any>;
+  descontoPix?: number | null;
 }
 
 export function TenantStep({ form }: TenantStepProps) {

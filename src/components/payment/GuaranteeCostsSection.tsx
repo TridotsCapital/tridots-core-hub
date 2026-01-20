@@ -49,8 +49,11 @@ export function GuaranteeCostsSection({
   const garantiaAnualBase = garantiaMensal * 12;
   
   // Use saved value if available, otherwise calculate with discount
-  const pixDiscount = descontoPix || 5;
-  const garantiaAnualComDesconto = garantiaAnualBase * (1 - pixDiscount / 100);
+  // Use ?? 0 to avoid fallback to 5 - if not configured, no discount
+  const pixDiscount = descontoPix ?? 0;
+  const garantiaAnualComDesconto = pixDiscount > 0 
+    ? garantiaAnualBase * (1 - pixDiscount / 100)
+    : garantiaAnualBase;
   
   // Final annual value based on payment method
   const garantiaAnualFinal = garantiaAnualSalva !== null && garantiaAnualSalva !== undefined

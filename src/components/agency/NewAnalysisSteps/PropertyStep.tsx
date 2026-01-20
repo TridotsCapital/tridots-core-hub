@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 
 interface PropertyStepProps {
   form: UseFormReturn<any>;
+  descontoPix?: number | null;
 }
 
 export function PropertyStep({ form }: PropertyStepProps) {

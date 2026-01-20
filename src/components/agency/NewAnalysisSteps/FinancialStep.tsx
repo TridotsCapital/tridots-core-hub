@@ -11,10 +11,11 @@ import { getPlanByRate, GUARANTEE_PLANS, type PlanType } from '@/lib/plans';
 
 interface FinancialStepProps {
   form: UseFormReturn<any>;
-  descontoPix?: number;
+  descontoPix?: number | null;
 }
 
-export function FinancialStep({ form, descontoPix = 5 }: FinancialStepProps) {
+export function FinancialStep({ form, descontoPix }: FinancialStepProps) {
+  const pixEnabled = descontoPix !== null && descontoPix !== undefined && descontoPix > 0;
   const taxaGarantia = form.watch('taxaGarantiaPercentual') || 10;
   const planoGarantia = form.watch('planoGarantia') as PlanType | null;
   const setupFee = form.watch('setupFee') || 100;

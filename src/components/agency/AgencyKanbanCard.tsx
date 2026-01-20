@@ -58,16 +58,22 @@ export function AgencyKanbanCard({ analysis, onClick, hasUnread = false }: Agenc
   const garantiaMensal = (analysis.valor_total || 0) * (analysis.taxa_garantia_percentual / 100);
   const garantiaAnualBase = garantiaMensal * 12;
   const isPix = analysis.forma_pagamento_preferida === 'pix';
-  const descontoPix = 5;
+  
+  // Get discount from agency (via JOIN or analysis data)
+  const descontoPix = (analysis as any).agency?.desconto_pix_percentual ?? 0;
   
   // Use saved value if available, otherwise calculate
   const garantiaAnualFinal = (analysis as any).garantia_anual ?? 
-    (isPix ? garantiaAnualBase * (1 - descontoPix / 100) : garantiaAnualBase);
+    (isPix && descontoPix > 0 ? garantiaAnualBase * (1 - descontoPix / 100) : garantiaAnualBase);
 
   // Format payment method text
   const getPaymentMethodText = () => {
     if (isPix) {
-      return `(Pix (${descontoPix}% off) de ${formatCurrency(garantiaAnualBase)})`;
+      // Only show discount info if discount exists
+      if (descontoPix > 0) {
+        return `(Pix (${Math.round(descontoPix)}% off) de ${formatCurrency(garantiaAnualBase)})`;
+      }
+      return '(Pix)';
     }
     
     const match = analysis.forma_pagamento_preferida?.match(/card_(\d+)x/);
