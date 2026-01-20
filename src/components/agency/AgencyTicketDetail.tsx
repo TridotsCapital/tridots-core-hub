@@ -158,11 +158,11 @@ export function AgencyTicketDetail({ ticketId, onClose }: AgencyTicketDetailProp
                         Garantia
                       </Badge>
                     )}
-                    {ticket.contract_id && !ticket.claim_id && (
+                    {ticket.contract_id && !ticket.claim_id && ticket.analysis_id && (
                       <Badge 
                         variant="outline" 
                         className="cursor-pointer hover:bg-green-100 border-green-300 text-green-700 text-xs"
-                        onClick={() => navigate(`/agency/contracts/${ticket.contract_id}`)}
+                        onClick={() => navigate(`/agency/contracts/${ticket.analysis_id}`)}
                       >
                         <FileCheck className="h-3 w-3 mr-1" />
                         Contrato
@@ -172,7 +172,7 @@ export function AgencyTicketDetail({ ticketId, onClose }: AgencyTicketDetailProp
                       <Badge 
                         variant="outline" 
                         className="cursor-pointer hover:bg-blue-100 border-blue-300 text-blue-700 text-xs"
-                        onClick={() => navigate(`/agency/analyses?open=${ticket.analysis_id}`)}
+                        onClick={() => navigate('/agency/analyses', { state: { analysisId: ticket.analysis_id } })}
                       >
                         <FileText className="h-3 w-3 mr-1" />
                         Análise
