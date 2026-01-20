@@ -10,6 +10,7 @@ import { Card, CardContent } from '@/components/ui/card';
 export default function AgencyNewAnalysis() {
   const { user } = useAuth();
   const [agencyId, setAgencyId] = useState<string | null>(null);
+  const [descontoPix, setDescontoPix] = useState<number | null>(null);
   const [isAgencyActive, setIsAgencyActive] = useState(true);
   const [loading, setLoading] = useState(true);
 
@@ -27,15 +28,16 @@ export default function AgencyNewAnalysis() {
         if (error) throw error;
         setAgencyId(data.agency_id);
 
-        // Check if agency is active
+        // Check if agency is active and get discount
         const { data: agency } = await supabase
           .from('agencies')
-          .select('active')
+          .select('active, desconto_pix_percentual')
           .eq('id', data.agency_id)
           .single();
 
         if (agency) {
           setIsAgencyActive(agency.active);
+          setDescontoPix(agency.desconto_pix_percentual);
         }
       } catch (error) {
         console.error('Error fetching agency:', error);
@@ -96,7 +98,7 @@ export default function AgencyNewAnalysis() {
       title="Nova Análise" 
       description="Solicite uma nova análise de crédito"
     >
-      <NewAnalysisForm agencyId={agencyId} />
+      <NewAnalysisForm agencyId={agencyId} descontoPix={descontoPix} />
     </AgencyLayout>
   );
 }

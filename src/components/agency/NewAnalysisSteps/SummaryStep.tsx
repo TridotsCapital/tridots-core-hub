@@ -11,9 +11,10 @@ import { ComposicaoAnaliseCard } from '@/components/payment/ComposicaoAnaliseCar
 
 interface SummaryStepProps {
   form: UseFormReturn<any>;
+  descontoPix?: number | null;
 }
 
-export function SummaryStep({ form }: SummaryStepProps) {
+export function SummaryStep({ form, descontoPix }: SummaryStepProps) {
   const values = form.getValues();
   
   const propertyType = PROPERTY_TYPES.find(t => t.value === values.imovelTipo)?.label || values.imovelTipo;
@@ -22,9 +23,11 @@ export function SummaryStep({ form }: SummaryStepProps) {
   const totalEncargos = (values.valorAluguel || 0) + (values.valorCondominio || 0) + (values.valorIptu || 0);
   const taxaMensal = totalEncargos * ((values.taxaGarantiaPercentual || 8) / 100);
   const garantiaAnualBase = taxaMensal * 12;
-  const PIX_DISCOUNT = 5;
-  const garantiaAnual = values.formaPagamentoPreferida === 'pix'
-    ? garantiaAnualBase * (1 - PIX_DISCOUNT / 100)
+  
+  // Use actual discount from agency (0 if not configured)
+  const pixDiscountValue = descontoPix ?? 0;
+  const garantiaAnual = values.formaPagamentoPreferida === 'pix' && pixDiscountValue > 0
+    ? garantiaAnualBase * (1 - pixDiscountValue / 100)
     : garantiaAnualBase;
 
   return (
@@ -206,7 +209,7 @@ export function SummaryStep({ form }: SummaryStepProps) {
         setupFee={values.setupFee || 0}
         setupFeeExempt={values.setupFee === 0}
         formaPagamentoPreferida={values.formaPagamentoPreferida}
-        descontoPix={5}
+        descontoPix={descontoPix}
         garantiaAnualSalva={garantiaAnual}
       />
 

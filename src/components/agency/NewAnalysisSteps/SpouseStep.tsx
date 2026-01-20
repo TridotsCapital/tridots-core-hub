@@ -8,6 +8,7 @@ import whatsappIcon from '@/assets/whatsapp-icon.png';
 
 interface SpouseStepProps {
   form: UseFormReturn<any>;
+  descontoPix?: number | null;
 }
 
 export function SpouseStep({ form }: SpouseStepProps) {

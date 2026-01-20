@@ -69,6 +69,7 @@ type FormData = z.infer<typeof formSchema>;
 
 interface NewAnalysisFormProps {
   agencyId: string;
+  descontoPix?: number | null;
 }
 
 const STEPS = [
@@ -78,8 +79,9 @@ const STEPS = [
   { id: 'summary', title: 'Resumo', component: SummaryStep },
 ];
 
-export function NewAnalysisForm({ agencyId }: NewAnalysisFormProps) {
+export function NewAnalysisForm({ agencyId, descontoPix }: NewAnalysisFormProps) {
   const { user } = useAuth();
+  const pixDiscountValue = descontoPix ?? 0;
   const { draft, hasDraft, saveDraft, clearDraft, getLastSavedTime } = useAnalysisDraft();
   const [showSimulator, setShowSimulator] = useState(true);
   const [currentStep, setCurrentStep] = useState(0);
@@ -200,9 +202,9 @@ export function NewAnalysisForm({ agencyId }: NewAnalysisFormProps) {
       const valorTotal = data.valorAluguel + (data.valorCondominio || 0) + (data.valorIptu || 0);
       const garantiaMensal = valorTotal * (data.taxaGarantiaPercentual / 100);
       const garantiaAnualBase = garantiaMensal * 12;
-      const PIX_DISCOUNT = 5; // 5% off for PIX payments
-      const garantiaAnual = data.formaPagamentoPreferida === 'pix'
-        ? garantiaAnualBase * (1 - PIX_DISCOUNT / 100)
+      // Use dynamic discount from agency (0 if not configured)
+      const garantiaAnual = data.formaPagamentoPreferida === 'pix' && pixDiscountValue > 0
+        ? garantiaAnualBase * (1 - pixDiscountValue / 100)
         : garantiaAnualBase;
 
       const { data: analysis, error } = await supabase
@@ -274,7 +276,7 @@ export function NewAnalysisForm({ agencyId }: NewAnalysisFormProps) {
   if (showSimulator) {
     return (
       <>
-        <GuaranteeSimulator onStartAnalysis={handleSimulatorComplete} />
+        <GuaranteeSimulator onStartAnalysis={handleSimulatorComplete} descontoPix={descontoPix} />
         <Dialog open={showDraftDialog} onOpenChange={setShowDraftDialog}>
           <DialogContent>
             <DialogHeader>
@@ -319,7 +321,7 @@ export function NewAnalysisForm({ agencyId }: NewAnalysisFormProps) {
         <CardContent className="pt-6">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)}>
-              <StepComponent form={form} />
+              <StepComponent form={form} descontoPix={descontoPix} />
 
               <div className="flex justify-between mt-8 pt-6 border-t">
                 <Button

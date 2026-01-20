@@ -29,7 +29,7 @@ interface PaymentOptionItem {
 
 interface PaymentOptionsDisplayProps {
   garantiaAnual: number;
-  descontoPix: number;
+  descontoPix?: number | null;
   formaEscolhida?: PaymentMethod;
   onSelect?: (forma: PaymentMethod) => void;
   readOnly?: boolean;
@@ -51,7 +51,10 @@ export function PaymentOptionsDisplay({
   const [showAll, setShowAll] = useState(showAllByDefault);
   const { toast } = useToast();
 
-  const pixValue = garantiaAnual * (1 - descontoPix / 100);
+  // Check if PIX is enabled based on discount configuration
+  const pixEnabled = descontoPix !== null && descontoPix !== undefined && descontoPix > 0;
+  const pixDiscountValue = descontoPix ?? 0;
+  const pixValue = pixEnabled ? garantiaAnual * (1 - pixDiscountValue / 100) : garantiaAnual;
 
   const handleBlockedOptionClick = async () => {
     // Log interest in the blocked option
@@ -81,15 +84,23 @@ export function PaymentOptionsDisplay({
       value: 0,
       blocked: true,
     },
-    // PIX option
-    {
-      id: 'pix',
-      label: 'PIX à vista',
-      description: formatCurrency(pixValue),
-      value: pixValue,
-      discount: descontoPix,
-      highlighted: true,
-    },
+    // PIX option - show as blocked if not enabled
+    pixEnabled
+      ? {
+          id: 'pix',
+          label: 'PIX à vista',
+          description: formatCurrency(pixValue),
+          value: pixValue,
+          discount: Math.round(pixDiscountValue),
+          highlighted: true,
+        }
+      : {
+          id: 'pix',
+          label: 'PIX à vista',
+          description: 'PIX indisponível - entre em contato com a Tridots',
+          value: 0,
+          blocked: true,
+        },
     {
       id: 'card_1x',
       label: 'Cartão 1x',
@@ -165,29 +176,41 @@ export function PaymentOptionsDisplay({
         {visibleOptions.map((option) => {
           // Render blocked option differently
           if (option.blocked) {
+            // Use different styling for PIX blocked vs other blocked options
+            const isPIXBlocked = option.id === 'pix';
             return (
               <div
                 key={option.id}
-                onClick={handleBlockedOptionClick}
+                onClick={isPIXBlocked ? undefined : handleBlockedOptionClick}
                 className={cn(
-                  'flex items-center justify-between p-3 rounded-lg border-2 cursor-pointer transition-all',
-                  'border-orange-400 bg-orange-50 dark:bg-orange-950/20',
-                  'hover:bg-orange-100 dark:hover:bg-orange-950/30'
+                  'flex items-center justify-between p-3 rounded-lg border-2 transition-all',
+                  isPIXBlocked 
+                    ? 'border-muted bg-muted/30 cursor-not-allowed opacity-60'
+                    : 'border-orange-400 bg-orange-50 dark:bg-orange-950/20 cursor-pointer hover:bg-orange-100 dark:hover:bg-orange-950/30'
                 )}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-4 h-4 rounded-full border-2 border-orange-400 flex items-center justify-center">
-                    <Lock className="h-2.5 w-2.5 text-orange-500" />
+                  <div className={cn(
+                    'w-4 h-4 rounded-full border-2 flex items-center justify-center',
+                    isPIXBlocked ? 'border-muted-foreground/50' : 'border-orange-400'
+                  )}>
+                    <Lock className={cn('h-2.5 w-2.5', isPIXBlocked ? 'text-muted-foreground/50' : 'text-orange-500')} />
                   </div>
-                  <Building2 className="h-4 w-4 text-orange-600" />
+                  {isPIXBlocked ? (
+                    <QrCode className="h-4 w-4 text-muted-foreground/50" />
+                  ) : (
+                    <Building2 className="h-4 w-4 text-orange-600" />
+                  )}
                   <div>
-                    <span className="font-medium text-orange-700 dark:text-orange-400">{option.label}</span>
-                    <Badge variant="secondary" className="ml-2 bg-orange-200 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300 text-xs">
-                      Solicitar
-                    </Badge>
+                    <span className={cn('font-medium', isPIXBlocked ? 'text-muted-foreground' : 'text-orange-700 dark:text-orange-400')}>{option.label}</span>
+                    {!isPIXBlocked && (
+                      <Badge variant="secondary" className="ml-2 bg-orange-200 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300 text-xs">
+                        Solicitar
+                      </Badge>
+                    )}
                   </div>
                 </div>
-                <span className="text-sm text-orange-600 dark:text-orange-400">{option.description}</span>
+                <span className={cn('text-sm', isPIXBlocked ? 'text-muted-foreground text-xs' : 'text-orange-600 dark:text-orange-400')}>{option.description}</span>
               </div>
             );
           }

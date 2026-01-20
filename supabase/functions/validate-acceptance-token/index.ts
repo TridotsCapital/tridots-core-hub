@@ -113,7 +113,7 @@ const handler = async (req: Request): Promise<Response> => {
     
     const setupFee = analysis.setup_fee_exempt ? 0 : analysis.setup_fee;
     const primeiraParcela = setupFee + (garantiaAnual / 12);
-    const descontoPix = analysis.agency?.desconto_pix_percentual || 5;
+    const descontoPix = analysis.agency?.desconto_pix_percentual ?? 0;
 
     console.log("Token is valid:", { 
       analysisId: analysis.id, 

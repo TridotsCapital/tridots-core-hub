@@ -4,7 +4,7 @@ import { CreditCard, QrCode, Sparkles } from 'lucide-react';
 interface PaymentMethodDisplayProps {
   method: string | null | undefined;
   garantiaAnual: number;
-  descontoPix?: number;
+  descontoPix?: number | null;
   showDiscount?: boolean;
   size?: 'sm' | 'md' | 'lg';
 }
@@ -15,11 +15,13 @@ const formatCurrency = (value: number) =>
 export function PaymentMethodDisplay({
   method,
   garantiaAnual,
-  descontoPix = 5,
+  descontoPix,
   showDiscount = true,
   size = 'md',
 }: PaymentMethodDisplayProps) {
   if (!method) return null;
+  
+  const pixDiscountValue = descontoPix ?? 0;
 
   const sizeClasses = {
     sm: 'text-sm',
@@ -35,17 +37,29 @@ export function PaymentMethodDisplay({
 
   // Handle PIX
   if (method === 'pix') {
-    const valorComDesconto = garantiaAnual * (1 - descontoPix / 100);
+    // If no discount, just show PIX without discount info
+    if (pixDiscountValue === 0) {
+      return (
+        <div className="flex flex-wrap items-center gap-2">
+          <QrCode className={`${iconSize[size]} text-primary shrink-0`} />
+          <span className={`font-semibold ${sizeClasses[size]}`}>
+            PIX: {formatCurrency(garantiaAnual)}
+          </span>
+        </div>
+      );
+    }
+    
+    const valorComDesconto = garantiaAnual * (1 - pixDiscountValue / 100);
     return (
       <div className="flex flex-wrap items-center gap-2">
         <QrCode className={`${iconSize[size]} text-primary shrink-0`} />
         <span className={`font-semibold ${sizeClasses[size]}`}>
-          PIX ({descontoPix}% off): {formatCurrency(valorComDesconto)}
+          PIX ({Math.round(pixDiscountValue)}% off): {formatCurrency(valorComDesconto)}
         </span>
         <span className="text-sm text-muted-foreground line-through">
           {formatCurrency(garantiaAnual)}
         </span>
-        {showDiscount && descontoPix > 0 && (
+        {showDiscount && pixDiscountValue > 0 && (
           <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200">
             <Sparkles className="h-3 w-3 mr-1" />
             Economia de {formatCurrency(garantiaAnual - valorComDesconto)}
