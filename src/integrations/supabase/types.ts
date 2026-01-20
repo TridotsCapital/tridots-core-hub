@@ -1169,6 +1169,18 @@ export type Database = {
           doc_vistoria_inicial_uploaded_at: string | null
           id: string
           last_renewal_id: string | null
+          payer_address: string | null
+          payer_cep: string | null
+          payer_city: string | null
+          payer_complement: string | null
+          payer_cpf: string | null
+          payer_email: string | null
+          payer_is_tenant: boolean | null
+          payer_name: string | null
+          payer_neighborhood: string | null
+          payer_number: string | null
+          payer_phone: string | null
+          payer_state: string | null
           renewal_count: number | null
           status: Database["public"]["Enums"]["contract_status"]
           updated_at: string
@@ -1207,6 +1219,18 @@ export type Database = {
           doc_vistoria_inicial_uploaded_at?: string | null
           id?: string
           last_renewal_id?: string | null
+          payer_address?: string | null
+          payer_cep?: string | null
+          payer_city?: string | null
+          payer_complement?: string | null
+          payer_cpf?: string | null
+          payer_email?: string | null
+          payer_is_tenant?: boolean | null
+          payer_name?: string | null
+          payer_neighborhood?: string | null
+          payer_number?: string | null
+          payer_phone?: string | null
+          payer_state?: string | null
           renewal_count?: number | null
           status?: Database["public"]["Enums"]["contract_status"]
           updated_at?: string
@@ -1245,6 +1269,18 @@ export type Database = {
           doc_vistoria_inicial_uploaded_at?: string | null
           id?: string
           last_renewal_id?: string | null
+          payer_address?: string | null
+          payer_cep?: string | null
+          payer_city?: string | null
+          payer_complement?: string | null
+          payer_cpf?: string | null
+          payer_email?: string | null
+          payer_is_tenant?: boolean | null
+          payer_name?: string | null
+          payer_neighborhood?: string | null
+          payer_number?: string | null
+          payer_phone?: string | null
+          payer_state?: string | null
           renewal_count?: number | null
           status?: Database["public"]["Enums"]["contract_status"]
           updated_at?: string

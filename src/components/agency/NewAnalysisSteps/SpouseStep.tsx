@@ -129,7 +129,11 @@ export function SpouseStep({ form }: SpouseStepProps) {
                 <FormItem>
                   <FormLabel>Data de Nascimento</FormLabel>
                   <FormControl>
-                    <Input {...field} type="date" />
+                    <Input 
+                      {...field} 
+                      type="date" 
+                      max={new Date().toISOString().split('T')[0]}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

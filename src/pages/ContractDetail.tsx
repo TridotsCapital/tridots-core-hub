@@ -45,6 +45,7 @@ import { InternalNotesTab } from '@/components/shared/InternalNotesTab';
 import { GuaranteeCostsSection } from '@/components/payment/GuaranteeCostsSection';
 import { ContractRenewalTab } from '@/components/contracts/ContractRenewalTab';
 import { CoverageCard } from '@/components/shared/CoverageCard';
+import { PayerInfoCard } from '@/components/shared/PayerInfoCard';
 import { ContractCommissionsTab } from '@/components/shared/ContractCommissionsTab';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -602,6 +603,22 @@ export default function ContractDetail() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Payer Info - show if different from tenant */}
+            <PayerInfoCard
+              payerIsTenant={contract.payer_is_tenant}
+              payerName={contract.payer_name}
+              payerCpf={contract.payer_cpf}
+              payerEmail={contract.payer_email}
+              payerPhone={contract.payer_phone}
+              payerAddress={contract.payer_address}
+              payerNumber={contract.payer_number}
+              payerComplement={contract.payer_complement}
+              payerNeighborhood={contract.payer_neighborhood}
+              payerCity={contract.payer_city}
+              payerState={contract.payer_state}
+              payerCep={contract.payer_cep}
+            />
 
             {/* Spouse Info */}
             {analysis.conjuge_nome && (

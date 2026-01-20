@@ -32,6 +32,7 @@ interface Contract {
     inquilino_nome: string;
     inquilino_cpf: string;
     valor_aluguel: number;
+    payments_validated_at?: string | null;
     valor_total: number | null;
     taxa_garantia_percentual: number | null;
     garantia_anual: number | null;
@@ -277,7 +278,9 @@ export function AgencyContractList({
                           </Badge>
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {format(new Date(contract.created_at), 'dd/MM/yyyy', { locale: ptBR })}
+                          {contract.analysis?.payments_validated_at 
+                            ? format(new Date(contract.analysis.payments_validated_at), 'dd/MM/yyyy', { locale: ptBR })
+                            : format(new Date(contract.created_at), 'dd/MM/yyyy', { locale: ptBR })}
                         </TableCell>
                         <TableCell className="text-right">
                           <DropdownMenu>
