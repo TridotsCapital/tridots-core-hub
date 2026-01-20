@@ -1421,6 +1421,233 @@ export type Database = {
         }
         Relationships: []
       }
+      help_chapters: {
+        Row: {
+          created_at: string
+          icon: string
+          id: string
+          is_new: boolean
+          order_index: number
+          slug: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          icon?: string
+          id?: string
+          is_new?: boolean
+          order_index: number
+          slug: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          icon?: string
+          id?: string
+          is_new?: boolean
+          order_index?: number
+          slug?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      help_faqs: {
+        Row: {
+          answer: string
+          chapter_id: string
+          created_at: string
+          id: string
+          order_index: number
+          question: string
+          updated_at: string
+        }
+        Insert: {
+          answer: string
+          chapter_id: string
+          created_at?: string
+          id?: string
+          order_index?: number
+          question: string
+          updated_at?: string
+        }
+        Update: {
+          answer?: string
+          chapter_id?: string
+          created_at?: string
+          id?: string
+          order_index?: number
+          question?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "help_faqs_chapter_id_fkey"
+            columns: ["chapter_id"]
+            isOneToOne: false
+            referencedRelation: "help_chapters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      help_feedback: {
+        Row: {
+          created_at: string
+          id: string
+          is_helpful: boolean
+          section_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_helpful: boolean
+          section_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_helpful?: boolean
+          section_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "help_feedback_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "help_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      help_glossary: {
+        Row: {
+          created_at: string
+          definition: string
+          id: string
+          term: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          definition: string
+          id?: string
+          term: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          definition?: string
+          id?: string
+          term?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      help_media: {
+        Row: {
+          caption: string | null
+          created_at: string
+          file_path: string | null
+          id: string
+          media_type: string
+          order_index: number
+          placeholder_id: string
+          section_id: string
+          updated_at: string
+          video_url: string | null
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          file_path?: string | null
+          id?: string
+          media_type: string
+          order_index?: number
+          placeholder_id: string
+          section_id: string
+          updated_at?: string
+          video_url?: string | null
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          file_path?: string | null
+          id?: string
+          media_type?: string
+          order_index?: number
+          placeholder_id?: string
+          section_id?: string
+          updated_at?: string
+          video_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "help_media_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "help_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      help_sections: {
+        Row: {
+          chapter_id: string
+          content: string
+          created_at: string
+          id: string
+          order_index: number
+          portal_links: Json | null
+          see_also: Json | null
+          slug: string
+          tips: Json | null
+          title: string
+          updated_at: string
+          warnings: Json | null
+        }
+        Insert: {
+          chapter_id: string
+          content?: string
+          created_at?: string
+          id?: string
+          order_index: number
+          portal_links?: Json | null
+          see_also?: Json | null
+          slug: string
+          tips?: Json | null
+          title: string
+          updated_at?: string
+          warnings?: Json | null
+        }
+        Update: {
+          chapter_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          order_index?: number
+          portal_links?: Json | null
+          see_also?: Json | null
+          slug?: string
+          tips?: Json | null
+          title?: string
+          updated_at?: string
+          warnings?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "help_sections_chapter_id_fkey"
+            columns: ["chapter_id"]
+            isOneToOne: false
+            referencedRelation: "help_chapters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       internal_chat: {
         Row: {
           analysis_id: string
