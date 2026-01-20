@@ -16,6 +16,7 @@ import {
   KeyRound,
   UserCircle,
   AlertCircle,
+  BookOpen,
 } from "lucide-react";
 import logoBlack from "@/assets/logo-tridots-black.webp";
 import { NavLink } from "@/components/NavLink";
@@ -64,6 +65,7 @@ const menuItemsConfig = [
   { title: "Minhas Comissões", icon: DollarSign, pathKey: "commissions" },
   { title: "Drive Documentos", icon: FolderOpen, pathKey: "documents" },
   { title: "Colaboradores", icon: Users, pathKey: "collaborators" },
+  { title: "Ajuda", icon: BookOpen, pathKey: "help" },
 ];
 
 export function AgencySidebar() {

@@ -12,3 +12,4 @@ export { default as AgencyCommissions } from './AgencyCommissions';
 export { default as AgencyDocuments } from './AgencyDocuments';
 export { default as AgencyChangePassword } from './AgencyChangePassword';
 export { default as AgencyProfile } from './AgencyProfile';
+export { default as AgencyHelp } from './AgencyHelp';
