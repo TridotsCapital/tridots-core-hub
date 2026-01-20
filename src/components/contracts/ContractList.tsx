@@ -66,6 +66,7 @@ interface Contract {
     garantia_anual: number | null;
     approved_at: string | null;
     payments_validated_at?: string | null;
+    guarantee_payment_date?: string | null;
   } | null;
   agency: {
     id: string;
@@ -117,9 +118,11 @@ export function ContractList({ contracts, isLoading, onRenew, onFlagPendency, on
         Cobertura: c.analysis?.garantia_anual || 0,
         'Taxa %': c.analysis?.taxa_garantia_percentual || 0,
         Status: STATUS_CONFIG[c.status]?.label || c.status,
-        'Data Criação': c.analysis?.payments_validated_at 
-          ? format(new Date(c.analysis.payments_validated_at), 'dd/MM/yyyy')
-          : format(new Date(c.created_at), 'dd/MM/yyyy'),
+        'Data Criação': c.analysis?.guarantee_payment_date 
+          ? format(new Date(c.analysis.guarantee_payment_date), 'dd/MM/yyyy')
+          : c.analysis?.payments_validated_at 
+            ? format(new Date(c.analysis.payments_validated_at), 'dd/MM/yyyy')
+            : format(new Date(c.created_at), 'dd/MM/yyyy'),
       }));
 
     if (data.length === 0) return;
@@ -283,9 +286,11 @@ export function ContractList({ contracts, isLoading, onRenew, onFlagPendency, on
                     </div>
                   </TableCell>
                   <TableCell>
-                    {contract.analysis?.payments_validated_at 
-                      ? format(new Date(contract.analysis.payments_validated_at), 'dd/MM/yyyy', { locale: ptBR })
-                      : format(new Date(contract.created_at), 'dd/MM/yyyy', { locale: ptBR })}
+                    {contract.analysis?.guarantee_payment_date 
+                      ? format(new Date(contract.analysis.guarantee_payment_date), 'dd/MM/yyyy', { locale: ptBR })
+                      : contract.analysis?.payments_validated_at 
+                        ? format(new Date(contract.analysis.payments_validated_at), 'dd/MM/yyyy', { locale: ptBR })
+                        : format(new Date(contract.created_at), 'dd/MM/yyyy', { locale: ptBR })}
                   </TableCell>
                   <TableCell onClick={e => e.stopPropagation()}>
                     <DropdownMenu>
