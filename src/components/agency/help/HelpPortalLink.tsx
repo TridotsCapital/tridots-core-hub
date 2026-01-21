@@ -18,7 +18,9 @@ export function HelpPortalLink({ label, path, icon }: HelpPortalLinkProps) {
     : Icons.ExternalLink;
 
   const handleClick = () => {
-    navigate(agencyPath(path));
+    // Remove /agency prefix from path if present, since agencyPath will add it when needed
+    const cleanPath = path.replace(/^\/agency/, '');
+    navigate(agencyPath(cleanPath));
   };
 
   return (
