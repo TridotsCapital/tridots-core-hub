@@ -31,18 +31,58 @@ export function HelpScreenshotPlaceholder({
 
   // If we have actual media, display it
   if (media?.file_path) {
-    const { data: urlData } = supabase.storage
-      .from("help-assets")
-      .getPublicUrl(media.file_path);
+    // Check if file_path is already a full URL or just a path
+    const imageUrl = media.file_path.startsWith("http")
+      ? media.file_path
+      : supabase.storage.from("help-assets").getPublicUrl(media.file_path).data.publicUrl;
 
     return (
       <figure className="my-6">
         <div className="rounded-lg overflow-hidden border bg-muted/30">
           <img
-            src={urlData.publicUrl}
+            src={imageUrl}
             alt={media.caption || placeholderId}
             className="w-full h-auto"
           />
+        </div>
+        {media.caption && (
+          <figcaption className="text-xs text-center text-muted-foreground mt-2">
+            {media.caption}
+          </figcaption>
+        )}
+      </figure>
+    );
+  }
+
+  // Check for video
+  if (media?.video_url) {
+    const getYouTubeEmbedUrl = (url: string) => {
+      const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&]+)/);
+      return match ? `https://www.youtube.com/embed/${match[1]}` : null;
+    };
+
+    const embedUrl = getYouTubeEmbedUrl(media.video_url);
+
+    return (
+      <figure className="my-6">
+        <div className="rounded-lg overflow-hidden border bg-muted/30 aspect-video">
+          {embedUrl ? (
+            <iframe
+              src={embedUrl}
+              className="w-full h-full"
+              allowFullScreen
+              title={media.caption || placeholderId}
+            />
+          ) : (
+            <a
+              href={media.video_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center h-full text-primary hover:underline"
+            >
+              Abrir vídeo
+            </a>
+          )}
         </div>
         {media.caption && (
           <figcaption className="text-xs text-center text-muted-foreground mt-2">

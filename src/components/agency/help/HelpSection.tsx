@@ -16,12 +16,15 @@ interface HelpSectionProps {
 
 export function HelpSection({ section, chapterSlug, isActive, onNavigate }: HelpSectionProps) {
   // Parse content and replace screenshot placeholders
+  // Supports both [[screenshot:id]] (database format) and [SCREENSHOT: id] (legacy format)
   const renderContent = (content: string) => {
-    const parts = content.split(/\[SCREENSHOT:\s*([^\]]+)\]/g);
+    const parts = content.split(/\[\[screenshot:([^\]]+)\]\]|\[SCREENSHOT:\s*([^\]]+)\]/g);
     
     return parts.map((part, index) => {
-      // Odd indices are the screenshot IDs
-      if (index % 2 === 1) {
+      // Every 3rd item starting from index 1 or 2 is a placeholder ID
+      if (index % 3 === 1 || index % 3 === 2) {
+        // Skip undefined parts (one of the capture groups will be undefined)
+        if (!part) return null;
         return (
           <HelpScreenshotPlaceholder
             key={index}
@@ -30,6 +33,9 @@ export function HelpSection({ section, chapterSlug, isActive, onNavigate }: Help
           />
         );
       }
+      
+      // Skip empty content
+      if (!part || !part.trim()) return null;
       
       // Render markdown-like content
       return (
