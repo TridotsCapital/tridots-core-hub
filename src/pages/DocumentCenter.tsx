@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -40,6 +41,7 @@ import {
   useDownloadTermTemplate,
   TermTemplate,
 } from "@/hooks/useTermTemplates";
+import { HelpAdminPanel } from "@/components/help-admin";
 import {
   Upload,
   FileText,
@@ -51,6 +53,7 @@ import {
   History,
   Loader2,
   EyeOff,
+  BookOpen,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -164,16 +167,32 @@ const DocumentCenter = () => {
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Centro de Documentos</h1>
             <p className="text-muted-foreground">
-              Gerencie os modelos de termos disponíveis para as imobiliárias
+              Gerencie modelos de termos e conteúdo do Help Center
             </p>
           </div>
-          {isMaster && (
-            <Button onClick={() => setIsUploadOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Novo Modelo
-            </Button>
-          )}
         </div>
+
+        <Tabs defaultValue="templates" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="templates" className="gap-2">
+              <FileText className="h-4 w-4" />
+              Modelos de Termos
+            </TabsTrigger>
+            <TabsTrigger value="help" className="gap-2">
+              <BookOpen className="h-4 w-4" />
+              Gestão do Help
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="templates">
+            <div className="flex justify-end mb-4">
+              {isMaster && (
+                <Button onClick={() => setIsUploadOpen(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Novo Modelo
+                </Button>
+              )}
+            </div>
 
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
@@ -282,9 +301,13 @@ const DocumentCenter = () => {
               );
             })}
           </div>
-        )}
+            )}
+          </TabsContent>
 
-        {/* Upload Dialog */}
+          <TabsContent value="help">
+            <HelpAdminPanel />
+          </TabsContent>
+        </Tabs>
         <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
           <DialogContent>
             <DialogHeader>
