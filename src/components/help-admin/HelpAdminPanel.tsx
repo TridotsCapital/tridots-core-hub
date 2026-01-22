@@ -5,7 +5,7 @@ import { HelpChapterList } from "./HelpChapterList";
 import { HelpSectionEditor } from "./HelpSectionEditor";
 import { HelpMediaManager } from "./HelpMediaManager";
 import { HelpFeedbackViewer } from "./HelpFeedbackViewer";
-import { HelpChapter, HelpSection } from "@/hooks/useHelpAdmin";
+import { HelpChapter, HelpSection, useHelpAdminMedia } from "@/hooks/useHelpAdmin";
 import { BookOpen, Image, MessageSquare } from "lucide-react";
 
 type ViewState =
@@ -111,7 +111,7 @@ export function HelpAdminPanel() {
 
 // Global media gallery component
 function HelpMediaGallery() {
-  const { data: media, isLoading } = require("@/hooks/useHelpAdmin").useHelpAdminMedia();
+  const { data: media, isLoading } = useHelpAdminMedia();
 
   if (isLoading) {
     return (
