@@ -89,10 +89,13 @@ export function useCreateUser() {
 
       return data;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (data, variables) => {
+      const isRecovered = data?.recovered === true;
       toast({
-        title: "Usuário criado",
-        description: `${variables.full_name} foi adicionado com sucesso.`,
+        title: isRecovered ? "Usuário recuperado" : "Usuário criado",
+        description: isRecovered 
+          ? `${variables.full_name} foi recuperado e vinculado com sucesso.`
+          : `${variables.full_name} foi adicionado com sucesso.`,
       });
       
       // Invalidate relevant queries
