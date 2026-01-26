@@ -115,6 +115,9 @@ serve(async (req) => {
     }
 
     // Create the user with admin API
+    let userId: string;
+    let isRecoveredOrphan = false;
+    
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
@@ -125,26 +128,112 @@ serve(async (req) => {
     if (createError) {
       console.error('Error creating user:', createError);
       
-      // Mensagens específicas para erros comuns em português
-      let userMessage = createError.message;
+      // Check if this is an "email already exists" error - might be an orphan user
+      const isEmailExistsError = 
+        createError.message?.includes('already been registered') || 
+        createError.message?.includes('already exists') ||
+        createError.message?.includes('User already registered');
       
-      if (createError.message?.includes('already been registered') || 
-          createError.message?.includes('already exists') ||
-          createError.message?.includes('User already registered')) {
-        userMessage = 'Este email já está cadastrado no sistema';
+      if (isEmailExistsError) {
+        console.log('Email exists, checking for orphan user...');
+        
+        // Try to find the existing user
+        const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+        
+        if (listError) {
+          console.error('Error listing users:', listError);
+          return new Response(
+            JSON.stringify({ error: 'Erro ao verificar usuário existente' }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        
+        const existingUser = users?.find(u => u.email?.toLowerCase() === email.toLowerCase());
+        
+        if (existingUser) {
+          // Check if user has a profile
+          const { data: existingProfile } = await supabaseAdmin
+            .from('profiles')
+            .select('id, active')
+            .eq('id', existingUser.id)
+            .single();
+          
+          if (!existingProfile) {
+            // This is an orphan user - recover it by creating the profile
+            console.log(`Orphan user detected: ${email}. Recovering...`);
+            
+            const { error: profileError } = await supabaseAdmin
+              .from('profiles')
+              .insert({
+                id: existingUser.id,
+                email: email,
+                full_name: full_name,
+                active: true
+              });
+            
+            if (profileError) {
+              console.error('Error creating profile for orphan user:', profileError);
+              return new Response(
+                JSON.stringify({ error: 'Erro ao recuperar usuário. Contate o suporte.' }),
+                { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+              );
+            }
+            
+            // Update password for the recovered user
+            const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+              existingUser.id,
+              { password: password }
+            );
+            
+            if (updateError) {
+              console.error('Error updating password for orphan user:', updateError);
+              // Continue anyway, user can reset password later
+            }
+            
+            userId = existingUser.id;
+            isRecoveredOrphan = true;
+            console.log(`Orphan user recovered successfully: ${email}`);
+          } else {
+            // User has profile - check if active
+            if (!existingProfile.active) {
+              return new Response(
+                JSON.stringify({ error: 'Este email pertence a um usuário desativado. Contate o administrador.' }),
+                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+              );
+            }
+            
+            // Profile exists and is active - truly duplicate
+            return new Response(
+              JSON.stringify({ error: 'Este email já está cadastrado e ativo no sistema' }),
+              { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+        } else {
+          // Couldn't find the user - generic error
+          return new Response(
+            JSON.stringify({ error: 'Este email já está cadastrado no sistema' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
       } else if (createError.message?.includes('invalid email')) {
-        userMessage = 'Email inválido';
+        return new Response(
+          JSON.stringify({ error: 'Email inválido' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       } else if (createError.message?.includes('password')) {
-        userMessage = 'Senha inválida. Verifique os requisitos de segurança.';
+        return new Response(
+          JSON.stringify({ error: 'Senha inválida. Verifique os requisitos de segurança.' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      } else {
+        return new Response(
+          JSON.stringify({ error: createError.message || 'Erro ao criar usuário' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
-      
-      return new Response(
-        JSON.stringify({ error: userMessage }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    } else {
+      userId = newUser.user.id;
     }
-
-    const userId = newUser.user.id;
 
     // The profile is created automatically by the handle_new_user trigger
     // Now add role-specific records
@@ -194,13 +283,16 @@ serve(async (req) => {
       }
     }
 
-    console.log(`User created successfully: ${email} (${type})`);
+    console.log(`User ${isRecoveredOrphan ? 'recovered' : 'created'} successfully: ${email} (${type})`);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         user_id: userId,
-        message: 'User created successfully'
+        recovered: isRecoveredOrphan,
+        message: isRecoveredOrphan 
+          ? 'Usuário existente recuperado e vinculado com sucesso'
+          : 'Usuário criado com sucesso'
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
