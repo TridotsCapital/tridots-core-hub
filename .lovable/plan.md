@@ -1,117 +1,122 @@
 
-# Plano: Corrigir Criação/Edição de Usuários (Tridots e Imobiliária)
+# Plano: Garantir Funcionamento de Criação/Edição de Usuários
 
-## Diagnóstico do Problema
+## Diagnóstico Final
 
-O erro "edge function returned a non-2xx status code" é uma mensagem genérica do cliente Supabase. A edge function `create-user` está retornando erros específicos (como "A user with this email address has already been registered"), mas o hook `useCreateUser` não está extraindo corretamente a mensagem do corpo da resposta.
+O erro "email já cadastrado" está correto tecnicamente - o email `lamadreseguros@gmail.com` **existe** no sistema de autenticação do Supabase (auth.users), mas:
+- **Não tem profile** na tabela pública `profiles`
+- **Não aparece na listagem** porque a UI busca apenas de `profiles`
 
-**Causa raiz**: Quando `supabase.functions.invoke` recebe um status não-2xx:
-- `error` contém mensagem genérica
-- `data` contém o corpo da resposta com a mensagem real
+Este é um "usuário órfão" - criado no sistema de auth mas sem registro completo.
 
-O código atual verifica `error` primeiro e ignora `data.error`.
-
----
-
-## Solução
-
-### 1. Corrigir o Hook `useCreateUser`
-
-**Arquivo**: `src/hooks/useCreateUser.ts`
-
-Alterar a ordem de verificação de erros para priorizar a mensagem específica:
-
-```typescript
-const { data, error } = await supabase.functions.invoke('create-user', {
-  body: params,
-});
-
-// Priorizar mensagem específica do corpo da resposta
-if (data?.error) {
-  throw new Error(translateErrorMessage(data.error));
-}
-
-// Fallback para erros de rede/invocação
-if (error) {
-  throw new Error(error.message || 'Falha ao criar usuário');
-}
-```
-
-Adicionar função para traduzir mensagens de erro comuns:
-
-```typescript
-function translateErrorMessage(message: string): string {
-  const translations: Record<string, string> = {
-    'A user with this email address has already been registered': 
-      'Este email já está cadastrado no sistema',
-    'Missing required fields': 
-      'Campos obrigatórios não preenchidos',
-    'Invalid role for team member': 
-      'Permissão inválida para membro da equipe',
-    'Only masters can create team members': 
-      'Apenas administradores podem criar membros da equipe',
-    // ... outras traduções
-  };
-  return translations[message] || message;
-}
-```
-
-### 2. Melhorar a Edge Function `create-user`
-
-**Arquivo**: `supabase/functions/create-user/index.ts`
-
-Tratar erro de email duplicado de forma mais amigável:
-
-```typescript
-if (createError) {
-  console.error('Error creating user:', createError);
-  
-  // Mensagens específicas para erros comuns
-  let userMessage = createError.message;
-  if (createError.code === 'email_exists') {
-    userMessage = 'Este email já está cadastrado no sistema';
-  }
-  
-  return new Response(
-    JSON.stringify({ error: userMessage }),
-    { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-  );
-}
-```
-
-### 3. Validação Prévia de Email (Opcional - UX Melhorada)
-
-Adicionar verificação de email antes de submeter o formulário:
-
-**Arquivo**: `src/components/users/AddUserDialog.tsx`
-
-```typescript
-// Verificar se email já existe antes de criar
-const checkEmailExists = async (email: string) => {
-  const { data } = await supabase
-    .from('profiles')
-    .select('email')
-    .eq('email', email)
-    .single();
-  return !!data;
-};
-```
+## Causas Possíveis
+1. Tentativa anterior de registro que falhou após criar o usuário no auth
+2. Trigger `handle_new_user` falhou silenciosamente
+3. Registro via outro fluxo que não completou
 
 ---
 
-## Resumo das Alterações
+## Solução Proposta
+
+### 1. Melhorar Edge Function `create-user`
+
+Adicionar lógica para detectar e recuperar usuários órfãos:
+
+```text
+┌─────────────────────┐
+│ Tentar criar user   │
+└─────────┬───────────┘
+          │
+          ▼
+┌─────────────────────┐     ┌────────────────────────┐
+│ Email já existe?    │────▶│ Verificar se tem       │
+└─────────────────────┘ SIM │ profile no sistema     │
+                            └───────────┬────────────┘
+                                        │
+                    ┌───────────────────┴───────────────────┐
+                    ▼                                       ▼
+          ┌─────────────────┐                    ┌─────────────────┐
+          │ Tem profile?    │                    │ Usuário órfão   │
+          │ Erro: duplicado │                    │ Recuperar!      │
+          └─────────────────┘                    └─────────────────┘
+```
+
+**Novo fluxo:**
+1. Tentar criar usuário via `auth.admin.createUser`
+2. Se falhar com "email exists":
+   - Buscar o user_id existente via listagem
+   - Verificar se existe profile para esse user_id
+   - Se NÃO existe profile → criar profile + vincular roles
+   - Se existe profile → retornar erro "email já cadastrado"
+
+### 2. Arquivos a Modificar
 
 | Arquivo | Alteração |
 |---------|-----------|
-| `src/hooks/useCreateUser.ts` | Corrigir extração de erro + traduzir mensagens |
-| `supabase/functions/create-user/index.ts` | Mensagens de erro em português |
-| `src/components/users/AddUserDialog.tsx` | (Opcional) Validação prévia de email |
+| `supabase/functions/create-user/index.ts` | Adicionar lógica de recuperação de usuário órfão |
+| `src/hooks/useCreateUser.ts` | Adicionar tradução para novas mensagens |
+
+### 3. Código Principal - Edge Function
+
+```typescript
+// Após erro de email duplicado, verificar se é usuário órfão
+if (createError?.message?.includes('already been registered')) {
+  // Buscar usuário existente
+  const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+  const existingUser = users?.find(u => u.email === email);
+  
+  if (existingUser) {
+    // Verificar se tem profile
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('id')
+      .eq('id', existingUser.id)
+      .single();
+    
+    if (!profile) {
+      // É usuário órfão - criar profile manualmente
+      const { error: profileError } = await supabaseAdmin
+        .from('profiles')
+        .insert({
+          id: existingUser.id,
+          email: email,
+          full_name: full_name
+        });
+      
+      if (!profileError) {
+        // Continuar com vinculação de roles...
+        userId = existingUser.id;
+        // Prosseguir normalmente
+      }
+    } else {
+      // Profile existe - é duplicado real
+      return new Response(
+        JSON.stringify({ error: 'Este email já está cadastrado e ativo no sistema' }),
+        { status: 400, ... }
+      );
+    }
+  }
+}
+```
+
+### 4. Melhorias de UX Adicionais
+
+- Mensagem clara quando usuário é recuperado: "Usuário existente vinculado com sucesso"
+- Log de auditoria para rastrear recuperações
+- Opção futura: tela de administração para ver/limpar usuários órfãos
 
 ---
 
+## Resumo da Implementação
+
+1. **Edge Function** - Detectar email duplicado + verificar se é órfão + recuperar automaticamente
+2. **Hook Frontend** - Traduzir novas mensagens de sucesso/erro
+3. **Validação** - Garantir que novo usuário recebe role correta mesmo em recuperação
+
 ## Resultado Esperado
 
-- Usuários Tridots: Criação com mensagens de erro claras em português
-- Colaboradores Imobiliária: Mesmo comportamento com feedback adequado
-- Emails duplicados: Mensagem específica "Este email já está cadastrado"
-- Erros de permissão: Mensagens explicativas para cada caso
+- ✅ Criar novos usuários Tridots funciona
+- ✅ Criar colaboradores de imobiliária funciona  
+- ✅ Emails duplicados reais mostram erro claro
+- ✅ Usuários órfãos são recuperados automaticamente
+- ✅ Mensagens em português claras para todos os cenários
