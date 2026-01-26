@@ -11,6 +11,54 @@ interface CreateUserParams {
   agency_id?: string;
 }
 
+// Traduz mensagens de erro comuns para português
+function translateErrorMessage(message: string): string {
+  const translations: Record<string, string> = {
+    'A user with this email address has already been registered': 
+      'Este email já está cadastrado no sistema',
+    'User already registered':
+      'Este email já está cadastrado no sistema',
+    'Missing required fields': 
+      'Campos obrigatórios não preenchidos',
+    'Invalid role for team member': 
+      'Permissão inválida para membro da equipe',
+    'Only masters can create team members': 
+      'Apenas administradores podem criar membros da equipe',
+    'You can only add collaborators to your own agency':
+      'Você só pode adicionar colaboradores à sua própria imobiliária',
+    'Cannot add collaborators to inactive agency':
+      'Não é possível adicionar colaboradores a uma imobiliária inativa',
+    'Agency ID is required for collaborators':
+      'ID da imobiliária é obrigatório para colaboradores',
+    'Missing authorization header':
+      'Sessão expirada. Faça login novamente.',
+    'Invalid token':
+      'Sessão inválida. Faça login novamente.',
+    'Not authenticated':
+      'Você precisa estar logado para realizar esta ação',
+    'Failed to assign role':
+      'Falha ao atribuir permissão ao usuário',
+    'Failed to link user to agency':
+      'Falha ao vincular usuário à imobiliária',
+    'Internal server error':
+      'Erro interno do servidor. Tente novamente.',
+  };
+  
+  // Verifica correspondência exata
+  if (translations[message]) {
+    return translations[message];
+  }
+  
+  // Verifica correspondência parcial para mensagens que podem variar
+  for (const [key, value] of Object.entries(translations)) {
+    if (message.toLowerCase().includes(key.toLowerCase())) {
+      return value;
+    }
+  }
+  
+  return message;
+}
+
 export function useCreateUser() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -20,19 +68,23 @@ export function useCreateUser() {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
-        throw new Error('Not authenticated');
+        throw new Error('Você precisa estar logado para realizar esta ação');
       }
 
       const { data, error } = await supabase.functions.invoke('create-user', {
         body: params,
       });
 
-      if (error) {
-        throw new Error(error.message || 'Failed to create user');
+      // IMPORTANTE: Priorizar mensagem específica do corpo da resposta
+      // O supabase.functions.invoke retorna erro genérico em `error` 
+      // mas a mensagem real está em `data.error`
+      if (data?.error) {
+        throw new Error(translateErrorMessage(data.error));
       }
 
-      if (data?.error) {
-        throw new Error(data.error);
+      // Fallback para erros de rede/invocação
+      if (error) {
+        throw new Error(translateErrorMessage(error.message) || 'Falha ao criar usuário');
       }
 
       return data;

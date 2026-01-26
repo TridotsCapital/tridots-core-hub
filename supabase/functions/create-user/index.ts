@@ -124,8 +124,22 @@ serve(async (req) => {
 
     if (createError) {
       console.error('Error creating user:', createError);
+      
+      // Mensagens específicas para erros comuns em português
+      let userMessage = createError.message;
+      
+      if (createError.message?.includes('already been registered') || 
+          createError.message?.includes('already exists') ||
+          createError.message?.includes('User already registered')) {
+        userMessage = 'Este email já está cadastrado no sistema';
+      } else if (createError.message?.includes('invalid email')) {
+        userMessage = 'Email inválido';
+      } else if (createError.message?.includes('password')) {
+        userMessage = 'Senha inválida. Verifique os requisitos de segurança.';
+      }
+      
       return new Response(
-        JSON.stringify({ error: createError.message }),
+        JSON.stringify({ error: userMessage }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
