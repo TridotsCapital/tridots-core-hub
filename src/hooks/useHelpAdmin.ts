@@ -342,3 +342,199 @@ export function extractPlaceholders(content: string): string[] {
   }
   return matches;
 }
+
+// Utility: Generate slug from title
+export function generateSlug(title: string): string {
+  return title
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // Remove acentos
+    .replace(/[^a-z0-9]+/g, "-") // Substitui caracteres especiais por hífen
+    .replace(/^-|-$/g, ""); // Remove hífens do início/fim
+}
+
+// Create new chapter
+export function useCreateHelpChapter() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ title, icon, is_new = false }: { title: string; icon: string; is_new?: boolean }) => {
+      // Get max order_index
+      const { data: chapters } = await supabase
+        .from("help_chapters")
+        .select("order_index")
+        .order("order_index", { ascending: false })
+        .limit(1);
+
+      const maxOrder = chapters?.[0]?.order_index || 0;
+
+      const { data, error } = await supabase
+        .from("help_chapters")
+        .insert({
+          title,
+          slug: generateSlug(title),
+          icon,
+          is_new,
+          order_index: maxOrder + 1,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["help-admin-chapters"] });
+      toast.success("Capítulo criado com sucesso");
+    },
+    onError: (error) => {
+      toast.error("Erro ao criar capítulo: " + error.message);
+    },
+  });
+}
+
+// Delete chapter (only if no sections)
+export function useDeleteHelpChapter() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (chapterId: string) => {
+      // Check if chapter has sections
+      const { count, error: countError } = await supabase
+        .from("help_sections")
+        .select("*", { count: "exact", head: true })
+        .eq("chapter_id", chapterId);
+
+      if (countError) throw countError;
+      if (count && count > 0) {
+        throw new Error("Não é possível excluir um capítulo com seções. Exclua as seções primeiro.");
+      }
+
+      const { error } = await supabase.from("help_chapters").delete().eq("id", chapterId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["help-admin-chapters"] });
+      toast.success("Capítulo excluído com sucesso");
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+}
+
+// Reorder chapters
+export function useReorderHelpChapters() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (chapters: { id: string; order_index: number }[]) => {
+      const updates = chapters.map((ch) =>
+        supabase
+          .from("help_chapters")
+          .update({ order_index: ch.order_index, updated_at: new Date().toISOString() })
+          .eq("id", ch.id)
+      );
+      await Promise.all(updates);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["help-admin-chapters"] });
+      toast.success("Ordem dos capítulos atualizada");
+    },
+    onError: (error) => {
+      toast.error("Erro ao reordenar: " + error.message);
+    },
+  });
+}
+
+// Create new section
+export function useCreateHelpSection() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      chapter_id,
+      title,
+      content = "",
+    }: {
+      chapter_id: string;
+      title: string;
+      content?: string;
+    }) => {
+      // Get max order_index for this chapter
+      const { data: sections } = await supabase
+        .from("help_sections")
+        .select("order_index")
+        .eq("chapter_id", chapter_id)
+        .order("order_index", { ascending: false })
+        .limit(1);
+
+      const maxOrder = sections?.[0]?.order_index || 0;
+
+      const { data, error } = await supabase
+        .from("help_sections")
+        .insert({
+          chapter_id,
+          title,
+          slug: generateSlug(title),
+          content,
+          order_index: maxOrder + 1,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["help-admin-sections"] });
+      toast.success("Seção criada com sucesso");
+    },
+    onError: (error) => {
+      toast.error("Erro ao criar seção: " + error.message);
+    },
+  });
+}
+
+// Delete section (and associated media)
+export function useDeleteHelpSection() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (sectionId: string) => {
+      // Delete associated media first
+      const { error: mediaError } = await supabase.from("help_media").delete().eq("section_id", sectionId);
+      if (mediaError) throw mediaError;
+
+      // Delete section
+      const { error } = await supabase.from("help_sections").delete().eq("id", sectionId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["help-admin-sections"] });
+      queryClient.invalidateQueries({ queryKey: ["help-admin-media"] });
+      toast.success("Seção excluída com sucesso");
+    },
+    onError: (error) => {
+      toast.error("Erro ao excluir seção: " + error.message);
+    },
+  });
+}
+
+// Reorder sections
+export function useReorderHelpSections() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (sections: { id: string; order_index: number }[]) => {
+      const updates = sections.map((sec) =>
+        supabase
+          .from("help_sections")
+          .update({ order_index: sec.order_index, updated_at: new Date().toISOString() })
+          .eq("id", sec.id)
+      );
+      await Promise.all(updates);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["help-admin-sections"] });
+      toast.success("Ordem das seções atualizada");
+    },
+    onError: (error) => {
+      toast.error("Erro ao reordenar: " + error.message);
+    },
+  });
+}

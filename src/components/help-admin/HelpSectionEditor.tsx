@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,12 +16,41 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import {
   useHelpAdminSections,
   useUpdateHelpSection,
+  useCreateHelpSection,
+  useDeleteHelpSection,
+  useReorderHelpSections,
   HelpChapter,
   HelpSection,
   extractPlaceholders,
 } from "@/hooks/useHelpAdmin";
+import { SortableSectionItem } from "./SortableSectionItem";
 import { Edit, Save, Loader2, Image, FileText, ArrowLeft, Lightbulb, AlertTriangle, Link2, X, Plus } from "lucide-react";
 
 interface HelpSectionEditorProps {
@@ -33,6 +62,10 @@ interface HelpSectionEditorProps {
 export function HelpSectionEditor({ chapter, onBack, onSelectSection }: HelpSectionEditorProps) {
   const { data: sections, isLoading } = useHelpAdminSections(chapter.id);
   const updateMutation = useUpdateHelpSection();
+  const createMutation = useCreateHelpSection();
+  const deleteMutation = useDeleteHelpSection();
+  const reorderMutation = useReorderHelpSections();
+
   const [editingSection, setEditingSection] = useState<HelpSection | null>(null);
   const [editForm, setEditForm] = useState<{
     title: string;
@@ -45,6 +78,21 @@ export function HelpSectionEditor({ chapter, onBack, onSelectSection }: HelpSect
     tips: [],
     warnings: [],
   });
+
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [createForm, setCreateForm] = useState({ title: "", content: "" });
+  const [sectionToDelete, setSectionToDelete] = useState<HelpSection | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const openEditDialog = (section: HelpSection) => {
     setEditingSection(section);
@@ -66,6 +114,36 @@ export function HelpSectionEditor({ chapter, onBack, onSelectSection }: HelpSect
       warnings: editForm.warnings.filter(Boolean),
     });
     setEditingSection(null);
+  };
+
+  const handleCreate = async () => {
+    if (!createForm.title.trim()) return;
+    await createMutation.mutateAsync({
+      chapter_id: chapter.id,
+      title: createForm.title,
+      content: createForm.content,
+    });
+    setIsCreateDialogOpen(false);
+    setCreateForm({ title: "", content: "" });
+  };
+
+  const handleDelete = async () => {
+    if (!sectionToDelete) return;
+    await deleteMutation.mutateAsync(sectionToDelete.id);
+    setSectionToDelete(null);
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id || !sections) return;
+
+    const oldIndex = sections.findIndex((sec) => sec.id === active.id);
+    const newIndex = sections.findIndex((sec) => sec.id === over.id);
+    const reordered = arrayMove(sections, oldIndex, newIndex);
+
+    reorderMutation.mutate(
+      reordered.map((sec, idx) => ({ id: sec.id, order_index: idx + 1 }))
+    );
   };
 
   const addTip = () => setEditForm({ ...editForm, tips: [...editForm.tips, ""] });
@@ -100,91 +178,54 @@ export function HelpSectionEditor({ chapter, onBack, onSelectSection }: HelpSect
   return (
     <>
       <div className="space-y-4">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={onBack}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <h3 className="text-lg font-semibold">{chapter.title}</h3>
-            <p className="text-sm text-muted-foreground">
-              {sections?.length || 0} seções
-            </p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" onClick={onBack}>
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <div>
+              <h3 className="text-lg font-semibold">{chapter.title}</h3>
+              <p className="text-sm text-muted-foreground">
+                {sections?.length || 0} seções
+              </p>
+            </div>
           </div>
+          <Button onClick={() => setIsCreateDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Nova Seção
+          </Button>
         </div>
 
         <ScrollArea className="h-[calc(100vh-300px)]">
-          <div className="space-y-3 pr-4">
-            {sections?.map((section) => {
-              const placeholders = extractPlaceholders(section.content);
-              return (
-                <Card key={section.id} className="hover:bg-muted/30 transition-colors">
-                  <CardHeader className="pb-2">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="text-xs">
-                            {section.order_index}
-                          </Badge>
-                          <CardTitle className="text-base">{section.title}</CardTitle>
-                        </div>
-                        <CardDescription className="mt-1">
-                          /{section.slug}
-                        </CardDescription>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onSelectSection(section)}
-                        >
-                          <Image className="h-4 w-4 mr-1" />
-                          Mídia
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => openEditDialog(section)}>
-                          <Edit className="h-4 w-4 mr-1" />
-                          Editar
-                        </Button>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="flex flex-wrap gap-2 text-xs">
-                      {placeholders.length > 0 && (
-                        <Badge variant="secondary" className="gap-1">
-                          <Image className="h-3 w-3" />
-                          {placeholders.length} placeholder(s)
-                        </Badge>
-                      )}
-                      {section.tips && section.tips.length > 0 && (
-                        <Badge variant="secondary" className="gap-1 bg-amber-100 text-amber-800">
-                          <Lightbulb className="h-3 w-3" />
-                          {section.tips.length} dica(s)
-                        </Badge>
-                      )}
-                      {section.warnings && section.warnings.length > 0 && (
-                        <Badge variant="secondary" className="gap-1 bg-red-100 text-red-800">
-                          <AlertTriangle className="h-3 w-3" />
-                          {section.warnings.length} alerta(s)
-                        </Badge>
-                      )}
-                      {section.portal_links && section.portal_links.length > 0 && (
-                        <Badge variant="secondary" className="gap-1 bg-blue-100 text-blue-800">
-                          <Link2 className="h-3 w-3" />
-                          {section.portal_links.length} atalho(s)
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
-                      {section.content.substring(0, 150)}...
-                    </p>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={sections?.map((sec) => sec.id) || []}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="space-y-3 pr-4">
+                {sections?.map((section) => (
+                  <SortableSectionItem
+                    key={section.id}
+                    section={section}
+                    onEdit={() => openEditDialog(section)}
+                    onDelete={(e) => {
+                      e.stopPropagation();
+                      setSectionToDelete(section);
+                    }}
+                    onSelectMedia={() => onSelectSection(section)}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
         </ScrollArea>
       </div>
 
+      {/* Edit Section Dialog */}
       <Dialog open={!!editingSection} onOpenChange={(open) => !open && setEditingSection(null)}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
           <DialogHeader>
@@ -285,6 +326,67 @@ export function HelpSectionEditor({ chapter, onBack, onSelectSection }: HelpSect
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Create Section Dialog */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nova Seção</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Título</Label>
+              <Input
+                value={createForm.title}
+                onChange={(e) => setCreateForm({ ...createForm, title: e.target.value })}
+                placeholder="Ex: Como configurar notificações"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Conteúdo Inicial (opcional)</Label>
+              <Textarea
+                value={createForm.content}
+                onChange={(e) => setCreateForm({ ...createForm, content: e.target.value })}
+                placeholder="Escreva o conteúdo em Markdown..."
+                rows={5}
+                className="font-mono text-sm"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleCreate} disabled={createMutation.isPending || !createForm.title.trim()}>
+              {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Criar Seção
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!sectionToDelete} onOpenChange={(open) => !open && setSectionToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir seção?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. A seção "{sectionToDelete?.title}" 
+              e todas as mídias associadas serão removidas permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
