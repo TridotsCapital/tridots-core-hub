@@ -41,3 +41,6 @@ verify_jwt = false
 
 [functions.upload-manual-document]
 verify_jwt = false
+
+[functions.seed-demo-agency]
+verify_jwt = false
