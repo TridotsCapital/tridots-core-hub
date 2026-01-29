@@ -202,7 +202,6 @@ Deno.serve(async (req) => {
           valor_aluguel: a.valor_aluguel,
           valor_condominio: a.valor_condominio,
           valor_iptu: a.valor_iptu,
-          valor_total: valorTotal,
           plano_garantia: a.plano_garantia,
           taxa_garantia_percentual: a.taxa_garantia_percentual,
           garantia_anual: garantiaAnual,
