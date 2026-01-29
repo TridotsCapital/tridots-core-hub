@@ -69,6 +69,17 @@ Deno.serve(async (req) => {
     const demoEmail = "demo@tridots.com.br";
     const demoPassword = "Demo@2025";
 
+    // First, check if user already exists and delete it
+    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
+    const existingDemoUser = existingUsers?.users?.find(u => u.email === demoEmail);
+    
+    if (existingDemoUser) {
+      // Delete existing profile first
+      await supabaseAdmin.from("profiles").delete().eq("id", existingDemoUser.id);
+      // Delete the auth user
+      await supabaseAdmin.auth.admin.deleteUser(existingDemoUser.id);
+    }
+
     const { data: authUser, error: authError } =
       await supabaseAdmin.auth.admin.createUser({
         email: demoEmail,
