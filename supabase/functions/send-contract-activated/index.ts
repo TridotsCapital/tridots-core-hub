@@ -42,6 +42,7 @@ serve(async (req) => {
       .from('contracts')
       .select(`
         id,
+        agency_id,
         data_fim_contrato,
         analysis:analyses(
           inquilino_nome,
@@ -53,6 +54,7 @@ serve(async (req) => {
           imovel_cidade
         ),
         agency:agencies(
+          id,
           nome_fantasia,
           razao_social,
           telefone
@@ -62,6 +64,7 @@ serve(async (req) => {
       .single();
 
     if (contractError || !contract) {
+      console.error('Erro ao buscar contrato:', contractError);
       return new Response(
         JSON.stringify({ success: false, error: 'Contrato não encontrado' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -84,6 +87,9 @@ serve(async (req) => {
       razao_social?: string;
       telefone?: string;
     };
+
+    // Usar agency_id do contrato (mais confiável) ou o id da agency
+    const agencyId = contract.agency_id || agency?.id;
 
     // Montar endereço
     const addressParts = [
@@ -145,54 +151,58 @@ serve(async (req) => {
     }
 
     // 2. E-mail para todos os colaboradores da imobiliária
-    const { data: agencyUsers } = await supabase
-      .from('agency_users')
-      .select('user_id')
-      .eq('agency_id', agency?.id || '');
+    if (agencyId) {
+      const { data: agencyUsers, error: agencyUsersError } = await supabase
+        .from('agency_users')
+        .select('user_id')
+        .eq('agency_id', agencyId);
 
-    if (agencyUsers && agencyUsers.length > 0) {
-      const userIds = agencyUsers.map(u => u.user_id);
-      
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, email')
-        .in('id', userIds)
-        .eq('active', true);
+      console.log(`Buscando colaboradores da agência ${agencyId}:`, agencyUsers?.length || 0, 'encontrados');
 
-      if (profiles) {
-        const agencyTemplate = contractActivatedAgencyTemplate({
-          tenantName: analysis.inquilino_nome,
-          propertyAddress,
-          rentValue,
-          contractEndDate
-        });
+      if (agencyUsers && agencyUsers.length > 0) {
+        const userIds = agencyUsers.map(u => u.user_id);
+        
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, email')
+          .in('id', userIds)
+          .eq('active', true);
 
-        for (const profile of profiles) {
-          const agencyResult = await sendEmail(
-            resendApiKey,
-            profile.email,
-            agencyTemplate.subject,
-            agencyTemplate.html,
-            test_mode,
-            testEmail
-          );
-
-          await supabase.from('email_logs').insert({
-            recipient_email: test_mode ? testEmail : profile.email,
-            recipient_original: test_mode ? profile.email : null,
-            template_type: 'contract_activated_agency',
-            subject: agencyTemplate.subject,
-            status: agencyResult.success ? 'sent' : 'failed',
-            metadata: { contract_id, test_mode, recipient_type: 'agency_user', user_id: profile.id },
-            error_message: agencyResult.error,
-            sent_at: agencyResult.success ? new Date().toISOString() : null
+        if (profiles) {
+          const agencyTemplate = contractActivatedAgencyTemplate({
+            tenantName: analysis.inquilino_nome,
+            propertyAddress,
+            rentValue,
+            contractEndDate
           });
 
-          results.push({ 
-            type: `agency_user_${profile.id}`, 
-            success: agencyResult.success, 
-            error: agencyResult.error 
-          });
+          for (const profile of profiles) {
+            const agencyResult = await sendEmail(
+              resendApiKey,
+              profile.email,
+              agencyTemplate.subject,
+              agencyTemplate.html,
+              test_mode,
+              testEmail
+            );
+
+            await supabase.from('email_logs').insert({
+              recipient_email: test_mode ? testEmail : profile.email,
+              recipient_original: test_mode ? profile.email : null,
+              template_type: 'contract_activated_agency',
+              subject: agencyTemplate.subject,
+              status: agencyResult.success ? 'sent' : 'failed',
+              metadata: { contract_id, test_mode, recipient_type: 'agency_user', user_id: profile.id },
+              error_message: agencyResult.error,
+              sent_at: agencyResult.success ? new Date().toISOString() : null
+            });
+
+            results.push({ 
+              type: `agency_user_${profile.id}`, 
+              success: agencyResult.success, 
+              error: agencyResult.error 
+            });
+          }
         }
       }
     }
