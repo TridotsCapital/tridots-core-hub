@@ -2,6 +2,15 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
+// Remove acentos e caracteres especiais, substitui espaços por underscores
+const sanitizeFileName = (fileName: string): string => {
+  return fileName
+    .normalize("NFD")                    // Decompõe acentos
+    .replace(/[\u0300-\u036f]/g, "")    // Remove marcas diacríticas
+    .replace(/[^a-zA-Z0-9._-]/g, "_")   // Substitui caracteres especiais por _
+    .replace(/_+/g, "_");               // Remove underscores duplicados
+};
+
 export interface TermTemplate {
   id: string;
   name: string;
@@ -69,7 +78,8 @@ export const useUploadTermTemplate = () => {
       userId: string;
     }) => {
       const fileExt = file.name.split(".").pop();
-      const fileName = `${Date.now()}_${file.name}`;
+      const sanitizedName = sanitizeFileName(file.name);
+      const fileName = `${Date.now()}_${sanitizedName}`;
       const filePath = `templates/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
@@ -127,7 +137,8 @@ export const useUploadNewVersion = () => {
       originalTemplate: TermTemplate;
       userId: string;
     }) => {
-      const fileName = `${Date.now()}_${file.name}`;
+      const sanitizedName = sanitizeFileName(file.name);
+      const fileName = `${Date.now()}_${sanitizedName}`;
       const filePath = `templates/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
