@@ -29,6 +29,7 @@ interface Agency {
   id: string;
   nome_fantasia: string | null;
   razao_social: string;
+  active: boolean;
 }
 
 interface Collaborator {
@@ -87,8 +88,7 @@ export function NewTicketDialog({ open, onOpenChange, onSuccess }: NewTicketDial
         setLoadingAgencies(true);
         const { data } = await supabase
           .from('agencies')
-          .select('id, nome_fantasia, razao_social')
-          .eq('active', true)
+          .select('id, nome_fantasia, razao_social, active')
           .order('razao_social', { ascending: true });
         setAgencies(data || []);
         setLoadingAgencies(false);
@@ -233,6 +233,11 @@ export function NewTicketDialog({ open, onOpenChange, onSuccess }: NewTicketDial
                         <span className="flex items-center gap-2">
                           <Building2 className="h-4 w-4 text-muted-foreground" />
                           {getAgencyDisplayName(agency)}
+                          {!agency.active && (
+                            <Badge variant="outline" className="ml-1 text-xs bg-amber-50 text-amber-700 border-amber-200">
+                              Pendente
+                            </Badge>
+                          )}
                         </span>
                       </SelectItem>
                     ))}
