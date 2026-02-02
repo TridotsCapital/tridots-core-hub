@@ -1,57 +1,71 @@
 
-# Plano de Correção: Upload de Templates com Caracteres Especiais
+# Plano: Permitir Chamados para Todas as Imobiliárias (Incluindo Inativas)
 
 ## Problema Identificado
 
-O sistema não consegue fazer upload de arquivos cujos nomes contêm:
-- Espaços
-- Caracteres acentuados (á, é, ã, ç, etc.)
-- Outros caracteres especiais
-
-Isso ocorre porque o caminho do arquivo no Storage é gerado diretamente a partir do nome original do arquivo, que o Supabase Storage rejeita.
-
-## Solução
-
-Vou criar uma função que "sanitiza" o nome do arquivo, removendo ou substituindo caracteres problemáticos antes de enviar para o Storage. O nome original do arquivo será preservado no banco de dados para exibição.
-
-### Modificações Necessárias
-
-**1. Atualizar `src/hooks/useTermTemplates.ts`**
-
-Adicionar uma função utilitária para sanitizar nomes de arquivos:
+O diálogo de criação de chamados (`NewTicketDialog.tsx`) carrega apenas imobiliárias ativas na linha 91:
 
 ```typescript
-// Remove acentos e caracteres especiais, substitui espaços por underscores
-const sanitizeFileName = (fileName: string): string => {
-  return fileName
-    .normalize("NFD")                    // Decompõe acentos
-    .replace(/[\u0300-\u036f]/g, "")    // Remove marcas diacríticas
-    .replace(/[^a-zA-Z0-9._-]/g, "_")   // Substitui caracteres especiais por _
-    .replace(/_+/g, "_");               // Remove underscores duplicados
-};
+.eq('active', true)
 ```
 
-Aplicar essa função em dois lugares:
-- `useUploadTermTemplate` (linha 72)
-- `useUploadNewVersion` (linha 130)
+Isso impede a Tridots de enviar chamados para imobiliárias que ainda estão em processo de ativação.
 
-**2. Fazer upload do novo arquivo**
+## Solucao
 
-Após a correção, vou fazer upload do arquivo PDF que você enviou como nova versão do template `termo_adesao_imobiliaria`.
+Remover o filtro de imobiliárias ativas no componente `NewTicketDialog`, permitindo que **todas** as imobiliárias apareçam na lista de seleção. Para melhorar a usabilidade, vou adicionar um indicador visual (badge) para distinguir imobiliárias ativas das inativas.
 
----
+## Modificacoes
 
-### Detalhes Técnicos
+**Arquivo: `src/components/tickets/NewTicketDialog.tsx`**
 
-| Local | Antes | Depois |
+| Linha | Antes | Depois |
 |-------|-------|--------|
-| `useUploadTermTemplate` (linha 72) | `` `${Date.now()}_${file.name}` `` | `` `${Date.now()}_${sanitizeFileName(file.name)}` `` |
-| `useUploadNewVersion` (linha 130) | `` `${Date.now()}_${file.name}` `` | `` `${Date.now()}_${sanitizeFileName(file.name)}` `` |
+| 91 | `.eq('active', true)` | (removido) |
+| 28-32 | Interface Agency sem `active` | Adicionar campo `active: boolean` |
+| 232-236 | SelectItem simples | SelectItem com badge "Pendente" para inativas |
 
-O nome original (`file.name`) continuará sendo salvo no campo `file_name` da tabela para exibição correta ao usuário.
+### Detalhes da Implementacao
+
+1. **Atualizar interface Agency** para incluir o campo `active`
+2. **Remover filtro** `.eq('active', true)` da consulta
+3. **Adicionar `active` no select** da consulta
+4. **Exibir badge visual** "Pendente" ao lado de imobiliárias inativas na lista
+
+### Visualizacao do Resultado
+
+```text
++----------------------------------+
+| Selecionar imobiliária...        |
++----------------------------------+
+| [ Buscar imobiliária... ]        |
++----------------------------------+
+| [Building] Imobiliária ABC       |
+| [Building] Imobiliária XYZ [Pendente] |  <- inativa, com badge
+| [Building] Outra Imobiliária     |
++----------------------------------+
+```
 
 ---
 
-### Sobre o Arquivo Enviado
+## Secao Tecnica
 
-Após a correção, farei o upload do PDF que você anexou como **versão 5** do template `termo_adesao_imobiliaria`, substituindo a versão atual.
+### Codigo da consulta atualizada (linhas 88-93)
+
+```typescript
+const { data } = await supabase
+  .from('agencies')
+  .select('id, nome_fantasia, razao_social, active')
+  .order('razao_social', { ascending: true });
+```
+
+### Badge para inativas (dentro do SelectItem)
+
+```tsx
+{getAgencyDisplayName(agency)}
+{!agency.active && (
+  <Badge variant="outline" className="ml-2 text-xs bg-amber-50 text-amber-700 border-amber-200">
+    Pendente
+  </Badge>
+)}
+```
