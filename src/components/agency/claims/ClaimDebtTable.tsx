@@ -31,6 +31,12 @@ import type { ClaimItemCategory } from '@/types/claims';
 import { claimItemCategoryList } from '@/types/claims';
 import type { DraftClaimItem } from '@/hooks/useClaimDraft';
 
+// Parse date string (YYYY-MM-DD) to local Date without timezone shift
+const parseDateString = (dateStr: string): Date => {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year, month - 1, day);
+};
+
 interface ClaimDebtTableProps {
   items: DraftClaimItem[];
   onChange: (items: DraftClaimItem[]) => void;
@@ -309,14 +315,14 @@ export function ClaimDebtTable({ items, onChange, onClearAll, disabled }: ClaimD
                         disabled={disabled}
                       >
                         {item.due_date
-                          ? format(new Date(item.due_date), 'dd/MM/yyyy', { locale: ptBR })
+                          ? format(parseDateString(item.due_date), 'dd/MM/yyyy', { locale: ptBR })
                           : 'Selecionar'}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
                       <Calendar
                         mode="single"
-                        selected={item.due_date ? new Date(item.due_date) : undefined}
+                        selected={item.due_date ? parseDateString(item.due_date) : undefined}
                         onSelect={(date) => handleDateSelect(item.id, date)}
                         disabled={(date) => isAfter(date, new Date())}
                         initialFocus
