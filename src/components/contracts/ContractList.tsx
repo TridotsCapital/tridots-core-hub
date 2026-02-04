@@ -189,7 +189,8 @@ export function ContractList({ contracts, isLoading, onRenew, onFlagPendency, on
               <TableHead>Imobiliária</TableHead>
               <TableHead>Localização</TableHead>
               <TableHead className="text-right">Valor Locatício</TableHead>
-              <TableHead className="text-right">Cobertura</TableHead>
+              <TableHead className="text-right">Garantia Anual</TableHead>
+              <TableHead className="text-right">Cobertura 20x</TableHead>
               <TableHead className="text-center">Taxa %</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Criação</TableHead>
@@ -257,12 +258,18 @@ export function ContractList({ contracts, isLoading, onRenew, onFlagPendency, on
                   <TableCell className="text-right font-medium">
                     {contract.analysis?.valor_total ? formatCurrency(contract.analysis.valor_total) : formatCurrency(contract.analysis?.valor_aluguel || 0)}
                   </TableCell>
-                  <TableCell className="text-right font-medium text-primary">
+                  <TableCell className="text-right font-medium">
                     {contract.analysis?.garantia_anual 
                       ? formatCurrency(contract.analysis.garantia_anual)
                       : contract.analysis?.valor_total && contract.analysis?.taxa_garantia_percentual
                         ? formatCurrency(contract.analysis.valor_total * 12 * (contract.analysis.taxa_garantia_percentual / 100))
                         : '-'
+                    }
+                  </TableCell>
+                  <TableCell className="text-right font-medium text-primary">
+                    {contract.analysis?.valor_total 
+                      ? formatCurrency(contract.analysis.valor_total * 20)
+                      : '-'
                     }
                   </TableCell>
                   <TableCell className="text-center">

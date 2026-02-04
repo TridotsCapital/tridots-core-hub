@@ -44,3 +44,6 @@ verify_jwt = false
 
 [functions.seed-demo-agency]
 verify_jwt = false
+
+[functions.send-ticket-notification]
+verify_jwt = false

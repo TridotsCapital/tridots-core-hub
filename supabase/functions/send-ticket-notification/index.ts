@@ -1,0 +1,188 @@
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { ticketNotificationTemplate, sendEmail } from "../_shared/email-templates.ts";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
+
+interface NotificationRequest {
+  ticket_id: string;
+  message_id?: string;
+  event_type: 'new_ticket' | 'new_reply';
+}
+
+serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+
+    if (!resendApiKey) {
+      console.error("RESEND_API_KEY not configured");
+      return new Response(
+        JSON.stringify({ error: "RESEND_API_KEY not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    const body: NotificationRequest = await req.json();
+    const { ticket_id, message_id, event_type } = body;
+
+    console.log(`Processing ticket notification: ticket_id=${ticket_id}, event_type=${event_type}`);
+
+    // Buscar dados do ticket
+    const { data: ticket, error: ticketError } = await supabase
+      .from('tickets')
+      .select(`
+        id,
+        protocol,
+        subject,
+        agency_id,
+        assigned_to
+      `)
+      .eq('id', ticket_id)
+      .single();
+
+    if (ticketError || !ticket) {
+      console.error("Ticket not found:", ticketError);
+      return new Response(
+        JSON.stringify({ error: "Ticket not found" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Verificar se o ticket pertence a uma imobiliária
+    if (!ticket.agency_id) {
+      console.log("Ticket does not belong to an agency, skipping notification");
+      return new Response(
+        JSON.stringify({ success: true, message: "No agency associated" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Buscar dados da imobiliária separadamente
+    const { data: agency, error: agencyError } = await supabase
+      .from('agencies')
+      .select('id, razao_social, nome_fantasia, responsavel_email, responsavel_nome')
+      .eq('id', ticket.agency_id)
+      .single();
+
+    if (agencyError || !agency) {
+      console.error("Agency not found:", agencyError);
+      return new Response(
+        JSON.stringify({ error: "Agency not found" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Buscar prévia da mensagem (se for nova resposta)
+    let messagePreview: string | undefined;
+    if (event_type === 'new_reply' && message_id) {
+      const { data: message } = await supabase
+        .from('ticket_messages')
+        .select('content')
+        .eq('id', message_id)
+        .single();
+      
+      if (message?.content) {
+        messagePreview = message.content;
+      }
+    }
+
+    // Coletar destinatários
+    const recipients: { email: string; name: string }[] = [];
+
+    // 1. E-mail principal da imobiliária
+    if (agency.responsavel_email) {
+      recipients.push({
+        email: agency.responsavel_email,
+        name: agency.responsavel_nome || agency.nome_fantasia || agency.razao_social
+      });
+    }
+
+    // 2. Colaborador designado no chamado (se diferente do responsável)
+    if (ticket.assigned_to) {
+      const { data: assignedUser } = await supabase
+        .from('profiles')
+        .select('email, full_name')
+        .eq('id', ticket.assigned_to)
+        .single();
+
+      if (assignedUser?.email && assignedUser.email !== agency.responsavel_email) {
+        recipients.push({
+          email: assignedUser.email,
+          name: assignedUser.full_name || 'Colaborador'
+        });
+      }
+    }
+
+    if (recipients.length === 0) {
+      console.log("No recipients found for notification");
+      return new Response(
+        JSON.stringify({ success: true, message: "No recipients" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Construir URL do portal
+    const portalUrl = `${supabaseUrl.replace('.supabase.co', '')}.lovable.app/${agency.id}/support`;
+
+    // Enviar e-mails
+    const results: { email: string; success: boolean; error?: string }[] = [];
+
+    for (const recipient of recipients) {
+      const template = ticketNotificationTemplate({
+        agencyName: agency.nome_fantasia || agency.razao_social,
+        recipientName: recipient.name,
+        ticketProtocol: ticket.protocol || ticket.id.slice(0, 8).toUpperCase(),
+        ticketSubject: ticket.subject || 'Sem assunto',
+        eventType: event_type,
+        messagePreview,
+        portalUrl
+      });
+
+      console.log(`Sending email to ${recipient.email}`);
+
+      const result = await sendEmail(
+        resendApiKey,
+        recipient.email,
+        template.subject,
+        template.html
+      );
+
+      results.push({
+        email: recipient.email,
+        success: result.success,
+        error: result.error
+      });
+
+      if (!result.success) {
+        console.error(`Failed to send email to ${recipient.email}:`, result.error);
+      }
+    }
+
+    console.log("Notification results:", results);
+
+    return new Response(
+      JSON.stringify({ success: true, results }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+
+  } catch (error) {
+    console.error("Error in send-ticket-notification:", error);
+    return new Response(
+      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+});
