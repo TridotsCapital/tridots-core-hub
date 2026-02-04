@@ -1,231 +1,226 @@
 
-# Plano: Ajustes Diversos no Portal
 
-## 1. Coluna COBERTURA na Lista de Contratos
+# Plano: Confirmacao de Envio de E-mail para Tridots
 
-### Problema
-Atualmente a coluna "Cobertura" mostra o valor da `garantia_anual` (premio pago). O usuario quer que ela mostre a **Cobertura Total** (Valor Locaticio x 20), que representa o limite maximo de acionamento de garantias.
+## Resumo
 
-### Solucao
-Adicionar uma nova coluna "Cobertura" que calcula `valor_total * 20` e manter a coluna "Garantia Anual" existente.
-
-### Arquivos Afetados
-- `src/components/contracts/ContractList.tsx` (Portal Tridots)
-- `src/components/agency/AgencyContractList.tsx` (Portal Imobiliaria)
+Implementar feedback visual para a Tridots garantindo que e-mails foram enviados com sucesso em todos os 8 cenarios de notificacao do sistema.
 
 ---
 
-## 2. Banner de Documentacao Pendente
+## Cenarios de Notificacao Confirmados
 
-### Problema
-O banner aparece para todos os contratos com status `documentacao_pendente`, mesmo quando a imobiliaria ja enviou os documentos e esta aguardando avaliacao da Tridots.
-
-### Regra de Negocio Atualizada
-O banner deve aparecer apenas quando:
-- Existe contrato com `status = 'documentacao_pendente'` **E**
-- Pelo menos um documento NAO foi enviado (`status = null`) **OU**
-- Pelo menos um documento foi REJEITADO (`status = 'rejeitado'`)
-
-Se todos os documentos estao com `status = 'enviado'` (aguardando validacao) ou `status = 'aprovado'`, o banner NAO deve aparecer.
-
-### Arquivos Afetados
-- `src/hooks/useContractsPendingDocs.ts` - Alterar query para filtrar corretamente
+| # | Cenario | Destinatario | Disparo |
+|---|---------|--------------|---------|
+| 1 | Aceite Digital | Inquilino | Trigger (aprovacao analise) |
+| 2 | Lembrete Renovacao | Inquilino | Manual (botao) |
+| 3 | Confirmacao Pagamento | Inquilino | Trigger (validacao PIX/Stripe) |
+| 4 | Contrato Ativado (Inquilino) | Inquilino | Trigger (status = ativo) |
+| 5 | Contrato Ativado (Imobiliaria) | Colaboradores | Trigger (status = ativo) |
+| 6 | Ativacao Cadastro | Imobiliaria | Trigger (active = true) |
+| 7 | Nova Imobiliaria | Tridots (interno) | Trigger (novo cadastro) |
+| 8 | Chamados | Imobiliaria | Trigger (novo ticket/resposta) |
 
 ---
 
-## 3. Bug do Calendario (Timezone)
+## Solucao
 
-### Problema
-Ao selecionar uma data no calendario (ex: 05/02/2026), o campo exibe o dia anterior (04/02/2026).
+### 1. Toast de Sucesso (Envios Manuais)
 
-### Causa Raiz
-O problema ocorre na funcao `handleDateSelect` do `ClaimDebtTable.tsx`:
+Para acoes manuais ja existentes no frontend, adicionar toast verde apos confirmacao de envio:
 
-```typescript
-const formattedDate = format(date, 'yyyy-MM-dd');
+**Arquivo: `src/components/contracts/RenewalNotificationActions.tsx`**
+- Adicionar toast de sucesso apos `send-renewal-notification`
+- Mensagem: "E-mail enviado com sucesso para [nome_destinatario]"
+
+### 2. Toast de Erro com Reenvio
+
+Quando falhar, mostrar toast vermelho com botao para reenviar:
+- Mensagem de erro detalhada
+- Botao "Tentar novamente" que reexecuta a funcao
+
+### 3. Notificacao In-App para Triggers Automaticos
+
+Criar novo tipo de notificacao `email_sent` para usuarios Tridots (master/analyst) quando e-mails automaticos sao enviados.
+
+**Novo tipo de notificacao:**
+```text
+type: 'email_sent'
+source: 'sistema'
+title: 'E-mail enviado: [template_type]'
+message: 'Destinatario: [email]'
+metadata: { template_type, recipient_email, status }
 ```
 
-Quando a data e convertida para string no formato ISO sem considerar o timezone local, pode haver deslocamento de 1 dia dependendo do horario.
+### 4. Modificar Edge Functions
 
-### Solucao
-Usar a funcao `startOfDay` para normalizar a data antes de formatar, garantindo que a data selecionada seja preservada corretamente.
-
-### Arquivo Afetado
-- `src/components/agency/claims/ClaimDebtTable.tsx`
-
----
-
-## 4. E-mail de Notificacao para Chamados
-
-### Problema
-Atualmente nao existe notificacao por e-mail quando a Tridots cria um chamado para a imobiliaria ou responde a um chamado existente.
-
-### Solucao
-Criar uma Edge Function `send-ticket-notification` que:
-1. Recebe o ID do ticket e tipo de evento (novo_chamado ou nova_resposta)
-2. Busca os dados do ticket e imobiliaria
-3. Envia e-mail para:
-   - O colaborador designado no chamado (se houver)
-   - O e-mail principal da imobiliaria (`responsavel_email`)
-
-### Trigger
-Utilizar database triggers para disparar a funcao automaticamente quando:
-- Um novo ticket e criado com `agency_id` preenchido
-- Uma nova mensagem e inserida em `ticket_messages` por um usuario Tridots
-
-### Arquivos a Criar/Modificar
-- `supabase/functions/send-ticket-notification/index.ts` (nova Edge Function)
-- `supabase/functions/_shared/email-templates.ts` (novo template)
-- Migration para criar triggers no banco
+Atualizar todas as Edge Functions de envio para:
+1. Retornar informacoes detalhadas sobre o envio
+2. Criar notificacao in-app para usuarios Tridots
 
 ---
 
 ## Secao Tecnica
 
-### 1. ContractList.tsx - Adicionar Coluna Cobertura
+### Arquivos a Modificar
 
-Antes (linha 192):
-```typescript
-<TableHead className="text-right">Cobertura</TableHead>
+| Arquivo | Tipo | Descricao |
+|---------|------|-----------|
+| `src/types/notifications.ts` | Modificacao | Adicionar tipo `email_sent` e source `sistema` |
+| `src/components/contracts/RenewalNotificationActions.tsx` | Modificacao | Adicionar toast de sucesso/erro com reenvio |
+| `supabase/functions/send-agency-activation/index.ts` | Modificacao | Criar notificacao in-app |
+| `supabase/functions/send-contract-activated/index.ts` | Modificacao | Criar notificacao in-app |
+| `supabase/functions/send-payment-confirmation/index.ts` | Modificacao | Criar notificacao in-app |
+| `supabase/functions/send-new-agency-notification/index.ts` | Modificacao | Criar notificacao in-app |
+| `supabase/functions/send-ticket-notification/index.ts` | Modificacao | Criar notificacao in-app |
+| `supabase/functions/send-renewal-notification/index.ts` | Modificacao | Criar notificacao in-app |
+| Migration SQL | Criacao | Funcao para criar notificacao para Tridots |
+
+### Logica da Notificacao In-App
+
+```sql
+-- Funcao para criar notificacao de e-mail enviado para usuarios Tridots
+CREATE OR REPLACE FUNCTION create_email_sent_notification(
+  p_template_type TEXT,
+  p_recipient_email TEXT,
+  p_recipient_name TEXT,
+  p_reference_id UUID DEFAULT NULL,
+  p_success BOOLEAN DEFAULT TRUE
+) RETURNS VOID AS $$
+DECLARE
+  v_user_id UUID;
+  v_title TEXT;
+  v_message TEXT;
+BEGIN
+  -- Criar notificacao para todos os usuarios master/analyst
+  FOR v_user_id IN 
+    SELECT id FROM profiles WHERE role IN ('master', 'analyst') AND active = true
+  LOOP
+    v_title := CASE 
+      WHEN p_success THEN 'E-mail enviado com sucesso'
+      ELSE 'Falha no envio de e-mail'
+    END;
+    
+    v_message := CASE p_template_type
+      WHEN 'agency_activation' THEN 'Ativacao de cadastro para ' || p_recipient_name
+      WHEN 'contract_activated_tenant' THEN 'Contrato ativado para inquilino ' || p_recipient_name
+      WHEN 'contract_activated_agency' THEN 'Contrato ativado para imobiliaria'
+      WHEN 'payment_confirmation' THEN 'Confirmacao de pagamento para ' || p_recipient_name
+      WHEN 'new_agency_pending' THEN 'Nova imobiliaria cadastrada'
+      WHEN 'ticket_notification' THEN 'Notificacao de chamado para ' || p_recipient_name
+      WHEN 'renewal_notification' THEN 'Lembrete de renovacao para ' || p_recipient_name
+      ELSE 'E-mail: ' || p_template_type
+    END;
+
+    INSERT INTO notifications (user_id, type, source, reference_id, title, message, metadata)
+    VALUES (
+      v_user_id,
+      'email_sent',
+      'sistema',
+      p_reference_id,
+      v_title,
+      v_message,
+      jsonb_build_object(
+        'template_type', p_template_type,
+        'recipient_email', p_recipient_email,
+        'recipient_name', p_recipient_name,
+        'success', p_success
+      )
+    );
+  END LOOP;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 ```
 
-Depois:
-```typescript
-<TableHead className="text-right">Garantia Anual</TableHead>
-<TableHead className="text-right">Cobertura 20x</TableHead>
-```
+### Exemplo de Modificacao em Edge Function
 
-Valor da nova coluna:
 ```typescript
-{contract.analysis?.valor_total 
-  ? formatCurrency(contract.analysis.valor_total * 20)
-  : '-'
+// Em send-agency-activation/index.ts - apos envio bem-sucedido:
+
+if (result.success) {
+  // Criar notificacao in-app para usuarios Tridots
+  await supabase.rpc('create_email_sent_notification', {
+    p_template_type: 'agency_activation',
+    p_recipient_email: recipientEmail,
+    p_recipient_name: agency.responsavel_nome || agency.nome_fantasia,
+    p_reference_id: agency_id,
+    p_success: true
+  });
 }
 ```
 
-### 2. useContractsPendingDocs.ts - Nova Logica
+### Toast com Reenvio (Frontend)
 
 ```typescript
-// Buscar contratos onde:
-// - status = 'documentacao_pendente'
-// - E pelo menos um doc NAO enviado ou REJEITADO
-const { data, error } = await supabase
-  .from('contracts')
-  .select('id, doc_contrato_locacao_status, doc_vistoria_inicial_status, doc_seguro_incendio_status')
-  .eq('agency_id', agencyId)
-  .eq('status', 'documentacao_pendente');
+// Em RenewalNotificationActions.tsx
 
-// Filtrar no frontend
-const pendingCount = data?.filter(c => 
-  c.doc_contrato_locacao_status === null ||
-  c.doc_contrato_locacao_status === 'rejeitado' ||
-  c.doc_vistoria_inicial_status === null ||
-  c.doc_vistoria_inicial_status === 'rejeitado' ||
-  c.doc_seguro_incendio_status === null ||
-  c.doc_seguro_incendio_status === 'rejeitado'
-).length || 0;
+const handleSendEmail = async () => {
+  setSendingEmail(true);
+  try {
+    const { data, error } = await supabase.functions.invoke('send-renewal-notification', {
+      body: { ... }
+    });
+
+    if (error || data?.error) {
+      toast({
+        title: "Falha no envio",
+        description: data?.error || error?.message || "Erro ao enviar e-mail",
+        variant: "destructive",
+        action: (
+          <Button variant="outline" size="sm" onClick={handleSendEmail}>
+            Tentar novamente
+          </Button>
+        )
+      });
+      return;
+    }
+
+    toast({
+      title: "E-mail enviado!",
+      description: `Notificacao enviada para ${recipientName}`,
+      variant: "default", // verde
+    });
+    
+  } catch (err) {
+    // tratamento de erro
+  } finally {
+    setSendingEmail(false);
+  }
+};
 ```
 
-### 3. ClaimDebtTable.tsx - Correcao Timezone
+### Configuracao Visual da Notificacao
 
-Antes (linha 154):
 ```typescript
-const formattedDate = format(date, 'yyyy-MM-dd');
-```
+// Em src/types/notifications.ts
 
-Depois:
-```typescript
-// Usar a data local sem conversao de timezone
-const year = date.getFullYear();
-const month = String(date.getMonth() + 1).padStart(2, '0');
-const day = String(date.getDate()).padStart(2, '0');
-const formattedDate = `${year}-${month}-${day}`;
-```
+export type NotificationType = 
+  | 'ticket_message' 
+  | 'ticket_status' 
+  | 'analysis_message' 
+  | 'analysis_status'
+  | 'contract_status'
+  | 'contract_document_rejected'
+  | 'email_sent';  // NOVO
 
-### 4. Template de E-mail para Chamados
+export type NotificationSource = 'chamados' | 'analises' | 'contratos' | 'sinistros' | 'sistema';  // NOVO
 
-```typescript
-// Novo template em email-templates.ts
-export function ticketNotificationTemplate(data: {
-  agencyName: string;
-  ticketProtocol: string;
-  ticketSubject: string;
-  eventType: 'new_ticket' | 'new_reply';
-  message?: string;
-  portalUrl: string;
-}): { subject: string; html: string }
-```
-
-### 5. Migration para Triggers
-
-```sql
--- Funcao para disparar notificacao de novo ticket
-CREATE OR REPLACE FUNCTION notify_agency_new_ticket()
-RETURNS TRIGGER AS $$
-BEGIN
-  -- Chamar Edge Function apenas para tickets criados por usuarios Tridots
-  IF NEW.agency_id IS NOT NULL THEN
-    PERFORM net.http_post(
-      url := current_setting('app.edge_function_url') || '/send-ticket-notification',
-      body := jsonb_build_object(
-        'ticket_id', NEW.id,
-        'event_type', 'new_ticket'
-      )
-    );
-  END IF;
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- Trigger para novos tickets
-CREATE TRIGGER trigger_notify_agency_new_ticket
-AFTER INSERT ON tickets
-FOR EACH ROW
-EXECUTE FUNCTION notify_agency_new_ticket();
-
--- Funcao para disparar notificacao de nova mensagem
-CREATE OR REPLACE FUNCTION notify_agency_new_ticket_message()
-RETURNS TRIGGER AS $$
-DECLARE
-  v_ticket RECORD;
-  v_sender_role TEXT;
-BEGIN
-  -- Buscar ticket e role do sender
-  SELECT t.*, p.role INTO v_ticket
-  FROM tickets t
-  LEFT JOIN profiles p ON p.id = NEW.sender_id
-  WHERE t.id = NEW.ticket_id;
-  
-  -- Notificar apenas se mensagem foi enviada por usuario Tridots (master/analyst)
-  SELECT role INTO v_sender_role FROM profiles WHERE id = NEW.sender_id;
-  IF v_sender_role IN ('master', 'analyst') AND v_ticket.agency_id IS NOT NULL THEN
-    PERFORM net.http_post(
-      url := current_setting('app.edge_function_url') || '/send-ticket-notification',
-      body := jsonb_build_object(
-        'ticket_id', NEW.ticket_id,
-        'message_id', NEW.id,
-        'event_type', 'new_reply'
-      )
-    );
-  END IF;
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- Trigger para novas mensagens
-CREATE TRIGGER trigger_notify_agency_new_ticket_message
-AFTER INSERT ON ticket_messages
-FOR EACH ROW
-EXECUTE FUNCTION notify_agency_new_ticket_message();
+// Em getNotificationConfig:
+case 'email_sent':
+  return {
+    icon: 'Mail',
+    color: 'text-emerald-600',
+    bgColor: 'bg-emerald-50',
+    borderColor: 'border-emerald-200'
+  };
 ```
 
 ---
 
-## Resumo das Alteracoes
+## Resultado Final
 
-| Item | Tipo | Arquivo(s) |
-|------|------|------------|
-| Coluna Cobertura 20x | Modificacao | ContractList.tsx, AgencyContractList.tsx |
-| Banner Docs Pendentes | Modificacao | useContractsPendingDocs.ts |
-| Bug Calendario | Modificacao | ClaimDebtTable.tsx |
-| E-mail Chamados | Criacao | send-ticket-notification/index.ts, email-templates.ts, migration SQL |
+1. **Envios Manuais**: Toast verde imediato confirmando "E-mail enviado para [destinatario]"
+2. **Envios Automaticos**: Notificacao na central de notificacoes (bell icon) informando cada e-mail enviado
+3. **Falhas**: Toast vermelho com mensagem de erro e botao "Tentar novamente"
+4. **Historico**: Todos os envios continuam registrados na tabela `email_logs` para consulta
+
