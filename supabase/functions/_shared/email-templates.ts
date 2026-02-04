@@ -527,6 +527,77 @@ export function weeklyCommissionReportTemplate(data: {
   };
 }
 
+// Template: Notificação de Chamado para Imobiliária
+export function ticketNotificationTemplate(data: {
+  agencyName: string;
+  recipientName: string;
+  ticketProtocol: string;
+  ticketSubject: string;
+  eventType: 'new_ticket' | 'new_reply';
+  messagePreview?: string;
+  portalUrl: string;
+}): { subject: string; html: string } {
+  const isNewTicket = data.eventType === 'new_ticket';
+  const title = isNewTicket 
+    ? 'Novo chamado recebido! 📩' 
+    : 'Nova resposta no chamado! 💬';
+  const description = isNewTicket
+    ? 'A Tridots Capital abriu um novo chamado para sua imobiliária.'
+    : 'A Tridots Capital respondeu a um chamado da sua imobiliária.';
+
+  const content = `
+    <h1 style="margin:0 0 20px 0;font-size:24px;color:${TRIDOTS_BLUE};font-weight:600;">
+      ${title}
+    </h1>
+    <p style="margin:0 0 20px 0;font-size:16px;color:#374151;line-height:1.6;">
+      Olá, <strong>${data.recipientName}</strong>!
+    </p>
+    <p style="margin:0 0 20px 0;font-size:16px;color:#374151;line-height:1.6;">
+      ${description}
+    </p>
+    
+    <div style="background-color:#eff6ff;border:1px solid #93c5fd;border-radius:8px;padding:20px;margin:20px 0;">
+      <h3 style="margin:0 0 15px 0;font-size:16px;color:#1e40af;">Detalhes do Chamado</h3>
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+        <tr>
+          <td style="padding:8px 0;color:#4b5563;font-size:14px;">Protocolo:</td>
+          <td style="padding:8px 0;color:#111827;font-size:14px;text-align:right;font-weight:500;">#${data.ticketProtocol}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;color:#4b5563;font-size:14px;">Assunto:</td>
+          <td style="padding:8px 0;color:#111827;font-size:14px;text-align:right;font-weight:500;">${data.ticketSubject}</td>
+        </tr>
+      </table>
+    </div>
+
+    ${data.messagePreview ? `
+    <div style="background-color:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:15px;margin:20px 0;">
+      <p style="margin:0 0 8px 0;font-size:12px;color:#6b7280;text-transform:uppercase;">Prévia da mensagem:</p>
+      <p style="margin:0;font-size:14px;color:#374151;line-height:1.6;font-style:italic;">"${data.messagePreview.substring(0, 200)}${data.messagePreview.length > 200 ? '...' : ''}"</p>
+    </div>
+    ` : ''}
+
+    <div style="text-align:center;margin:30px 0;">
+      <a href="${data.portalUrl}" style="display:inline-block;background-color:${TRIDOTS_ACCENT};color:#ffffff;font-size:16px;font-weight:600;padding:14px 32px;border-radius:8px;text-decoration:none;">
+        Acessar Portal
+      </a>
+    </div>
+    
+    <p style="margin:20px 0 0 0;font-size:14px;color:#6b7280;line-height:1.6;">
+      Acesse o portal da imobiliária para visualizar os detalhes completos e responder ao chamado.
+    </p>
+  `;
+
+  const subjectText = isNewTicket 
+    ? `Novo chamado #${data.ticketProtocol}: ${data.ticketSubject}`
+    : `Nova resposta no chamado #${data.ticketProtocol}`;
+
+  return {
+    subject: `${subjectText} - Tridots Capital`,
+    html: generateEmailWrapper(content, isNewTicket ? 'A Tridots abriu um novo chamado' : 'Você recebeu uma resposta no chamado', IMAGES.office)
+  };
+}
+
 // Retorna o logo como attachment inline para uso no sendEmail
 export function getLogoAttachment(): InlineAttachment {
   return {

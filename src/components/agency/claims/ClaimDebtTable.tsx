@@ -151,8 +151,12 @@ export function ClaimDebtTable({ items, onChange, onClearAll, disabled }: ClaimD
       return newErrors;
     });
 
-    const formattedDate = format(date, 'yyyy-MM-dd');
-    const refPeriod = format(date, 'MM/yyyy');
+    // Usar componentes de data local para evitar problemas de timezone
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const formattedDate = `${year}-${month}-${day}`;
+    const refPeriod = `${month}/${year}`;
 
     handleChange(id, 'due_date', formattedDate);
     

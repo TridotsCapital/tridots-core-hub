@@ -195,7 +195,8 @@ export function AgencyContractList({
                     <TableHead>Inquilino</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Valor Locatício</TableHead>
-                    <TableHead className="text-right">Cobertura</TableHead>
+                    <TableHead className="text-right">Garantia Anual</TableHead>
+                    <TableHead className="text-right">Cobertura 20x</TableHead>
                     <TableHead className="text-center">Taxa %</TableHead>
                     <TableHead>Data</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
@@ -270,9 +271,15 @@ export function AgencyContractList({
                         <TableCell className="text-right font-medium">
                           {formatCurrency(contract.analysis?.valor_total || contract.analysis?.valor_aluguel || 0)}
                         </TableCell>
-                        <TableCell className="text-right font-medium text-primary">
+                        <TableCell className="text-right font-medium">
                           {contract.analysis?.garantia_anual 
                             ? formatCurrency(contract.analysis.garantia_anual)
+                            : '-'
+                          }
+                        </TableCell>
+                        <TableCell className="text-right font-medium text-primary">
+                          {contract.analysis?.valor_total 
+                            ? formatCurrency(contract.analysis.valor_total * 20)
                             : '-'
                           }
                         </TableCell>
