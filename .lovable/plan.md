@@ -1,34 +1,30 @@
 
-# Plano: Correcao do Bug de Timezone no Calendario de Debitos
+
+# Plano: Remover Auto-Preenchimento do Campo Referencia
 
 ## Problema Identificado
 
-O calendario de data de vencimento na tabela de itens de debito esta exibindo o dia anterior ao selecionado. A causa eh a forma como a data armazenada (string "YYYY-MM-DD") eh convertida de volta para objeto Date.
+Na funcao `handleDateSelect` (linha 140-174), existe uma logica que automaticamente preenche o campo "Referencia" com o mes/ano da data selecionada no calendario de "Vencimento", caso o campo esteja vazio.
 
-**Codigo problematico (linhas 312 e 319):**
+**Codigo responsavel (linhas 169-173):**
 ```typescript
-// Linha 312 - Exibicao no botao
-format(new Date(item.due_date), 'dd/MM/yyyy', { locale: ptBR })
-
-// Linha 319 - Definicao do dia selecionado no calendario
-selected={item.due_date ? new Date(item.due_date) : undefined}
+// Auto-fill reference period based on due date
+const item = items.find((i) => i.id === id);
+if (item && !item.reference_period) {
+  handleChange(id, 'reference_period', refPeriod);
+}
 ```
 
-**Por que falha:** Quando `new Date("2026-02-05")` eh chamado, o JavaScript interpreta como meia-noite UTC. Em fusos horarios negativos (ex: Brasil GMT-3), isso resulta em `2026-02-04T21:00:00` localmente, exibindo o dia anterior.
+Esse comportamento nao faz sentido porque:
+- Vencimento e Referencia sao campos independentes
+- Uma conta pode ter referencia de um mes e vencimento em outro
+- Exemplo: Aluguel de 01/2026 pode vencer em 05/02/2026
 
 ---
 
 ## Solucao
 
-Criar funcao auxiliar que parseia strings de data "YYYY-MM-DD" usando componentes locais, evitando a interpretacao UTC:
-
-```typescript
-// Parsear data local sem shift de timezone
-function parseDateString(dateStr: string): Date {
-  const [year, month, day] = dateStr.split('-').map(Number);
-  return new Date(year, month - 1, day);
-}
-```
+Remover a logica de auto-preenchimento do campo de referencia baseada na data de vencimento.
 
 ---
 
@@ -36,7 +32,7 @@ function parseDateString(dateStr: string): Date {
 
 | Arquivo | Tipo | Descricao |
 |---------|------|-----------|
-| `src/components/agency/claims/ClaimDebtTable.tsx` | Modificacao | Corrigir parsing de data para exibicao e selecao |
+| `src/components/agency/claims/ClaimDebtTable.tsx` | Modificacao | Remover auto-fill do campo reference_period |
 
 ---
 
@@ -44,31 +40,33 @@ function parseDateString(dateStr: string): Date {
 
 ### Alteracoes no Codigo
 
-**1. Adicionar funcao auxiliar (apos imports, linha ~32):**
-```typescript
-// Parse date string (YYYY-MM-DD) to local Date without timezone shift
-const parseDateString = (dateStr: string): Date => {
-  const [year, month, day] = dateStr.split('-').map(Number);
-  return new Date(year, month - 1, day);
-};
-```
+**Remover linhas 165 e 169-173:**
 
-**2. Corrigir exibicao no botao (linha 312):**
 ```typescript
-// ANTES
-format(new Date(item.due_date), 'dd/MM/yyyy', { locale: ptBR })
+// ANTES (linhas 160-174)
+// Usar componentes de data local para evitar problemas de timezone
+const year = date.getFullYear();
+const month = String(date.getMonth() + 1).padStart(2, '0');
+const day = String(date.getDate()).padStart(2, '0');
+const formattedDate = `${year}-${month}-${day}`;
+const refPeriod = `${month}/${year}`;
+
+handleChange(id, 'due_date', formattedDate);
+
+// Auto-fill reference period based on due date
+const item = items.find((i) => i.id === id);
+if (item && !item.reference_period) {
+  handleChange(id, 'reference_period', refPeriod);
+}
 
 // DEPOIS
-format(parseDateString(item.due_date), 'dd/MM/yyyy', { locale: ptBR })
-```
+// Usar componentes de data local para evitar problemas de timezone
+const year = date.getFullYear();
+const month = String(date.getMonth() + 1).padStart(2, '0');
+const day = String(date.getDate()).padStart(2, '0');
+const formattedDate = `${year}-${month}-${day}`;
 
-**3. Corrigir selecao no calendario (linha 319):**
-```typescript
-// ANTES
-selected={item.due_date ? new Date(item.due_date) : undefined}
-
-// DEPOIS
-selected={item.due_date ? parseDateString(item.due_date) : undefined}
+handleChange(id, 'due_date', formattedDate);
 ```
 
 ---
@@ -76,6 +74,7 @@ selected={item.due_date ? parseDateString(item.due_date) : undefined}
 ## Resultado Esperado
 
 Apos a correcao:
-1. A data selecionada no calendario sera exibida corretamente no campo
-2. O calendario marcara o dia correto como selecionado ao reabrir
-3. Nao havera mais deslocamento de -1 dia causado por timezone
+1. Selecionar uma data no calendario de Vencimento apenas preenche o campo de Vencimento
+2. O campo Referencia permanece independente e nao eh afetado
+3. O usuario deve preencher o campo Referencia manualmente
+
