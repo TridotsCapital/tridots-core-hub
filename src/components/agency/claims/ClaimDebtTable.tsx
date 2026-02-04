@@ -162,15 +162,8 @@ export function ClaimDebtTable({ items, onChange, onClearAll, disabled }: ClaimD
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     const formattedDate = `${year}-${month}-${day}`;
-    const refPeriod = `${month}/${year}`;
 
     handleChange(id, 'due_date', formattedDate);
-    
-    // Auto-fill reference period based on due date
-    const item = items.find((i) => i.id === id);
-    if (item && !item.reference_period) {
-      handleChange(id, 'reference_period', refPeriod);
-    }
   };
 
   // Amount field handlers - use local state while editing
