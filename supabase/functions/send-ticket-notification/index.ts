@@ -45,7 +45,6 @@ serve(async (req) => {
       .from('tickets')
       .select(`
         id,
-        protocol,
         subject,
         agency_id,
         assigned_to
@@ -144,7 +143,7 @@ serve(async (req) => {
       const template = ticketNotificationTemplate({
         agencyName: agency.nome_fantasia || agency.razao_social,
         recipientName: recipient.name,
-        ticketProtocol: ticket.protocol || ticket.id.slice(0, 8).toUpperCase(),
+        ticketProtocol: ticket.id.slice(0, 8).toUpperCase(),
         ticketSubject: ticket.subject || 'Sem assunto',
         eventType: event_type,
         messagePreview,
