@@ -147,6 +147,15 @@ serve(async (req) => {
         sent_at: tenantResult.success ? new Date().toISOString() : null
       });
 
+      // Criar notificação in-app para usuários Tridots
+      await supabase.rpc('create_email_sent_notification', {
+        p_template_type: 'contract_activated_tenant',
+        p_recipient_email: analysis.inquilino_email,
+        p_recipient_name: analysis.inquilino_nome,
+        p_reference_id: contract_id,
+        p_success: tenantResult.success
+      });
+
       results.push({ type: 'tenant', success: tenantResult.success, error: tenantResult.error });
     }
 
@@ -195,6 +204,15 @@ serve(async (req) => {
               metadata: { contract_id, test_mode, recipient_type: 'agency_user', user_id: profile.id },
               error_message: agencyResult.error,
               sent_at: agencyResult.success ? new Date().toISOString() : null
+            });
+
+            // Criar notificação in-app para usuários Tridots (apenas uma vez por colaborador)
+            await supabase.rpc('create_email_sent_notification', {
+              p_template_type: 'contract_activated_agency',
+              p_recipient_email: profile.email,
+              p_recipient_name: agencyName,
+              p_reference_id: contract_id,
+              p_success: agencyResult.success
             });
 
             results.push({ 

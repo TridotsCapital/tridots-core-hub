@@ -1,6 +1,6 @@
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { MessageSquare, RefreshCw, FileText, CheckCircle, X, Circle } from 'lucide-react';
+import { MessageSquare, RefreshCw, FileText, CheckCircle, X, Circle, Mail, FileCheck, FileX, Bell } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Notification } from '@/types/notifications';
 import { getNotificationConfig, getSourceLabel } from '@/types/notifications';
@@ -17,6 +17,10 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   RefreshCw,
   FileText,
   CheckCircle,
+  Mail,
+  FileCheck,
+  FileX,
+  Bell,
 };
 
 export function NotificationItem({ notification, onRead, onDelete, onClick }: NotificationItemProps) {
