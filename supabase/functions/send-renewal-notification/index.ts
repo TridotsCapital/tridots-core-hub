@@ -85,6 +85,7 @@ const handler = async (req: Request): Promise<Response> => {
       : message;
 
     // Send email if applicable
+    let emailSuccess = false;
     if ((channel === 'email' || channel === 'both') && recipientEmail) {
       if (!resendApiKey) {
         console.warn('RESEND_API_KEY not configured, skipping email');
@@ -108,18 +109,43 @@ const handler = async (req: Request): Promise<Response> => {
           contractEndDate: contract.data_fim_contrato
         });
         
-        const emailResponse = await resend.emails.send({
-          from: "Tridots Capital <naoresponder@tridotscapital.com>",
-          to: [recipientEmail],
-          subject: `${recipientName}, renovação de contrato - ação necessária - Tridots Capital`,
-          html: emailHtml,
-          attachments: [{
-            filename: 'tridots-logo.png',
-            content: LOGO_BASE64,
-          }]
-        });
+        try {
+          const emailResponse = await resend.emails.send({
+            from: "Tridots Capital <naoresponder@tridotscapital.com>",
+            to: [recipientEmail],
+            subject: `${recipientName}, renovação de contrato - ação necessária - Tridots Capital`,
+            html: emailHtml,
+            attachments: [{
+              filename: 'tridots-logo.png',
+              content: LOGO_BASE64,
+            }]
+          });
 
-        console.log("Email sent successfully:", emailResponse);
+          console.log("Email sent successfully:", emailResponse);
+          emailSuccess = true;
+
+          // Criar notificação in-app para usuários Tridots
+          await supabase.rpc('create_email_sent_notification', {
+            p_template_type: 'renewal_notification',
+            p_recipient_email: recipientEmail,
+            p_recipient_name: recipientName,
+            p_reference_id: contractId,
+            p_success: true
+          });
+        } catch (emailError) {
+          console.error("Email send failed:", emailError);
+          
+          // Criar notificação de falha
+          await supabase.rpc('create_email_sent_notification', {
+            p_template_type: 'renewal_notification',
+            p_recipient_email: recipientEmail,
+            p_recipient_name: recipientName,
+            p_reference_id: contractId,
+            p_success: false
+          });
+          
+          throw emailError;
+        }
       }
     }
 

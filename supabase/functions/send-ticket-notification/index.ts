@@ -166,6 +166,15 @@ serve(async (req) => {
         error: result.error
       });
 
+      // Criar notificação in-app para usuários Tridots
+      await supabase.rpc('create_email_sent_notification', {
+        p_template_type: 'ticket_notification',
+        p_recipient_email: recipient.email,
+        p_recipient_name: recipient.name,
+        p_reference_id: ticket_id,
+        p_success: result.success
+      });
+
       if (!result.success) {
         console.error(`Failed to send email to ${recipient.email}:`, result.error);
       }

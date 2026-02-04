@@ -108,6 +108,15 @@ serve(async (req) => {
       sent_at: result.success ? new Date().toISOString() : null
     });
 
+    // Criar notificação in-app para usuários Tridots
+    await supabase.rpc('create_email_sent_notification', {
+      p_template_type: 'payment_confirmation',
+      p_recipient_email: tenantEmail,
+      p_recipient_name: analysis.inquilino_nome,
+      p_reference_id: analysis_id,
+      p_success: result.success
+    });
+
     return new Response(
       JSON.stringify({
         success: result.success,

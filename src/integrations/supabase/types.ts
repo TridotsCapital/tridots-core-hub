@@ -2387,6 +2387,16 @@ export type Database = {
         Args: { _analysis_id: string }
         Returns: string
       }
+      create_email_sent_notification: {
+        Args: {
+          p_recipient_email: string
+          p_recipient_name: string
+          p_reference_id?: string
+          p_success?: boolean
+          p_template_type: string
+        }
+        Returns: undefined
+      }
       get_agency_approval_rate: {
         Args: { _agency_id: string }
         Returns: {

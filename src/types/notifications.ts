@@ -4,9 +4,10 @@ export type NotificationType =
   | 'analysis_message' 
   | 'analysis_status'
   | 'contract_status'
-  | 'contract_document_rejected';
+  | 'contract_document_rejected'
+  | 'email_sent';
 
-export type NotificationSource = 'chamados' | 'analises' | 'contratos' | 'sinistros';
+export type NotificationSource = 'chamados' | 'analises' | 'contratos' | 'sinistros' | 'sistema';
 
 export interface NotificationMetadata {
   sender_name?: string;
@@ -17,6 +18,10 @@ export interface NotificationMetadata {
   status?: string;
   old_status?: string;
   new_status?: string;
+  template_type?: string;
+  recipient_email?: string;
+  recipient_name?: string;
+  success?: boolean;
 }
 
 export interface Notification {
@@ -88,6 +93,13 @@ export const getNotificationConfig = (type: NotificationType): {
         bgColor: 'bg-red-50',
         borderColor: 'border-red-200'
       };
+    case 'email_sent':
+      return {
+        icon: 'Mail',
+        color: 'text-emerald-600',
+        bgColor: 'bg-emerald-50',
+        borderColor: 'border-emerald-200'
+      };
     default:
       return {
         icon: 'Bell',
@@ -106,6 +118,8 @@ export const getSourceLabel = (source: NotificationSource): string => {
       return 'Análise';
     case 'contratos':
       return 'Contrato';
+    case 'sistema':
+      return 'Sistema';
     default:
       return '';
   }

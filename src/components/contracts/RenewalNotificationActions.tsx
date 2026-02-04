@@ -93,7 +93,7 @@ Equipe Tridots`;
 
     setSendingEmail(true);
     try {
-      const { error } = await supabase.functions.invoke('send-renewal-notification', {
+      const { data, error } = await supabase.functions.invoke('send-renewal-notification', {
         body: {
           contractId,
           renewalId,
@@ -104,7 +104,16 @@ Equipe Tridots`;
         }
       });
 
-      if (error) throw error;
+      if (error || data?.error) {
+        const errorMessage = data?.error || error?.message || 'Erro ao enviar e-mail';
+        toast.error(`Falha no envio: ${errorMessage}`, {
+          action: {
+            label: 'Tentar novamente',
+            onClick: handleSendEmail
+          }
+        });
+        return;
+      }
 
       // Log the notification
       await createNotification.mutateAsync({
@@ -116,10 +125,15 @@ Equipe Tridots`;
         message_preview: customMessage.slice(0, 100)
       });
 
-      toast.success('E-mail enviado com sucesso!');
+      toast.success(`E-mail enviado com sucesso para ${tenantName}!`);
     } catch (error) {
       console.error('Error sending email:', error);
-      toast.error('Erro ao enviar e-mail. Tente novamente.');
+      toast.error('Erro ao enviar e-mail', {
+        action: {
+          label: 'Tentar novamente',
+          onClick: handleSendEmail
+        }
+      });
     } finally {
       setSendingEmail(false);
     }
