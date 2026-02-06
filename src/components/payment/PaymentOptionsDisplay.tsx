@@ -76,13 +76,13 @@ export function PaymentOptionsDisplay({
   };
 
   const allOptions: PaymentOptionItem[] = [
-    // Blocked option first
+    // Boleto option - UNLOCKED
     {
       id: 'boleto_imobiliaria',
-      label: 'Pagamento via Imobiliária',
-      description: 'Boleto Mensal Unificado',
-      value: 0,
-      blocked: true,
+      label: 'Boleto Mensal Unificado',
+      description: 'Pagamento centralizado via imobiliária',
+      value: garantiaAnual,
+      blocked: false,
     },
     // PIX option - show as blocked if not enabled
     pixEnabled
@@ -215,26 +215,28 @@ export function PaymentOptionsDisplay({
             );
           }
 
-          return (
-            <Label
-              key={option.id}
-              htmlFor={option.id}
-              className={cn(
-                'flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all',
-                formaEscolhida === option.id
-                  ? 'border-primary bg-primary/5'
-                  : 'border-border hover:border-primary/50',
-                option.highlighted && 'border-green-500/50 bg-green-50 dark:bg-green-950/20',
-                readOnly && 'cursor-default'
-              )}
-            >
-              <div className="flex items-center gap-3">
-                <RadioGroupItem value={option.id} id={option.id} />
-                {option.id === 'pix' ? (
-                  <QrCode className={cn('h-4 w-4', option.highlighted ? 'text-green-600' : 'text-muted-foreground')} />
-                ) : (
-                  <CreditCard className="h-4 w-4 text-muted-foreground" />
-                )}
+           return (
+             <Label
+               key={option.id}
+               htmlFor={option.id}
+               className={cn(
+                 'flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all',
+                 formaEscolhida === option.id
+                   ? 'border-primary bg-primary/5'
+                   : 'border-border hover:border-primary/50',
+                 option.highlighted && 'border-green-500/50 bg-green-50 dark:bg-green-950/20',
+                 readOnly && 'cursor-default'
+               )}
+             >
+               <div className="flex items-center gap-3">
+                 <RadioGroupItem value={option.id} id={option.id} />
+                 {option.id === 'pix' ? (
+                   <QrCode className={cn('h-4 w-4', option.highlighted ? 'text-green-600' : 'text-muted-foreground')} />
+                 ) : option.id === 'boleto_imobiliaria' ? (
+                   <Building2 className="h-4 w-4 text-primary" />
+                 ) : (
+                   <CreditCard className="h-4 w-4 text-muted-foreground" />
+                 )}
                 <div>
                   <span className="font-medium">{option.label}</span>
                   {option.discount && (
@@ -288,6 +290,7 @@ export function getPaymentMethodLabel(method: PaymentMethod | string | null | un
   if (!method) return 'Não definida';
   
   const labels: Record<string, string> = {
+    boleto_imobiliaria: 'Boleto Mensal Unificado',
     pix: 'PIX à vista',
     card_1x: 'Cartão 1x',
     card_2x: 'Cartão 2x',

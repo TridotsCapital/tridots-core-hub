@@ -34,6 +34,8 @@ export interface AgencySignupData {
   bairro: string;
   cidade: string;
   estado: string;
+  // Billing
+  billing_due_day?: number;
 }
 
 interface AgencySignupFormProps {
@@ -46,6 +48,7 @@ const STEPS = [
   { id: 2, title: 'Empresa', icon: Building2 },
   { id: 3, title: 'Responsável', icon: User },
   { id: 4, title: 'Endereço', icon: MapPin },
+  { id: 5, title: 'Vencimento', icon: Building2 },
 ];
 
 const ESTADOS_BRASIL = [
@@ -107,6 +110,7 @@ export function AgencySignupForm({ onSubmit, loading }: AgencySignupFormProps) {
     bairro: '',
     cidade: '',
     estado: '',
+    billing_due_day: 10,
   });
   
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -268,6 +272,12 @@ export function AgencySignupForm({ onSubmit, loading }: AgencySignupFormProps) {
           return false;
         }
         return true;
+      case 5:
+        if (!formData.billing_due_day) {
+          toast.error('Selecione a data de vencimento');
+          return false;
+        }
+        return true;
       default:
         return true;
     }
@@ -275,7 +285,7 @@ export function AgencySignupForm({ onSubmit, loading }: AgencySignupFormProps) {
 
   const handleNext = () => {
     if (validateStep(currentStep)) {
-      setCurrentStep(prev => Math.min(prev + 1, 4));
+      setCurrentStep(prev => Math.min(prev + 1, 5));
     }
   };
 
@@ -285,11 +295,11 @@ export function AgencySignupForm({ onSubmit, loading }: AgencySignupFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (currentStep !== 4) {
+    if (currentStep !== 5) {
       handleNext();
       return;
     }
-    if (validateStep(4)) {
+    if (validateStep(5)) {
       await onSubmit(formData);
     }
   };
@@ -608,6 +618,43 @@ export function AgencySignupForm({ onSubmit, loading }: AgencySignupFormProps) {
                 </SelectContent>
               </Select>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Step 5: Billing Configuration */}
+      {currentStep === 5 && (
+        <div className="space-y-4 animate-fade-in">
+          <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mb-4">
+            <p className="text-sm text-foreground">
+              <strong>Data de Vencimento:</strong> Escolha o dia do mês em que suas faturas vencem. Todas as suas parcelas de garantia serão consolidadas nessa data.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="billing-due-day" className="font-medium">Dia de Vencimento *</Label>
+            <Select 
+              value={formData.billing_due_day?.toString() || '10'} 
+              onValueChange={(v) => updateField('billing_due_day', parseInt(v) as any)}
+            >
+              <SelectTrigger id="billing-due-day" className="h-11">
+                <SelectValue placeholder="Selecione o dia" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="5">Dia 05 do mês</SelectItem>
+                <SelectItem value="10">Dia 10 do mês</SelectItem>
+                <SelectItem value="15">Dia 15 do mês</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+            <p className="text-sm font-medium">ℹ️ Informações importantes:</p>
+            <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+              <li>Você pode alterar essa data depois via seu perfil</li>
+              <li>Alterações valem a partir do próximo mês</li>
+              <li>A data será posterga­da se cair no fim de semana ou feriado</li>
+            </ul>
           </div>
         </div>
       )}
