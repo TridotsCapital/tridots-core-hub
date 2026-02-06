@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { useAgencyInvoices, type InvoiceFilter } from '@/hooks/useAgencyInvoices';
+import { useInvoiceAnalytics } from '@/hooks/useInvoiceAnalytics';
 import {
   Table,
   TableBody,
@@ -19,7 +20,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Eye, Download, DollarSign } from 'lucide-react';
+import { Eye, Download, DollarSign, AlertCircle, Lock } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
@@ -48,6 +50,9 @@ export default function FinancialInvoices() {
   const [searchAgency, setSearchAgency] = useState('');
 
   const { data: invoices = [], isLoading } = useAgencyInvoices(filters);
+  // For analytics, pass date filters if they exist
+  const analyticsFilters = filters as unknown as { fromDate?: string; toDate?: string };
+  const { data: analytics, isLoading: analyticsLoading } = useInvoiceAnalytics(analyticsFilters);
 
   const handleFilterChange = (key: string, value: any) => {
     setFilters(prev => ({
@@ -65,6 +70,14 @@ export default function FinancialInvoices() {
   const totalValue = filteredInvoices.reduce((sum, inv) => sum + (inv.adjusted_value || inv.total_value || 0), 0);
   const paidValue = filteredInvoices.filter(inv => inv.status === 'paga').reduce((sum, inv) => sum + (inv.paid_value || 0), 0);
   const pendingValue = totalValue - paidValue;
+  
+  const kpiData = analytics || {
+    totalToReceive: 0,
+    totalReceived: 0,
+    totalOverdue: 0,
+    blockedAgenciesCount: 0,
+    alertsCount: 0
+  };
 
   return (
     <DashboardLayout
@@ -72,21 +85,47 @@ export default function FinancialInvoices() {
       description="Gestão de faturas de garantia por imobiliária"
     >
       <div className="space-y-6 animate-fade-in">
-        {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-background rounded-lg border border-primary/20 p-4">
-            <p className="text-sm text-muted-foreground mb-1">Total a Receber</p>
-            <p className="text-2xl font-bold text-primary">R$ {totalValue.toFixed(2)}</p>
-          </div>
-          <div className="bg-background rounded-lg border border-primary/20 p-4">
-            <p className="text-sm text-muted-foreground mb-1">Recebido</p>
-            <p className="text-2xl font-bold text-primary">R$ {paidValue.toFixed(2)}</p>
-          </div>
-          <div className="bg-background rounded-lg border border-destructive/20 p-4">
-            <p className="text-sm text-muted-foreground mb-1">Pendente</p>
-            <p className="text-2xl font-bold text-destructive">R$ {pendingValue.toFixed(2)}</p>
-          </div>
-        </div>
+         {/* Alerts */}
+         {kpiData.blockedAgenciesCount > 0 && (
+           <Alert variant="destructive">
+             <Lock className="h-4 w-4" />
+             <AlertDescription>
+               {kpiData.blockedAgenciesCount} agência(s) bloqueada(s) por falta de pagamento
+             </AlertDescription>
+           </Alert>
+         )}
+         {kpiData.alertsCount > 0 && (
+           <Alert>
+             <AlertCircle className="h-4 w-4" />
+             <AlertDescription>
+               {kpiData.alertsCount} fatura(s) vencendo nos próximos 5 dias
+             </AlertDescription>
+           </Alert>
+         )}
+
+         {/* KPI Cards */}
+         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+           <div className="bg-background rounded-lg border border-primary/20 p-4">
+             <p className="text-sm text-muted-foreground mb-1">Total a Receber</p>
+             <p className="text-2xl font-bold text-primary">R$ {kpiData.totalToReceive.toFixed(2)}</p>
+           </div>
+           <div className="bg-background rounded-lg border border-primary/20 p-4">
+             <p className="text-sm text-muted-foreground mb-1">Recebido</p>
+             <p className="text-2xl font-bold text-primary">R$ {kpiData.totalReceived.toFixed(2)}</p>
+           </div>
+           <div className="bg-background rounded-lg border border-destructive/20 p-4">
+             <p className="text-sm text-muted-foreground mb-1">Atrasado</p>
+             <p className="text-2xl font-bold text-destructive">R$ {kpiData.totalOverdue.toFixed(2)}</p>
+           </div>
+           <div className="bg-background rounded-lg border border-destructive/20 p-4">
+             <p className="text-sm text-muted-foreground mb-1">Agências Bloqueadas</p>
+             <p className="text-2xl font-bold text-destructive">{kpiData.blockedAgenciesCount}</p>
+           </div>
+           <div className="bg-background rounded-lg border border-destructive/20 p-4">
+             <p className="text-sm text-muted-foreground mb-1">Alertas Vencimento</p>
+             <p className="text-2xl font-bold text-destructive">{kpiData.alertsCount}</p>
+           </div>
+         </div>
 
         {/* Filtros */}
         <div className="bg-background rounded-lg border p-4 space-y-4">
