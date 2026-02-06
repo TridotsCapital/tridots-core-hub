@@ -1,7 +1,10 @@
 import { useState, useMemo } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import type { MonthSummary } from "@/hooks/useMonthlyInvoiceSummary";
 
 interface MonthlyInvoiceChartProps {
@@ -10,10 +13,26 @@ interface MonthlyInvoiceChartProps {
   selectedYear: number;
   onSelectMonth: (month: number, year: number) => void;
   isLoading?: boolean;
+  /** Optional: Additional info to show in header */
+  agencyCount?: number;
+  /** Optional: Show status badge */
+  showStatus?: boolean;
 }
 
 const MONTHS_VISIBLE = 7;
-const MONTH_NAMES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+const MONTH_NAMES_SHORT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+const MONTH_NAMES_FULL = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+
+const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+  rascunho: { label: "Rascunho", variant: "secondary" },
+  gerada: { label: "Gerada", variant: "default" },
+  enviada: { label: "Enviada", variant: "default" },
+  atrasada: { label: "Atrasada", variant: "destructive" },
+  paga: { label: "Paga", variant: "outline" },
+  cancelada: { label: "Cancelada", variant: "secondary" },
+  futura: { label: "Aguardando Faturamento", variant: "secondary" },
+  pendente: { label: "Pendente", variant: "default" },
+};
 
 const getStatusColor = (status: MonthSummary['status'], hasInvoice: boolean) => {
   if (!hasInvoice) return 'bg-blue-200 dark:bg-blue-900/50';
@@ -43,12 +62,18 @@ const getStatusColorSelected = (status: MonthSummary['status'], hasInvoice: bool
   }
 };
 
+const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+};
+
 export function MonthlyInvoiceChart({
   data,
   selectedMonth,
   selectedYear,
   onSelectMonth,
-  isLoading = false
+  isLoading = false,
+  agencyCount,
+  showStatus = true
 }: MonthlyInvoiceChartProps) {
   // Find index of current month in data
   const currentMonthIndex = useMemo(() => {
@@ -74,6 +99,11 @@ export function MonthlyInvoiceChart({
     return max;
   }, [data]);
 
+  // Selected month data
+  const selectedMonthData = useMemo(() => {
+    return data.find(m => m.month === selectedMonth && m.year === selectedYear);
+  }, [data, selectedMonth, selectedYear]);
+
   const canGoLeft = offset > 0;
   const canGoRight = offset + MONTHS_VISIBLE < data.length;
 
@@ -93,10 +123,25 @@ export function MonthlyInvoiceChart({
   if (isLoading) {
     return (
       <div className="bg-card rounded-lg border p-6">
-        <div className="flex items-end justify-center gap-3 h-44">
+        <div className="flex items-center justify-between gap-4 mb-6 pb-4 border-b">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-muted animate-pulse" />
+            <div className="space-y-2">
+              <div className="w-32 h-6 bg-muted animate-pulse rounded" />
+              <div className="w-24 h-4 bg-muted animate-pulse rounded" />
+            </div>
+          </div>
+          <div className="flex gap-6">
+            <div className="space-y-2 text-right">
+              <div className="w-16 h-4 bg-muted animate-pulse rounded ml-auto" />
+              <div className="w-28 h-8 bg-muted animate-pulse rounded" />
+            </div>
+          </div>
+        </div>
+        <div className="flex items-end justify-center gap-4 h-36">
           {Array.from({ length: MONTHS_VISIBLE }).map((_, i) => (
-            <div key={i} className="flex flex-col items-center gap-2">
-              <div className="w-12 h-20 bg-muted animate-pulse rounded" />
+            <div key={i} className="flex flex-col items-center gap-2 flex-1">
+              <div className="w-full max-w-[56px] h-20 bg-muted animate-pulse rounded" />
               <div className="w-10 h-4 bg-muted animate-pulse rounded" />
             </div>
           ))}
@@ -107,7 +152,52 @@ export function MonthlyInvoiceChart({
 
   return (
     <div className="bg-card rounded-lg border p-6">
-      <div className="flex items-center justify-between gap-4">
+      {/* Header: Month Summary */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b">
+        <div className="flex items-center gap-4">
+          <div className="p-3 rounded-full bg-primary/10">
+            <Calendar className="h-6 w-6 text-primary" />
+          </div>
+          <div>
+            <h3 className="text-xl font-semibold">
+              {MONTH_NAMES_FULL[selectedMonth - 1]} {selectedYear}
+            </h3>
+            {selectedMonthData?.dueDate && (
+              <p className="text-sm text-muted-foreground">
+                Vencimento: {format(new Date(selectedMonthData.dueDate), "dd 'de' MMMM", { locale: ptBR })}
+              </p>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-6">
+          <div className="text-right">
+            <p className="text-sm text-muted-foreground">Valor Total</p>
+            <p className="text-2xl font-bold">{formatCurrency(selectedMonthData?.totalValue || 0)}</p>
+          </div>
+          {agencyCount !== undefined && (
+            <div className="text-right">
+              <p className="text-sm text-muted-foreground">Imobiliárias</p>
+              <p className="text-2xl font-bold">{agencyCount}</p>
+            </div>
+          )}
+          {showStatus && selectedMonthData?.hasInvoice && (
+            <Badge 
+              variant={statusConfig[selectedMonthData.status]?.variant || "default"} 
+              className="text-sm px-3 py-1"
+            >
+              {statusConfig[selectedMonthData.status]?.label || selectedMonthData.status}
+            </Badge>
+          )}
+          {showStatus && !selectedMonthData?.hasInvoice && selectedMonthData?.totalValue && selectedMonthData.totalValue > 0 && (
+            <Badge variant="secondary" className="text-sm px-3 py-1">
+              Aguardando Faturamento
+            </Badge>
+          )}
+        </div>
+      </div>
+
+      {/* Chart */}
+      <div className="flex items-center justify-between gap-2">
         <Button
           variant="ghost"
           size="icon"
@@ -118,7 +208,7 @@ export function MonthlyInvoiceChart({
           <ChevronLeft className="h-6 w-6" />
         </Button>
 
-        <div className="flex items-end justify-center gap-3 sm:gap-4 flex-1 h-44 overflow-hidden">
+        <div className="flex items-end justify-center gap-2 sm:gap-4 flex-1 h-36">
           {visibleMonths.map((monthData) => {
             const isSelected = monthData.month === selectedMonth && monthData.year === selectedYear;
             const isCurrentMonth = (() => {
@@ -135,13 +225,13 @@ export function MonthlyInvoiceChart({
                 key={`${monthData.month}-${monthData.year}`}
                 onClick={() => onSelectMonth(monthData.month, monthData.year)}
                 className={cn(
-                  "flex flex-col items-center gap-2 transition-all duration-200 group min-w-[52px] sm:min-w-[64px]",
-                  isSelected && "scale-110"
+                  "flex flex-col items-center gap-2 transition-all duration-200 group flex-1 max-w-[80px]",
+                  isSelected && "scale-105"
                 )}
               >
                 <div
                   className={cn(
-                    "w-10 sm:w-12 rounded-t transition-all duration-200 shadow-sm",
+                    "w-full max-w-[56px] rounded-t transition-all duration-200 shadow-sm",
                     barColor,
                     isSelected && "ring-2 ring-primary ring-offset-2 ring-offset-background shadow-md"
                   )}
@@ -152,7 +242,7 @@ export function MonthlyInvoiceChart({
                   isSelected ? "text-foreground font-semibold" : "text-muted-foreground",
                   isCurrentMonth && !isSelected && "text-primary font-semibold"
                 )}>
-                  {MONTH_NAMES[monthData.month - 1]}
+                  {MONTH_NAMES_SHORT[monthData.month - 1]}
                 </span>
                 <span className={cn(
                   "text-[10px] sm:text-xs",
@@ -176,7 +266,7 @@ export function MonthlyInvoiceChart({
         </Button>
       </div>
 
-      {/* Legenda */}
+      {/* Legend */}
       <div className="flex flex-wrap items-center justify-center gap-6 mt-6 pt-4 border-t text-sm text-muted-foreground">
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 rounded bg-green-500" />
