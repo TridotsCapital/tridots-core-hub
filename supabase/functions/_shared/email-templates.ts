@@ -670,3 +670,260 @@ export async function sendEmail(
     };
   }
 }
+
+// ========== TEMPLATES DE FATURA (FASE 4.1) ==========
+
+// Template 1: Fatura Disponível (Imobiliária)
+export function invoiceAvailableTemplate(data: {
+  agencyName: string;
+  invoiceMonth: string;
+  invoiceYear: number;
+  totalValue: number;
+  dueDate: string;
+}): { subject: string; html: string } {
+  const content = `
+    <h1 style="margin:0 0 20px 0;font-size:24px;color:${TRIDOTS_BLUE};font-weight:600;">
+      Fatura disponível! 📄
+    </h1>
+    <p style="margin:0 0 20px 0;font-size:16px;color:#374151;line-height:1.6;">
+      Olá, <strong>${data.agencyName}</strong>!
+    </p>
+    <p style="margin:0 0 20px 0;font-size:16px;color:#374151;line-height:1.6;">
+      Sua fatura consolidada de garantias do mês está disponível para visualização e download.
+    </p>
+    
+    <div style="background-color:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:20px;margin:20px 0;">
+      <h3 style="margin:0 0 15px 0;font-size:16px;color:#166534;">Dados da Fatura</h3>
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+        <tr>
+          <td style="padding:8px 0;color:#4b5563;font-size:14px;">Período:</td>
+          <td style="padding:8px 0;color:#111827;font-size:14px;text-align:right;font-weight:500;">${data.invoiceMonth}/${data.invoiceYear}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;color:#4b5563;font-size:14px;">Valor Total:</td>
+          <td style="padding:8px 0;color:#111827;font-size:14px;text-align:right;font-weight:500;font-size:18px;">R$ ${(data.totalValue / 100).toFixed(2)}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;color:#4b5563;font-size:14px;">Vencimento:</td>
+          <td style="padding:8px 0;color:#111827;font-size:14px;text-align:right;font-weight:500;">${data.dueDate}</td>
+        </tr>
+      </table>
+    </div>
+    
+    <p style="margin:20px 0 0 0;font-size:14px;color:#6b7280;line-height:1.6;">
+      Acesse o portal para visualizar, baixar ou gerar o boleto da fatura.
+    </p>
+  `;
+
+  return {
+    subject: `${data.agencyName}, fatura disponível - ${data.invoiceMonth}/${data.invoiceYear} - Tridots Capital`,
+    html: generateEmailWrapper(content, `Fatura do mês ${data.invoiceMonth}/${data.invoiceYear} disponível`, IMAGES.office)
+  };
+}
+
+// Template 2: Lembrete de Vencimento (3 dias antes)
+export function invoiceDueReminderTemplate(data: {
+  agencyName: string;
+  invoiceMonth: string;
+  invoiceYear: number;
+  totalValue: number;
+  dueDate: string;
+  daysUntilDue: number;
+}): { subject: string; html: string } {
+  const content = `
+    <h1 style="margin:0 0 20px 0;font-size:24px;color:${TRIDOTS_BLUE};font-weight:600;">
+      Lembrete: Fatura próxima do vencimento ⏰
+    </h1>
+    <p style="margin:0 0 20px 0;font-size:16px;color:#374151;line-height:1.6;">
+      Olá, <strong>${data.agencyName}</strong>!
+    </p>
+    <p style="margin:0 0 20px 0;font-size:16px;color:#374151;line-height:1.6;">
+      Sua fatura está próxima do vencimento. Para evitar inadimplência, providencie o pagamento em breve.
+    </p>
+    
+    <div style="background-color:#fef3c7;border:2px solid #f59e0b;border-radius:8px;padding:20px;margin:20px 0;">
+      <h3 style="margin:0 0 15px 0;font-size:16px;color:#92400e;">Dados da Fatura</h3>
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+        <tr>
+          <td style="padding:8px 0;color:#4b5563;font-size:14px;">Período:</td>
+          <td style="padding:8px 0;color:#111827;font-size:14px;text-align:right;font-weight:500;">${data.invoiceMonth}/${data.invoiceYear}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;color:#4b5563;font-size:14px;">Valor Total:</td>
+          <td style="padding:8px 0;color:#111827;font-size:14px;text-align:right;font-weight:500;font-size:18px;">R$ ${(data.totalValue / 100).toFixed(2)}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;color:#4b5563;font-size:14px;">Vencimento:</td>
+          <td style="padding:8px 0;color:#111827;font-size:14px;text-align:right;font-weight:500;color:#dc2626;">${data.dueDate}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;color:#4b5563;font-size:14px;">Dias restantes:</td>
+          <td style="padding:8px 0;color:#111827;font-size:14px;text-align:right;font-weight:500;font-size:18px;color:#f59e0b;">${data.daysUntilDue} dias</td>
+        </tr>
+      </table>
+    </div>
+    
+    <p style="margin:20px 0 0 0;font-size:14px;color:#6b7280;line-height:1.6;">
+      Visite o portal para gerar o boleto ou configurar a forma de pagamento preferida.
+    </p>
+  `;
+
+  return {
+    subject: `${data.agencyName}, fatura vence em ${data.daysUntilDue} dias - Tridots Capital`,
+    html: generateEmailWrapper(content, `Fatura ${data.invoiceMonth}/${data.invoiceYear} vence em ${data.daysUntilDue} dias`, IMAGES.family)
+  };
+}
+
+// Template 3: Aviso de Atraso (1 dia após vencimento)
+export function invoiceOverdueTemplate(data: {
+  agencyName: string;
+  invoiceMonth: string;
+  invoiceYear: number;
+  totalValue: number;
+  dueDate: string;
+  daysOverdue: number;
+}): { subject: string; html: string } {
+  const content = `
+    <h1 style="margin:0 0 20px 0;font-size:24px;color:${TRIDOTS_BLUE};font-weight:600;">
+      Atenção: Fatura em atraso! ⚠️
+    </h1>
+    <p style="margin:0 0 20px 0;font-size:16px;color:#374151;line-height:1.6;">
+      Olá, <strong>${data.agencyName}</strong>!
+    </p>
+    <p style="margin:0 0 20px 0;font-size:16px;color:#374151;line-height:1.6;">
+      Sua fatura encontra-se em atraso. Para evitar bloqueios na plataforma, regularize o pagamento imediatamente.
+    </p>
+    
+    <div style="background-color:#fee2e2;border:2px solid #dc2626;border-radius:8px;padding:20px;margin:20px 0;">
+      <h3 style="margin:0 0 15px 0;font-size:16px;color:#991b1b;">Dados da Fatura</h3>
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+        <tr>
+          <td style="padding:8px 0;color:#4b5563;font-size:14px;">Período:</td>
+          <td style="padding:8px 0;color:#111827;font-size:14px;text-align:right;font-weight:500;">${data.invoiceMonth}/${data.invoiceYear}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;color:#4b5563;font-size:14px;">Valor Total:</td>
+          <td style="padding:8px 0;color:#111827;font-size:14px;text-align:right;font-weight:500;font-size:18px;color:#dc2626;">R$ ${(data.totalValue / 100).toFixed(2)}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;color:#4b5563;font-size:14px;">Data de Vencimento:</td>
+          <td style="padding:8px 0;color:#111827;font-size:14px;text-align:right;font-weight:500;">${data.dueDate}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;color:#4b5563;font-size:14px;">Dias em atraso:</td>
+          <td style="padding:8px 0;color:#111827;font-size:14px;text-align:right;font-weight:500;font-size:18px;color:#dc2626;">${data.daysOverdue} dias</td>
+        </tr>
+      </table>
+    </div>
+    
+    <p style="margin:20px 0 0 0;font-size:14px;color:#6b7280;line-height:1.6;">
+      <strong>⚠️ Aviso importante:</strong> Se o pagamento não for realizado em breve, sua conta pode ser bloqueada, 
+      impedindo a criação de novas análises e solicitações de garantia.
+    </p>
+  `;
+
+  return {
+    subject: `⚠️ ${data.agencyName}, fatura em atraso - ação necessária - Tridots Capital`,
+    html: generateEmailWrapper(content, `Fatura em atraso - ação necessária`, IMAGES.keys)
+  };
+}
+
+// Template 4: Alerta Pré-Bloqueio (48 horas antes do bloqueio)
+export function preBlockingAlertTemplate(data: {
+  agencyName: string;
+  hoursUntilBlock: number;
+  totalOverdueValue: number;
+}): { subject: string; html: string } {
+  const content = `
+    <h1 style="margin:0 0 20px 0;font-size:24px;color:${TRIDOTS_BLUE};font-weight:600;">
+      Urgente: Seu acesso será bloqueado em breve! 🔒
+    </h1>
+    <p style="margin:0 0 20px 0;font-size:16px;color:#374151;line-height:1.6;">
+      Olá, <strong>${data.agencyName}</strong>!
+    </p>
+    <p style="margin:0 0 20px 0;font-size:16px;color:#374151;line-height:1.6;">
+      Sua conta será bloqueada em <strong>${data.hoursUntilBlock} horas</strong> por falta de pagamento. 
+      Este é seu último aviso antes do bloqueio automático!
+    </p>
+    
+    <div style="background-color:#fecaca;border:3px solid #dc2626;border-radius:8px;padding:20px;margin:20px 0;">
+      <h3 style="margin:0 0 15px 0;font-size:16px;color:#7f1d1d;">Situação Crítica</h3>
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+        <tr>
+          <td style="padding:8px 0;color:#4b5563;font-size:14px;">Valor em atraso:</td>
+          <td style="padding:8px 0;color:#111827;font-size:14px;text-align:right;font-weight:500;font-size:18px;color:#dc2626;">R$ ${(data.totalOverdueValue / 100).toFixed(2)}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;color:#4b5563;font-size:14px;">Tempo para bloqueio:</td>
+          <td style="padding:8px 0;color:#111827;font-size:14px;text-align:right;font-weight:500;font-size:18px;color:#dc2626;">${data.hoursUntilBlock}h</td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="text-align:center;margin:30px 0;">
+      <p style="margin:0 0 15px 0;font-weight:600;color:#374151;">Regularize o pagamento agora mesmo!</p>
+      <p style="margin:0;color:#6b7280;font-size:14px;">Após o bloqueio, você não poderá criar novas análises ou solicitações.</p>
+    </div>
+    
+    <p style="margin:20px 0 0 0;font-size:14px;color:#6b7280;line-height:1.6;">
+      Acesse o portal imediatamente para efetuar o pagamento e evitar interrupção dos serviços.
+    </p>
+  `;
+
+  return {
+    subject: `🔒 ${data.agencyName}, bloqueio iminente - regularize a situação agora - Tridots Capital`,
+    html: generateEmailWrapper(content, `Bloqueio iminente - ação imediata necessária`, IMAGES.keys)
+  };
+}
+
+// Template 5: Confirmação de Bloqueio
+export function blockingConfirmationTemplate(data: {
+  agencyName: string;
+  blockedDate: string;
+  totalOverdueValue: number;
+}): { subject: string; html: string } {
+  const content = `
+    <h1 style="margin:0 0 20px 0;font-size:24px;color:${TRIDOTS_BLUE};font-weight:600;">
+      Conta Bloqueada 🔒
+    </h1>
+    <p style="margin:0 0 20px 0;font-size:16px;color:#374151;line-height:1.6;">
+      Olá, <strong>${data.agencyName}</strong>!
+    </p>
+    <p style="margin:0 0 20px 0;font-size:16px;color:#374151;line-height:1.6;">
+      Sua conta foi bloqueada por falta de pagamento. Você não conseguirá criar novas análises ou solicitações de garantia 
+      até que a situação seja regularizada.
+    </p>
+    
+    <div style="background-color:#fee2e2;border:2px solid #dc2626;border-radius:8px;padding:20px;margin:20px 0;">
+      <h3 style="margin:0 0 15px 0;font-size:16px;color:#991b1b;">Informações do Bloqueio</h3>
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+        <tr>
+          <td style="padding:8px 0;color:#4b5563;font-size:14px;">Data do bloqueio:</td>
+          <td style="padding:8px 0;color:#111827;font-size:14px;text-align:right;font-weight:500;">${data.blockedDate}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;color:#4b5563;font-size:14px;">Valor em atraso:</td>
+          <td style="padding:8px 0;color:#111827;font-size:14px;text-align:right;font-weight:500;font-size:18px;color:#dc2626;">R$ ${(data.totalOverdueValue / 100).toFixed(2)}</td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="background-color:#f3f4f6;border-left:4px solid #6b7280;padding:20px;margin:20px 0;">
+      <h4 style="margin:0 0 10px 0;color:#374151;">Como desbloquear sua conta:</h4>
+      <ol style="margin:0;padding-left:20px;color:#6b7280;font-size:14px;">
+        <li style="margin:5px 0;">Acesse o portal de faturas</li>
+        <li style="margin:5px 0;">Regularize todo o valor em atraso</li>
+        <li style="margin:5px 0;">A conta será desbloqueada automaticamente dentro de 1 hora</li>
+      </ol>
+    </div>
+    
+    <p style="margin:20px 0 0 0;font-size:14px;color:#6b7280;line-height:1.6;">
+      Para dúvidas ou assistência, entre em contato conosco pelo portal de suporte.
+    </p>
+  `;
+
+  return {
+    subject: `🔒 ${data.agencyName}, conta bloqueada - Tridots Capital`,
+    html: generateEmailWrapper(content, `Sua conta foi bloqueada por falta de pagamento`, IMAGES.keys)
+  };
+}
