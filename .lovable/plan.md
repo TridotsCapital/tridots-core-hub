@@ -1,316 +1,169 @@
 
-# Plano Definitivo: Modulo de Faturas com UI Inspirada no Nubank
 
-## Resumo das Definicoes do Usuario
+# Plano de Correção: Módulo de Faturas
 
-| Aspecto | Definicao |
-|---------|-----------|
-| **Altura das barras** | Valor total das parcelas do mes (Tridots: soma de todas imobiliarias / Agencia: valor da propria fatura) |
-| **Cores das barras** | Verde (paga), Vermelho (atrasada), Amarelo (pendente), Azul claro (futura) |
-| **Resumo no topo** | Valor total do mes selecionado + data de vencimento programado |
-| **Navegacao ao clicar** | Pagina separada com detalhes da fatura |
-| **Estados visuais** | Badges para representar os diferentes status |
+## Problemas Identificados
+
+### 1. Gráfico muito apertado
+O componente `MonthlyInvoiceChart.tsx` está com altura fixa de apenas 32px para as barras (`h-32`) e espaçamento muito pequeno entre os elementos.
+
+### 2. Não está listando imobiliárias para Tridots
+Ao verificar o hook `useAgenciesWithInvoiceInMonth`, ele está funcionando corretamente, mas pode haver um problema de dados vazios ou filtros incorretos. Preciso verificar se a query está retornando dados.
+
+### 3. Erro 404 ao clicar em "Ver Contrato" nas faturas da agência
+**Causa raiz identificada:**
+- O botão navega para `/contracts/:contract_id`
+- Porém, o componente `AgencyContractDetail` busca análises usando o ID da URL como `analysis_id` (linha 112)
+- Os IDs são diferentes: `contract_id` ≠ `analysis_id`
+
+**Comprovação no banco:**
+```text
+contract_id:  c3e5c4f8-c40d-4e97-9fa2-5e20da617c24
+analysis_id:  6044b4ff-d054-4361-8b2b-8b3ad8abee0d
+```
 
 ---
 
-## Parte 1: Correcoes de Bugs Existentes
+## Correções Planejadas
 
-### 1.1 Rota Faltando (Portal Tridots)
+### 1. Melhorar Visual do Gráfico (`MonthlyInvoiceChart.tsx`)
 
-**Problema**: A rota `/invoices/:invoiceId` nao existe no portal Tridots (linha 78 do App.tsx so tem `/invoices`)
+| Aspecto | Atual | Novo |
+|---------|-------|------|
+| Altura do container | `h-32` (8rem) | `h-40` (10rem) |
+| Largura das barras | `w-8 sm:w-10` | `w-10 sm:w-12` |
+| Gap entre elementos | `gap-1 sm:gap-2` | `gap-2 sm:gap-3` |
+| Padding do card | `p-4` | `p-6` |
+| Tamanho da fonte | `text-[10px]` | `text-xs` |
 
-**Correcao**: Adicionar a rota no `InternalRoutes()`:
-```text
-Arquivo: src/App.tsx
-Linha 78: <Route path="/invoices" element={<FinancialInvoices />} />
-Adicionar: <Route path="/invoices/:invoiceId" element={<InvoiceDetail />} />
-```
+### 2. Corrigir Navegação "Ver Contrato" (`useMonthlyInvoiceSummary.ts`)
 
-### 1.2 Navegacao Errada
+O hook precisa retornar o `analysis_id` junto com o `contract_id` para que a navegação funcione corretamente.
 
-**Problema**: `FinancialInvoices.tsx` navega para `/financial/invoices/:id` que nao existe
-
-| Arquivo | Linha | Atual | Correcao |
-|---------|-------|-------|----------|
-| `FinancialInvoices.tsx` | 364 | `/financial/invoices/${invoice.id}` | `/invoices/${invoice.id}` |
-| `FinancialInvoices.tsx` | 383 | `/financial/invoices/${invoice.id}?tab=payment` | `/invoices/${invoice.id}?tab=payment` |
-| `InvoiceDetail.tsx` | 74 | `/financial/invoices` | `/invoices` |
-
-### 1.3 Bug do Vencimento das Parcelas
-
-**Analise**: Verifiquei os dados no banco e a logica da Edge Function `generate-installments`. O comportamento esta CORRETO conforme a regra de negocio documentada:
-
-| Parcela | Data Gerada | Dia Configurado | Situacao |
-|---------|-------------|-----------------|----------|
-| 4 (Mai/2026) | 2026-05-11 | 10 | 10/05 e Domingo, postergou para 11 |
-| 9 (Out/2026) | 2026-10-12 | 10 | 10/10 e Sabado, postergou para 12 |
-| 12 (Jan/2027) | 2027-01-11 | 10 | 10/01 e Domingo, postergou para 11 |
-
-Isso segue a regra: "Vencimentos em finais de semana sao automaticamente postergados para o proximo dia util."
-
-**Se o usuario desejar manter sempre o dia fixo (ignorando fins de semana)**, sera necessario remover a funcao `adjustToBusinessDay` da Edge Function. Aguardando confirmacao.
-
----
-
-## Parte 2: Nova Interface Inspirada no Nubank
-
-### 2.1 Novo Componente: Grafico de Barras Mensal
-
-Criar componente reutilizavel `MonthlyInvoiceChart.tsx`:
-
-```text
-+------------------------------------------------------------------+
-|  [<]  Nov  Dez  Jan  Fev  Mar  Abr  Mai  Jun  Jul  Ago  Set  [>] |
-|        |    |    |    █    |    |    |    |    |    |    |       |
-|        |    |    |   ███   |    |    |    |    |    |    |       |
-|        |    |    |   ███  ███  ███  ███  ███  ███  ███  ███      |
-|  (verde)   (amarelo)  (azul claro para futuras)                  |
-+------------------------------------------------------------------+
-```
-
-**Estrutura**:
-- Barra horizontal com 12 meses visiveis
-- Setas para navegar entre periodos
-- Barra selecionada destacada visualmente
-- Altura proporcional ao valor do mes
-- Cores por status predominante do mes
-
-**Cores Definidas**:
-- `bg-green-500` - Paga
-- `bg-red-500` - Atrasada
-- `bg-yellow-500` - Pendente (aguardando pagamento)
-- `bg-blue-200` - Futura (parcelas agendadas)
-
-### 2.2 Nova Estrutura: Portal Tridots (`FinancialInvoices.tsx`)
-
-```text
-+------------------------------------------------------------------+
-| FATURAS UNIFICADAS                            [Gerar Rascunhos]  |
-| Gestao de faturas de garantia por imobiliaria                    |
-+------------------------------------------------------------------+
-| GRAFICO DE BARRAS MENSAL (componente MonthlyInvoiceChart)        |
-| [<]  Nov  Dez  Jan  [FEV]  Mar  Abr  Mai  Jun  Jul  Ago  Set [>] |
-+------------------------------------------------------------------+
-| CARD RESUMO DO MES SELECIONADO                                   |
-| +--------------------------+                                     |
-| | Fevereiro 2026           |                                     |
-| | R$ 100,00                |                                     |
-| | Vencimento: 10/02/2026   |                                     |
-| | 1 imobiliaria            |                                     |
-| +--------------------------+                                     |
-+------------------------------------------------------------------+
-| LISTA DE IMOBILIARIAS COM FATURA NO MES SELECIONADO              |
-| +--------------------------------------------------------------+ |
-| | teste 15 LTDA                                                | |
-| | CNPJ: xx.xxx.xxx/0001-xx                                     | |
-| | R$ 100,00           [Rascunho]               [Ver Detalhes]  | |
-| +--------------------------------------------------------------+ |
-+------------------------------------------------------------------+
-```
-
-**Comportamento**:
-1. Usuario clica em um mes no grafico
-2. Card de resumo atualiza com totais do mes
-3. Lista abaixo mostra todas as imobiliarias com fatura/parcelas naquele mes
-4. Clicar em "Ver Detalhes" navega para `/invoices/:id`
-
-### 2.3 Nova Estrutura: Portal Agencia (`AgencyInvoices.tsx`)
-
-```text
-+------------------------------------------------------------------+
-| MINHAS FATURAS                                                   |
-| Acompanhe suas faturas de garantia                               |
-+------------------------------------------------------------------+
-| [Alerta se houver fatura atrasada]                               |
-+------------------------------------------------------------------+
-| GRAFICO DE BARRAS MENSAL (componente MonthlyInvoiceChart)        |
-| [<]  Nov  Dez  Jan  [FEV]  Mar  Abr  Mai  Jun  Jul  Ago  Set [>] |
-+------------------------------------------------------------------+
-| CARD RESUMO DO MES SELECIONADO                                   |
-| +--------------------------+                                     |
-| | Fevereiro 2026           |                                     |
-| | R$ 100,00                |                                     |
-| | Vencimento: 10/02/2026   |                                     |
-| | Status: Rascunho         |                                     |
-| +--------------------------+                                     |
-+------------------------------------------------------------------+
-| DETALHES DOS CONTRATOS DA FATURA                                 |
-| +--------------------------------------------------------------+ |
-| | Contrato | Inquilino | Imovel      | Parcela | Valor | Acao | |
-| |----------|-----------|-------------|---------|-------|------| |
-| | c3e5...  | Joao Silva| Rua X, 123  | 1/12    | R$100 | [>]  | |
-| +--------------------------------------------------------------+ |
-+------------------------------------------------------------------+
-```
-
-**Comportamento**:
-1. Usuario clica em um mes no grafico
-2. Card de resumo mostra valor + vencimento + status
-3. Tabela abaixo detalha cada contrato/parcela da fatura
-4. Botao de acao permite navegar para o contrato
-
----
-
-## Parte 3: Novo Hook para Dados Consolidados
-
-### 3.1 Hook `useMonthlyInvoiceSummary`
-
-Buscar dados consolidados por mes (faturas existentes + parcelas futuras):
-
+**Alteração na query de invoice_items:**
 ```typescript
-interface MonthSummary {
-  month: number;
-  year: number;
-  totalValue: number;
-  status: 'paga' | 'atrasada' | 'pendente' | 'futura';
-  invoiceCount: number;    // Para Tridots
-  hasInvoice: boolean;     // Se ja tem fatura gerada
-}
+// Atual
+contract_id,
+tenant_name,
+property_address,
+installment_number,
+value,
 
-export const useMonthlyInvoiceSummary = (agencyId?: string) => {
-  // Query 1: Faturas existentes (agency_invoices)
-  // Query 2: Parcelas futuras sem fatura (guarantee_installments onde status = 'pendente')
-  // Consolidar ambos os datasets por mes/ano
+// Novo - adicionar join para pegar analysis_id
+contract_id,
+tenant_name,
+property_address,
+installment_number,
+value,
+contracts!inner (analysis_id)
+```
+
+**Alteração na função handleGoToContract (`AgencyInvoices.tsx`):**
+```typescript
+// Atual
+const handleGoToContract = (contractId: string) => {
+  navigate(agencyPath(`/contracts/${contractId}`));
 };
-```
 
-### 3.2 Hook `useAgenciesWithInvoiceInMonth`
-
-Para o portal Tridots, listar imobiliarias com fatura em um mes especifico:
-
-```typescript
-interface AgencyInvoiceSummary {
-  agencyId: string;
-  agencyName: string;
-  cnpj: string;
-  invoiceId: string | null;   // null se for apenas parcelas futuras
-  totalValue: number;
-  dueDate: string;
-  status: 'paga' | 'atrasada' | 'pendente' | 'futura' | 'rascunho';
-}
-
-export const useAgenciesWithInvoiceInMonth = (month: number, year: number) => {
-  // Query com JOIN entre agency_invoices, guarantee_installments e agencies
+// Novo - usar analysis_id em vez de contract_id
+const handleGoToContract = (analysisId: string) => {
+  navigate(agencyPath(`/contracts/${analysisId}`));
 };
 ```
 
 ---
 
-## Parte 4: Arquivos a Criar/Modificar
+## Arquivos a Modificar
 
-| Arquivo | Acao | Descricao |
-|---------|------|-----------|
-| `src/App.tsx` | Modificar | Adicionar rota `/invoices/:invoiceId` |
-| `src/components/invoices/MonthlyInvoiceChart.tsx` | **Criar** | Componente do grafico de barras mensal |
-| `src/hooks/useMonthlyInvoiceSummary.ts` | **Criar** | Hook para dados consolidados por mes |
-| `src/pages/FinancialInvoices.tsx` | Modificar | Refatorar com novo layout (grafico + lista) |
-| `src/pages/agency/AgencyInvoices.tsx` | Modificar | Refatorar com novo layout (grafico + detalhes) |
-| `src/pages/InvoiceDetail.tsx` | Modificar | Corrigir botao voltar |
+| Arquivo | Mudança |
+|---------|---------|
+| `src/components/invoices/MonthlyInvoiceChart.tsx` | Aumentar altura e espaçamento do gráfico |
+| `src/hooks/useMonthlyInvoiceSummary.ts` | Incluir `analysis_id` na query de `useAgencyMonthInstallments` |
+| `src/pages/agency/AgencyInvoices.tsx` | Usar `analysis_id` na navegação para contrato |
 
 ---
 
-## Parte 5: Comportamento Detalhado do Grafico
+## Detalhes Técnicos
 
-### 5.1 Calculo da Altura das Barras
+### Correção do Hook `useAgencyMonthInstallments`
+
+Na parte que busca parcelas pendentes (sem fatura), modificar a query para incluir o `analysis_id`:
 
 ```typescript
-// Encontrar o maior valor para escala
-const maxValue = Math.max(...months.map(m => m.totalValue));
-
-// Altura proporcional (minimo 20% para visualizacao)
-const getBarHeight = (value: number) => {
-  if (value === 0) return 4; // altura minima
-  return Math.max(20, (value / maxValue) * 100);
-};
+// Linha 315-336 - Query de guarantee_installments
+const { data: installments, error } = await supabase
+  .from('guarantee_installments')
+  .select(`
+    id,
+    installment_number,
+    value,
+    due_date,
+    status,
+    contract_id,
+    contracts!inner (
+      agency_id,
+      analysis_id,  // <-- ADICIONAR
+      analyses!inner (
+        inquilino_nome,
+        imovel_endereco,
+        imovel_numero
+      )
+    )
+  `)
 ```
 
-### 5.2 Determinacao da Cor
+E atualizar o retorno para incluir `analysis_id`:
 
 ```typescript
-const getBarColor = (month: MonthSummary) => {
-  if (!month.hasInvoice) return 'bg-blue-200';  // Futura
-  switch (month.status) {
-    case 'paga': return 'bg-green-500';
-    case 'atrasada': return 'bg-red-500';
-    case 'pendente': 
-    case 'rascunho':
-    case 'gerada':
-    case 'enviada':
-      return 'bg-yellow-500';
-    default: return 'bg-blue-200';
-  }
-};
+return (installments || []).map((inst: any) => ({
+  id: inst.id,
+  contract_id: inst.contract_id,
+  analysis_id: inst.contracts?.analysis_id,  // <-- ADICIONAR
+  tenant_name: inst.contracts?.analyses?.inquilino_nome || 'N/A',
+  property_address: `...`,
+  installment_number: inst.installment_number,
+  value: inst.value,
+  invoiceStatus: 'futura',
+  hasInvoice: false
+}));
 ```
 
-### 5.3 Navegacao entre Periodos
+### Correção da Navegação em `AgencyInvoices.tsx`
 
-- Seta esquerda: move 3 meses para tras
-- Seta direita: move 3 meses para frente
-- Limite: 12 meses no passado ate 12 meses no futuro
-- Mes atual centralizado no carregamento inicial
+```typescript
+// Linha 70-72 - Alterar para usar analysis_id
+const handleGoToContract = (analysisId: string) => {
+  navigate(agencyPath(`/contracts/${analysisId}`));
+};
 
----
+// Linha 195 - Alterar chamada
+onClick={() => handleGoToContract(item.analysis_id)}
+```
 
-## Parte 6: Acoes na Pagina de Detalhe
+### Melhoria Visual do Gráfico
 
-Quando usuario clica em uma imobiliaria (Tridots) ou ve detalhes (Agencia):
+```typescript
+// Container principal
+<div className="bg-card rounded-lg border p-6">
 
-### Portal Tridots - Detalhes da Fatura (`/invoices/:id`)
-- Resumo: Status, Vencimento, Valor Total, Valor Pago
-- Tabela de parcelas vinculadas
-- **Acoes**:
-  - "Ir para Contrato" - navega para `/contracts/:id`
-  - "Upload Boleto" - permite anexar PDF do boleto
-  - "Registrar Pagamento" - modal existente
-  - "Enviar Fatura" - muda status para 'enviada'
-  - "Cancelar Fatura" - cria nova e cancela atual
+// Container das barras - aumentar altura
+<div className="flex items-end justify-center gap-2 sm:gap-3 flex-1 h-40 overflow-hidden">
 
-### Portal Agencia - Detalhes da Fatura (`/invoices/:id`)
-- Resumo: Status, Vencimento, Valor Total
-- Tabela de parcelas com link para contrato
-- Download de boleto (quando disponivel)
-- Historico de eventos
+// Cada barra - aumentar largura
+<button className="flex flex-col items-center gap-1.5 ... min-w-[48px] sm:min-w-[56px]">
 
----
+// Barra visual - aumentar largura
+<div className="w-10 sm:w-12 rounded-t ...">
 
-## Parte 7: Tratamento de Meses Futuros
-
-Para meses onde ainda nao existe fatura (apenas parcelas pendentes):
-
-### No Grafico
-- Barra azul claro
-- Ao clicar, mostra card com:
-  - "Fatura ainda nao gerada"
-  - Valor previsto (soma das parcelas)
-  - Data de vencimento prevista
-
-### Na Lista (Tridots)
-- Mostra imobiliarias com parcelas agendadas
-- Botao "Gerar Fatura" ao lado (chama `generate-invoice-drafts`)
-
-### Na Tabela (Agencia)
-- Mostra parcelas agendadas com status "Aguardando Faturamento"
-- Sem acoes (read-only)
+// Texto do mês - aumentar tamanho
+<span className="text-xs font-medium ...">
+```
 
 ---
 
-## Resumo de Implementacao
+## Resultado Esperado
 
-### Ordem de Execucao
+1. Gráfico de barras mais espaçoso e visualmente agradável
+2. Listagem de imobiliárias aparecendo corretamente para cada mês
+3. Clique em "Ver Contrato" navegando corretamente para a página de detalhes do contrato
 
-1. **Correcoes imediatas**: Adicionar rota, corrigir navegacoes
-2. **Criar hook** `useMonthlyInvoiceSummary` 
-3. **Criar componente** `MonthlyInvoiceChart`
-4. **Refatorar** `FinancialInvoices.tsx` com novo layout
-5. **Refatorar** `AgencyInvoices.tsx` com novo layout
-6. **Criar hook** `useAgenciesWithInvoiceInMonth`
-7. **Testar** fluxo completo em ambos os portais
-
-### Resultado Esperado
-
-1. Erro 404 ao clicar em fatura corrigido
-2. Grafico de barras visual com meses (estilo Nubank)
-3. Navegacao intuitiva entre meses passados, atual e futuros
-4. Cores claras indicando status de cada mes
-5. Lista de imobiliarias (Tridots) ou contratos (Agencia) abaixo
-6. Acoes funcionais para gerenciar faturas
