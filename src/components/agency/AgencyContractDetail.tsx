@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { ContractRenewalTab } from '@/components/contracts/ContractRenewalTab';
-import { ArrowLeft, Home, User, Users, DollarSign, Calendar, CheckCircle, Clock, XCircle, CreditCard, FileText, Loader2, MessageSquare, Eye, ExternalLink, FileCheck, Shield, CalendarSync } from 'lucide-react';
+import { ArrowLeft, Home, User, Users, DollarSign, Calendar, CheckCircle, Clock, XCircle, CreditCard, FileText, Loader2, MessageSquare, Eye, ExternalLink, FileCheck, Shield, CalendarSync, Receipt } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency, PROPERTY_TYPES } from '@/lib/validators';
 import { format, addDays, isWithinInterval } from 'date-fns';
@@ -21,6 +21,7 @@ import { GuaranteeCostsSection } from '@/components/payment/GuaranteeCostsSectio
 import { CoverageCard } from '@/components/shared/CoverageCard';
 import { PayerInfoCard } from '@/components/shared/PayerInfoCard';
 import { ContractCommissionsTab } from '@/components/shared/ContractCommissionsTab';
+import { ContractInstallmentsTab } from '@/components/contracts/ContractInstallmentsTab';
 import { useTicketCountByAnalysis, useTicketsByAnalysis } from '@/hooks/useTickets';
 import { useActiveClaimByContract } from '@/hooks/useActiveClaimByContract';
 import { usePendingRenewal } from '@/hooks/useContractRenewal';
@@ -431,6 +432,12 @@ export function AgencyContractDetail() {
             <CalendarSync className="h-3.5 w-3.5" />
             Renovação
           </TabsTrigger>}
+          {contract && contract.payment_method === 'boleto_imobiliaria' && (
+            <TabsTrigger value="parcelas" className="flex items-center gap-2">
+              <Receipt className="h-3.5 w-3.5" />
+              Parcelas
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6 mt-6">
@@ -810,6 +817,13 @@ export function AgencyContractDetail() {
               }}
               isAgencyView={true}
             />
+          </TabsContent>
+        )}
+
+        {/* Parcelas Tab */}
+        {contract && contract.payment_method === 'boleto_imobiliaria' && (
+          <TabsContent value="parcelas" className="mt-6">
+            <ContractInstallmentsTab contractId={contract.id} />
           </TabsContent>
         )}
       </Tabs>

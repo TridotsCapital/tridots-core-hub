@@ -8,6 +8,7 @@ import { NpsProvider } from "@/contexts/NpsContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { PendingApprovalBanner } from "@/components/agency/PendingApprovalBanner";
+import { BillingBlockedBanner } from "@/components/agency/BillingBlockedBanner";
 import { isCorrectPortalForRole, getPortalUrlForRole } from "@/lib/subdomain";
 
 interface AgencyLayoutProps {
@@ -21,11 +22,13 @@ interface AgencyLayoutProps {
 interface AgencyStatusContextType {
   isAgencyActive: boolean;
   isAgencyStatusLoading: boolean;
+  isBillingBlocked: boolean;
 }
 
 const AgencyStatusContext = createContext<AgencyStatusContextType>({
   isAgencyActive: true,
   isAgencyStatusLoading: true,
+  isBillingBlocked: false,
 });
 
 export const useAgencyStatus = () => useContext(AgencyStatusContext);
@@ -36,6 +39,7 @@ export function AgencyLayout({ children, title, description, actions }: AgencyLa
   const [agencyId, setAgencyId] = useState<string | null>(null);
   const [agencyName, setAgencyName] = useState<string | null>(null);
   const [isAgencyActive, setIsAgencyActive] = useState(true);
+  const [isBillingBlocked, setIsBillingBlocked] = useState(false);
   const [loadingAgency, setLoadingAgency] = useState(true);
   const [agencyStatusLoading, setAgencyStatusLoading] = useState(true);
 
@@ -62,16 +66,17 @@ export function AgencyLayout({ children, title, description, actions }: AgencyLa
         const fetchedAgencyId = (agencyUserData as any).agency_id;
         setAgencyId(fetchedAgencyId);
 
-        // Fetch agency name and active status
+        // Fetch agency name, active status, and billing status
         const { data: agency } = await supabase
           .from('agencies')
-          .select('nome_fantasia, razao_social, active')
+          .select('nome_fantasia, razao_social, active, billing_blocked_at')
           .eq('id', fetchedAgencyId)
           .single();
 
         if (agency) {
           setAgencyName(agency.nome_fantasia || agency.razao_social);
           setIsAgencyActive(agency.active);
+          setIsBillingBlocked(agency.billing_blocked_at !== null);
         }
       } catch (err) {
         console.error('Error fetching agency info:', err);
@@ -143,7 +148,7 @@ export function AgencyLayout({ children, title, description, actions }: AgencyLa
   }
 
   return (
-    <AgencyStatusContext.Provider value={{ isAgencyActive, isAgencyStatusLoading: agencyStatusLoading }}>
+    <AgencyStatusContext.Provider value={{ isAgencyActive, isAgencyStatusLoading: agencyStatusLoading, isBillingBlocked }}>
       <NpsProvider agencyId={agencyId}>
         <SidebarProvider>
           <div className="min-h-screen flex w-full bg-background">
@@ -174,7 +179,10 @@ export function AgencyLayout({ children, title, description, actions }: AgencyLa
                 )}
               </header>
               <main className="flex-1 p-6 overflow-x-auto overflow-y-auto">
-                {!isAgencyActive && (
+                {isBillingBlocked && (
+                  <BillingBlockedBanner className="mb-6" />
+                )}
+                {!isAgencyActive && !isBillingBlocked && (
                   <PendingApprovalBanner className="mb-6" />
                 )}
                 {children}
