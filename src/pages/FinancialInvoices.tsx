@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { useMonthlyInvoiceSummary, useAgenciesWithInvoiceInMonth } from '@/hooks/useMonthlyInvoiceSummary';
 import { useInvoiceAnalytics } from '@/hooks/useInvoiceAnalytics';
@@ -22,10 +22,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Eye, AlertCircle, Lock, FileText, Loader2, Calendar, Building2, ArrowRight } from 'lucide-react';
+import { AlertCircle, Lock, FileText, Loader2, Building2, ArrowRight } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -51,8 +50,6 @@ const statusLabels: Record<string, string> = {
   cancelada: 'Cancelada',
   futura: 'Aguardando Faturamento',
 };
-
-const MONTH_NAMES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
 const months = [
   { value: '1', label: 'Janeiro' },
@@ -86,12 +83,7 @@ export default function FinancialInvoices() {
   // Hooks
   const { data: monthlySummary = [], isLoading: summaryLoading } = useMonthlyInvoiceSummary();
   const { data: agencies = [], isLoading: agenciesLoading } = useAgenciesWithInvoiceInMonth(selectedMonth, selectedYear);
-  const { data: analytics, isLoading: analyticsLoading } = useInvoiceAnalytics({});
-
-  // Selected month data
-  const selectedMonthData = useMemo(() => {
-    return monthlySummary.find(m => m.month === selectedMonth && m.year === selectedYear);
-  }, [monthlySummary, selectedMonth, selectedYear]);
+  const { data: analytics } = useInvoiceAnalytics({});
 
   const kpiData = analytics || {
     totalToReceive: 0,
@@ -197,80 +189,49 @@ export default function FinancialInvoices() {
         )}
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <Card>
             <CardContent className="pt-4">
               <p className="text-sm text-muted-foreground mb-1">Total a Receber</p>
-              <p className="text-2xl font-bold text-primary">{formatCurrency(kpiData.totalToReceive)}</p>
+              <p className="text-xl font-bold text-primary">{formatCurrency(kpiData.totalToReceive)}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-4">
               <p className="text-sm text-muted-foreground mb-1">Recebido</p>
-              <p className="text-2xl font-bold text-primary">{formatCurrency(kpiData.totalReceived)}</p>
+              <p className="text-xl font-bold text-primary">{formatCurrency(kpiData.totalReceived)}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-4">
               <p className="text-sm text-muted-foreground mb-1">Atrasado</p>
-              <p className="text-2xl font-bold text-destructive">{formatCurrency(kpiData.totalOverdue)}</p>
+              <p className="text-xl font-bold text-destructive">{formatCurrency(kpiData.totalOverdue)}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-4">
-              <p className="text-sm text-muted-foreground mb-1">Agências Bloqueadas</p>
-              <p className="text-2xl font-bold text-destructive">{kpiData.blockedAgenciesCount}</p>
+              <p className="text-sm text-muted-foreground mb-1">Bloqueadas</p>
+              <p className="text-xl font-bold text-destructive">{kpiData.blockedAgenciesCount}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-4">
-              <p className="text-sm text-muted-foreground mb-1">Alertas Vencimento</p>
-              <p className="text-2xl font-bold text-destructive">{kpiData.alertsCount}</p>
+              <p className="text-sm text-muted-foreground mb-1">Alertas</p>
+              <p className="text-xl font-bold text-destructive">{kpiData.alertsCount}</p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Monthly Chart (Nubank style) */}
+        {/* QUADRANTE 1: Resumo do mês + Gráfico de barras */}
         <MonthlyInvoiceChart
           data={monthlySummary}
           selectedMonth={selectedMonth}
           selectedYear={selectedYear}
           onSelectMonth={handleSelectMonth}
           isLoading={summaryLoading}
+          agencyCount={agencies.length}
+          showStatus={false}
         />
-
-        {/* Selected Month Summary Card */}
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-full bg-primary/10">
-                  <Calendar className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold">
-                    {MONTH_NAMES[selectedMonth - 1]} {selectedYear}
-                  </h3>
-                  {selectedMonthData?.dueDate && (
-                    <p className="text-sm text-muted-foreground">
-                      Vencimento: {format(new Date(selectedMonthData.dueDate), "dd 'de' MMMM", { locale: ptBR })}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <div className="flex items-center gap-6">
-                <div className="text-right">
-                  <p className="text-sm text-muted-foreground">Valor Total</p>
-                  <p className="text-2xl font-bold">{formatCurrency(selectedMonthData?.totalValue || 0)}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm text-muted-foreground">Imobiliárias</p>
-                  <p className="text-2xl font-bold">{agencies.length}</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Action: Generate Drafts */}
         <div className="flex justify-end">
@@ -332,34 +293,32 @@ export default function FinancialInvoices() {
           </Dialog>
         </div>
 
-        {/* Agencies List */}
-        <div className="space-y-3">
-          <h3 className="text-lg font-semibold flex items-center gap-2">
-            <Building2 className="h-5 w-5" />
-            Imobiliárias
-          </h3>
-          
-          {agenciesLoading ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-24 w-full rounded-lg" />
-              ))}
-            </div>
-          ) : agencies.length === 0 ? (
-            <Card>
-              <CardContent className="py-8 text-center text-muted-foreground">
+        {/* QUADRANTE 2: Lista de Imobiliárias com faturas */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Building2 className="h-5 w-5" />
+              Detalhes das Faturas
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {agenciesLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-20 w-full rounded-lg" />
+                ))}
+              </div>
+            ) : agencies.length === 0 ? (
+              <div className="py-8 text-center text-muted-foreground">
                 <p>Nenhuma imobiliária com fatura ou parcelas neste período.</p>
-              </CardContent>
-            </Card>
-          ) : (
-            agencies.map((agency) => (
-              <Card 
-                key={agency.agencyId} 
-                className="hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => agency.invoiceId && navigate(`/invoices/${agency.invoiceId}`)}
-              >
-                <CardContent className="py-4">
-                  <div className="flex items-center justify-between gap-4">
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {agencies.map((agency) => (
+                  <div 
+                    key={agency.agencyId} 
+                    className="flex items-center justify-between gap-4 p-4 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors"
+                  >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3 mb-1">
                         <h4 className="font-semibold truncate">{agency.agencyName}</h4>
@@ -369,27 +328,18 @@ export default function FinancialInvoices() {
                       </div>
                       <p className="text-sm text-muted-foreground">
                         CNPJ: {agency.cnpj}
+                        {agency.dueDate && ` • Vencimento: ${format(new Date(agency.dueDate), 'dd/MM/yyyy')}`}
                       </p>
-                      {agency.dueDate && (
-                        <p className="text-sm text-muted-foreground">
-                          Vencimento: {format(new Date(agency.dueDate), 'dd/MM/yyyy')}
-                        </p>
-                      )}
                     </div>
                     
                     <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <p className="text-xl font-bold">{formatCurrency(agency.totalValue)}</p>
-                      </div>
+                      <p className="text-xl font-bold">{formatCurrency(agency.totalValue)}</p>
                       
                       {agency.invoiceId ? (
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/invoices/${agency.invoiceId}`);
-                          }}
+                          onClick={() => navigate(`/invoices/${agency.invoiceId}`)}
                           className="gap-2"
                         >
                           Ver Detalhes
@@ -399,10 +349,7 @@ export default function FinancialInvoices() {
                         <Button
                           variant="default"
                           size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleGenerateForAgency(agency.agencyId);
-                          }}
+                          onClick={() => handleGenerateForAgency(agency.agencyId)}
                           className="gap-2"
                         >
                           <FileText className="h-4 w-4" />
@@ -411,11 +358,11 @@ export default function FinancialInvoices() {
                       )}
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            ))
-          )}
-        </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </DashboardLayout>
   );
