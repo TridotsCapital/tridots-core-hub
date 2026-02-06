@@ -46,6 +46,7 @@ interface ContractRenewalTabProps {
   contractId: string;
   contractStatus: string;
   dataFimContrato: string | null;
+  paymentMethod?: 'pix' | 'card' | 'boleto_imobiliaria' | null;
   analysis: {
     inquilino_nome: string;
     inquilino_email: string | null;
@@ -66,6 +67,7 @@ export function ContractRenewalTab({
   contractId,
   contractStatus,
   dataFimContrato,
+  paymentMethod,
   analysis,
   isAgencyView = false,
 }: ContractRenewalTabProps) {
@@ -346,6 +348,7 @@ export function ContractRenewalTab({
         dataFimContrato={dataFimContrato}
         analysis={analysis}
         pendingRenewal={pendingRenewal || undefined}
+        currentPaymentMethod={paymentMethod}
       />
 
       {/* Approve Modal */}
