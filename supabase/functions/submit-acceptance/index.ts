@@ -8,7 +8,7 @@ const corsHeaders = {
 
 interface SubmitAcceptanceRequest {
   token: string;
-  step: "terms" | "payer" | "setup_payment" | "guarantee_payment";
+  step: "terms" | "payer" | "setup_payment" | "guarantee_payment" | "acceptance_complete";
   identityPhotoPath?: string;
   payerData?: {
     name: string;
@@ -49,10 +49,10 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Processing acceptance step:", { token: token.substring(0, 8) + "...", step });
 
-    // Validate token
+    // Validate token and get analysis data
     const { data: analysis, error: fetchError } = await supabase
       .from("analyses")
-      .select("id, acceptance_token_expires_at, acceptance_token_used_at, setup_fee_exempt")
+      .select("id, acceptance_token_expires_at, acceptance_token_used_at, setup_fee_exempt, setup_fee, forma_pagamento_preferida, inquilino_nome, agency:agencies(nome_fantasia)")
       .eq("acceptance_token", token)
       .single();
 
@@ -68,6 +68,52 @@ const handler = async (req: Request): Promise<Response> => {
     if (expiresAt < new Date()) {
       throw new Error("Token expirado");
     }
+
+    const isBoletoUnificado = analysis.forma_pagamento_preferida === 'boleto_imobiliaria';
+    const isSetupExempt = analysis.setup_fee_exempt || (analysis.setup_fee || 0) <= 0;
+
+    // Helper function to mark acceptance as complete
+    const markAcceptanceComplete = async () => {
+      const { error: updateError } = await supabase
+        .from("analyses")
+        .update({
+          acceptance_token_used_at: new Date().toISOString(),
+        })
+        .eq("id", analysis.id);
+
+      if (updateError) throw updateError;
+
+      await supabase.rpc("log_analysis_timeline_event", {
+        _analysis_id: analysis.id,
+        _event_type: "acceptance_completed",
+        _description: "Aceite concluído - Aguardando validação da Tridots",
+        _metadata: { payment_method: analysis.forma_pagamento_preferida },
+      });
+
+      // Create notification for masters about pending validation
+      const { data: masters } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "master");
+
+      if (masters && masters.length > 0) {
+        for (const master of masters) {
+          await supabase.from("notifications").insert({
+            user_id: master.user_id,
+            type: "payments_pending_validation",
+            source: "analises",
+            reference_id: analysis.id,
+            title: "Aceite aguardando validação",
+            message: `O inquilino ${analysis.inquilino_nome} completou o aceite e aguarda validação.`,
+            metadata: {
+              tenant_name: analysis.inquilino_nome,
+              agency_name: analysis.agency?.nome_fantasia,
+              is_boleto_unificado: isBoletoUnificado,
+            },
+          });
+        }
+      }
+    };
 
     // Process based on step
     switch (step) {
@@ -139,6 +185,11 @@ const handler = async (req: Request): Promise<Response> => {
           _metadata: { is_tenant: payerData.isTenant },
         });
 
+        // If boleto_imobiliaria and setup is exempt, mark acceptance as complete
+        if (isBoletoUnificado && isSetupExempt) {
+          await markAcceptanceComplete();
+        }
+
         break;
       }
 
@@ -161,6 +212,11 @@ const handler = async (req: Request): Promise<Response> => {
           _description: "Pagamento da taxa setup confirmado pelo inquilino",
           _metadata: { has_receipt: !!paymentConfirmation?.receiptPath },
         });
+
+        // If boleto_imobiliaria, mark acceptance as complete after setup payment
+        if (isBoletoUnificado) {
+          await markAcceptanceComplete();
+        }
 
         break;
       }
@@ -202,12 +258,6 @@ const handler = async (req: Request): Promise<Response> => {
           .eq("role", "master");
 
         if (masters && masters.length > 0) {
-          const { data: analysisDetails } = await supabase
-            .from("analyses")
-            .select("inquilino_nome, agency:agencies(nome_fantasia)")
-            .eq("id", analysis.id)
-            .single();
-
           for (const master of masters) {
             await supabase.from("notifications").insert({
               user_id: master.user_id,
@@ -215,15 +265,21 @@ const handler = async (req: Request): Promise<Response> => {
               source: "analises",
               reference_id: analysis.id,
               title: "Pagamentos aguardando validação",
-              message: `O inquilino ${analysisDetails?.inquilino_nome} confirmou os pagamentos e aguarda validação.`,
+              message: `O inquilino ${analysis.inquilino_nome} confirmou os pagamentos e aguarda validação.`,
               metadata: {
-                tenant_name: analysisDetails?.inquilino_nome,
-                agency_name: analysisDetails?.agency?.nome_fantasia,
+                tenant_name: analysis.inquilino_nome,
+                agency_name: analysis.agency?.nome_fantasia,
               },
             });
           }
         }
 
+        break;
+      }
+
+      case "acceptance_complete": {
+        // This step is called when boleto_imobiliaria completes without needing payment steps
+        await markAcceptanceComplete();
         break;
       }
 

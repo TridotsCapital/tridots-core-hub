@@ -93,6 +93,7 @@ export default function AgencyForm() {
       desconto_pix_percentual: agency.desconto_pix_percentual,
       active: agency.active,
       internal_observations: (agency as any).internal_observations,
+      billing_due_day: (agency as any).billing_due_day,
     } : undefined,
   });
 
@@ -209,7 +210,7 @@ export default function AgencyForm() {
               A comissão recorrente agora é definida automaticamente pelo plano escolhido (START: 5%, PRIME: 10%, EXCLUSIVE: 15%)
             </CardDescription>
           </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-2">
               <Label htmlFor="percentual_comissao_setup">
                 % Comissão sobre Setup Fee *
@@ -263,6 +264,25 @@ export default function AgencyForm() {
               {errors.desconto_pix_percentual && (
                 <p className="text-sm text-destructive">{errors.desconto_pix_percentual.message}</p>
               )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="billing_due_day">
+                Dia Vencimento Boleto Unificado
+              </Label>
+              <select
+                id="billing_due_day"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                {...register('billing_due_day' as any, { valueAsNumber: true })}
+              >
+                <option value="">Não definido</option>
+                <option value="5">Dia 05</option>
+                <option value="10">Dia 10</option>
+                <option value="15">Dia 15</option>
+              </select>
+              <p className="text-xs text-muted-foreground">
+                Dia de vencimento das faturas do Boleto Unificado
+              </p>
             </div>
           </CardContent>
         </Card>

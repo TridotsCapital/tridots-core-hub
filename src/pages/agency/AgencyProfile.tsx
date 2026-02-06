@@ -375,6 +375,35 @@ function AgencyProfileTab() {
 
       <Separator />
 
+      {/* Billing Configuration - Read Only */}
+      {agency.billing_due_day && (
+        <>
+          <div className="space-y-4">
+            <h3 className="font-medium flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Configuração de Faturamento
+            </h3>
+            
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                Dia de Vencimento do Boleto Unificado
+                <Lock className="h-3 w-3 text-muted-foreground" />
+              </Label>
+              <Input
+                value={`Dia ${String(agency.billing_due_day).padStart(2, '0')}`}
+                disabled
+                className="bg-muted cursor-not-allowed max-w-[150px]"
+              />
+              <p className="text-xs text-muted-foreground">
+                Dia de vencimento definido pela Tridots para faturas do Boleto Unificado.
+              </p>
+            </div>
+          </div>
+
+          <Separator />
+        </>
+      )}
+
       {/* Address Section */}
       <div className="space-y-4">
         <h3 className="font-medium flex items-center gap-2">

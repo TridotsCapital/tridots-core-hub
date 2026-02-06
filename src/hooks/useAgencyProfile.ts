@@ -22,6 +22,7 @@ export interface AgencyProfileData {
   active: boolean;
   onboarding_completed: boolean | null;
   terms_accepted_at: string | null;
+  billing_due_day: number | null;
 }
 
 export interface UpdateAgencyProfileData {
@@ -76,7 +77,8 @@ export function useAgencyProfile() {
           creci_numero,
           active,
           onboarding_completed,
-          terms_accepted_at
+          terms_accepted_at,
+          billing_due_day
         `)
         .eq("id", agencyUser.agency_id)
         .single();

@@ -25,6 +25,7 @@ interface PaymentOptionItem {
   discount?: number;
   highlighted?: boolean;
   blocked?: boolean;
+  subDescription?: string;
 }
 
 interface PaymentOptionsDisplayProps {
@@ -75,14 +76,17 @@ export function PaymentOptionsDisplay({
     });
   };
 
+  const parcelaMensal = garantiaAnual / 12;
+
   const allOptions: PaymentOptionItem[] = [
-    // Boleto option - UNLOCKED
+    // Boleto option - UNLOCKED - show monthly installment as primary
     {
       id: 'boleto_imobiliaria',
       label: 'Boleto Mensal Unificado',
-      description: 'Pagamento centralizado via imobiliária',
-      value: garantiaAnual,
+      description: `12x de ${formatCurrency(parcelaMensal)}`,
+      value: parcelaMensal,
       blocked: false,
+      subDescription: `(Total anual: ${formatCurrency(garantiaAnual)})`,
     },
     // PIX option - show as blocked if not enabled
     pixEnabled
@@ -250,7 +254,10 @@ export function PaymentOptionsDisplay({
                 <span className={cn('font-semibold', option.highlighted && 'text-green-600')}>
                   {option.description}
                 </span>
-                {option.id !== 'pix' && option.id !== 'card_1x' && (
+                {option.id === 'boleto_imobiliaria' && option.subDescription && (
+                  <p className="text-xs text-muted-foreground">{option.subDescription}</p>
+                )}
+                {option.id !== 'pix' && option.id !== 'card_1x' && option.id !== 'boleto_imobiliaria' && (
                   <p className="text-xs text-muted-foreground">(Total: {formatCurrency(garantiaAnual)})</p>
                 )}
               </div>

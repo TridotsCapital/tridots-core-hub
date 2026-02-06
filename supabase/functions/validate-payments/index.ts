@@ -47,9 +47,8 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Missing required fields: analysisId and action");
     }
 
-    if (action === "validate" && !guaranteePaymentDate) {
-      throw new Error("Data de pagamento da garantia é obrigatória");
-    }
+    // For boleto_imobiliaria, guaranteePaymentDate is not required
+    // We'll check this after fetching the analysis
 
     console.log("Processing payment validation:", { analysisId, action, userId });
 
@@ -68,6 +67,13 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Análise não está aguardando pagamento");
     }
 
+    const isBoletoUnificado = analysis.forma_pagamento_preferida === 'boleto_imobiliaria';
+
+    // Validate guaranteePaymentDate only if not boleto_imobiliaria
+    if (action === "validate" && !isBoletoUnificado && !guaranteePaymentDate) {
+      throw new Error("Data de pagamento da garantia é obrigatória");
+    }
+
     if (action === "validate") {
       // Validate payments - move to approved and create contract
       
@@ -77,8 +83,12 @@ const handler = async (req: Request): Promise<Response> => {
         approved_at: new Date().toISOString(),
         payments_validated_at: new Date().toISOString(),
         payments_validated_by: userId,
-        guarantee_payment_date: guaranteePaymentDate,
       };
+
+      // Only set guarantee_payment_date if not boleto_imobiliaria
+      if (!isBoletoUnificado && guaranteePaymentDate) {
+        updateData.guarantee_payment_date = guaranteePaymentDate;
+      }
       
       if (setupPaymentDate) {
         updateData.setup_payment_date = setupPaymentDate;
@@ -105,26 +115,58 @@ const handler = async (req: Request): Promise<Response> => {
         // Don't fail the whole operation, log it
       }
 
-      // Generate commissions
-      try {
-        await generateCommissions(supabase, analysis, guaranteePaymentDate!);
-        console.log("Commissions generated successfully for analysis:", analysisId);
-      } catch (commissionError) {
-        console.error("Error generating commissions:", commissionError);
-        // Don't fail the whole operation, log it
+      // Update contract with payment_method if boleto_imobiliaria
+      if (contractId && isBoletoUnificado) {
+        const { error: contractUpdateError } = await supabase
+          .from("contracts")
+          .update({ payment_method: 'boleto_imobiliaria' })
+          .eq("id", contractId);
+
+        if (contractUpdateError) {
+          console.error("Error updating contract payment_method:", contractUpdateError);
+        }
+
+        // Generate installments for boleto_imobiliaria
+        console.log('Generating installments for boleto_imobiliaria contract...');
+        try {
+          const { data: installmentsResult, error: installmentsError } = await supabase.functions.invoke('generate-installments', {
+            body: { contract_id: contractId }
+          });
+
+          if (installmentsError) {
+            console.error('Error generating installments:', installmentsError);
+          } else {
+            console.log('Installments generated successfully:', installmentsResult);
+          }
+        } catch (installmentsErr) {
+          console.error('Exception generating installments:', installmentsErr);
+        }
+      }
+
+      // Generate commissions (only for non-boleto, or modify as needed)
+      if (!isBoletoUnificado) {
+        try {
+          await generateCommissions(supabase, analysis, guaranteePaymentDate!);
+          console.log("Commissions generated successfully for analysis:", analysisId);
+        } catch (commissionError) {
+          console.error("Error generating commissions:", commissionError);
+          // Don't fail the whole operation, log it
+        }
       }
 
       // Log timeline event with payment dates
       const setupDateInfo = setupPaymentDate ? `, Setup: ${setupPaymentDate}` : '';
+      const guaranteeDateInfo = !isBoletoUnificado && guaranteePaymentDate ? `Garantia: ${guaranteePaymentDate}` : 'Boleto Unificado';
       await supabase.rpc("log_analysis_timeline_event", {
         _analysis_id: analysisId,
         _event_type: "payments_validated",
-        _description: `Pagamentos validados - Garantia: ${guaranteePaymentDate}${setupDateInfo}`,
+        _description: `Pagamentos validados - ${guaranteeDateInfo}${setupDateInfo}`,
         _metadata: { 
           validated_by: userId,
           contract_id: contractId,
           setup_payment_date: setupPaymentDate || null,
-          guarantee_payment_date: guaranteePaymentDate,
+          guarantee_payment_date: guaranteePaymentDate || null,
+          is_boleto_unificado: isBoletoUnificado,
         },
         _created_by: userId,
       });
@@ -152,7 +194,7 @@ const handler = async (req: Request): Promise<Response> => {
         }
       }
 
-      console.log("Payments validated successfully:", { analysisId, contractId });
+      console.log("Payments validated successfully:", { analysisId, contractId, isBoletoUnificado });
 
       return new Response(
         JSON.stringify({ 
