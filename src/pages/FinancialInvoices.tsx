@@ -135,12 +135,12 @@ export default function FinancialInvoices() {
               value={searchAgency}
               onChange={(e) => setSearchAgency(e.target.value)}
             />
-            <Select value={filters.status || ''} onValueChange={(v) => handleFilterChange('status', v)}>
+            <Select value={filters.status || 'all'} onValueChange={(v) => handleFilterChange('status', v === 'all' ? undefined : v)}>
               <SelectTrigger>
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos</SelectItem>
+                <SelectItem value="all">Todos</SelectItem>
                 <SelectItem value="rascunho">Rascunho</SelectItem>
                 <SelectItem value="gerada">Gerada</SelectItem>
                 <SelectItem value="enviada">Enviada</SelectItem>
@@ -149,12 +149,12 @@ export default function FinancialInvoices() {
                 <SelectItem value="cancelada">Cancelada</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={filters.referenceYear?.toString() || ''} onValueChange={(v) => handleFilterChange('referenceYear', v ? parseInt(v) : undefined)}>
+            <Select value={filters.referenceYear?.toString() || 'all'} onValueChange={(v) => handleFilterChange('referenceYear', v === 'all' ? undefined : parseInt(v))}>
               <SelectTrigger>
                 <SelectValue placeholder="Ano" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos</SelectItem>
+                <SelectItem value="all">Todos</SelectItem>
                 <SelectItem value="2024">2024</SelectItem>
                 <SelectItem value="2025">2025</SelectItem>
                 <SelectItem value="2026">2026</SelectItem>
