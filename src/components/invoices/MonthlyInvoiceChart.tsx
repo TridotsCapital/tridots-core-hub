@@ -19,7 +19,7 @@ interface MonthlyInvoiceChartProps {
   showStatus?: boolean;
 }
 
-const MONTHS_VISIBLE = 7;
+const MONTHS_VISIBLE = 12;
 const MONTH_NAMES_SHORT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 const MONTH_NAMES_FULL = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
@@ -81,11 +81,18 @@ export function MonthlyInvoiceChart({
     return data.findIndex(m => m.month === now.getMonth() + 1 && m.year === now.getFullYear());
   }, [data]);
 
-  // Calculate initial offset to center on current/selected month
+  // Calculate initial offset to position current month visible (not necessarily centered)
   const [offset, setOffset] = useState(() => {
-    const selectedIndex = data.findIndex(m => m.month === selectedMonth && m.year === selectedYear);
-    const targetIndex = selectedIndex >= 0 ? selectedIndex : currentMonthIndex;
-    return Math.max(0, targetIndex - Math.floor(MONTHS_VISIBLE / 2));
+    const now = new Date();
+    const currentMonthIdx = data.findIndex(
+      m => m.month === now.getMonth() + 1 && m.year === now.getFullYear()
+    );
+    
+    if (currentMonthIdx < 0) return 0;
+    
+    // Position current month on the left third of the visible area
+    const idealOffset = Math.max(0, currentMonthIdx - Math.floor(MONTHS_VISIBLE / 4));
+    return Math.min(idealOffset, Math.max(0, data.length - MONTHS_VISIBLE));
   });
 
   // Get visible months
@@ -208,7 +215,7 @@ export function MonthlyInvoiceChart({
           <ChevronLeft className="h-6 w-6" />
         </Button>
 
-        <div className="flex items-end justify-center gap-2 sm:gap-4 flex-1 h-36">
+        <div className="flex items-end justify-between gap-1 flex-1 h-36 px-1">
           {visibleMonths.map((monthData) => {
             const isSelected = monthData.month === selectedMonth && monthData.year === selectedYear;
             const isCurrentMonth = (() => {
@@ -225,27 +232,27 @@ export function MonthlyInvoiceChart({
                 key={`${monthData.month}-${monthData.year}`}
                 onClick={() => onSelectMonth(monthData.month, monthData.year)}
                 className={cn(
-                  "flex flex-col items-center gap-2 transition-all duration-200 group flex-1 max-w-[80px]",
+                  "flex flex-col items-center gap-1.5 transition-all duration-200 group flex-1 min-w-0",
                   isSelected && "scale-105"
                 )}
               >
                 <div
                   className={cn(
-                    "w-full max-w-[56px] rounded-t transition-all duration-200 shadow-sm",
+                    "w-full max-w-[36px] sm:max-w-[44px] rounded-t transition-all duration-200 shadow-sm",
                     barColor,
                     isSelected && "ring-2 ring-primary ring-offset-2 ring-offset-background shadow-md"
                   )}
                   style={{ height: `${barHeight}%`, minHeight: '12px' }}
                 />
                 <span className={cn(
-                  "text-xs sm:text-sm font-medium transition-colors",
+                  "text-[10px] sm:text-xs font-medium transition-colors",
                   isSelected ? "text-foreground font-semibold" : "text-muted-foreground",
                   isCurrentMonth && !isSelected && "text-primary font-semibold"
                 )}>
                   {MONTH_NAMES_SHORT[monthData.month - 1]}
                 </span>
                 <span className={cn(
-                  "text-[10px] sm:text-xs",
+                  "text-[9px] sm:text-[10px]",
                   isSelected ? "text-foreground" : "text-muted-foreground/70"
                 )}>
                   {monthData.year}

@@ -34,30 +34,35 @@ export const useMonthlyInvoiceSummary = (agencyId?: string) => {
       const currentMonth = now.getMonth() + 1;
       const currentYear = now.getFullYear();
       
-      // Gerar range de 12 meses para trás e 12 para frente
+      // Start from January 2026 (system billing start date)
+      const startYear = 2026;
+      const startMonth = 1;
+      
+      // End at current month + 12 months into the future
+      const endYear = currentYear + 1;
+      const endMonth = currentMonth;
+      
       const months: MonthSummary[] = [];
       
-      for (let i = -12; i <= 12; i++) {
-        let targetMonth = currentMonth + i;
-        let targetYear = currentYear;
-        
-        while (targetMonth > 12) {
-          targetMonth -= 12;
-          targetYear++;
-        }
-        while (targetMonth < 1) {
-          targetMonth += 12;
-          targetYear--;
-        }
-        
+      let year = startYear;
+      let month = startMonth;
+      
+      // Generate months from Jan/2026 until current month + 12 months
+      while (year < endYear || (year === endYear && month <= endMonth)) {
         months.push({
-          month: targetMonth,
-          year: targetYear,
+          month,
+          year,
           totalValue: 0,
           status: 'futura',
           invoiceCount: 0,
           hasInvoice: false
         });
+        
+        month++;
+        if (month > 12) {
+          month = 1;
+          year++;
+        }
       }
 
       // Query 1: Faturas existentes
