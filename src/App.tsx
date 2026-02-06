@@ -44,7 +44,9 @@ import {
   AgencyNewClaim,
   AgencyChangePassword,
   AgencyProfile,
-  AgencyHelp
+  AgencyHelp,
+  AgencyInvoices,
+  AgencyInvoiceDetail
 } from "./pages/agency";
 import AgencyCommissions from "./pages/agency/AgencyCommissions";
 import AgencyDocuments from "./pages/agency/AgencyDocuments";
@@ -108,6 +110,8 @@ function AgencyRoutes({ atRoot = false }: { atRoot?: boolean }) {
       <Route path={`${prefix}/collaborators`} element={<AgencyCollaborators />} />
       <Route path={`${prefix}/support`} element={<AgencySupport />} />
       <Route path={`${prefix}/commissions`} element={<AgencyCommissions />} />
+      <Route path={`${prefix}/invoices`} element={<AgencyInvoices />} />
+      <Route path={`${prefix}/invoices/:invoiceId`} element={<AgencyInvoiceDetail />} />
       <Route path={`${prefix}/documents`} element={<AgencyDocuments />} />
       <Route path={`${prefix}/settings/password`} element={<AgencyChangePassword />} />
       <Route path={`${prefix}/profile`} element={<AgencyProfile />} />
