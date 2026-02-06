@@ -164,12 +164,35 @@ export default function TenantAcceptance() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentStep]);
 
-  // Calculate total steps based on setup_fee_exempt or setup_fee = 0
+  // Calculate total steps based on setup_fee_exempt and forma_pagamento_preferida
   const isSetupExempt = analysis?.setup_fee_exempt || (analysis?.setup_fee || 0) <= 0;
-  const totalSteps = isSetupExempt ? 3 : 4;
-  const stepNames = isSetupExempt 
-    ? ['Termos e Condições', 'Confirmação', 'Pagamento Garantia']
-    : ['Termos e Condições', 'Confirmação', 'Pagamento Setup', 'Pagamento Garantia'];
+  const isBoletoUnificado = analysis?.forma_pagamento_preferida === 'boleto_imobiliaria';
+
+  // Determine steps based on the combination of conditions
+  let totalSteps: number;
+  let stepNames: string[];
+
+  if (isBoletoUnificado) {
+    if (isSetupExempt) {
+      // Boleto + Setup Isento = 2 steps (Termos, Confirmação)
+      totalSteps = 2;
+      stepNames = ['Termos e Condições', 'Confirmação'];
+    } else {
+      // Boleto + Setup NÃO Isento = 3 steps (Termos, Confirmação, Pagamento Setup)
+      totalSteps = 3;
+      stepNames = ['Termos e Condições', 'Confirmação', 'Pagamento Setup'];
+    }
+  } else {
+    if (isSetupExempt) {
+      // Cartão/PIX + Setup Isento = 3 steps (Termos, Confirmação, Pagamento Garantia)
+      totalSteps = 3;
+      stepNames = ['Termos e Condições', 'Confirmação', 'Pagamento Garantia'];
+    } else {
+      // Cartão/PIX + Setup NÃO Isento = 4 steps (Termos, Confirmação, Pagamento Setup, Pagamento Garantia)
+      totalSteps = 4;
+      stepNames = ['Termos e Condições', 'Confirmação', 'Pagamento Setup', 'Pagamento Garantia'];
+    }
+  }
 
   // Validate token on mount
   useEffect(() => {
@@ -384,8 +407,19 @@ export default function TenantAcceptance() {
 
       if (error) throw error;
 
-      // If setup is exempt, skip to step 4 (guarantee payment), otherwise step 3 (setup payment)
-      setCurrentStep(isSetupExempt ? 4 : 3);
+      // Determine next step based on payment method and setup status
+      if (isBoletoUnificado) {
+        if (isSetupExempt) {
+          // Boleto + Setup Isento: aceite completo, redireciona para sucesso
+          navigate(`/aceite/${token}/sucesso`);
+        } else {
+          // Boleto + Setup NÃO Isento: vai para pagamento do setup
+          setCurrentStep(3);
+        }
+      } else {
+        // Cartão/PIX: se setup isento vai direto para garantia, senão para setup
+        setCurrentStep(isSetupExempt ? 3 : 3);
+      }
       toast.success('Dados confirmados com sucesso!');
     } catch (error) {
       console.error('Error submitting payer data:', error);
@@ -432,7 +466,13 @@ export default function TenantAcceptance() {
 
       if (error) throw error;
 
-      setCurrentStep(4);
+      if (isBoletoUnificado) {
+        // Boleto Unificado: após pagar setup, aceite completo
+        navigate(`/aceite/${token}/sucesso`);
+      } else {
+        // Cartão/PIX: vai para pagamento da garantia
+        setCurrentStep(4);
+      }
       toast.success('Pagamento da taxa setup confirmado!');
     } catch (error) {
       console.error('Error confirming setup payment:', error);

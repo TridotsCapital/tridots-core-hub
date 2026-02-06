@@ -44,6 +44,7 @@ import { TicketDetailSheet } from '@/components/tickets/TicketDetailSheet';
 import { InternalNotesTab } from '@/components/shared/InternalNotesTab';
 import { GuaranteeCostsSection } from '@/components/payment/GuaranteeCostsSection';
 import { ContractRenewalTab } from '@/components/contracts/ContractRenewalTab';
+import { ContractInstallmentsTab } from '@/components/contracts/ContractInstallmentsTab';
 import { CoverageCard } from '@/components/shared/CoverageCard';
 import { PayerInfoCard } from '@/components/shared/PayerInfoCard';
 import { ContractCommissionsTab } from '@/components/shared/ContractCommissionsTab';
@@ -462,6 +463,12 @@ export default function ContractDetail() {
             <TabsTrigger value="docs" className="whitespace-nowrap shrink-0">Docs</TabsTrigger>
             <TabsTrigger value="timeline" className="whitespace-nowrap shrink-0">Timeline</TabsTrigger>
             <TabsTrigger value="financial" className="whitespace-nowrap shrink-0">Financeiro</TabsTrigger>
+            {contract.payment_method === 'boleto_imobiliaria' && (
+              <TabsTrigger value="parcelas" className="flex items-center gap-2 whitespace-nowrap shrink-0">
+                <Calendar className="h-4 w-4" />
+                Parcelas
+              </TabsTrigger>
+            )}
             <TabsTrigger value="pagamentos" className="flex items-center gap-2 whitespace-nowrap shrink-0">
               <CreditCard className="h-4 w-4" />
               Pagamentos
@@ -479,6 +486,26 @@ export default function ContractDetail() {
               Renovação
             </TabsTrigger>
           </TabsList>
+
+          {/* Parcelas Tab - only for boleto_imobiliaria */}
+          {contract.payment_method === 'boleto_imobiliaria' && (
+            <TabsContent value="parcelas" className="mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Calendar className="h-5 w-5" />
+                    Parcelas do Boleto Unificado
+                  </CardTitle>
+                  <CardDescription>
+                    Acompanhe as 12 parcelas mensais da garantia
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ContractInstallmentsTab contractId={contract.id} />
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
 
           <TabsContent value="overview" className="space-y-6 mt-6">
             {/* Custos da Garantia Tridots - NO TOPO */}

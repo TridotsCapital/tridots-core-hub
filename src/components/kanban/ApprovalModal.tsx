@@ -60,10 +60,12 @@ export function ApprovalModal({ analysis, open, onOpenChange, onConfirm, mode = 
   }, [taxaGarantia, analysis?.taxa_garantia_percentual]);
 
   const isSetupRequired = !analysis?.setup_fee_exempt && (analysis?.setup_fee || 0) > 0;
+  const formaPagamento = (analysis as any)?.forma_pagamento_preferida;
+  const isBoletoUnificado = formaPagamento === 'boleto_imobiliaria';
   
   const isFormValid = () => {
     if (isSetupRequired && !setupPaymentLink.trim()) return false;
-    if (!guaranteePaymentLink.trim()) return false;
+    if (!isBoletoUnificado && !guaranteePaymentLink.trim()) return false;
     return true;
   };
 
@@ -83,7 +85,7 @@ export function ApprovalModal({ analysis, open, onOpenChange, onConfirm, mode = 
         body: { 
           analysisId: analysis.id,
           setupPaymentLink: isSetupRequired ? setupPaymentLink : null,
-          guaranteePaymentLink,
+          guaranteePaymentLink: isBoletoUnificado ? null : guaranteePaymentLink,
         }
       });
 
@@ -95,7 +97,7 @@ export function ApprovalModal({ analysis, open, onOpenChange, onConfirm, mode = 
         acceptance_token: data.token,
         acceptance_token_expires_at: data.expiresAt,
         setup_payment_link: isSetupRequired ? setupPaymentLink : null,
-        guarantee_payment_link: guaranteePaymentLink,
+        guarantee_payment_link: isBoletoUnificado ? null : guaranteePaymentLink,
       };
 
       // If rate was adjusted, save original and mark as adjusted
@@ -128,7 +130,7 @@ export function ApprovalModal({ analysis, open, onOpenChange, onConfirm, mode = 
   const garantiaMensal = valorTotal * taxaGarantia / 100;
   const garantiaAnual = garantiaMensal * 12;
   const setupFee = analysis.setup_fee_exempt ? 0 : analysis.setup_fee;
-  const formaPagamento = (analysis as any).forma_pagamento_preferida || 'card_12x';
+  // formaPagamento is already defined above
 
   // Helper to format payment method display
   const getPaymentMethodDisplay = (method: string, valorAnual: number) => {
@@ -260,49 +262,64 @@ export function ApprovalModal({ analysis, open, onOpenChange, onConfirm, mode = 
             )}
           </div>
 
-          {/* Payment Links */}
-          <div className="space-y-4 p-4 rounded-lg border border-primary/30 bg-primary/5">
-            <h4 className="text-sm font-semibold flex items-center gap-2">
-              <ExternalLink className="h-4 w-4 text-primary" />
-              Links de Pagamento
-            </h4>
-            
-            {isSetupRequired && (
-              <div className="space-y-2">
-                <Label htmlFor="setupLink" className="flex items-center gap-2">
-                  <Receipt className="h-4 w-4" />
-                  Link Pagamento Taxa Setup *
-                </Label>
-                <Input
-                  id="setupLink"
-                  value={setupPaymentLink}
-                  onChange={(e) => setSetupPaymentLink(e.target.value)}
-                  placeholder="https://..."
-                  className="font-mono text-sm"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Valor: {formatCurrency(setupFee)}
-                </p>
+          {/* Payment Links - Only show if there are links to fill */}
+          {(isSetupRequired || !isBoletoUnificado) ? (
+            <div className="space-y-4 p-4 rounded-lg border border-primary/30 bg-primary/5">
+              <h4 className="text-sm font-semibold flex items-center gap-2">
+                <ExternalLink className="h-4 w-4 text-primary" />
+                Links de Pagamento
+              </h4>
+              
+              {isSetupRequired && (
+                <div className="space-y-2">
+                  <Label htmlFor="setupLink" className="flex items-center gap-2">
+                    <Receipt className="h-4 w-4" />
+                    Link Pagamento Taxa Setup *
+                  </Label>
+                  <Input
+                    id="setupLink"
+                    value={setupPaymentLink}
+                    onChange={(e) => setSetupPaymentLink(e.target.value)}
+                    placeholder="https://..."
+                    className="font-mono text-sm"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Valor: {formatCurrency(setupFee)}
+                  </p>
+                </div>
+              )}
+              
+              {!isBoletoUnificado && (
+                <div className="space-y-2">
+                  <Label htmlFor="guaranteeLink" className="flex items-center gap-2">
+                    <Receipt className="h-4 w-4" />
+                    Link Pagamento Garantia *
+                  </Label>
+                  <Input
+                    id="guaranteeLink"
+                    value={guaranteePaymentLink}
+                    onChange={(e) => setGuaranteePaymentLink(e.target.value)}
+                    placeholder="https://..."
+                    className="font-mono text-sm"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Forma de pagamento: {getPaymentMethodDisplay(formaPagamento || 'card_12x', garantiaAnual)}
+                  </p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="p-4 rounded-lg border border-success/30 bg-success/5">
+              <div className="flex items-center gap-2 text-success">
+                <CheckCircle className="h-4 w-4" />
+                <span className="text-sm font-medium">Boleto Unificado via Imobiliária</span>
               </div>
-            )}
-            
-            <div className="space-y-2">
-              <Label htmlFor="guaranteeLink" className="flex items-center gap-2">
-                <Receipt className="h-4 w-4" />
-                Link Pagamento Garantia *
-              </Label>
-              <Input
-                id="guaranteeLink"
-                value={guaranteePaymentLink}
-                onChange={(e) => setGuaranteePaymentLink(e.target.value)}
-                placeholder="https://..."
-                className="font-mono text-sm"
-              />
-              <p className="text-xs text-muted-foreground">
-                Forma de pagamento: {getPaymentMethodDisplay(formaPagamento, garantiaAnual)}
+              <p className="text-xs text-muted-foreground mt-2">
+                O pagamento da garantia será cobrado diretamente da imobiliária através do sistema de Boleto Unificado. 
+                Não é necessário gerar link de pagamento para o inquilino.
               </p>
             </div>
-          </div>
+          )}
 
           {/* Observations */}
           <div className="space-y-2">
