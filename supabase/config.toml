@@ -47,3 +47,9 @@ verify_jwt = false
 
 [functions.send-ticket-notification]
 verify_jwt = false
+
+[functions.generate-installments]
+verify_jwt = false
+
+[functions.generate-invoice-drafts]
+verify_jwt = false
