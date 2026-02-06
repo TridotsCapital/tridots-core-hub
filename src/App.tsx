@@ -15,6 +15,7 @@ import Analyses from "./pages/Analyses";
 import AnalysisForm from "./pages/AnalysisForm";
 import Commissions from "./pages/Commissions";
 import FinancialDashboard from "./pages/FinancialDashboard";
+import FinancialInvoices from "./pages/FinancialInvoices";
 import DocumentCenter from "./pages/DocumentCenter";
 import AuditViewer from "./pages/AuditViewer";
 import UserManagement from "./pages/UserManagement";
@@ -74,6 +75,7 @@ function InternalRoutes() {
       <Route path="/analyses/new" element={<AnalysisForm />} />
       <Route path="/analyses/:id" element={<AnalysisForm />} />
       <Route path="/commissions" element={<Commissions />} />
+      <Route path="/invoices" element={<FinancialInvoices />} />
       <Route path="/financial" element={<FinancialDashboard />} />
       <Route path="/documents" element={<DocumentCenter />} />
       <Route path="/audit" element={<AuditViewer />} />
