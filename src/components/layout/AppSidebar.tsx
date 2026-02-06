@@ -30,6 +30,7 @@ import {
   Headphones,
   FileCheck,
   AlertTriangle,
+  Receipt,
 } from 'lucide-react';
 import logoWhite from "@/assets/logo-tridots-white.webp";
 
@@ -76,6 +77,11 @@ const menuItems = [
     title: 'Comissões',
     icon: DollarSign,
     path: '/commissions',
+  },
+  {
+    title: 'Faturas',
+    icon: Receipt,
+    path: '/invoices',
   },
   {
     title: 'Financeiro',
