@@ -14,11 +14,16 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ArrowLeft, Download, Send } from 'lucide-react';
+import { ArrowLeft, Download, Send, Upload, X, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import InvoicePaymentModal from '@/components/invoices/InvoicePaymentModal';
 import InvoiceTimelineView from '@/components/invoices/InvoiceTimelineView';
+import { BoletoUploadDialog } from '@/components/invoices/BoletoUploadDialog';
+import { CancelInvoiceDialog } from '@/components/invoices/CancelInvoiceDialog';
 import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 
 const statusLabels: Record<string, string> = {
   rascunho: 'Rascunho',
@@ -33,9 +38,43 @@ export default function InvoiceDetail() {
   const { invoiceId } = useParams<{ invoiceId: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  
   const [showPaymentModal, setShowPaymentModal] = useState(searchParams.get('tab') === 'payment');
+  const [showBoletoUpload, setShowBoletoUpload] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
 
   const { data: invoice, isLoading } = useInvoiceDetail(invoiceId || null);
+  
+  const handleChangeStatus = async (newStatus: string) => {
+    try {
+      const updateData: Record<string, any> = { status: newStatus };
+      
+      if (newStatus === 'enviada') {
+        updateData.sent_at = new Date().toISOString();
+      }
+      
+      const { error } = await supabase
+        .from('agency_invoices')
+        .update(updateData)
+        .eq('id', invoiceId);
+      
+      if (error) throw error;
+      
+      toast({ title: 'Status atualizado', description: `Fatura marcada como "${statusLabels[newStatus]}"` });
+      queryClient.invalidateQueries({ queryKey: ['invoice_detail'] });
+      queryClient.invalidateQueries({ queryKey: ['invoice_timeline'] });
+    } catch (error: any) {
+      toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+    }
+  };
+  
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['invoice_detail'] });
+    queryClient.invalidateQueries({ queryKey: ['invoice_timeline'] });
+    queryClient.invalidateQueries({ queryKey: ['monthly_invoice_summary'] });
+    queryClient.invalidateQueries({ queryKey: ['agencies_invoice_month'] });
+  };
   const { data: timeline } = useInvoiceTimeline(invoiceId || '');
 
   if (isLoading) {
@@ -77,17 +116,50 @@ export default function InvoiceDetail() {
             <ArrowLeft className="h-4 w-4" />
             Voltar
           </Button>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            {/* Upload de Boleto */}
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setShowBoletoUpload(true)}
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              {(invoice as any).boleto_url ? 'Trocar Boleto' : 'Upload Boleto'}
+            </Button>
+
+            {/* Download Boleto (se existir) */}
             {(invoice as any).boleto_url && (
-              <Button variant="outline" size="sm" onClick={() => window.open((invoice as any).boleto_url, '_blank')}>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => window.open((invoice as any).boleto_url, '_blank')}
+              >
                 <Download className="h-4 w-4 mr-2" />
-                Boleto
+                Ver Boleto
               </Button>
             )}
-            {invoice.status === 'rascunho' && (
-              <Button variant="outline" size="sm">
+
+            {/* Enviar Fatura (mudar status para 'enviada') */}
+            {(invoice.status === 'rascunho' || invoice.status === 'gerada') && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => handleChangeStatus('enviada')}
+              >
                 <Send className="h-4 w-4 mr-2" />
-                Enviar
+                Enviar Fatura
+              </Button>
+            )}
+
+            {/* Cancelar Fatura */}
+            {invoice.status !== 'paga' && invoice.status !== 'cancelada' && (
+              <Button 
+                variant="destructive" 
+                size="sm"
+                onClick={() => setShowCancelDialog(true)}
+              >
+                <X className="h-4 w-4 mr-2" />
+                Cancelar
               </Button>
             )}
           </div>
@@ -145,8 +217,17 @@ export default function InvoiceDetail() {
                   </TableRow>
                 ) : (
                   items.map(item => (
-                    <TableRow key={item.id} className="cursor-pointer hover:bg-muted/50">
-                      <TableCell className="font-mono text-sm">{item.contract_id.slice(0, 8)}</TableCell>
+                    <TableRow key={item.id} className="hover:bg-muted/50">
+                      <TableCell>
+                        <Button 
+                          variant="link" 
+                          className="p-0 h-auto font-mono text-sm"
+                          onClick={() => navigate(`/contracts/${item.contract_id}`)}
+                        >
+                          {item.contract_id.slice(0, 8)}
+                          <ExternalLink className="h-3 w-3 ml-1" />
+                        </Button>
+                      </TableCell>
                       <TableCell>{item.tenant_name}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">{item.property_address}</TableCell>
                       <TableCell>{item.installment_number}/12</TableCell>
@@ -212,6 +293,23 @@ export default function InvoiceDetail() {
           onClose={() => setShowPaymentModal(false)}
         />
       )}
+
+      {/* Dialog de Upload de Boleto */}
+      <BoletoUploadDialog
+        open={showBoletoUpload}
+        onOpenChange={setShowBoletoUpload}
+        invoiceId={invoice.id}
+        currentBoletoUrl={(invoice as any).boleto_url}
+        onSuccess={handleRefresh}
+      />
+
+      {/* Dialog de Cancelamento */}
+      <CancelInvoiceDialog
+        open={showCancelDialog}
+        onOpenChange={setShowCancelDialog}
+        invoiceId={invoice.id}
+        onSuccess={() => navigate('/invoices')}
+      />
     </DashboardLayout>
   );
 }
