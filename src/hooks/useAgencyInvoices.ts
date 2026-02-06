@@ -174,16 +174,17 @@ export const useRegisterInvoicePayment = () => {
       paymentNotes?: string;
     }) => {
       const { invoiceId, paidValue, paymentProofUrl, paymentNotes } = params;
+      const paidAt = new Date().toISOString();
 
       const { data, error } = await supabase
         .from('agency_invoices')
         .update({
           status: 'paga',
-          paid_at: new Date().toISOString(),
+          paid_at: paidAt,
           paid_value: paidValue,
           payment_proof_url: paymentProofUrl,
           payment_notes: paymentNotes,
-          updated_at: new Date().toISOString()
+          updated_at: paidAt
         })
         .eq('id', invoiceId)
         .select()
@@ -200,11 +201,34 @@ export const useRegisterInvoicePayment = () => {
           description: `Pagamento de R$ ${paidValue.toFixed(2)} registrado`
         });
 
+      // BAIXA AUTOMÁTICA DAS PARCELAS: Buscar invoice_items e atualizar parcelas vinculadas
+      const { data: items } = await supabase
+        .from('invoice_items')
+        .select('installment_id')
+        .eq('invoice_id', invoiceId);
+
+      if (items && items.length > 0) {
+        const installmentIds = items
+          .map(item => item.installment_id)
+          .filter((id): id is string => id !== null);
+        
+        if (installmentIds.length > 0) {
+          await supabase
+            .from('guarantee_installments')
+            .update({ 
+              status: 'paga', 
+              paid_at: paidAt 
+            })
+            .in('id', installmentIds);
+        }
+      }
+
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agency_invoices'] });
       queryClient.invalidateQueries({ queryKey: ['invoice_detail'] });
+      queryClient.invalidateQueries({ queryKey: ['contract_installments'] });
     }
   });
 };
@@ -266,18 +290,26 @@ export const useCancelInvoice = () => {
           description: `Fatura cancelada. ${reason || 'Sem motivo especificado'}. Nova fatura gerada: ${newInvoice.id}`
         });
 
-      // Atualizar status das parcelas de volta para 'pendente'
+      // REVERSÃO COMPLETA: Atualizar status das parcelas de volta para 'pendente' e limpar paid_at
       const { data: items } = await supabase
         .from('invoice_items')
         .select('installment_id')
         .eq('invoice_id', invoiceId);
 
-      if (items) {
-        for (const item of items) {
+      if (items && items.length > 0) {
+        const installmentIds = items
+          .map(item => item.installment_id)
+          .filter((id): id is string => id !== null);
+        
+        if (installmentIds.length > 0) {
           await supabase
             .from('guarantee_installments')
-            .update({ status: 'pendente', invoice_item_id: null })
-            .eq('id', item.installment_id);
+            .update({ 
+              status: 'pendente', 
+              invoice_item_id: null,
+              paid_at: null 
+            })
+            .in('id', installmentIds);
         }
       }
 
