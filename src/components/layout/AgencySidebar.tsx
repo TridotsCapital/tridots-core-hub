@@ -63,6 +63,7 @@ const menuItemsConfig = [
   { title: "Meus Contratos", icon: FileCheck, pathKey: "contracts" },
   { title: "Garantias", icon: AlertTriangle, pathKey: "claims" },
   { title: "Minhas Comissões", icon: DollarSign, pathKey: "commissions" },
+  { title: "Faturas", icon: DollarSign, pathKey: "invoices" },
   { title: "Drive Documentos", icon: FolderOpen, pathKey: "documents" },
   { title: "Colaboradores", icon: Users, pathKey: "collaborators" },
   { title: "Ajuda", icon: BookOpen, pathKey: "help" },
