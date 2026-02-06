@@ -1,5 +1,5 @@
 import { Badge } from '@/components/ui/badge';
-import { CreditCard, QrCode, Sparkles } from 'lucide-react';
+import { CreditCard, QrCode, Sparkles, Building2 } from 'lucide-react';
 
 interface PaymentMethodDisplayProps {
   method: string | null | undefined;
@@ -34,6 +34,22 @@ export function PaymentMethodDisplay({
     md: 'h-4 w-4',
     lg: 'h-5 w-5',
   };
+
+  // Handle boleto_imobiliaria (Boleto Unificado)
+  if (method === 'boleto_imobiliaria') {
+    const parcelaMensal = garantiaAnual / 12;
+    return (
+      <div className="flex flex-wrap items-center gap-2">
+        <Building2 className={`${iconSize[size]} text-primary shrink-0`} />
+        <span className={`font-semibold ${sizeClasses[size]}`}>
+          Boleto Unificado (via imobiliária) — 12x de {formatCurrency(parcelaMensal)}
+        </span>
+        <span className="text-sm text-muted-foreground">
+          (Total: {formatCurrency(garantiaAnual)})
+        </span>
+      </div>
+    );
+  }
 
   // Handle PIX
   if (method === 'pix') {

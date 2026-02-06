@@ -20,11 +20,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Eye, Download, DollarSign, AlertCircle, Lock } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Eye, Download, DollarSign, AlertCircle, Lock, FileText, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 
 const statusColors: Record<string, string> = {
   rascunho: 'bg-secondary text-secondary-foreground',
@@ -44,10 +56,33 @@ const statusLabels: Record<string, string> = {
   cancelada: 'Cancelada',
 };
 
+const months = [
+  { value: '1', label: 'Janeiro' },
+  { value: '2', label: 'Fevereiro' },
+  { value: '3', label: 'Março' },
+  { value: '4', label: 'Abril' },
+  { value: '5', label: 'Maio' },
+  { value: '6', label: 'Junho' },
+  { value: '7', label: 'Julho' },
+  { value: '8', label: 'Agosto' },
+  { value: '9', label: 'Setembro' },
+  { value: '10', label: 'Outubro' },
+  { value: '11', label: 'Novembro' },
+  { value: '12', label: 'Dezembro' },
+];
+
 export default function FinancialInvoices() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [filters, setFilters] = useState<InvoiceFilter>({});
   const [searchAgency, setSearchAgency] = useState('');
+  
+  // Dialog state for generating drafts
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const currentDate = new Date();
+  const [draftMonth, setDraftMonth] = useState(String(currentDate.getMonth() + 1));
+  const [draftYear, setDraftYear] = useState(String(currentDate.getFullYear()));
 
   const { data: invoices = [], isLoading } = useAgencyInvoices(filters);
   // For analytics, pass date filters if they exist
@@ -77,6 +112,39 @@ export default function FinancialInvoices() {
     totalOverdue: 0,
     blockedAgenciesCount: 0,
     alertsCount: 0
+  };
+
+  const handleGenerateDrafts = async () => {
+    setIsGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-invoice-drafts', {
+        body: {
+          reference_month: parseInt(draftMonth),
+          reference_year: parseInt(draftYear)
+        }
+      });
+
+      if (error) throw error;
+
+      const result = data as { invoices_created?: number; agencies_processed?: number; message?: string };
+      
+      toast({
+        title: 'Rascunhos gerados com sucesso',
+        description: `${result.invoices_created || 0} fatura(s) gerada(s) para ${result.agencies_processed || 0} agência(s)`
+      });
+      
+      setIsDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['agency_invoices'] });
+    } catch (error: any) {
+      console.error('Error generating drafts:', error);
+      toast({
+        title: 'Erro ao gerar rascunhos',
+        description: error.message || 'Ocorreu um erro ao processar a solicitação',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -129,44 +197,103 @@ export default function FinancialInvoices() {
 
         {/* Filtros */}
         <div className="bg-background rounded-lg border p-4 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Input
-              placeholder="Buscar por imobiliária..."
-              value={searchAgency}
-              onChange={(e) => setSearchAgency(e.target.value)}
-            />
-            <Select value={filters.status || 'all'} onValueChange={(v) => handleFilterChange('status', v === 'all' ? undefined : v)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="rascunho">Rascunho</SelectItem>
-                <SelectItem value="gerada">Gerada</SelectItem>
-                <SelectItem value="enviada">Enviada</SelectItem>
-                <SelectItem value="atrasada">Atrasada</SelectItem>
-                <SelectItem value="paga">Paga</SelectItem>
-                <SelectItem value="cancelada">Cancelada</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={filters.referenceYear?.toString() || 'all'} onValueChange={(v) => handleFilterChange('referenceYear', v === 'all' ? undefined : parseInt(v))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Ano" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="2024">2024</SelectItem>
-                <SelectItem value="2025">2025</SelectItem>
-                <SelectItem value="2026">2026</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button
-              variant="outline"
-              onClick={() => setFilters({})}
-              className="w-full"
-            >
-              Limpar Filtros
-            </Button>
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 flex-1">
+              <Input
+                placeholder="Buscar por imobiliária..."
+                value={searchAgency}
+                onChange={(e) => setSearchAgency(e.target.value)}
+              />
+              <Select value={filters.status || 'all'} onValueChange={(v) => handleFilterChange('status', v === 'all' ? undefined : v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="rascunho">Rascunho</SelectItem>
+                  <SelectItem value="gerada">Gerada</SelectItem>
+                  <SelectItem value="enviada">Enviada</SelectItem>
+                  <SelectItem value="atrasada">Atrasada</SelectItem>
+                  <SelectItem value="paga">Paga</SelectItem>
+                  <SelectItem value="cancelada">Cancelada</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={filters.referenceYear?.toString() || 'all'} onValueChange={(v) => handleFilterChange('referenceYear', v === 'all' ? undefined : parseInt(v))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Ano" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="2024">2024</SelectItem>
+                  <SelectItem value="2025">2025</SelectItem>
+                  <SelectItem value="2026">2026</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                variant="outline"
+                onClick={() => setFilters({})}
+                className="w-full"
+              >
+                Limpar Filtros
+              </Button>
+            </div>
+            
+            {/* Botão Gerar Rascunhos */}
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="gap-2">
+                  <FileText className="h-4 w-4" />
+                  Gerar Rascunhos
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Gerar Rascunhos de Faturas</DialogTitle>
+                  <DialogDescription>
+                    Gere faturas em rascunho para todas as agências com parcelas pendentes no período selecionado.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Mês de Referência</label>
+                    <Select value={draftMonth} onValueChange={setDraftMonth}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {months.map((month) => (
+                          <SelectItem key={month.value} value={month.value}>
+                            {month.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Ano de Referência</label>
+                    <Select value={draftYear} onValueChange={setDraftYear}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="2024">2024</SelectItem>
+                        <SelectItem value="2025">2025</SelectItem>
+                        <SelectItem value="2026">2026</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                    Cancelar
+                  </Button>
+                  <Button onClick={handleGenerateDrafts} disabled={isGenerating}>
+                    {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {isGenerating ? 'Gerando...' : 'Gerar Rascunhos'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
 
