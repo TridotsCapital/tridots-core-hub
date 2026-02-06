@@ -67,8 +67,9 @@ export default function AgencyInvoices() {
     setSelectedYear(year);
   };
 
-  const handleGoToContract = (contractId: string) => {
-    navigate(agencyPath(`/contracts/${contractId}`));
+  const handleGoToContract = (analysisId: string) => {
+    if (!analysisId) return;
+    navigate(agencyPath(`/contracts/${analysisId}`));
   };
 
   return (
@@ -192,7 +193,8 @@ export default function AgencyInvoices() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleGoToContract(item.contract_id)}
+                          onClick={() => handleGoToContract(item.analysis_id)}
+                          disabled={!item.analysis_id}
                           className="gap-1"
                         >
                           <ExternalLink className="h-4 w-4" />

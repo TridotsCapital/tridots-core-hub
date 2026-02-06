@@ -92,12 +92,12 @@ export function MonthlyInvoiceChart({
 
   if (isLoading) {
     return (
-      <div className="bg-card rounded-lg border p-4">
-        <div className="flex items-end justify-center gap-2 h-32">
+      <div className="bg-card rounded-lg border p-6">
+        <div className="flex items-end justify-center gap-3 h-44">
           {Array.from({ length: MONTHS_VISIBLE }).map((_, i) => (
             <div key={i} className="flex flex-col items-center gap-2">
-              <div className="w-10 h-16 bg-muted animate-pulse rounded" />
-              <div className="w-8 h-3 bg-muted animate-pulse rounded" />
+              <div className="w-12 h-20 bg-muted animate-pulse rounded" />
+              <div className="w-10 h-4 bg-muted animate-pulse rounded" />
             </div>
           ))}
         </div>
@@ -106,19 +106,19 @@ export function MonthlyInvoiceChart({
   }
 
   return (
-    <div className="bg-card rounded-lg border p-4">
-      <div className="flex items-center justify-between gap-2">
+    <div className="bg-card rounded-lg border p-6">
+      <div className="flex items-center justify-between gap-4">
         <Button
           variant="ghost"
           size="icon"
           onClick={handlePrev}
           disabled={!canGoLeft}
-          className="shrink-0"
+          className="shrink-0 h-10 w-10"
         >
-          <ChevronLeft className="h-5 w-5" />
+          <ChevronLeft className="h-6 w-6" />
         </Button>
 
-        <div className="flex items-end justify-center gap-1 sm:gap-2 flex-1 h-32 overflow-hidden">
+        <div className="flex items-end justify-center gap-3 sm:gap-4 flex-1 h-44 overflow-hidden">
           {visibleMonths.map((monthData) => {
             const isSelected = monthData.month === selectedMonth && monthData.year === selectedYear;
             const isCurrentMonth = (() => {
@@ -135,30 +135,30 @@ export function MonthlyInvoiceChart({
                 key={`${monthData.month}-${monthData.year}`}
                 onClick={() => onSelectMonth(monthData.month, monthData.year)}
                 className={cn(
-                  "flex flex-col items-center gap-1 transition-all duration-200 group min-w-[40px] sm:min-w-[48px]",
-                  isSelected && "scale-105"
+                  "flex flex-col items-center gap-2 transition-all duration-200 group min-w-[52px] sm:min-w-[64px]",
+                  isSelected && "scale-110"
                 )}
               >
                 <div
                   className={cn(
-                    "w-8 sm:w-10 rounded-t transition-all duration-200",
+                    "w-10 sm:w-12 rounded-t transition-all duration-200 shadow-sm",
                     barColor,
-                    isSelected && "ring-2 ring-primary ring-offset-2 ring-offset-background"
+                    isSelected && "ring-2 ring-primary ring-offset-2 ring-offset-background shadow-md"
                   )}
-                  style={{ height: `${barHeight}%`, minHeight: '8px' }}
+                  style={{ height: `${barHeight}%`, minHeight: '12px' }}
                 />
                 <span className={cn(
-                  "text-[10px] sm:text-xs font-medium transition-colors",
-                  isSelected ? "text-foreground" : "text-muted-foreground",
-                  isCurrentMonth && !isSelected && "text-primary"
+                  "text-xs sm:text-sm font-medium transition-colors",
+                  isSelected ? "text-foreground font-semibold" : "text-muted-foreground",
+                  isCurrentMonth && !isSelected && "text-primary font-semibold"
                 )}>
                   {MONTH_NAMES[monthData.month - 1]}
                 </span>
                 <span className={cn(
-                  "text-[9px] sm:text-[10px]",
+                  "text-[10px] sm:text-xs",
                   isSelected ? "text-foreground" : "text-muted-foreground/70"
                 )}>
-                  {monthData.year.toString().slice(-2)}
+                  {monthData.year}
                 </span>
               </button>
             );
@@ -170,28 +170,28 @@ export function MonthlyInvoiceChart({
           size="icon"
           onClick={handleNext}
           disabled={!canGoRight}
-          className="shrink-0"
+          className="shrink-0 h-10 w-10"
         >
-          <ChevronRight className="h-5 w-5" />
+          <ChevronRight className="h-6 w-6" />
         </Button>
       </div>
 
       {/* Legenda */}
-      <div className="flex flex-wrap items-center justify-center gap-4 mt-4 pt-4 border-t text-xs text-muted-foreground">
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded bg-green-500" />
+      <div className="flex flex-wrap items-center justify-center gap-6 mt-6 pt-4 border-t text-sm text-muted-foreground">
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded bg-green-500" />
           <span>Paga</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded bg-yellow-500" />
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded bg-yellow-500" />
           <span>Pendente</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded bg-red-500" />
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded bg-red-500" />
           <span>Atrasada</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded bg-blue-200 dark:bg-blue-900/50" />
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded bg-blue-200 dark:bg-blue-900/50" />
           <span>Futura</span>
         </div>
       </div>
