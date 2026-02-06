@@ -17,6 +17,7 @@ import {
   UserCircle,
   AlertCircle,
   BookOpen,
+  Receipt,
 } from "lucide-react";
 import logoBlack from "@/assets/logo-tridots-black.webp";
 import { NavLink } from "@/components/NavLink";
@@ -27,6 +28,7 @@ import { useClaimDraft } from "@/hooks/useClaimDraft";
 import { useNotificationCounts } from "@/hooks/useNotificationCounts";
 import { useRejectedDocumentsCount } from "@/hooks/useRejectedDocumentsCount";
 import { useAgencyOnboardingStatus } from "@/hooks/useAgencyDocuments";
+import { useAgencyBillingStatus } from "@/hooks/useAgencyBillingStatus";
 import { useNps } from "@/contexts/NpsContext";
 import { useAgencyPath } from "@/hooks/useAgencyPath";
 import { NotificationCenter } from "@/components/notifications";
@@ -63,7 +65,7 @@ const menuItemsConfig = [
   { title: "Meus Contratos", icon: FileCheck, pathKey: "contracts" },
   { title: "Garantias", icon: AlertTriangle, pathKey: "claims" },
   { title: "Minhas Comissões", icon: DollarSign, pathKey: "commissions" },
-  { title: "Faturas", icon: DollarSign, pathKey: "invoices" },
+  { title: "Faturas", icon: Receipt, pathKey: "invoices" },
   { title: "Drive Documentos", icon: FolderOpen, pathKey: "documents" },
   { title: "Colaboradores", icon: Users, pathKey: "collaborators" },
   { title: "Ajuda", icon: BookOpen, pathKey: "help" },
@@ -79,15 +81,23 @@ export function AgencySidebar() {
   const { pendingSurveys, hasPendingNps, showNpsModal } = useNps();
   const { data: rejectedDocsCount } = useRejectedDocumentsCount();
   const onboardingStatus = useAgencyOnboardingStatus(agencyUser?.agency?.id);
+  const { data: billingStatus } = useAgencyBillingStatus();
+  const { data: notificationCounts } = useNotificationCounts();
 
   const agencyName = agencyUser?.agency?.nome_fantasia || agencyUser?.agency?.razao_social || "Imobiliária";
-  const { data: notificationCounts } = useNotificationCounts();
+  
+  // Check billing blocked status
+  const isBillingBlocked = billingStatus?.isBlocked ?? false;
+  const hasOverdueInvoices = billingStatus?.hasOverdueInvoices ?? false;
   
   // Check if there are pending onboarding docs
   const hasPendingOnboardingDocs = !agencyUser?.agency?.active && (
     onboardingStatus.pendingDocuments.length > 0 || 
     onboardingStatus.rejectedDocuments.length > 0
   );
+  
+  // Determine if actions should be blocked
+  const isActionsBlocked = isBillingBlocked || !agencyUser?.agency?.active;
 
   const handleSignOut = async () => {
     await signOut();
@@ -180,79 +190,109 @@ export function AgencySidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    className={`w-full justify-start gap-2 shadow-sm ${
-                      hasAnalysisDraft
-                        ? "bg-amber-600 hover:bg-amber-700 text-white"
-                        : "bg-primary hover:bg-primary/90 text-primary-foreground"
-                    }`}
-                    onClick={() => navigate(agencyPath("/analyses/new"))}
-                  >
-                    {hasAnalysisDraft ? (
-                      <>
-                        <Play className="h-4 w-4" />
-                        Continuar Análise
-                        <Badge variant="secondary" className="ml-auto bg-white/20 text-white text-[10px] px-1.5">
-                          Rascunho
-                        </Badge>
-                      </>
-                    ) : (
-                      <>
+              {/* Nova Análise - blocked when billing blocked or agency inactive */}
+              {isActionsBlocked ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="w-full">
+                      <Button
+                        className="w-full justify-start gap-2 shadow-sm bg-muted text-muted-foreground"
+                        disabled
+                      >
                         <Plus className="h-4 w-4" />
                         Nova Análise
-                      </>
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                {hasAnalysisDraft && (
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
                   <TooltipContent side="right">
-                    <p>Última edição: {getLastSavedTime()}</p>
+                    <p>
+                      {isBillingBlocked 
+                        ? "Bloqueado por inadimplência" 
+                        : "Disponível após aprovação do cadastro"}
+                    </p>
                   </TooltipContent>
-                )}
-              </Tooltip>
-            </TooltipProvider>
-            {agencyUser?.agency?.active ? (
-              <Button
-                variant="outline"
-                className="w-full justify-start gap-2 border-amber-300 text-amber-700 hover:bg-amber-50 hover:text-amber-800 mt-2"
-                onClick={() => navigate(agencyPath("/claims/new"))}
-              >
-                <Shield className="h-4 w-4" />
-                Solicitar Garantia
-              </Button>
-            ) : (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="w-full">
+                </Tooltip>
+              ) : (
+                <Tooltip>
+                  <TooltipTrigger asChild>
                     <Button
-                      variant="outline"
-                      className="w-full justify-start gap-2 border-muted text-muted-foreground mt-2"
-                      disabled
+                      className={`w-full justify-start gap-2 shadow-sm ${
+                        hasAnalysisDraft
+                          ? "bg-amber-600 hover:bg-amber-700 text-white"
+                          : "bg-primary hover:bg-primary/90 text-primary-foreground"
+                      }`}
+                      onClick={() => navigate(agencyPath("/analyses/new"))}
                     >
-                      <Shield className="h-4 w-4" />
-                      Solicitar Garantia
+                      {hasAnalysisDraft ? (
+                        <>
+                          <Play className="h-4 w-4" />
+                          Continuar Análise
+                          <Badge variant="secondary" className="ml-auto bg-white/20 text-white text-[10px] px-1.5">
+                            Rascunho
+                          </Badge>
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="h-4 w-4" />
+                          Nova Análise
+                        </>
+                      )}
                     </Button>
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent side="right">
-                  <p>Disponível após aprovação do cadastro</p>
-                </TooltipContent>
-              </Tooltip>
-            )}
+                  </TooltipTrigger>
+                  {hasAnalysisDraft && (
+                    <TooltipContent side="right">
+                      <p>Última edição: {getLastSavedTime()}</p>
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              )}
 
-            {hasPendingNps && (
-              <Button
-                variant="outline"
-                className="w-full justify-start gap-2 border-amber-400 bg-amber-50 text-amber-800 hover:bg-amber-100 mt-2"
-                onClick={showNpsModal}
-              >
-                <Star className="h-4 w-4" />
-                Avaliar Chamados
-                <Badge className="ml-auto bg-amber-500 text-white hover:bg-amber-500">{pendingSurveys.length}</Badge>
-              </Button>
-            )}
+              {/* Solicitar Garantia - blocked when billing blocked or agency inactive */}
+              {isActionsBlocked ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="w-full">
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start gap-2 border-muted text-muted-foreground mt-2"
+                        disabled
+                      >
+                        <Shield className="h-4 w-4" />
+                        Solicitar Garantia
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    <p>
+                      {isBillingBlocked 
+                        ? "Bloqueado por inadimplência" 
+                        : "Disponível após aprovação do cadastro"}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              ) : (
+                <Button
+                  variant="outline"
+                  className="w-full justify-start gap-2 border-amber-300 text-amber-700 hover:bg-amber-50 hover:text-amber-800 mt-2"
+                  onClick={() => navigate(agencyPath("/claims/new"))}
+                >
+                  <Shield className="h-4 w-4" />
+                  Solicitar Garantia
+                </Button>
+              )}
+
+              {hasPendingNps && (
+                <Button
+                  variant="outline"
+                  className="w-full justify-start gap-2 border-amber-400 bg-amber-50 text-amber-800 hover:bg-amber-100 mt-2"
+                  onClick={showNpsModal}
+                >
+                  <Star className="h-4 w-4" />
+                  Avaliar Chamados
+                  <Badge className="ml-auto bg-amber-500 text-white hover:bg-amber-500">{pendingSurveys.length}</Badge>
+                </Button>
+              )}
+            </TooltipProvider>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
