@@ -62,3 +62,9 @@ verify_jwt = false
 
 [functions.process-delinquency-blocking]
 verify_jwt = false
+
+[functions.generate-invoice-pdf]
+verify_jwt = false
+
+[functions.generate-invoice-excel]
+verify_jwt = false
