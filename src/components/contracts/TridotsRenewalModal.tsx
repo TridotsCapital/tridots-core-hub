@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -12,7 +12,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, RefreshCw, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Loader2, RefreshCw, CheckCircle, XCircle, Clock, CreditCard, Landmark, AlertTriangle } from 'lucide-react';
 import { format, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatCurrency } from '@/lib/validators';
@@ -22,6 +23,7 @@ import {
   useRejectRenewal 
 } from '@/hooks/useContractRenewal';
 import { Textarea } from '@/components/ui/textarea';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface Analysis {
   inquilino_nome: string;
@@ -55,6 +57,7 @@ interface TridotsRenewalModalProps {
   dataFimContrato: string | null;
   analysis: Analysis;
   pendingRenewal?: PendingRenewal;
+  currentPaymentMethod?: 'pix' | 'card' | 'boleto_imobiliaria' | null;
 }
 
 export function TridotsRenewalModal({
@@ -64,10 +67,14 @@ export function TridotsRenewalModal({
   dataFimContrato,
   analysis,
   pendingRenewal,
+  currentPaymentMethod,
 }: TridotsRenewalModalProps) {
   const [mode, setMode] = useState<'pending' | 'new'>(pendingRenewal ? 'pending' : 'new');
   const [durationMonths, setDurationMonths] = useState('12');
   const [rejectionReason, setRejectionReason] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<'pix' | 'card' | 'boleto_imobiliaria' | 'keep'>(
+    'keep'
+  );
   
   // Form values for new renewal
   const [valorAluguel, setValorAluguel] = useState(analysis.valor_aluguel.toString());
@@ -80,7 +87,18 @@ export function TridotsRenewalModal({
   const approveRenewal = useApproveRenewal();
   const rejectRenewal = useRejectRenewal();
 
+  // Reset mode when pendingRenewal changes
+  useEffect(() => {
+    setMode(pendingRenewal ? 'pending' : 'new');
+  }, [pendingRenewal]);
+
+
+  const isChangingPaymentMethod = paymentMethod !== 'keep' && paymentMethod !== currentPaymentMethod;
+  const isChangingFromBoleto = currentPaymentMethod === 'boleto_imobiliaria' && isChangingPaymentMethod;
+
   const handleInitiateRenewal = async () => {
+    const newPaymentMethod = paymentMethod === 'keep' ? undefined : paymentMethod;
+    
     await initiateRenewal.mutateAsync({
       contract_id: contractId,
       new_valor_aluguel: parseFloat(valorAluguel) || 0,
@@ -94,7 +112,8 @@ export function TridotsRenewalModal({
       old_valor_outros_encargos: analysis.valor_outros_encargos || null,
       old_taxa_garantia_percentual: analysis.taxa_garantia_percentual,
       old_data_fim_contrato: dataFimContrato,
-      durationMonths: parseInt(durationMonths)
+      durationMonths: parseInt(durationMonths),
+      newPaymentMethod
     });
     onOpenChange(false);
   };
@@ -102,10 +121,13 @@ export function TridotsRenewalModal({
   const handleApprovePending = async () => {
     if (!pendingRenewal) return;
     
+    const newPaymentMethod = paymentMethod === 'keep' ? undefined : paymentMethod;
+    
     await approveRenewal.mutateAsync({
       renewalId: pendingRenewal.id,
       contractId,
-      durationMonths: parseInt(durationMonths)
+      durationMonths: parseInt(durationMonths),
+      newPaymentMethod
     });
     onOpenChange(false);
   };
@@ -224,6 +246,50 @@ export function TridotsRenewalModal({
               </div>
 
               <div className="space-y-2">
+                <Label>Forma de Pagamento</Label>
+                <Select value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as typeof paymentMethod)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a forma de pagamento" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="keep">
+                      <div className="flex items-center gap-2">
+                        <RefreshCw className="h-4 w-4" />
+                        Manter atual ({currentPaymentMethod === 'boleto_imobiliaria' ? 'Boleto Unificado' : currentPaymentMethod === 'card' ? 'Cartão' : 'PIX'})
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="boleto_imobiliaria">
+                      <div className="flex items-center gap-2">
+                        <Landmark className="h-4 w-4" />
+                        Boleto Unificado (Imobiliária)
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="card">
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="h-4 w-4" />
+                        Cartão de Crédito (Inquilino)
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="pix">
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="h-4 w-4" />
+                        PIX (Inquilino)
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                {isChangingFromBoleto && (
+                  <Alert className="border-amber-300 bg-amber-50">
+                    <AlertTriangle className="h-4 w-4 text-amber-600" />
+                    <AlertDescription className="text-amber-800 text-xs">
+                      Mudança de Boleto Unificado para outra forma requer novo aceite digital do inquilino.
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+
+              <div className="space-y-2">
                 <Label>Motivo da Recusa (se aplicável)</Label>
                 <Textarea
                   value={rejectionReason}
@@ -327,6 +393,50 @@ export function TridotsRenewalModal({
                   onChange={(e) => setDurationMonths(e.target.value)}
                 />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Forma de Pagamento na Renovação</Label>
+              <Select value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as typeof paymentMethod)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a forma de pagamento" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="keep">
+                    <div className="flex items-center gap-2">
+                      <RefreshCw className="h-4 w-4" />
+                      Manter atual ({currentPaymentMethod === 'boleto_imobiliaria' ? 'Boleto Unificado' : currentPaymentMethod === 'card' ? 'Cartão' : 'PIX'})
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="boleto_imobiliaria">
+                    <div className="flex items-center gap-2">
+                      <Landmark className="h-4 w-4" />
+                      Boleto Unificado (Imobiliária)
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="card">
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="h-4 w-4" />
+                      Cartão de Crédito (Inquilino)
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="pix">
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="h-4 w-4" />
+                      PIX (Inquilino)
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              
+              {isChangingFromBoleto && (
+                <Alert className="border-amber-300 bg-amber-50">
+                  <AlertTriangle className="h-4 w-4 text-amber-600" />
+                  <AlertDescription className="text-amber-800 text-xs">
+                    Mudança de Boleto Unificado para outra forma requer novo aceite digital do inquilino.
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
 
             {dataFimContrato && (

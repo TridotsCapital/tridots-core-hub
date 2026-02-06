@@ -68,3 +68,6 @@ verify_jwt = false
 
 [functions.generate-invoice-excel]
 verify_jwt = false
+
+[functions.process-renewal-installments]
+verify_jwt = false

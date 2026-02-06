@@ -162,7 +162,7 @@ export const useCancelRenewal = () => {
   });
 };
 
-// Approve a renewal (Tridots side)
+// Approve a renewal (Tridots side) and process installments
 export const useApproveRenewal = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -171,14 +171,17 @@ export const useApproveRenewal = () => {
     mutationFn: async ({ 
       renewalId, 
       contractId, 
-      durationMonths 
+      durationMonths,
+      newPaymentMethod
     }: { 
       renewalId: string; 
       contractId: string; 
       durationMonths: number;
+      newPaymentMethod?: 'pix' | 'card' | 'boleto_imobiliaria';
     }) => {
       if (!user) throw new Error('Usuário não autenticado');
 
+      // 1. Update renewal status to approved
       const { error } = await supabase
         .from('contract_renewals' as any)
         .update({ 
@@ -190,11 +193,27 @@ export const useApproveRenewal = () => {
         .eq('id', renewalId);
 
       if (error) throw error;
+
+      // 2. Call edge function to process renewal installments and update contract
+      const { error: fnError } = await supabase.functions.invoke('process-renewal-installments', {
+        body: {
+          renewal_id: renewalId,
+          contract_id: contractId,
+          new_payment_method: newPaymentMethod
+        }
+      });
+
+      if (fnError) {
+        console.error('Error processing renewal installments:', fnError);
+        // Non-fatal - the renewal is still approved
+        toast.warning('Renovação aprovada, mas houve erro ao gerar parcelas');
+      }
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['contract-renewals', variables.contractId] });
       queryClient.invalidateQueries({ queryKey: ['pending-renewal', variables.contractId] });
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
+      queryClient.invalidateQueries({ queryKey: ['contract-installments', variables.contractId] });
       toast.success('Renovação aprovada com sucesso!');
     },
     onError: (error) => {
@@ -245,13 +264,13 @@ export const useRejectRenewal = () => {
   });
 };
 
-// Initiate a renewal internally (Tridots side)
+// Initiate a renewal internally (Tridots side) - immediately approved
 export const useInitiateRenewal = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: RenewalRequestData & { durationMonths: number }) => {
+    mutationFn: async (data: RenewalRequestData & { durationMonths: number; newPaymentMethod?: 'pix' | 'card' | 'boleto_imobiliaria' }) => {
       if (!user) throw new Error('Usuário não autenticado');
 
       // For Tridots-initiated renewals, they're immediately approved
@@ -281,12 +300,28 @@ export const useInitiateRenewal = () => {
         .single();
 
       if (error) throw error;
+
+      // Process installments for the renewal
+      const { error: fnError } = await supabase.functions.invoke('process-renewal-installments', {
+        body: {
+          renewal_id: (renewal as any).id,
+          contract_id: data.contract_id,
+          new_payment_method: data.newPaymentMethod
+        }
+      });
+
+      if (fnError) {
+        console.error('Error processing renewal installments:', fnError);
+        toast.warning('Renovação criada, mas houve erro ao gerar parcelas');
+      }
+
       return renewal;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['contract-renewals', variables.contract_id] });
       queryClient.invalidateQueries({ queryKey: ['pending-renewal', variables.contract_id] });
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
+      queryClient.invalidateQueries({ queryKey: ['contract-installments', variables.contract_id] });
       toast.success('Renovação iniciada com sucesso!');
     },
     onError: (error) => {

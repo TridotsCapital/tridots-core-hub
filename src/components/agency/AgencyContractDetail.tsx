@@ -802,6 +802,7 @@ export function AgencyContractDetail() {
               contractId={contract.id}
               contractStatus={contract.status}
               dataFimContrato={contract.data_fim_contrato}
+              paymentMethod={contract.payment_method}
               analysis={{
                 inquilino_nome: analysis.inquilino_nome,
                 inquilino_email: analysis.inquilino_email,
