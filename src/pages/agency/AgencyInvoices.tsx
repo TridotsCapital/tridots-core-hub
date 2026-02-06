@@ -1,42 +1,74 @@
+import { useState, useMemo } from "react";
 import { AgencyLayout } from "@/components/layout/AgencyLayout";
-import { useAgencyInvoices } from "@/hooks/useAgencyInvoices";
-import { useAgencyInvoiceExports } from "@/hooks/useAgencyInvoiceExports";
+import { useMonthlyInvoiceSummary, useAgencyMonthInstallments } from "@/hooks/useMonthlyInvoiceSummary";
+import { useAgencyUser } from "@/hooks/useAgencyUser";
+import { MonthlyInvoiceChart } from "@/components/invoices/MonthlyInvoiceChart";
 import { formatCurrency } from "@/lib/validators";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, Download, Eye, FileJson } from "lucide-react";
+import { AlertCircle, Calendar, FileText, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAgencyPath } from "@/hooks/useAgencyPath";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { useAgencyInvoiceExports } from "@/hooks/useAgencyInvoiceExports";
 
-const statusConfig = {
-  rascunho: { label: "Rascunho", variant: "secondary" as const },
-  gerada: { label: "Gerada", variant: "default" as const },
-  enviada: { label: "Enviada", variant: "default" as const },
-  atrasada: { label: "Atrasada", variant: "destructive" as const },
-  paga: { label: "Paga", variant: "outline" as const },
-  cancelada: { label: "Cancelada", variant: "secondary" as const },
+const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+  rascunho: { label: "Rascunho", variant: "secondary" },
+  gerada: { label: "Gerada", variant: "default" },
+  enviada: { label: "Enviada", variant: "default" },
+  atrasada: { label: "Atrasada", variant: "destructive" },
+  paga: { label: "Paga", variant: "outline" },
+  cancelada: { label: "Cancelada", variant: "secondary" },
+  futura: { label: "Aguardando Faturamento", variant: "secondary" },
+  pendente: { label: "Pendente", variant: "default" },
 };
+
+const MONTH_NAMES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
 export default function AgencyInvoices() {
   const { agencyPath } = useAgencyPath();
   const navigate = useNavigate();
-  const { data: invoices, isLoading } = useAgencyInvoices();
+  const { data: agencyUserData } = useAgencyUser();
+  const agencyId = agencyUserData?.agency_id;
+  
+  const currentDate = new Date();
+  const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
+
   const { isExporting, exportInvoice } = useAgencyInvoiceExports();
+  
+  // Hooks
+  const { data: monthlySummary = [], isLoading: summaryLoading } = useMonthlyInvoiceSummary(agencyId);
+  const { data: installments = [], isLoading: installmentsLoading } = useAgencyMonthInstallments(agencyId, selectedMonth, selectedYear);
 
-  const handleViewDetails = (invoiceId: string) => {
-    navigate(agencyPath(`/invoices/${invoiceId}`));
+  // Selected month data
+  const selectedMonthData = useMemo(() => {
+    return monthlySummary.find(m => m.month === selectedMonth && m.year === selectedYear);
+  }, [monthlySummary, selectedMonth, selectedYear]);
+
+  // Check for overdue invoices
+  const hasOverdue = useMemo(() => {
+    return monthlySummary.some(m => m.status === 'atrasada');
+  }, [monthlySummary]);
+
+  const handleSelectMonth = (month: number, year: number) => {
+    setSelectedMonth(month);
+    setSelectedYear(year);
   };
 
-  const handleExportPDF = async (invoiceId: string) => {
-    await exportInvoice({ format: 'pdf', invoiceId });
-  };
-
-  const handleExportExcel = async (invoiceId: string) => {
-    await exportInvoice({ format: 'excel', invoiceId });
+  const handleGoToContract = (contractId: string) => {
+    navigate(agencyPath(`/contracts/${contractId}`));
   };
 
   return (
@@ -45,95 +77,149 @@ export default function AgencyInvoices() {
       description="Acompanhe suas faturas de garantia"
     >
       <div className="space-y-6">
-        {/* Alerts */}
-        {invoices?.some(inv => inv.status === "atrasada") && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex gap-3">
-            <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
+        {/* Overdue Alert */}
+        {hasOverdue && (
+          <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 flex gap-3">
+            <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
             <div>
-              <p className="font-medium text-red-900">Fatura em atraso</p>
-              <p className="text-sm text-red-800">Você possui faturas vencidas. Por favor, regularize o pagamento.</p>
+              <p className="font-medium text-destructive">Fatura em atraso</p>
+              <p className="text-sm text-destructive/80">
+                Você possui faturas vencidas. Por favor, regularize o pagamento para evitar bloqueios.
+              </p>
             </div>
           </div>
         )}
 
-        {/* Invoices List */}
-        <div className="space-y-3">
-          {isLoading ? (
-            <>
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-20 w-full rounded-lg" />
-              ))}
-            </>
-          ) : invoices && invoices.length > 0 ? (
-            invoices.map((invoice) => (
-              <Card key={invoice.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="font-medium text-sm">
-                          {invoice.reference_month}/{invoice.reference_year}
-                        </span>
-                        <Badge variant={statusConfig[invoice.status]?.variant || "default"}>
-                          {statusConfig[invoice.status]?.label || invoice.status}
+        {/* Monthly Chart (Nubank style) */}
+        <MonthlyInvoiceChart
+          data={monthlySummary}
+          selectedMonth={selectedMonth}
+          selectedYear={selectedYear}
+          onSelectMonth={handleSelectMonth}
+          isLoading={summaryLoading}
+        />
+
+        {/* Selected Month Summary Card */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-full bg-primary/10">
+                  <Calendar className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold">
+                    {MONTH_NAMES[selectedMonth - 1]} {selectedYear}
+                  </h3>
+                  {selectedMonthData?.dueDate && (
+                    <p className="text-sm text-muted-foreground">
+                      Vencimento: {format(new Date(selectedMonthData.dueDate), "dd 'de' MMMM", { locale: ptBR })}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="text-right">
+                  <p className="text-sm text-muted-foreground">Valor Total</p>
+                  <p className="text-2xl font-bold">{formatCurrency(selectedMonthData?.totalValue || 0)}</p>
+                </div>
+                {selectedMonthData?.hasInvoice && (
+                  <Badge variant={statusConfig[selectedMonthData.status]?.variant || "default"} className="text-sm px-3 py-1">
+                    {statusConfig[selectedMonthData.status]?.label || selectedMonthData.status}
+                  </Badge>
+                )}
+                {!selectedMonthData?.hasInvoice && selectedMonthData?.totalValue && selectedMonthData.totalValue > 0 && (
+                  <Badge variant="secondary" className="text-sm px-3 py-1">
+                    Aguardando Faturamento
+                  </Badge>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Contracts/Installments Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Detalhes da Fatura
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {installmentsLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-12 w-full" />
+                ))}
+              </div>
+            ) : installments.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>Nenhuma parcela neste período.</p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Inquilino</TableHead>
+                    <TableHead>Imóvel</TableHead>
+                    <TableHead>Parcela</TableHead>
+                    <TableHead className="text-right">Valor</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Ação</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {installments.map((item: any) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-medium">{item.tenant_name}</TableCell>
+                      <TableCell className="max-w-xs truncate text-sm text-muted-foreground">
+                        {item.property_address}
+                      </TableCell>
+                      <TableCell>{item.installment_number}/12</TableCell>
+                      <TableCell className="text-right font-medium">
+                        {formatCurrency(item.value)}
+                      </TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant={statusConfig[item.invoiceStatus]?.variant || "outline"} 
+                          className="text-xs"
+                        >
+                          {item.hasInvoice ? 'Faturada' : 'Aguardando'}
                         </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Vencimento: {format(new Date(invoice.due_date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
-                      </p>
-                    </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleGoToContract(item.contract_id)}
+                          className="gap-1"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                          Ver Contrato
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
 
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <p className="font-semibold text-lg">{formatCurrency(invoice.total_value)}</p>
-                        {invoice.paid_value && (
-                          <p className="text-xs text-muted-foreground">
-                            Pago: {formatCurrency(invoice.paid_value)}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleExportPDF(invoice.id)}
-                          disabled={isExporting}
-                          title="Baixar PDF"
-                        >
-                          <Download className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleExportExcel(invoice.id)}
-                          disabled={isExporting}
-                          title="Baixar Excel"
-                        >
-                          <FileJson className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleViewDetails(invoice.id)}
-                        >
-                          <Eye className="h-4 w-4" />
-                          Ver
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          ) : (
-            <Card>
-              <CardContent className="p-8 text-center text-muted-foreground">
-                <p>Nenhuma fatura encontrada.</p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+        {/* Total Summary Footer */}
+        {installments.length > 0 && (
+          <Card>
+            <CardContent className="py-4">
+              <div className="flex items-center justify-between">
+                <span className="font-medium">Total de Parcelas: {installments.length}</span>
+                <span className="text-xl font-bold">
+                  {formatCurrency(installments.reduce((sum: number, item: any) => sum + (item.value || 0), 0))}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </AgencyLayout>
   );

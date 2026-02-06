@@ -71,7 +71,7 @@ export default function InvoiceDetail() {
         <div className="flex items-center justify-between">
           <Button
             variant="ghost"
-            onClick={() => navigate('/financial/invoices')}
+            onClick={() => navigate('/invoices')}
             className="gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
