@@ -304,8 +304,25 @@ export const useAgencyMonthInstallments = (agencyId: string | undefined, month: 
         .maybeSingle();
 
       if (invoice?.invoice_items) {
+        // Para itens de fatura existente, buscar o analysis_id de cada contrato
+        const contractIds = invoice.invoice_items.map((item: any) => item.contract_id).filter(Boolean);
+        
+        let contractsMap: Record<string, string> = {};
+        if (contractIds.length > 0) {
+          const { data: contracts } = await supabase
+            .from('contracts')
+            .select('id, analysis_id')
+            .in('id', contractIds);
+          
+          contractsMap = (contracts || []).reduce((acc: Record<string, string>, c: any) => {
+            acc[c.id] = c.analysis_id;
+            return acc;
+          }, {});
+        }
+
         return invoice.invoice_items.map((item: any) => ({
           ...item,
+          analysis_id: contractsMap[item.contract_id] || null,
           invoiceStatus: invoice.status,
           hasInvoice: true
         }));
@@ -323,6 +340,7 @@ export const useAgencyMonthInstallments = (agencyId: string | undefined, month: 
           contract_id,
           contracts!inner (
             agency_id,
+            analysis_id,
             analyses!inner (
               inquilino_nome,
               imovel_endereco,
@@ -340,6 +358,7 @@ export const useAgencyMonthInstallments = (agencyId: string | undefined, month: 
       return (installments || []).map((inst: any) => ({
         id: inst.id,
         contract_id: inst.contract_id,
+        analysis_id: inst.contracts?.analysis_id,
         tenant_name: inst.contracts?.analyses?.inquilino_nome || 'N/A',
         property_address: `${inst.contracts?.analyses?.imovel_endereco || ''}, ${inst.contracts?.analyses?.imovel_numero || ''}`,
         installment_number: inst.installment_number,
