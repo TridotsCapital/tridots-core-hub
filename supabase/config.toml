@@ -56,3 +56,9 @@ verify_jwt = false
 
 [functions.send-invoice-notification]
 verify_jwt = false
+
+[functions.check-and-notify-invoices]
+verify_jwt = false
+
+[functions.process-delinquency-blocking]
+verify_jwt = false
