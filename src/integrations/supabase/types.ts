@@ -17,6 +17,9 @@ export type Database = {
       agencies: {
         Row: {
           active: boolean
+          billing_blocked_at: string | null
+          billing_due_day: number | null
+          billing_status: Database["public"]["Enums"]["billing_status"] | null
           cep: string | null
           cidade: string | null
           cnpj: string
@@ -42,6 +45,9 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          billing_blocked_at?: string | null
+          billing_due_day?: number | null
+          billing_status?: Database["public"]["Enums"]["billing_status"] | null
           cep?: string | null
           cidade?: string | null
           cnpj: string
@@ -67,6 +73,9 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          billing_blocked_at?: string | null
+          billing_due_day?: number | null
+          billing_status?: Database["public"]["Enums"]["billing_status"] | null
           cep?: string | null
           cidade?: string | null
           cnpj?: string
@@ -154,6 +163,99 @@ export type Database = {
             columns: ["reviewed_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agency_invoices: {
+        Row: {
+          adjusted_value: number | null
+          agency_id: string
+          boleto_barcode: string | null
+          boleto_url: string | null
+          canceled_at: string | null
+          canceled_by: string | null
+          created_at: string
+          created_by: string | null
+          due_date: string
+          id: string
+          paid_at: string | null
+          paid_by: string | null
+          paid_value: number | null
+          payment_notes: string | null
+          payment_proof_url: string | null
+          reference_month: number
+          reference_year: number
+          replacement_invoice_id: string | null
+          sent_at: string | null
+          sent_by: string | null
+          status: Database["public"]["Enums"]["invoice_status"]
+          total_value: number
+          updated_at: string
+        }
+        Insert: {
+          adjusted_value?: number | null
+          agency_id: string
+          boleto_barcode?: string | null
+          boleto_url?: string | null
+          canceled_at?: string | null
+          canceled_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          due_date: string
+          id?: string
+          paid_at?: string | null
+          paid_by?: string | null
+          paid_value?: number | null
+          payment_notes?: string | null
+          payment_proof_url?: string | null
+          reference_month: number
+          reference_year: number
+          replacement_invoice_id?: string | null
+          sent_at?: string | null
+          sent_by?: string | null
+          status?: Database["public"]["Enums"]["invoice_status"]
+          total_value?: number
+          updated_at?: string
+        }
+        Update: {
+          adjusted_value?: number | null
+          agency_id?: string
+          boleto_barcode?: string | null
+          boleto_url?: string | null
+          canceled_at?: string | null
+          canceled_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          due_date?: string
+          id?: string
+          paid_at?: string | null
+          paid_by?: string | null
+          paid_value?: number | null
+          payment_notes?: string | null
+          payment_proof_url?: string | null
+          reference_month?: number
+          reference_year?: number
+          replacement_invoice_id?: string | null
+          sent_at?: string | null
+          sent_by?: string | null
+          status?: Database["public"]["Enums"]["invoice_status"]
+          total_value?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agency_invoices_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agency_invoices_replacement_invoice_id_fkey"
+            columns: ["replacement_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "agency_invoices"
             referencedColumns: ["id"]
           },
         ]
@@ -1181,6 +1283,7 @@ export type Database = {
           payer_number: string | null
           payer_phone: string | null
           payer_state: string | null
+          payment_method: Database["public"]["Enums"]["payment_method"] | null
           renewal_count: number | null
           status: Database["public"]["Enums"]["contract_status"]
           updated_at: string
@@ -1231,6 +1334,7 @@ export type Database = {
           payer_number?: string | null
           payer_phone?: string | null
           payer_state?: string | null
+          payment_method?: Database["public"]["Enums"]["payment_method"] | null
           renewal_count?: number | null
           status?: Database["public"]["Enums"]["contract_status"]
           updated_at?: string
@@ -1281,6 +1385,7 @@ export type Database = {
           payer_number?: string | null
           payer_phone?: string | null
           payer_state?: string | null
+          payment_method?: Database["public"]["Enums"]["payment_method"] | null
           renewal_count?: number | null
           status?: Database["public"]["Enums"]["contract_status"]
           updated_at?: string
@@ -1420,6 +1525,73 @@ export type Database = {
           template_type?: string
         }
         Relationships: []
+      }
+      guarantee_installments: {
+        Row: {
+          agency_id: string
+          contract_id: string
+          created_at: string
+          due_date: string
+          id: string
+          installment_number: number
+          invoice_item_id: string | null
+          paid_at: string | null
+          reference_month: number
+          reference_year: number
+          status: Database["public"]["Enums"]["installment_status"]
+          value: number
+        }
+        Insert: {
+          agency_id: string
+          contract_id: string
+          created_at?: string
+          due_date: string
+          id?: string
+          installment_number: number
+          invoice_item_id?: string | null
+          paid_at?: string | null
+          reference_month: number
+          reference_year: number
+          status?: Database["public"]["Enums"]["installment_status"]
+          value: number
+        }
+        Update: {
+          agency_id?: string
+          contract_id?: string
+          created_at?: string
+          due_date?: string
+          id?: string
+          installment_number?: number
+          invoice_item_id?: string | null
+          paid_at?: string | null
+          reference_month?: number
+          reference_year?: number
+          status?: Database["public"]["Enums"]["installment_status"]
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guarantee_installments_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guarantee_installments_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guarantee_installments_invoice_item_id_fkey"
+            columns: ["invoice_item_id"]
+            isOneToOne: false
+            referencedRelation: "invoice_items"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       help_chapters: {
         Row: {
@@ -1720,6 +1892,105 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoice_items: {
+        Row: {
+          contract_id: string
+          created_at: string
+          id: string
+          installment_id: string | null
+          installment_number: number
+          invoice_id: string
+          property_address: string
+          tenant_name: string
+          value: number
+        }
+        Insert: {
+          contract_id: string
+          created_at?: string
+          id?: string
+          installment_id?: string | null
+          installment_number: number
+          invoice_id: string
+          property_address: string
+          tenant_name: string
+          value: number
+        }
+        Update: {
+          contract_id?: string
+          created_at?: string
+          id?: string
+          installment_id?: string | null
+          installment_number?: number
+          invoice_id?: string
+          property_address?: string
+          tenant_name?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_items_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_items_installment_id_fkey"
+            columns: ["installment_id"]
+            isOneToOne: false
+            referencedRelation: "guarantee_installments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "agency_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoice_timeline: {
+        Row: {
+          attachment_url: string | null
+          created_at: string
+          description: string
+          event_type: Database["public"]["Enums"]["invoice_event_type"]
+          id: string
+          invoice_id: string
+          metadata: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          attachment_url?: string | null
+          created_at?: string
+          description: string
+          event_type: Database["public"]["Enums"]["invoice_event_type"]
+          id?: string
+          invoice_id: string
+          metadata?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          attachment_url?: string | null
+          created_at?: string
+          description?: string
+          event_type?: Database["public"]["Enums"]["invoice_event_type"]
+          id?: string
+          invoice_id?: string
+          metadata?: Json | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_timeline_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "agency_invoices"
             referencedColumns: ["id"]
           },
         ]
@@ -2382,6 +2653,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_first_installment_date: {
+        Args: { activation_date: string; billing_due_day: number }
+        Returns: string
+      }
+      calculate_next_business_day: {
+        Args: { target_date: string }
+        Returns: string
+      }
       cleanup_stale_typing_indicators: { Args: never; Returns: undefined }
       create_contract_from_analysis: {
         Args: { _analysis_id: string }
@@ -2471,6 +2750,7 @@ export type Database = {
         | "aguardando_pagamento"
         | "ativo"
       app_role: "master" | "analyst" | "agency_user"
+      billing_status: "em_dia" | "atrasada" | "bloqueada"
       claim_file_type:
         | "boleto"
         | "contrato"
@@ -2518,11 +2798,27 @@ export type Database = {
         | "cancelado"
         | "encerrado"
         | "vencido"
+      installment_status: "pendente" | "faturada" | "paga" | "cancelada"
+      invoice_event_type:
+        | "created"
+        | "edited"
+        | "sent"
+        | "payment_registered"
+        | "canceled"
+        | "note_added"
+      invoice_status:
+        | "rascunho"
+        | "gerada"
+        | "enviada"
+        | "atrasada"
+        | "paga"
+        | "cancelada"
       notification_type:
         | "new_message"
         | "status_change"
         | "ticket_escalated"
         | "ticket_assigned"
+      payment_method: "pix" | "card" | "boleto_imobiliaria"
       ticket_category:
         | "financeiro"
         | "tecnico"
@@ -2681,6 +2977,7 @@ export const Constants = {
         "ativo",
       ],
       app_role: ["master", "analyst", "agency_user"],
+      billing_status: ["em_dia", "atrasada", "bloqueada"],
       claim_file_type: [
         "boleto",
         "contrato",
@@ -2734,12 +3031,30 @@ export const Constants = {
         "encerrado",
         "vencido",
       ],
+      installment_status: ["pendente", "faturada", "paga", "cancelada"],
+      invoice_event_type: [
+        "created",
+        "edited",
+        "sent",
+        "payment_registered",
+        "canceled",
+        "note_added",
+      ],
+      invoice_status: [
+        "rascunho",
+        "gerada",
+        "enviada",
+        "atrasada",
+        "paga",
+        "cancelada",
+      ],
       notification_type: [
         "new_message",
         "status_change",
         "ticket_escalated",
         "ticket_assigned",
       ],
+      payment_method: ["pix", "card", "boleto_imobiliaria"],
       ticket_category: [
         "financeiro",
         "tecnico",
