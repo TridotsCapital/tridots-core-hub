@@ -133,7 +133,8 @@ export function ApprovalModal({ analysis, open, onOpenChange, onConfirm, mode = 
   // formaPagamento is already defined above
 
   // Helper to format payment method display
-  const getPaymentMethodDisplay = (method: string, valorAnual: number) => {
+  const getPaymentMethodDisplay = (method: string | null | undefined, valorAnual: number) => {
+    if (!method) return 'Boleto Unificado';
     if (method === 'pix') {
       // Get discount from agency (via JOIN in analysis data)
       const desconto = (analysis as any)?.agency?.desconto_pix_percentual ?? 0;
