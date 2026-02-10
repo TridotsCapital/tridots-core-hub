@@ -174,9 +174,9 @@ export default function TenantAcceptance() {
 
   if (isBoletoUnificado) {
     if (isSetupExempt) {
-      // Boleto + Setup Isento = 2 steps (Termos, Confirmação)
-      totalSteps = 2;
-      stepNames = ['Termos e Condições', 'Confirmação'];
+      // Boleto + Setup Isento = 1 step only (Termos), auto-ativação no backend
+      totalSteps = 1;
+      stepNames = ['Termos e Condições'];
     } else {
       // Boleto + Setup NÃO Isento = 3 steps (Termos, Confirmação, Pagamento Setup)
       totalSteps = 3;
@@ -364,6 +364,13 @@ export default function TenantAcceptance() {
       });
 
       if (error) throw error;
+
+      // If boleto_imobiliaria + setup exempt, go directly to success (auto-activation happens in backend)
+      if (isBoletoUnificado && isSetupExempt) {
+        toast.success('Aceite concluído com sucesso!');
+        navigate(`/aceite/${token}/sucesso`);
+        return;
+      }
 
       setCurrentStep(2);
       toast.success('Documento enviado com sucesso!');
