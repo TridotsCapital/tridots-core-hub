@@ -1,48 +1,103 @@
 
-# Limpeza Completa da Imobiliaria Demo
+# Ajustes no Boleto Unificado: Cards, Aceite e Ativação Automática
 
 ## Resumo
 
-Apagar todos os dados operacionais da **Imobiliaria Demo** (ID: `4f2ab3ed-6d0f-4a78-a34d-45abe25b22c0`) para deixa-la limpa para testes manuais. A agencia em si (cadastro, usuarios) sera mantida.
+Corrigir 3 problemas relacionados ao cenário **Boleto Unificado + Setup Isento**:
+1. Cards do Kanban exibem "(1x)" ao invés de mostrar as parcelas
+2. Link de aceite exibe steps desnecessários (dados do pagador)
+3. Após aceite, a análise fica travada sem ativação
 
-## Dados a Remover
+---
 
-| Tabela | Registros |
-|--------|-----------|
-| Tickets (+ mensagens, notificacoes, historico) | 20 |
-| Claims (+ arquivos, notas, timeline) | 9 |
-| Faturas unificadas (+ itens, timeline) | 1 |
-| Parcelas de garantia | 144 |
-| Contratos (+ renovacoes, documentos) | 25 |
-| Comissoes | 106 |
-| Analises (+ documentos, timeline) | 48 |
+## 1. Cards do Kanban -- exibir parcelas do Boleto Unificado
 
-## Ordem de Execucao (respeitando FKs)
+**Problema**: A função `getPaymentMethodText()` nos cards não reconhece `boleto_imobiliaria`, caindo no fallback "(1x)".
 
-A exclusao deve seguir a ordem correta de dependencias:
+**Solução**: Adicionar tratamento para `boleto_imobiliaria` em ambos os cards:
 
-```text
-1. ticket_messages, ticket_notifications, ticket_analyst_history, ticket_typing_indicators
-2. tickets
-3. claim_files, claim_notes, claim_timeline
-4. claims
-5. invoice_timeline, invoice_items
-6. agency_invoices
-7. guarantee_installments
-8. renewal_notifications, contract_renewals
-9. internal_notes (referenciando contratos/analises)
-10. commissions
-11. analysis_documents, analysis_timeline
-12. contracts
-13. analyses
+- **`src/components/kanban/KanbanCard.tsx`** (portal Tridots)
+- **`src/components/agency/AgencyKanbanCard.tsx`** (portal Agência)
+
+Na função `getPaymentMethodText()`, antes do fallback `return '(1x)'`, inserir:
+
+```
+if (analysis.forma_pagamento_preferida === 'boleto_imobiliaria') {
+  const parcelaMensal = garantiaAnualFinal / 12;
+  return `Boleto Unificado (12x de ${formatCurrency(parcelaMensal)})`;
+}
 ```
 
-## Implementacao
+---
 
-Uma unica migration SQL usando o agency_id `4f2ab3ed-6d0f-4a78-a34d-45abe25b22c0` como filtro, executando DELETEs na ordem acima.
+## 2. Link de Aceite -- remover Step 2 para Boleto Unificado + Setup Isento
 
-## Resultado Esperado
+**Problema**: Quando Boleto Unificado + Setup Isento, o inquilino vê 2 steps (Termos + Confirmação). Como não há cobrança, o step de dados do pagador é desnecessário.
 
-- Imobiliaria Demo com zero analises, contratos, chamados, sinistros, faturas e parcelas
-- Cadastro da agencia e usuarios preservados
-- Pronta para testes manuais do zero
+**Solução** em `src/pages/TenantAcceptance.tsx`:
+
+- Reduzir para **1 step** quando `isBoletoUnificado && isSetupExempt`:
+  ```
+  totalSteps = 1;
+  stepNames = ['Termos e Condições'];
+  ```
+
+- Alterar `handleStep1Submit` para, neste cenário, chamar o `submit-acceptance` com step `terms` e, logo após o sucesso, chamar novamente com step `acceptance_complete`, redirecionando direto para a tela de sucesso (`/aceite/{token}/sucesso`).
+
+---
+
+## 3. Ativação automática no backend -- criar contrato sem validação manual
+
+**Problema**: No `submit-acceptance`, quando Boleto + Setup Isento, o `markAcceptanceComplete()` marca o token como usado e cria notificação de "aguardando validação", mas a análise fica travada em `aguardando_pagamento` pois a Tridots não consegue dar sequência.
+
+**Solução** em `supabase/functions/submit-acceptance/index.ts`:
+
+- Criar uma nova função `autoActivateAnalysis()` que executa a mesma lógica do `validate-payments` (action=validate), mas de forma automática:
+  1. Atualiza status da análise para `aprovada`
+  2. Define `payments_validated_at` (timestamp atual)
+  3. Chama `create_contract_from_analysis` (RPC)
+  4. Atualiza `payment_method` do contrato para `boleto_imobiliaria`
+  5. Chama `generate-installments` para criar as 12 parcelas
+  6. Registra evento na timeline: "Contrato ativado automaticamente (Boleto Unificado, Setup Isento)"
+  7. Notifica os usuários da agência sobre a ativação
+
+- No case `terms`, adicionar condição: se `isBoletoUnificado && isSetupExempt`, após salvar termos e foto, chamar `markAcceptanceComplete()` e `autoActivateAnalysis()`.
+
+- Ajustar `markAcceptanceComplete()` para usar uma descrição diferente neste cenário: "Aceite concluído - Contrato ativado automaticamente" ao invés de "Aguardando validação".
+
+---
+
+## Detalhes Técnicos
+
+### Arquivos alterados
+
+| Arquivo | Alteração |
+|---------|-----------|
+| `src/components/kanban/KanbanCard.tsx` | Adicionar caso `boleto_imobiliaria` em `getPaymentMethodText()` |
+| `src/components/agency/AgencyKanbanCard.tsx` | Mesmo ajuste acima |
+| `src/pages/TenantAcceptance.tsx` | Reduzir steps para 1 no cenário BU+Isento; redirecionar para sucesso após Step 1 |
+| `supabase/functions/submit-acceptance/index.ts` | Ativação automática no step `terms` quando BU+Isento |
+
+### Fluxo atualizado (Boleto Unificado + Setup Isento)
+
+```text
+Inquilino abre link
+       |
+       v
+  Step 1: Termos + Foto
+       |
+       v
+  submit-acceptance (step=terms)
+       |
+       +-- Salva termos e foto
+       +-- markAcceptanceComplete() -- marca token como usado
+       +-- autoActivateAnalysis()
+       |     +-- status -> "aprovada"
+       |     +-- create_contract_from_analysis
+       |     +-- payment_method -> "boleto_imobiliaria"
+       |     +-- generate-installments (12 parcelas)
+       |     +-- Notifica agência
+       |
+       v
+  Tela de Sucesso
+```
