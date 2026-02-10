@@ -76,6 +76,11 @@ export function AgencyKanbanCard({ analysis, onClick, hasUnread = false }: Agenc
       return '(Pix)';
     }
     
+    if (analysis.forma_pagamento_preferida === 'boleto_imobiliaria') {
+      const parcelaMensal = garantiaAnualFinal / 12;
+      return `Boleto Unificado (12x de ${formatCurrency(parcelaMensal)})`;
+    }
+
     const match = analysis.forma_pagamento_preferida?.match(/card_(\d+)x/);
     if (match) {
       const parcelas = parseInt(match[1], 10);
