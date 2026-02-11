@@ -335,27 +335,53 @@ export default function FinancialInvoices() {
                     <div className="flex items-center gap-4">
                       <p className="text-xl font-bold">{formatCurrency(agency.totalValue)}</p>
                       
-                      {agency.invoiceId ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => navigate(`/invoices/${agency.invoiceId}`)}
-                          className="gap-2"
-                        >
-                          Ver Detalhes
-                          <ArrowRight className="h-4 w-4" />
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="default"
-                          size="sm"
-                          onClick={() => handleGenerateForAgency(agency.agencyId)}
-                          className="gap-2"
-                        >
-                          <FileText className="h-4 w-4" />
-                          Gerar Fatura
-                        </Button>
-                      )}
+                      <Button
+                        variant={agency.invoiceId ? "outline" : "default"}
+                        size="sm"
+                        onClick={async () => {
+                          if (agency.invoiceId) {
+                            navigate(`/invoices/${agency.invoiceId}`);
+                          } else {
+                            try {
+                              const { data, error } = await supabase.functions.invoke('generate-invoice-drafts', {
+                                body: {
+                                  reference_month: selectedMonth,
+                                  reference_year: selectedYear,
+                                  agency_id: agency.agencyId
+                                }
+                              });
+                              if (error) throw error;
+                              
+                              // Refresh data then navigate to the newly created invoice
+                              await queryClient.invalidateQueries({ queryKey: ['monthly_invoice_summary'] });
+                              await queryClient.invalidateQueries({ queryKey: ['agencies_invoice_month'] });
+                              
+                              // Fetch the created invoice to navigate
+                              const { data: invoice } = await supabase
+                                .from('agency_invoices')
+                                .select('id')
+                                .eq('agency_id', agency.agencyId)
+                                .eq('reference_month', selectedMonth)
+                                .eq('reference_year', selectedYear)
+                                .order('created_at', { ascending: false })
+                                .limit(1)
+                                .maybeSingle();
+                              
+                              if (invoice) {
+                                navigate(`/invoices/${invoice.id}`);
+                              } else {
+                                toast({ title: 'Fatura gerada', description: 'Rascunho de fatura criado com sucesso' });
+                              }
+                            } catch (error: any) {
+                              toast({ title: 'Erro ao gerar fatura', description: error.message, variant: 'destructive' });
+                            }
+                          }
+                        }}
+                        className="gap-2"
+                      >
+                        Ver Detalhes
+                        <ArrowRight className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
                 ))}

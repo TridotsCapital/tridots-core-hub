@@ -20,7 +20,7 @@ export function useAnalysesKanban(filters?: KanbanFilters) {
         .from('analyses')
         .select(`
           *,
-          agency:agencies(id, razao_social, nome_fantasia, desconto_pix_percentual),
+          agency:agencies(id, razao_social, nome_fantasia, desconto_pix_percentual, billing_due_day),
           analyst:profiles(id, full_name)
         `)
         .order('created_at', { ascending: true }); // Oldest first for urgency
