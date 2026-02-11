@@ -241,8 +241,13 @@ export default function TenantAcceptance() {
           // Already completed - redirect to success
           navigate(`/aceite/${token}/sucesso`);
         } else if (data.analysis.setup_payment_confirmed_at && !data.analysis.setup_fee_exempt && (data.analysis.setup_fee || 0) > 0) {
-          // Setup paid, go to guarantee (step 4)
-          setCurrentStep(4);
+          if (data.analysis.forma_pagamento_preferida === 'boleto_imobiliaria') {
+            // Boleto Unificado: setup pago = fluxo concluído, redirecionar para sucesso
+            navigate(`/aceite/${token}/sucesso`);
+          } else {
+            // Setup paid, go to guarantee (step 4)
+            setCurrentStep(4);
+          }
         } else if (data.analysis.payer_name) {
           // Payer confirmed, go to setup (step 3) or guarantee if exempt
           setCurrentStep((data.analysis.setup_fee_exempt || (data.analysis.setup_fee || 0) <= 0) ? 3 : 3);
@@ -711,6 +716,10 @@ export default function TenantAcceptance() {
                           // Para PIX, o garantia_anual já vem com desconto do banco
                           const valorSemDesconto = valorAnual / (1 - descontoPix / 100);
                           return `PIX (${Math.round(descontoPix)}% off): ${formatCurrency(valorAnual)} (de ${formatCurrency(valorSemDesconto)})`;
+                        }
+                        
+                        if (method === 'boleto_imobiliaria') {
+                          return 'Pago juntamente com aluguel';
                         }
                         
                         const match = method.match(/card_(\d+)x/);
