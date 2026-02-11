@@ -6,29 +6,10 @@ import { MonthlyInvoiceChart } from '@/components/invoices/MonthlyInvoiceChart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { AlertCircle, Lock, FileText, Loader2, Building2, ArrowRight } from 'lucide-react';
+import { AlertCircle, Lock, Building2, ArrowRight } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
-import { useQueryClient } from '@tanstack/react-query';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const statusColors: Record<string, string> = {
@@ -51,34 +32,20 @@ const statusLabels: Record<string, string> = {
   futura: 'Aguardando Faturamento',
 };
 
-const months = [
-  { value: '1', label: 'Janeiro' },
-  { value: '2', label: 'Fevereiro' },
-  { value: '3', label: 'Março' },
-  { value: '4', label: 'Abril' },
-  { value: '5', label: 'Maio' },
-  { value: '6', label: 'Junho' },
-  { value: '7', label: 'Julho' },
-  { value: '8', label: 'Agosto' },
-  { value: '9', label: 'Setembro' },
-  { value: '10', label: 'Outubro' },
-  { value: '11', label: 'Novembro' },
-  { value: '12', label: 'Dezembro' },
-];
+const dueDayOptions = [
+  { value: null, label: 'Todos' },
+  { value: 5, label: 'Dia 5' },
+  { value: 10, label: 'Dia 10' },
+  { value: 15, label: 'Dia 15' },
+] as const;
 
 export default function FinancialInvoices() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   
   const currentDate = new Date();
   const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
-  
-  // Dialog state for generating drafts
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [draftMonth, setDraftMonth] = useState(String(currentDate.getMonth() + 1));
-  const [draftYear, setDraftYear] = useState(String(currentDate.getFullYear()));
+  const [dueDayFilter, setDueDayFilter] = useState<number | null>(null);
 
   // Hooks
   const { data: monthlySummary = [], isLoading: summaryLoading } = useMonthlyInvoiceSummary();
@@ -98,71 +65,14 @@ export default function FinancialInvoices() {
     setSelectedYear(year);
   };
 
-  const handleGenerateDrafts = async () => {
-    setIsGenerating(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('generate-invoice-drafts', {
-        body: {
-          reference_month: parseInt(draftMonth),
-          reference_year: parseInt(draftYear)
-        }
-      });
-
-      if (error) throw error;
-
-      const result = data as { invoices_created?: number; agencies_processed?: number };
-      
-      toast({
-        title: 'Rascunhos gerados com sucesso',
-        description: `${result.invoices_created || 0} fatura(s) gerada(s) para ${result.agencies_processed || 0} agência(s)`
-      });
-      
-      setIsDialogOpen(false);
-      queryClient.invalidateQueries({ queryKey: ['monthly_invoice_summary'] });
-      queryClient.invalidateQueries({ queryKey: ['agencies_invoice_month'] });
-    } catch (error: any) {
-      console.error('Error generating drafts:', error);
-      toast({
-        title: 'Erro ao gerar rascunhos',
-        description: error.message || 'Ocorreu um erro ao processar a solicitação',
-        variant: 'destructive'
-      });
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const handleGenerateForAgency = async (agencyId: string) => {
-    try {
-      const { data, error } = await supabase.functions.invoke('generate-invoice-drafts', {
-        body: {
-          reference_month: selectedMonth,
-          reference_year: selectedYear,
-          agency_id: agencyId
-        }
-      });
-
-      if (error) throw error;
-      
-      toast({
-        title: 'Fatura gerada',
-        description: 'Rascunho de fatura criado com sucesso'
-      });
-      
-      queryClient.invalidateQueries({ queryKey: ['monthly_invoice_summary'] });
-      queryClient.invalidateQueries({ queryKey: ['agencies_invoice_month'] });
-    } catch (error: any) {
-      toast({
-        title: 'Erro ao gerar fatura',
-        description: error.message,
-        variant: 'destructive'
-      });
-    }
-  };
-
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
   };
+
+  // Filtrar agências pelo dia de vencimento
+  const filteredAgencies = dueDayFilter
+    ? agencies.filter((a) => a.billingDueDay === dueDayFilter)
+    : agencies;
 
   return (
     <DashboardLayout
@@ -222,7 +132,7 @@ export default function FinancialInvoices() {
           </Card>
         </div>
 
-        {/* QUADRANTE 1: Resumo do mês + Gráfico de barras */}
+        {/* Gráfico mensal */}
         <MonthlyInvoiceChart
           data={monthlySummary}
           selectedMonth={selectedMonth}
@@ -233,67 +143,7 @@ export default function FinancialInvoices() {
           showStatus={false}
         />
 
-        {/* Action: Generate Drafts */}
-        <div className="flex justify-end">
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <FileText className="h-4 w-4" />
-                Gerar Rascunhos
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Gerar Rascunhos de Faturas</DialogTitle>
-                <DialogDescription>
-                  Gere faturas em rascunho para todas as agências com parcelas pendentes no período selecionado.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Mês de Referência</label>
-                  <Select value={draftMonth} onValueChange={setDraftMonth}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {months.map((month) => (
-                        <SelectItem key={month.value} value={month.value}>
-                          {month.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Ano de Referência</label>
-                  <Select value={draftYear} onValueChange={setDraftYear}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="2024">2024</SelectItem>
-                      <SelectItem value="2025">2025</SelectItem>
-                      <SelectItem value="2026">2026</SelectItem>
-                      <SelectItem value="2027">2027</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button onClick={handleGenerateDrafts} disabled={isGenerating}>
-                  {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {isGenerating ? 'Gerando...' : 'Gerar Rascunhos'}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
-
-        {/* QUADRANTE 2: Lista de Imobiliárias com faturas */}
+        {/* Lista de Imobiliárias com faturas */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-lg">
@@ -302,19 +152,34 @@ export default function FinancialInvoices() {
             </CardTitle>
           </CardHeader>
           <CardContent>
+            {/* Filtro por dia de vencimento */}
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-sm font-medium text-muted-foreground mr-1">Vencimento:</span>
+              {dueDayOptions.map((opt) => (
+                <Button
+                  key={opt.label}
+                  variant={dueDayFilter === opt.value ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setDueDayFilter(opt.value)}
+                >
+                  {opt.label}
+                </Button>
+              ))}
+            </div>
+
             {agenciesLoading ? (
               <div className="space-y-3">
                 {[1, 2, 3].map((i) => (
                   <Skeleton key={i} className="h-20 w-full rounded-lg" />
                 ))}
               </div>
-            ) : agencies.length === 0 ? (
+            ) : filteredAgencies.length === 0 ? (
               <div className="py-8 text-center text-muted-foreground">
-                <p>Nenhuma imobiliária com fatura ou parcelas neste período.</p>
+                <p>Nenhuma imobiliária com fatura neste período{dueDayFilter ? ` para vencimento dia ${dueDayFilter}` : ''}.</p>
               </div>
             ) : (
               <div className="space-y-3">
-                {agencies.map((agency) => (
+                {filteredAgencies.map((agency) => (
                   <div 
                     key={agency.agencyId} 
                     className="flex items-center justify-between gap-4 p-4 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors"
@@ -329,59 +194,24 @@ export default function FinancialInvoices() {
                       <p className="text-sm text-muted-foreground">
                         CNPJ: {agency.cnpj}
                         {agency.dueDate && ` • Vencimento: ${format(new Date(agency.dueDate), 'dd/MM/yyyy')}`}
+                        {agency.billingDueDay && ` • Dia ${agency.billingDueDay}`}
                       </p>
                     </div>
                     
                     <div className="flex items-center gap-4">
                       <p className="text-xl font-bold">{formatCurrency(agency.totalValue)}</p>
                       
-                      <Button
-                        variant={agency.invoiceId ? "outline" : "default"}
-                        size="sm"
-                        onClick={async () => {
-                          if (agency.invoiceId) {
-                            navigate(`/invoices/${agency.invoiceId}`);
-                          } else {
-                            try {
-                              const { data, error } = await supabase.functions.invoke('generate-invoice-drafts', {
-                                body: {
-                                  reference_month: selectedMonth,
-                                  reference_year: selectedYear,
-                                  agency_id: agency.agencyId
-                                }
-                              });
-                              if (error) throw error;
-                              
-                              // Refresh data then navigate to the newly created invoice
-                              await queryClient.invalidateQueries({ queryKey: ['monthly_invoice_summary'] });
-                              await queryClient.invalidateQueries({ queryKey: ['agencies_invoice_month'] });
-                              
-                              // Fetch the created invoice to navigate
-                              const { data: invoice } = await supabase
-                                .from('agency_invoices')
-                                .select('id')
-                                .eq('agency_id', agency.agencyId)
-                                .eq('reference_month', selectedMonth)
-                                .eq('reference_year', selectedYear)
-                                .order('created_at', { ascending: false })
-                                .limit(1)
-                                .maybeSingle();
-                              
-                              if (invoice) {
-                                navigate(`/invoices/${invoice.id}`);
-                              } else {
-                                toast({ title: 'Fatura gerada', description: 'Rascunho de fatura criado com sucesso' });
-                              }
-                            } catch (error: any) {
-                              toast({ title: 'Erro ao gerar fatura', description: error.message, variant: 'destructive' });
-                            }
-                          }
-                        }}
-                        className="gap-2"
-                      >
-                        Ver Detalhes
-                        <ArrowRight className="h-4 w-4" />
-                      </Button>
+                      {agency.invoiceId && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigate(`/invoices/${agency.invoiceId}`)}
+                          className="gap-2"
+                        >
+                          Ver Detalhes
+                          <ArrowRight className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))}

@@ -176,6 +176,7 @@ export const useRegisterInvoicePayment = () => {
       const { invoiceId, paidValue, paymentProofUrl, paymentNotes } = params;
       const paidAt = new Date().toISOString();
 
+      // 1. Marcar fatura como paga
       const { data, error } = await supabase
         .from('agency_invoices')
         .update({
@@ -187,12 +188,12 @@ export const useRegisterInvoicePayment = () => {
           updated_at: paidAt
         })
         .eq('id', invoiceId)
-        .select()
+        .select('*, reference_month, reference_year')
         .single();
 
       if (error) throw error;
 
-      // Registrar evento na timeline
+      // 2. Registrar evento na timeline
       await supabase
         .from('invoice_timeline')
         .insert({
@@ -201,10 +202,10 @@ export const useRegisterInvoicePayment = () => {
           description: `Pagamento de R$ ${paidValue.toFixed(2)} registrado`
         });
 
-      // BAIXA AUTOMÁTICA DAS PARCELAS: Buscar invoice_items e atualizar parcelas vinculadas
+      // 3. BAIXA AUTOMÁTICA DAS PARCELAS
       const { data: items } = await supabase
         .from('invoice_items')
-        .select('installment_id')
+        .select('installment_id, contract_id')
         .eq('invoice_id', invoiceId);
 
       if (items && items.length > 0) {
@@ -221,6 +222,33 @@ export const useRegisterInvoicePayment = () => {
             })
             .in('id', installmentIds);
         }
+
+        // 4. ATUALIZAR COMISSÕES: marcar de 'pendente' para 'a_pagar'
+        const contractIds = [...new Set(items.map(item => item.contract_id).filter(Boolean))];
+        
+        if (contractIds.length > 0 && data) {
+          // Buscar analysis_id dos contratos para vincular às comissões
+          const { data: contracts } = await supabase
+            .from('contracts')
+            .select('analysis_id')
+            .in('id', contractIds);
+
+          const analysisIds = (contracts || [])
+            .map(c => c.analysis_id)
+            .filter(Boolean);
+
+          if (analysisIds.length > 0) {
+            // Atualizar comissões recorrentes pendentes do mês de referência da fatura
+            await supabase
+              .from('commissions')
+              .update({ status: 'a_pagar' })
+              .in('analysis_id', analysisIds)
+              .eq('type', 'recorrente')
+              .eq('status', 'pendente')
+              .eq('mes_referencia', data.reference_month)
+              .eq('ano_referencia', data.reference_year);
+          }
+        }
       }
 
       return data;
@@ -229,6 +257,7 @@ export const useRegisterInvoicePayment = () => {
       queryClient.invalidateQueries({ queryKey: ['agency_invoices'] });
       queryClient.invalidateQueries({ queryKey: ['invoice_detail'] });
       queryClient.invalidateQueries({ queryKey: ['contract_installments'] });
+      queryClient.invalidateQueries({ queryKey: ['commissions'] });
     }
   });
 };
@@ -243,7 +272,6 @@ export const useCancelInvoice = () => {
     }) => {
       const { invoiceId, reason } = params;
 
-      // Criar nova fatura com os mesmos dados
       const { data: originalInvoice } = await supabase
         .from('agency_invoices')
         .select('*')
@@ -290,7 +318,7 @@ export const useCancelInvoice = () => {
           description: `Fatura cancelada. ${reason || 'Sem motivo especificado'}. Nova fatura gerada: ${newInvoice.id}`
         });
 
-      // REVERSÃO COMPLETA: Atualizar status das parcelas de volta para 'pendente' e limpar paid_at
+      // REVERSÃO COMPLETA: Atualizar status das parcelas de volta para 'pendente'
       const { data: items } = await supabase
         .from('invoice_items')
         .select('installment_id')
@@ -351,7 +379,6 @@ export const useSendInvoice = () => {
 
       if (error) throw error;
 
-      // Registrar evento
       await supabase
         .from('invoice_timeline')
         .insert({
