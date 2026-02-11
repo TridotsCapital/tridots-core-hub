@@ -45,7 +45,13 @@ serve(async (req) => {
         activated_at,
         payment_method,
         analysis:analyses!contracts_analysis_id_fkey (
-          garantia_anual
+          id,
+          garantia_anual,
+          inquilino_nome,
+          imovel_endereco,
+          imovel_numero,
+          imovel_bairro,
+          imovel_cidade
         )
       `)
       .eq("id", contract_id)
@@ -104,58 +110,46 @@ serve(async (req) => {
     const billingDueDay = agency.billing_due_day;
     const activationDay = activationDate.getDate();
 
-    let firstDueDate: Date;
+    let firstMonth: number;
+    let firstYear: number;
+    
     if (activationDay < billingDueDay) {
       // Primeira parcela no mesmo mês
-      firstDueDate = new Date(
-        activationDate.getFullYear(),
-        activationDate.getMonth(),
-        billingDueDay
-      );
+      firstMonth = activationDate.getMonth();
+      firstYear = activationDate.getFullYear();
     } else {
       // Primeira parcela no próximo mês
-      firstDueDate = new Date(
-        activationDate.getFullYear(),
-        activationDate.getMonth() + 1,
-        billingDueDay
-      );
+      firstMonth = activationDate.getMonth() + 1;
+      firstYear = activationDate.getFullYear();
+      if (firstMonth > 11) {
+        firstMonth = 0;
+        firstYear++;
+      }
     }
 
-    // Ajustar para próximo dia útil se cair em fim de semana
-    const adjustToBusinessDay = (date: Date): Date => {
-      const dayOfWeek = date.getDay();
-      if (dayOfWeek === 6) { // Sábado
-        date.setDate(date.getDate() + 2);
-      } else if (dayOfWeek === 0) { // Domingo
-        date.setDate(date.getDate() + 1);
-      }
-      return date;
-    };
-
-    firstDueDate = adjustToBusinessDay(firstDueDate);
-
-    // 7. Gerar as 12 parcelas
+    // 7. Gerar as 12 parcelas (SEM ajuste de dia útil conforme regra de negócio)
     const installments: InstallmentData[] = [];
     
     for (let i = 0; i < 12; i++) {
-      const dueDate = new Date(firstDueDate);
-      dueDate.setMonth(dueDate.getMonth() + i);
-      
-      // Recalcular dia útil para cada mês
-      const adjustedDueDate = adjustToBusinessDay(new Date(
-        dueDate.getFullYear(),
-        dueDate.getMonth(),
-        billingDueDay
-      ));
+      let m = firstMonth + i;
+      let y = firstYear;
+      while (m > 11) {
+        m -= 12;
+        y++;
+      }
+
+      const dueDate = new Date(y, m, billingDueDay);
+      const refMonth = m + 1; // 1-12
+      const refYear = y;
 
       installments.push({
         contract_id: contract.id,
         agency_id: contract.agency_id,
         installment_number: i + 1,
-        reference_month: adjustedDueDate.getMonth() + 1, // 1-12
-        reference_year: adjustedDueDate.getFullYear(),
+        reference_month: refMonth,
+        reference_year: refYear,
         value: valorParcela,
-        due_date: adjustedDueDate.toISOString().split('T')[0],
+        due_date: dueDate.toISOString().split('T')[0],
         status: 'pendente'
       });
     }
@@ -176,11 +170,129 @@ serve(async (req) => {
 
     console.log(`Created ${createdInstallments?.length} installments for contract ${contract_id}`);
 
+    // 9. CRIAR FATURAS AUTOMATICAMENTE para cada parcela
+    const analysis = contract.analysis;
+    const tenantName = analysis?.inquilino_nome || "N/A";
+    const propertyAddress = [
+      analysis?.imovel_endereco,
+      analysis?.imovel_numero,
+      analysis?.imovel_bairro,
+      analysis?.imovel_cidade
+    ].filter(Boolean).join(", ") || "N/A";
+
+    const invoicesCreated: string[] = [];
+    const invoicesUpdated: string[] = [];
+
+    for (const installment of createdInstallments || []) {
+      try {
+        // Verificar se já existe fatura para este mês/ano/agência
+        const { data: existingInvoice } = await supabase
+          .from("agency_invoices")
+          .select("id, total_value")
+          .eq("agency_id", contract.agency_id)
+          .eq("reference_month", installment.reference_month)
+          .eq("reference_year", installment.reference_year)
+          .neq("status", "cancelada")
+          .maybeSingle();
+
+        let invoiceId: string;
+
+        if (existingInvoice) {
+          // Fatura já existe: atualizar total_value
+          invoiceId = existingInvoice.id;
+          const newTotal = (existingInvoice.total_value || 0) + installment.value;
+
+          await supabase
+            .from("agency_invoices")
+            .update({ 
+              total_value: newTotal,
+              updated_at: new Date().toISOString()
+            })
+            .eq("id", invoiceId);
+
+          invoicesUpdated.push(invoiceId);
+        } else {
+          // Criar nova fatura
+          const dueDate = new Date(
+            installment.reference_year,
+            installment.reference_month - 1,
+            billingDueDay
+          );
+
+          const { data: newInvoice, error: invoiceError } = await supabase
+            .from("agency_invoices")
+            .insert({
+              agency_id: contract.agency_id,
+              reference_month: installment.reference_month,
+              reference_year: installment.reference_year,
+              status: "rascunho",
+              total_value: installment.value,
+              due_date: dueDate.toISOString().split('T')[0]
+            })
+            .select()
+            .single();
+
+          if (invoiceError) {
+            console.error(`Error creating invoice for ${installment.reference_month}/${installment.reference_year}:`, invoiceError);
+            continue;
+          }
+
+          invoiceId = newInvoice.id;
+          invoicesCreated.push(invoiceId);
+
+          // Registrar evento na timeline
+          await supabase
+            .from("invoice_timeline")
+            .insert({
+              invoice_id: invoiceId,
+              event_type: "created",
+              description: `Fatura ${String(installment.reference_month).padStart(2, '0')}/${installment.reference_year} criada automaticamente na ativação do contrato`
+            });
+        }
+
+        // Criar invoice_item vinculando parcela à fatura
+        const { data: invoiceItem, error: itemError } = await supabase
+          .from("invoice_items")
+          .insert({
+            invoice_id: invoiceId,
+            installment_id: installment.id,
+            contract_id: contract.id,
+            tenant_name: tenantName,
+            property_address: propertyAddress,
+            installment_number: installment.installment_number,
+            value: installment.value
+          })
+          .select()
+          .single();
+
+        if (itemError) {
+          console.error(`Error creating invoice item for installment ${installment.id}:`, itemError);
+          continue;
+        }
+
+        // Atualizar parcela para "faturada" com vínculo ao invoice_item
+        await supabase
+          .from("guarantee_installments")
+          .update({
+            status: "faturada",
+            invoice_item_id: invoiceItem.id
+          })
+          .eq("id", installment.id);
+
+      } catch (invoiceErr) {
+        console.error(`Error processing invoice for installment ${installment.id}:`, invoiceErr);
+      }
+    }
+
+    console.log(`Invoices created: ${invoicesCreated.length}, updated: ${invoicesUpdated.length}`);
+
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Created ${createdInstallments?.length} installments`,
-        installments: createdInstallments
+        message: `Created ${createdInstallments?.length} installments, ${invoicesCreated.length} new invoices, ${invoicesUpdated.length} invoices updated`,
+        installments: createdInstallments,
+        invoicesCreated,
+        invoicesUpdated
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

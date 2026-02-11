@@ -100,7 +100,8 @@ export default function InvoicePaymentModal({ invoiceId, invoiceValue, onClose }
             <ul className="text-muted-foreground space-y-1 list-disc list-inside">
               <li>Upload do comprovante de pagamento (via Cloud)</li>
               <li>Fatura será marcada como PAGA</li>
-              <li>Comissões serão geradas no próximo mês</li>
+              <li>Parcelas vinculadas serão marcadas como pagas</li>
+              <li>Comissões do mês serão marcadas como "a pagar"</li>
             </ul>
           </div>
 

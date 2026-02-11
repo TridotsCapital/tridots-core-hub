@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
 
 export interface MonthSummary {
   month: number;
@@ -20,11 +19,11 @@ export interface AgencyInvoiceSummary {
   totalValue: number;
   dueDate: string;
   status: 'paga' | 'atrasada' | 'pendente' | 'futura' | 'rascunho' | 'gerada' | 'enviada';
+  billingDueDay: number | null;
 }
 
 /**
  * Hook para buscar resumo mensal de faturas (para gráfico de barras)
- * Consolida dados de agency_invoices + guarantee_installments pendentes
  */
 export const useMonthlyInvoiceSummary = (agencyId?: string) => {
   return useQuery({
@@ -34,11 +33,8 @@ export const useMonthlyInvoiceSummary = (agencyId?: string) => {
       const currentMonth = now.getMonth() + 1;
       const currentYear = now.getFullYear();
       
-      // Start from January 2026 (system billing start date)
       const startYear = 2026;
       const startMonth = 1;
-      
-      // End at current month + 12 months into the future
       const endYear = currentYear + 1;
       const endMonth = currentMonth;
       
@@ -47,7 +43,6 @@ export const useMonthlyInvoiceSummary = (agencyId?: string) => {
       let year = startYear;
       let month = startMonth;
       
-      // Generate months from Jan/2026 until current month + 12 months
       while (year < endYear || (year === endYear && month <= endMonth)) {
         months.push({
           month,
@@ -65,7 +60,7 @@ export const useMonthlyInvoiceSummary = (agencyId?: string) => {
         }
       }
 
-      // Query 1: Faturas existentes
+      // Faturas existentes (agora sempre existem)
       let invoiceQuery = supabase
         .from('agency_invoices')
         .select('reference_month, reference_year, total_value, status, due_date, agency_id');
@@ -77,27 +72,6 @@ export const useMonthlyInvoiceSummary = (agencyId?: string) => {
       const { data: invoices, error: invoiceError } = await invoiceQuery;
       if (invoiceError) throw invoiceError;
 
-      // Query 2: Parcelas pendentes (sem fatura gerada)
-      let installmentQuery = supabase
-        .from('guarantee_installments')
-        .select(`
-          reference_month,
-          reference_year,
-          value,
-          due_date,
-          contract_id,
-          contracts!inner (agency_id)
-        `)
-        .eq('status', 'pendente')
-        .is('invoice_item_id', null);
-
-      if (agencyId) {
-        installmentQuery = installmentQuery.eq('contracts.agency_id', agencyId);
-      }
-
-      const { data: installments, error: installmentError } = await installmentQuery;
-      if (installmentError) throw installmentError;
-
       // Mapear faturas existentes
       const invoiceMap = new Map<string, { value: number; status: string; count: number; dueDate: string }>();
       
@@ -107,7 +81,6 @@ export const useMonthlyInvoiceSummary = (agencyId?: string) => {
         if (existing) {
           existing.value += inv.total_value || 0;
           existing.count++;
-          // Priorizar status mais crítico
           if (inv.status === 'atrasada' || (inv.status !== 'paga' && existing.status === 'paga')) {
             existing.status = inv.status;
           }
@@ -121,27 +94,9 @@ export const useMonthlyInvoiceSummary = (agencyId?: string) => {
         }
       }
 
-      // Mapear parcelas pendentes (meses futuros)
-      const pendingMap = new Map<string, { value: number; dueDate: string }>();
-      
-      for (const inst of installments || []) {
-        const key = `${inst.reference_month}-${inst.reference_year}`;
-        const existing = pendingMap.get(key);
-        if (existing) {
-          existing.value += inst.value || 0;
-        } else {
-          pendingMap.set(key, {
-            value: inst.value || 0,
-            dueDate: inst.due_date
-          });
-        }
-      }
-
-      // Consolidar dados
       return months.map(m => {
         const key = `${m.month}-${m.year}`;
         const invoice = invoiceMap.get(key);
-        const pending = pendingMap.get(key);
         
         if (invoice) {
           return {
@@ -154,17 +109,6 @@ export const useMonthlyInvoiceSummary = (agencyId?: string) => {
           };
         }
         
-        if (pending) {
-          return {
-            ...m,
-            totalValue: pending.value,
-            status: 'futura' as const,
-            invoiceCount: 0,
-            hasInvoice: false,
-            dueDate: pending.dueDate
-          };
-        }
-        
         return m;
       });
     }
@@ -172,15 +116,13 @@ export const useMonthlyInvoiceSummary = (agencyId?: string) => {
 };
 
 /**
- * Hook para buscar imobiliárias com fatura/parcelas em um mês específico (para Tridots)
+ * Hook para buscar imobiliárias com fatura em um mês específico (para Tridots)
+ * Simplificado: faturas sempre existem (criadas na ativação do contrato)
  */
 export const useAgenciesWithInvoiceInMonth = (month: number, year: number) => {
   return useQuery({
     queryKey: ['agencies_invoice_month', month, year],
     queryFn: async (): Promise<AgencyInvoiceSummary[]> => {
-      const results: AgencyInvoiceSummary[] = [];
-      
-      // Query 1: Faturas existentes para o mês
       const { data: invoices, error: invoiceError } = await supabase
         .from('agency_invoices')
         .select(`
@@ -192,7 +134,8 @@ export const useAgenciesWithInvoiceInMonth = (month: number, year: number) => {
           agencies!inner (
             id,
             razao_social,
-            cnpj
+            cnpj,
+            billing_due_day
           )
         `)
         .eq('reference_month', month)
@@ -201,75 +144,16 @@ export const useAgenciesWithInvoiceInMonth = (month: number, year: number) => {
 
       if (invoiceError) throw invoiceError;
 
-      // Adicionar faturas existentes
-      const agenciesWithInvoice = new Set<string>();
-      for (const inv of invoices || []) {
-        agenciesWithInvoice.add(inv.agency_id);
-        results.push({
-          agencyId: inv.agency_id,
-          agencyName: (inv.agencies as any)?.razao_social || '',
-          cnpj: (inv.agencies as any)?.cnpj || '',
-          invoiceId: inv.id,
-          totalValue: inv.total_value || 0,
-          dueDate: inv.due_date,
-          status: inv.status as AgencyInvoiceSummary['status']
-        });
-      }
-
-      // Query 2: Parcelas pendentes sem fatura (para meses futuros)
-      const { data: installments, error: installmentError } = await supabase
-        .from('guarantee_installments')
-        .select(`
-          value,
-          due_date,
-          contracts!inner (
-            agency_id,
-            agencies!inner (
-              id,
-              razao_social,
-              cnpj
-            )
-          )
-        `)
-        .eq('reference_month', month)
-        .eq('reference_year', year)
-        .eq('status', 'pendente')
-        .is('invoice_item_id', null);
-
-      if (installmentError) throw installmentError;
-
-      // Agrupar parcelas por agência
-      const pendingByAgency = new Map<string, { value: number; dueDate: string; name: string; cnpj: string }>();
-      
-      for (const inst of installments || []) {
-        const agencyId = (inst.contracts as any)?.agency_id;
-        if (!agencyId || agenciesWithInvoice.has(agencyId)) continue;
-        
-        const existing = pendingByAgency.get(agencyId);
-        if (existing) {
-          existing.value += inst.value || 0;
-        } else {
-          pendingByAgency.set(agencyId, {
-            value: inst.value || 0,
-            dueDate: inst.due_date,
-            name: (inst.contracts as any)?.agencies?.razao_social || '',
-            cnpj: (inst.contracts as any)?.agencies?.cnpj || ''
-          });
-        }
-      }
-
-      // Adicionar agências com apenas parcelas pendentes
-      for (const [agencyId, data] of pendingByAgency) {
-        results.push({
-          agencyId,
-          agencyName: data.name,
-          cnpj: data.cnpj,
-          invoiceId: null,
-          totalValue: data.value,
-          dueDate: data.dueDate,
-          status: 'futura'
-        });
-      }
+      const results: AgencyInvoiceSummary[] = (invoices || []).map((inv) => ({
+        agencyId: inv.agency_id,
+        agencyName: (inv.agencies as any)?.razao_social || '',
+        cnpj: (inv.agencies as any)?.cnpj || '',
+        invoiceId: inv.id,
+        totalValue: inv.total_value || 0,
+        dueDate: inv.due_date,
+        status: inv.status as AgencyInvoiceSummary['status'],
+        billingDueDay: (inv.agencies as any)?.billing_due_day || null
+      }));
 
       return results.sort((a, b) => a.agencyName.localeCompare(b.agencyName));
     },
@@ -286,7 +170,6 @@ export const useAgencyMonthInstallments = (agencyId: string | undefined, month: 
     queryFn: async () => {
       if (!agencyId) return [];
 
-      // Primeiro buscar fatura existente
       const { data: invoice } = await supabase
         .from('agency_invoices')
         .select(`
@@ -309,7 +192,6 @@ export const useAgencyMonthInstallments = (agencyId: string | undefined, month: 
         .maybeSingle();
 
       if (invoice?.invoice_items) {
-        // Para itens de fatura existente, buscar o analysis_id de cada contrato
         const contractIds = invoice.invoice_items.map((item: any) => item.contract_id).filter(Boolean);
         
         let contractsMap: Record<string, string> = {};
@@ -333,44 +215,7 @@ export const useAgencyMonthInstallments = (agencyId: string | undefined, month: 
         }));
       }
 
-      // Se não há fatura, buscar parcelas pendentes
-      const { data: installments, error } = await supabase
-        .from('guarantee_installments')
-        .select(`
-          id,
-          installment_number,
-          value,
-          due_date,
-          status,
-          contract_id,
-          contracts!inner (
-            agency_id,
-            analysis_id,
-            analyses!inner (
-              inquilino_nome,
-              imovel_endereco,
-              imovel_numero
-            )
-          )
-        `)
-        .eq('contracts.agency_id', agencyId)
-        .eq('reference_month', month)
-        .eq('reference_year', year)
-        .eq('status', 'pendente');
-
-      if (error) throw error;
-
-      return (installments || []).map((inst: any) => ({
-        id: inst.id,
-        contract_id: inst.contract_id,
-        analysis_id: inst.contracts?.analysis_id,
-        tenant_name: inst.contracts?.analyses?.inquilino_nome || 'N/A',
-        property_address: `${inst.contracts?.analyses?.imovel_endereco || ''}, ${inst.contracts?.analyses?.imovel_numero || ''}`,
-        installment_number: inst.installment_number,
-        value: inst.value,
-        invoiceStatus: 'futura',
-        hasInvoice: false
-      }));
+      return [];
     },
     enabled: !!agencyId && month > 0 && year > 0
   });
