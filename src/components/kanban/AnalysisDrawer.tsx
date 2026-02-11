@@ -66,6 +66,7 @@ import {
   StickyNote,
   FileCheck,
   Shield,
+  CalendarDays,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -145,9 +146,14 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
   }, [analysis?.acceptance_token, analysis?.acceptance_token_expires_at, analysis?.acceptance_token_used_at]);
 
   // Check if payments are pending validation - show if at least ONE confirmed (or setup exempt)
+  const isBoletoUnificado = analysis?.forma_pagamento_preferida === 'boleto_imobiliaria';
+  
   const paymentsPendingValidation = useMemo(() => {
     if (!analysis) return false;
     if (analysis.status !== 'aguardando_pagamento') return false;
+    
+    // BU + setup exempt = 100% automatic, no modal needed
+    if (isBoletoUnificado && analysis.setup_fee_exempt) return false;
     
     // Any confirmation exists
     const hasGuaranteeConfirmed = !!analysis.guarantee_payment_confirmed_at;
@@ -156,7 +162,7 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
     const anyConfirmed = hasGuaranteeConfirmed || hasSetupConfirmed || setupIsExempt;
     
     return anyConfirmed && !analysis.payments_validated_at && !analysis.payments_rejected_at;
-  }, [analysis]);
+  }, [analysis, isBoletoUnificado]);
 
   const handleRegenerateConfirm = async (data: Record<string, unknown>) => {
     if (!analysis) return;
@@ -185,8 +191,8 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
   const handleValidatePayments = async () => {
     if (!analysis) return;
     
-    // Validate required dates
-    if (!guaranteePaymentDate) {
+    // For BU, guarantee date is not required
+    if (!isBoletoUnificado && !guaranteePaymentDate) {
       toast.error('Informe a data do pagamento da garantia');
       return;
     }
@@ -204,7 +210,7 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
           analysisId: analysis.id,
           action: 'validate',
           setupPaymentDate: needsSetupDate ? setupPaymentDate : null,
-          guaranteePaymentDate: guaranteePaymentDate,
+          guaranteePaymentDate: isBoletoUnificado ? null : guaranteePaymentDate,
         }
       });
       
@@ -759,16 +765,49 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
           </DialogHeader>
           
           <div className="space-y-4">
-            {/* Guarantee Payment Date - Always required */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Data do Pagamento - Garantia *</Label>
-              <Input 
-                type="date" 
-                value={guaranteePaymentDate}
-                onChange={(e) => setGuaranteePaymentDate(e.target.value)}
-                required
-              />
-            </div>
+            {/* For Boleto Unificado: show info card instead of guarantee date field */}
+            {isBoletoUnificado ? (
+              <div className="rounded-lg border border-primary/30 bg-primary/5 p-4">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2 rounded-full bg-primary/10">
+                    <CalendarDays className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold">1ª Parcela da Garantia</p>
+                    <p className="text-xs text-muted-foreground">Boleto Unificado (via imobiliária)</p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between bg-background rounded-md p-3 border">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Valor mensal</p>
+                    <p className="text-lg font-bold text-primary">
+                      {formatCurrency((analysis as any)?.garantia_anual ? (analysis as any).garantia_anual / 12 : 0)}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-muted-foreground">Vencimento</p>
+                    <p className="text-lg font-bold">
+                      Dia {String((analysis as any)?.agency?.billing_due_day || 10).padStart(2, '0')}
+                    </p>
+                    <p className="text-xs text-muted-foreground">do próximo mês</p>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  A garantia será cobrada mensalmente junto com a fatura unificada da imobiliária.
+                </p>
+              </div>
+            ) : (
+              /* Standard: Guarantee Payment Date - required */
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Data do Pagamento - Garantia *</Label>
+                <Input 
+                  type="date" 
+                  value={guaranteePaymentDate}
+                  onChange={(e) => setGuaranteePaymentDate(e.target.value)}
+                  required
+                />
+              </div>
+            )}
             
             {/* Setup Payment Date - Conditional */}
             {!analysis?.setup_fee_exempt && analysis?.setup_fee && analysis.setup_fee > 0 && (
@@ -789,6 +828,7 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
             <ul className="text-sm text-muted-foreground space-y-1">
               <li>• Análise será movida para "Ativa"</li>
               <li>• Contrato será criado automaticamente</li>
+              {isBoletoUnificado && <li>• 12 parcelas de garantia serão geradas</li>}
               <li>• Imobiliária será notificada para enviar documentos</li>
             </ul>
           </div>
@@ -800,7 +840,7 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
             <Button 
               className="bg-success hover:bg-success/90"
               onClick={handleValidatePayments}
-              disabled={isValidating || !guaranteePaymentDate || (!analysis?.setup_fee_exempt && analysis?.setup_fee && analysis.setup_fee > 0 && !setupPaymentDate)}
+              disabled={isValidating || (!isBoletoUnificado && !guaranteePaymentDate) || (!analysis?.setup_fee_exempt && analysis?.setup_fee && analysis.setup_fee > 0 && !setupPaymentDate)}
             >
               {isValidating ? (
                 <>

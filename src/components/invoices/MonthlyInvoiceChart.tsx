@@ -124,7 +124,7 @@ export function MonthlyInvoiceChart({
 
   const getBarHeight = (value: number) => {
     if (value === 0) return 8;
-    return Math.max(20, (value / maxValue) * 100);
+    return Math.max(20, Math.round((value / maxValue) * 130));
   };
 
   if (isLoading) {
@@ -215,7 +215,7 @@ export function MonthlyInvoiceChart({
           <ChevronLeft className="h-6 w-6" />
         </Button>
 
-        <div className="flex items-end justify-between gap-1 flex-1 h-36 px-1">
+        <div className="flex items-end justify-between gap-0.5 flex-1 h-36 px-1">
           {visibleMonths.map((monthData) => {
             const isSelected = monthData.month === selectedMonth && monthData.year === selectedYear;
             const isCurrentMonth = (() => {
@@ -238,11 +238,11 @@ export function MonthlyInvoiceChart({
               >
                 <div
                   className={cn(
-                    "w-full max-w-[36px] sm:max-w-[44px] rounded-t transition-all duration-200 shadow-sm",
+                    "w-full max-w-[48px] sm:max-w-[60px] rounded-t transition-all duration-200 shadow-sm",
                     barColor,
                     isSelected && "ring-2 ring-primary ring-offset-2 ring-offset-background shadow-md"
                   )}
-                  style={{ height: `${barHeight}%`, minHeight: '12px' }}
+                  style={{ height: `${barHeight}px`, minHeight: '12px' }}
                 />
                 <span className={cn(
                   "text-[10px] sm:text-xs font-medium transition-colors",
