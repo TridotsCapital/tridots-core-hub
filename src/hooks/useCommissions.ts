@@ -262,8 +262,22 @@ export function useGenerateContractCommissions() {
 
       const commissions: TablesInsert<'commissions'>[] = [];
 
+      // Helper: get day 10 of the month AFTER the given month/year
+      const getDueDate10NextMonth = (month: number, year: number): string => {
+        let nextMonth = month + 1;
+        let nextYear = year;
+        if (nextMonth > 12) {
+          nextMonth = 1;
+          nextYear += 1;
+        }
+        const mm = String(nextMonth).padStart(2, '0');
+        return `${nextYear}-${mm}-10`;
+      };
+
       // Setup commission (one-time) - if not exempt
       if (setupFee > 0) {
+        const setupMesRef = startDate.getMonth() + 1;
+        const setupAnoRef = startDate.getFullYear();
         commissions.push({
           analysis_id: analysisId,
           agency_id: agencyId,
@@ -272,16 +286,18 @@ export function useGenerateContractCommissions() {
           valor: setupFee,
           base_calculo: setupFee,
           percentual_comissao: 100,
-          due_date: startDate.toISOString().split('T')[0],
-          mes_referencia: startDate.getMonth() + 1,
-          ano_referencia: startDate.getFullYear(),
+          due_date: getDueDate10NextMonth(setupMesRef, setupAnoRef),
+          mes_referencia: setupMesRef,
+          ano_referencia: setupAnoRef,
         });
       }
 
       // 12 recurring commissions
       for (let i = 0; i < 12; i++) {
-        const dueDate = new Date(startDate);
-        dueDate.setMonth(dueDate.getMonth() + i + 1); // Start from next month
+        const refDate = new Date(startDate);
+        refDate.setMonth(refDate.getMonth() + i);
+        const mesRef = refDate.getMonth() + 1;
+        const anoRef = refDate.getFullYear();
 
         commissions.push({
           analysis_id: analysisId,
@@ -291,9 +307,9 @@ export function useGenerateContractCommissions() {
           valor: comissaoMensal,
           base_calculo: garantiaAnual,
           percentual_comissao: plan.commissionRate,
-          due_date: dueDate.toISOString().split('T')[0],
-          mes_referencia: dueDate.getMonth() + 1,
-          ano_referencia: dueDate.getFullYear(),
+          due_date: getDueDate10NextMonth(mesRef, anoRef),
+          mes_referencia: mesRef,
+          ano_referencia: anoRef,
         });
       }
 
