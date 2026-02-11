@@ -293,8 +293,23 @@ async function generateCommissions(supabase: any, analysis: any, validationDate:
   const startDate = new Date(validationDate);
   const commissions: any[] = [];
 
+  // Helper: get day 10 of the month AFTER the given month/year
+  function getDueDate10NextMonth(month: number, year: number): string {
+    // month is 1-based (1=Jan, 12=Dec)
+    let nextMonth = month + 1;
+    let nextYear = year;
+    if (nextMonth > 12) {
+      nextMonth = 1;
+      nextYear += 1;
+    }
+    const mm = String(nextMonth).padStart(2, '0');
+    return `${nextYear}-${mm}-10`;
+  }
+
   // Setup commission (if not exempt and has fee)
   if (setupFee > 0) {
+    const setupMesRef = startDate.getMonth() + 1; // 1-based
+    const setupAnoRef = startDate.getFullYear();
     commissions.push({
       analysis_id: analysis.id,
       agency_id: analysis.agency_id,
@@ -303,16 +318,19 @@ async function generateCommissions(supabase: any, analysis: any, validationDate:
       valor: setupFee * (analysis.agency?.percentual_comissao_setup || 100) / 100,
       base_calculo: setupFee,
       percentual_comissao: analysis.agency?.percentual_comissao_setup || 100,
-      due_date: startDate.toISOString().split('T')[0],
-      mes_referencia: startDate.getMonth() + 1,
-      ano_referencia: startDate.getFullYear(),
+      due_date: getDueDate10NextMonth(setupMesRef, setupAnoRef),
+      mes_referencia: setupMesRef,
+      ano_referencia: setupAnoRef,
     });
   }
 
   // 12 recurring monthly commissions
   for (let i = 0; i < 12; i++) {
-    const dueDate = new Date(startDate);
-    dueDate.setMonth(dueDate.getMonth() + i + 1); // Start from next month
+    // Calculate mes_referencia: startDate month + i (the month of the installment)
+    const refDate = new Date(startDate);
+    refDate.setMonth(refDate.getMonth() + i);
+    const mesRef = refDate.getMonth() + 1; // 1-based
+    const anoRef = refDate.getFullYear();
 
     commissions.push({
       analysis_id: analysis.id,
@@ -322,9 +340,9 @@ async function generateCommissions(supabase: any, analysis: any, validationDate:
       valor: comissaoMensal,
       base_calculo: garantiaAnual,
       percentual_comissao: commissionRate,
-      due_date: dueDate.toISOString().split('T')[0],
-      mes_referencia: dueDate.getMonth() + 1,
-      ano_referencia: dueDate.getFullYear(),
+      due_date: getDueDate10NextMonth(mesRef, anoRef),
+      mes_referencia: mesRef,
+      ano_referencia: anoRef,
     });
   }
 
