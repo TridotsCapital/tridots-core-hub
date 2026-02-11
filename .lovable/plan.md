@@ -1,97 +1,106 @@
 
-# Ajustes no Boleto Unificado: Modal de Validacao, Grafico de Faturas e Usabilidade
+# Reestruturacao do Fluxo de Faturas: Criacao Automatica na Ativacao do Contrato
 
 ## Resumo
 
-Quatro ajustes distintos:
-1. Modal de validacao no portal Tridots -- adaptar para Boleto Unificado
-2. Grafico de colunas do modulo de faturas -- corrigir alturas e ampliar largura (ambos portais)
-3. Botao "Gerar Fatura" -> "Ver Detalhes" no portal Tridots
+Mudar fundamentalmente o fluxo de faturamento: ao inves de gerar faturas mensalmente (manual ou via cron), as faturas serao criadas automaticamente junto com as 12 parcelas no momento da ativacao do contrato. Isso garante que sempre exista uma fatura para cada mes/agencia, simplificando toda a interface.
 
 ---
 
-## 1. Modal de Validacao de Pagamentos para Boleto Unificado
+## 1. Edge Function: generate-installments (refatoracao principal)
 
-**Arquivo**: `src/components/kanban/AnalysisDrawer.tsx`
+**Arquivo**: `supabase/functions/generate-installments/index.ts`
 
-### Cenario A: Boleto Unificado + Setup NAO isento
+Apos criar as 12 parcelas, a funcao deve tambem:
+- Para cada parcela, verificar se ja existe uma fatura (`agency_invoices`) para aquela agencia/mes/ano com status diferente de `cancelada`
+- Se existir: adicionar um `invoice_item` vinculando a parcela a fatura existente, atualizar o `total_value` da fatura (somando o valor da nova parcela), e marcar a parcela como `faturada` com o `invoice_item_id`
+- Se nao existir: criar uma nova fatura com status `rascunho`, calcular o `due_date` usando o `billing_due_day` da agencia, criar o `invoice_item`, e marcar a parcela como `faturada`
+- Registrar evento na `invoice_timeline` para cada fatura criada/atualizada
 
-O modal atualmente mostra "Data do Pagamento - Garantia" (campo editavel) + "Data do Pagamento - Taxa Setup" (campo editavel). Para Boleto Unificado:
-
-- **Remover** o campo "Data do Pagamento - Garantia" (input date)
-- **Adicionar** um card informativo destacado com icone de calendario mostrando:
-  - Valor da parcela mensal (garantia_anual / 12)
-  - Data do proximo vencimento (dia configurado da imobiliaria, ex: dia 05, 10 ou 15 do proximo mes)
-  - Texto: "1a parcela da garantia"
-- **Manter** o campo "Data do Pagamento - Taxa Setup"
-- Na funcao `handleValidatePayments`, quando for `boleto_imobiliaria`, enviar `guaranteePaymentDate` como null (o backend ja deve lidar com isso)
-
-### Cenario B: Boleto Unificado + Setup ISENTO
-
-- O modal **nao aparece**. A ativacao ja e 100% automatica (implementada anteriormente).
-- Verificar que a logica `paymentsPendingValidation` retorna `false` para esse cenario, pois o aceite automatico ja faz a ativacao completa.
-
-### Dados necessarios
-
-A imobiliaria possui o campo `boleto_vencimento_dia` (05, 10 ou 15). Preciso verificar se essa informacao esta disponivel no drawer. Caso nao, buscar a agencia vinculada para exibir a data correta.
+Isso garante que ao ativar um contrato, todas as 12 faturas mensais ja existam.
 
 ---
 
-## 2. Grafico de Colunas -- Corrigir Alturas Proporcionais
-
-**Arquivo**: `src/components/invoices/MonthlyInvoiceChart.tsx`
-
-**Problema identificado**: A funcao `getBarHeight` usa o valor retornado como `style={{ height: \`${barHeight}%\` }}` dentro de um container com `h-36` (144px). O calculo esta correto matematicamente, mas o container usa `flex items-end` com `h-36` e as barras usam `height` em percentual. O problema e que percentual em flexbox nao funciona corretamente sem um height explicito no container pai.
-
-**Correcao**: Converter o calculo para usar pixels absolutos ao inves de percentual, baseado na altura do container (144px):
-
-```
-const getBarHeight = (value: number) => {
-  if (value === 0) return 8; // px
-  return Math.max(20, Math.round((value / maxValue) * 130)); // max 130px dentro de 144px
-};
-```
-
-E alterar o style para usar `height` em pixels: `style={{ height: \`${barHeight}px\` }}`
-
----
-
-## 3. Grafico de Colunas -- Barras Mais Largas (~70%)
-
-**Arquivo**: `src/components/invoices/MonthlyInvoiceChart.tsx`
-
-Ajustar o layout das barras para ocuparem ~70% do espaco disponivel:
-
-- Reduzir gap de `gap-1` para `gap-0.5` no container das barras
-- Aumentar `max-w` das barras de `max-w-[36px] sm:max-w-[44px]` para `max-w-[48px] sm:max-w-[60px]`
-- Manter a responsividade com `flex-1 min-w-0`
-
----
-
-## 4. Botao "Gerar Fatura" -> "Ver Detalhes" (Portal Tridots)
+## 2. Remover botao "Gerar Rascunhos" e simplificar Tridots
 
 **Arquivo**: `src/pages/FinancialInvoices.tsx`
 
-Na lista de imobiliarias (quadrante 2), o botao atualmente tem duas variantes:
-- Se ja tem fatura: "Ver Detalhes" (navega para `/invoices/{id}`)
-- Se nao tem fatura: "Gerar Fatura" (chama `handleGenerateForAgency`)
-
-**Alteracao**: Substituir "Gerar Fatura" por "Ver Detalhes" que executa o mesmo comportamento do botao atual (gera a fatura automaticamente e abre o detalhe). Ou seja, manter a funcao `handleGenerateForAgency` mas apos gerar, redirecionar para o detalhe da fatura. Se a fatura ja existir, redirecionar diretamente.
-
-Resultado: botao sempre mostra "Ver Detalhes", independentemente de ter fatura ou nao.
+- Remover o botao "Gerar Rascunhos" e todo o dialog associado (linhas 77-133, 237-294)
+- Remover a funcao `handleGenerateForAgency` (nao e mais necessaria)
+- Na lista de imobiliarias, o botao sempre sera "Ver Detalhes" e sempre tera `invoiceId` (pois a fatura ja existe)
+- Adicionar filtro de vencimento com chips/botoes ("Todos", "Dia 5", "Dia 10", "Dia 15") acima da lista de imobiliarias
+- Para o filtro funcionar, o hook `useAgenciesWithInvoiceInMonth` precisara retornar tambem o `billing_due_day` de cada agencia
 
 ---
 
-## Detalhes Tecnicos
+## 3. Filtro por dia de vencimento
 
-### Arquivos alterados
+**Arquivo**: `src/hooks/useMonthlyInvoiceSummary.ts`
+
+No hook `useAgenciesWithInvoiceInMonth`:
+- Simplificar: como faturas sempre existem, remover a logica de fallback para parcelas pendentes sem fatura
+- Adicionar `billing_due_day` no select da agencia para permitir filtragem no front-end
+- Retornar o campo `billingDueDay` no `AgencyInvoiceSummary`
+
+**Arquivo**: `src/pages/FinancialInvoices.tsx`
+
+- Novo state `dueDayFilter` (null | 5 | 10 | 15)
+- Renderizar chips: `Todos`, `Dia 5`, `Dia 10`, `Dia 15`
+- Filtrar a lista de agencias no front-end com base no `billingDueDay`
+
+---
+
+## 4. Atualizar comissoes na baixa de pagamento
+
+**Arquivo**: `src/hooks/useAgencyInvoices.ts` (funcao `useRegisterInvoicePayment`)
+
+Apos marcar parcelas como `paga`, adicionar logica para:
+- Buscar os `contract_id` das parcelas pagas
+- Para cada contrato, buscar comissoes com status `pendente` e `due_date` no mes de referencia da fatura
+- Atualizar essas comissoes de `pendente` para `a_pagar`
+- Invalidar queries de comissoes para atualizar a interface
+
+---
+
+## 5. Remover/desativar generate-invoice-drafts do cron
+
+**Arquivo**: `supabase/functions/generate-invoice-drafts/index.ts`
+
+Manter a funcao mas ajustar para ser um fallback de seguranca (caso alguma parcela nao tenha sido faturada corretamente). Ela pode ser mantida no cron como verificacao, mas nao sera mais o fluxo principal.
+
+---
+
+## Arquivos alterados
 
 | Arquivo | Alteracao |
 |---------|-----------|
-| `src/components/kanban/AnalysisDrawer.tsx` | Adaptar modal de validacao para BU: remover campo garantia, adicionar card informativo, buscar dia vencimento da agencia |
-| `src/components/invoices/MonthlyInvoiceChart.tsx` | Corrigir alturas proporcionais (px ao inves de %), ampliar largura das barras |
-| `src/pages/FinancialInvoices.tsx` | Botao "Gerar Fatura" -> "Ver Detalhes" com mesmo comportamento |
+| `supabase/functions/generate-installments/index.ts` | Criar faturas e invoice_items junto com as parcelas |
+| `src/pages/FinancialInvoices.tsx` | Remover "Gerar Rascunhos", adicionar filtro de vencimento (chips), simplificar botao |
+| `src/hooks/useMonthlyInvoiceSummary.ts` | Simplificar `useAgenciesWithInvoiceInMonth`, adicionar `billingDueDay` |
+| `src/hooks/useAgencyInvoices.ts` | Atualizar comissoes para `a_pagar` na baixa de pagamento |
+| `supabase/functions/generate-invoice-drafts/index.ts` | Ajustar para ser fallback de seguranca |
 
-### Busca de dados adicionais (AnalysisDrawer)
+---
 
-Para exibir a data de vencimento no card informativo, sera necessario acessar o `boleto_vencimento_dia` da agencia vinculada a analise. Provavelmente ja disponivel no objeto `analysis.agency` ou via query adicional.
+## Fluxo resultante
+
+```text
+Contrato ativado
+  |
+  v
+generate-installments cria 12 parcelas
+  |
+  v
+Para cada parcela: cria/atualiza fatura do mes (agency_invoices + invoice_items)
+  |
+  v
+Portal Tridots: lista imobiliarias com faturas por mes
+  |-- Filtro: Todos / Dia 5 / Dia 10 / Dia 15
+  |-- Clica na imobiliaria -> abre detalhe da fatura (sempre existe)
+  |
+  v
+Detalhe da fatura: lista parcelas, upload boleto, registrar pagamento
+  |
+  v
+Registrar Pagamento -> marca parcelas como pagas + comissoes como a_pagar
+```
