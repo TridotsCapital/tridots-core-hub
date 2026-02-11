@@ -1,81 +1,53 @@
 
-# Correcao: Comissoes nao geradas para contratos Boleto Unificado
 
-## Problema raiz
+# Ajuste de Due Date das Comissoes - Mes Subsequente (Dia 10)
 
-No Edge Function `validate-payments/index.ts`, na linha 147, existe uma condicao que **pula a geracao de comissoes** para contratos do tipo boleto unificado:
+## Problema Identificado
+Atualmente, o `due_date` das comissoes recorrentes e de setup esta sendo definido no **mesmo mes** do `mes_referencia`. A regra de negocio correta e: **toda comissao so e paga no mes seguinte ao mes de referencia da parcela, sempre no dia 10**.
 
+Exemplo: parcela do mes 08/2026 paga -> comissao com `due_date = 10/09/2026`.
+
+## Regras Confirmadas
+1. **Setup**: tambem e pago no mes seguinte a ativacao, dia 10
+2. **Recorrente**: `due_date` = dia 10 do mes seguinte ao `mes_referencia`
+3. **Todos os metodos de pagamento** (Boleto Unificado, Pix, Cartao): mesma regra
+4. **mes_referencia**: representa o mes da parcela de garantia (servico prestado), NAO o mes do pagamento da comissao
+5. **Dia fixo**: sempre dia 10, independente da agencia
+
+## Alteracoes Necessarias
+
+### 1. Edge Function `validate-payments/index.ts` (geracao de comissoes)
+Na funcao `generateCommissions`, ajustar o calculo de `due_date`:
+
+- **Setup**: `due_date` = dia 10 do mes seguinte ao mes da validacao (nao mais o mesmo mes)
+- **Recorrente**: `due_date` = dia 10 do mes seguinte ao `mes_referencia` da comissao (atualmente usa `startDate + i + 1` como due_date, o que ja e o mes seguinte ao startDate, mas o dia e variavel e o mes pode nao corresponder ao mes_referencia + 1)
+
+Logica correta:
 ```
-if (!isBoletoUnificado) {
-  await generateCommissions(supabase, analysis, guaranteePaymentDate!);
-}
+Para cada comissao recorrente:
+  mes_referencia = mes calculado
+  ano_referencia = ano calculado  
+  due_date = dia 10 do (mes_referencia + 1)
+
+Para setup:
+  mes_referencia = mes da ativacao
+  due_date = dia 10 do (mes da ativacao + 1)
 ```
 
-Isso significa que **nenhum contrato de boleto unificado jamais teve comissoes geradas**. Consequentemente:
-- A aba de comissoes do contrato aparece vazia
-- O registro de pagamento da fatura tenta atualizar comissoes que nao existem
+### 2. Hook `useCommissions.ts` (geracao client-side)
+A funcao `useGenerateContractCommissions` tem a mesma logica de geracao. Aplicar a mesma correcao:
+- Setup: `due_date` = dia 10 do mes seguinte
+- Recorrente: `due_date` = dia 10 do mes seguinte ao `mes_referencia`
 
-## Solucao
+### 3. Correcao retroativa dos dados existentes (SQL)
+Executar um UPDATE nos registros ja criados para ajustar o `due_date`:
+- Para comissoes recorrentes: `due_date` = dia 10 do mes seguinte ao `mes_referencia/ano_referencia`
+- Para comissoes de setup: `due_date` = dia 10 do mes seguinte ao `mes_referencia/ano_referencia`
 
-### Parte 1: Corrigir a Edge Function `validate-payments`
+### 4. Hook `useAgencyInvoices.ts` (registro de pagamento de fatura)
+Verificar se ao transicionar comissoes de `pendente` para `a_pagar`, o `due_date` ja esta correto (com a correcao acima, ja estara). Nenhuma alteracao adicional deve ser necessaria neste hook apos a correcao na geracao.
 
-**Arquivo**: `supabase/functions/validate-payments/index.ts`
-
-Remover a condicao `if (!isBoletoUnificado)` para que comissoes sejam geradas para **todos** os contratos, independentemente do metodo de pagamento. Para contratos boleto_imobiliaria, usar a data de ativacao (activated_at ou now) como base para calcular as datas de vencimento das comissoes.
-
-Alteracoes:
-- Remover o `if (!isBoletoUnificado)` na linha 147
-- Para boleto_imobiliaria, usar `new Date().toISOString().split('T')[0]` como `validationDate` (ja que nao tem `guaranteePaymentDate`)
-- Gerar comissoes normalmente (1 setup + 12 recorrentes)
-
-### Parte 2: Backfill de comissoes para contratos existentes
-
-**Arquivo**: `supabase/functions/generate-installments/index.ts`
-
-Adicionar geracao de comissoes dentro da funcao `generate-installments`, apos criar as parcelas e faturas. Assim, quando rodarmos o backfill para contratos existentes que ja tem parcelas, as comissoes tambem serao criadas.
-
-Alternativamente, podemos criar um script SQL de backfill que gera as comissoes retroativas para todos os contratos boleto_imobiliaria que nao possuem comissoes.
-
-A abordagem mais segura e executar um backfill via SQL diretamente, usando os dados das `analyses` vinculadas aos contratos boleto_imobiliaria que nao tem comissoes.
-
-### Parte 3: Backfill SQL (executar uma vez)
-
-Criar e executar uma query que:
-1. Identifica todos os contratos boleto_imobiliaria com analysis_id que nao possuem registros na tabela `commissions`
-2. Para cada um, insere 1 comissao setup (status `a_pagar`) e 12 comissoes recorrentes (status `pendente`)
-3. Usa os dados de `plano_garantia`, `garantia_anual` e `setup_fee` da analise para calcular os valores
-
-### Parte 4: Atualizar comissoes das faturas ja pagas
-
-Apos o backfill, executar uma segunda query que:
-1. Identifica faturas com status `paga`
-2. Para cada fatura paga, busca os `analysis_id` vinculados via `invoice_items -> contracts`
-3. Atualiza as comissoes recorrentes do mes/ano de referencia correspondente de `pendente` para `a_pagar`
-
----
-
-## Detalhes Tecnicos
-
-| Arquivo | Alteracao |
-|---------|-----------|
-| `supabase/functions/validate-payments/index.ts` | Remover condicao `!isBoletoUnificado` da geracao de comissoes |
-| Backfill SQL | Gerar comissoes retroativas para contratos sem comissoes |
-| Backfill SQL | Atualizar status das comissoes para faturas ja pagas |
-
-### Fluxo corrigido
-
-```text
-Validacao de pagamento (validate-payments)
-  |
-  v
-Criar contrato + gerar parcelas/faturas (boleto)
-  |
-  v
-Gerar comissoes (1 setup a_pagar + 12 recorrentes pendente) -- AGORA PARA TODOS
-  |
-  v
-Registro de pagamento da fatura (useRegisterInvoicePayment)
-  |
-  v
-Comissoes recorrentes do mes -> status 'a_pagar' -- AGORA FUNCIONA
-```
+## Resumo de Arquivos Afetados
+- `supabase/functions/validate-payments/index.ts` - corrigir `generateCommissions`
+- `src/hooks/useCommissions.ts` - corrigir `useGenerateContractCommissions`
+- Migracao SQL para corrigir dados existentes
