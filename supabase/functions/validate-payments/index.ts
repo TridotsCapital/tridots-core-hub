@@ -143,15 +143,16 @@ const handler = async (req: Request): Promise<Response> => {
         }
       }
 
-      // Generate commissions (only for non-boleto, or modify as needed)
-      if (!isBoletoUnificado) {
-        try {
-          await generateCommissions(supabase, analysis, guaranteePaymentDate!);
-          console.log("Commissions generated successfully for analysis:", analysisId);
-        } catch (commissionError) {
-          console.error("Error generating commissions:", commissionError);
-          // Don't fail the whole operation, log it
-        }
+      // Generate commissions for ALL contract types
+      try {
+        const commissionBaseDate = isBoletoUnificado 
+          ? new Date().toISOString().split('T')[0] 
+          : guaranteePaymentDate!;
+        await generateCommissions(supabase, analysis, commissionBaseDate);
+        console.log("Commissions generated successfully for analysis:", analysisId, { isBoletoUnificado });
+      } catch (commissionError) {
+        console.error("Error generating commissions:", commissionError);
+        // Don't fail the whole operation, log it
       }
 
       // Log timeline event with payment dates
