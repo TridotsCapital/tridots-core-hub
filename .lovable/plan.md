@@ -1,41 +1,56 @@
 
-# Correcao: Modulo de Faturas mostrando apenas fevereiro
+# Correcao: Comissoes nao geradas para contratos Boleto Unificado
 
-## Problema
+## Problema raiz
 
-O banco de dados mostra que existem parcelas pendentes nos meses 3 a 13 (marco 2026 em diante) para ambas as imobiliarias, mas so existem registros em `agency_invoices` para fevereiro/2026. Isso aconteceu porque os contratos foram ativados **antes** da nova logica que cria faturas automaticamente junto com as parcelas.
+No Edge Function `validate-payments/index.ts`, na linha 147, existe uma condicao que **pula a geracao de comissoes** para contratos do tipo boleto unificado:
 
-Resultado: o grafico e a lista so mostram dados de fevereiro, porque o hook `useMonthlyInvoiceSummary` busca apenas a tabela `agency_invoices`.
+```
+if (!isBoletoUnificado) {
+  await generateCommissions(supabase, analysis, guaranteePaymentDate!);
+}
+```
 
-## Solucao (2 partes)
+Isso significa que **nenhum contrato de boleto unificado jamais teve comissoes geradas**. Consequentemente:
+- A aba de comissoes do contrato aparece vazia
+- O registro de pagamento da fatura tenta atualizar comissoes que nao existem
 
-### Parte 1: Backfill das faturas faltantes
+## Solucao
 
-Ajustar a Edge Function `generate-invoice-drafts` para processar **todos os meses** com parcelas orfas (sem fatura vinculada), ao inves de apenas um mes especifico. Adicionar um modo "backfill_all" que varre todos os meses pendentes de uma vez.
+### Parte 1: Corrigir a Edge Function `validate-payments`
 
-Depois, chamar essa funcao uma vez para criar as faturas faltantes para meses 3-13.
+**Arquivo**: `supabase/functions/validate-payments/index.ts`
 
-**Arquivo**: `supabase/functions/generate-invoice-drafts/index.ts`
-
-Alteracoes:
-- Adicionar parametro `backfill_all: true` que busca TODAS as parcelas orfas sem filtro de mes/ano
-- Agrupar por agencia + mes/ano e criar/atualizar faturas para cada combinacao
-- Manter compatibilidade com o modo atual (filtro por mes especifico)
-
-### Parte 2: Fallback no hook (seguranca)
-
-Ajustar `useMonthlyInvoiceSummary` para, alem de buscar `agency_invoices`, tambem buscar parcelas de `guarantee_installments` que ainda nao estao vinculadas a faturas. Isso garante que o grafico mostra os valores corretos mesmo antes do backfill completar.
-
-**Arquivo**: `src/hooks/useMonthlyInvoiceSummary.ts`
+Remover a condicao `if (!isBoletoUnificado)` para que comissoes sejam geradas para **todos** os contratos, independentemente do metodo de pagamento. Para contratos boleto_imobiliaria, usar a data de ativacao (activated_at ou now) como base para calcular as datas de vencimento das comissoes.
 
 Alteracoes:
-- Apos mapear faturas existentes, buscar parcelas com status `pendente` e `invoice_item_id IS NULL`
-- Para cada parcela orfa, somar o valor no mes correspondente do grafico
-- Marcar esses meses como `status: 'pendente'` e `hasInvoice: false`
+- Remover o `if (!isBoletoUnificado)` na linha 147
+- Para boleto_imobiliaria, usar `new Date().toISOString().split('T')[0]` como `validationDate` (ja que nao tem `guaranteePaymentDate`)
+- Gerar comissoes normalmente (1 setup + 12 recorrentes)
 
-### Parte 3: Executar o backfill
+### Parte 2: Backfill de comissoes para contratos existentes
 
-Apos deploy da funcao atualizada, chama-la com `backfill_all: true` para criar todas as faturas faltantes de uma vez.
+**Arquivo**: `supabase/functions/generate-installments/index.ts`
+
+Adicionar geracao de comissoes dentro da funcao `generate-installments`, apos criar as parcelas e faturas. Assim, quando rodarmos o backfill para contratos existentes que ja tem parcelas, as comissoes tambem serao criadas.
+
+Alternativamente, podemos criar um script SQL de backfill que gera as comissoes retroativas para todos os contratos boleto_imobiliaria que nao possuem comissoes.
+
+A abordagem mais segura e executar um backfill via SQL diretamente, usando os dados das `analyses` vinculadas aos contratos boleto_imobiliaria que nao tem comissoes.
+
+### Parte 3: Backfill SQL (executar uma vez)
+
+Criar e executar uma query que:
+1. Identifica todos os contratos boleto_imobiliaria com analysis_id que nao possuem registros na tabela `commissions`
+2. Para cada um, insere 1 comissao setup (status `a_pagar`) e 12 comissoes recorrentes (status `pendente`)
+3. Usa os dados de `plano_garantia`, `garantia_anual` e `setup_fee` da analise para calcular os valores
+
+### Parte 4: Atualizar comissoes das faturas ja pagas
+
+Apos o backfill, executar uma segunda query que:
+1. Identifica faturas com status `paga`
+2. Para cada fatura paga, busca os `analysis_id` vinculados via `invoice_items -> contracts`
+3. Atualiza as comissoes recorrentes do mes/ano de referencia correspondente de `pendente` para `a_pagar`
 
 ---
 
@@ -43,20 +58,24 @@ Apos deploy da funcao atualizada, chama-la com `backfill_all: true` para criar t
 
 | Arquivo | Alteracao |
 |---------|-----------|
-| `supabase/functions/generate-invoice-drafts/index.ts` | Adicionar modo `backfill_all` que processa todos os meses com parcelas orfas |
-| `src/hooks/useMonthlyInvoiceSummary.ts` | Adicionar query de fallback para parcelas orfas sem fatura |
+| `supabase/functions/validate-payments/index.ts` | Remover condicao `!isBoletoUnificado` da geracao de comissoes |
+| Backfill SQL | Gerar comissoes retroativas para contratos sem comissoes |
+| Backfill SQL | Atualizar status das comissoes para faturas ja pagas |
 
-### Fluxo
+### Fluxo corrigido
 
 ```text
-Hook useMonthlyInvoiceSummary:
-  1. Busca agency_invoices (faturas existentes) -> mapeia por mes/ano
-  2. Busca guarantee_installments orfas (pendente + sem invoice_item_id)
-  3. Soma valores das orfas nos meses correspondentes
-  4. Resultado: grafico mostra todos os meses com valores corretos
-
-Backfill (uma vez):
-  1. Chama generate-invoice-drafts com backfill_all=true
-  2. Cria faturas + invoice_items para todas as parcelas orfas
-  3. Atualiza parcelas para status=faturada
+Validacao de pagamento (validate-payments)
+  |
+  v
+Criar contrato + gerar parcelas/faturas (boleto)
+  |
+  v
+Gerar comissoes (1 setup a_pagar + 12 recorrentes pendente) -- AGORA PARA TODOS
+  |
+  v
+Registro de pagamento da fatura (useRegisterInvoicePayment)
+  |
+  v
+Comissoes recorrentes do mes -> status 'a_pagar' -- AGORA FUNCIONA
 ```
