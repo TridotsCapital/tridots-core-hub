@@ -60,7 +60,7 @@ export const useMonthlyInvoiceSummary = (agencyId?: string) => {
         }
       }
 
-      // Faturas existentes (agora sempre existem)
+      // Faturas existentes
       let invoiceQuery = supabase
         .from('agency_invoices')
         .select('reference_month, reference_year, total_value, status, due_date, agency_id');
@@ -69,13 +69,29 @@ export const useMonthlyInvoiceSummary = (agencyId?: string) => {
         invoiceQuery = invoiceQuery.eq('agency_id', agencyId);
       }
 
-      const { data: invoices, error: invoiceError } = await invoiceQuery;
-      if (invoiceError) throw invoiceError;
+      // Also fetch orphan installments (not linked to any invoice)
+      let orphanQuery = supabase
+        .from('guarantee_installments')
+        .select('reference_month, reference_year, value, agency_id')
+        .is('invoice_item_id', null)
+        .in('status', ['pendente']);
+      
+      if (agencyId) {
+        orphanQuery = orphanQuery.eq('agency_id', agencyId);
+      }
+
+      const [invoiceResult, orphanResult] = await Promise.all([invoiceQuery, orphanQuery]);
+
+      if (invoiceResult.error) throw invoiceResult.error;
+      if (orphanResult.error) throw orphanResult.error;
+
+      const invoices = invoiceResult.data || [];
+      const orphans = orphanResult.data || [];
 
       // Mapear faturas existentes
       const invoiceMap = new Map<string, { value: number; status: string; count: number; dueDate: string }>();
       
-      for (const inv of invoices || []) {
+      for (const inv of invoices) {
         const key = `${inv.reference_month}-${inv.reference_year}`;
         const existing = invoiceMap.get(key);
         if (existing) {
@@ -94,6 +110,22 @@ export const useMonthlyInvoiceSummary = (agencyId?: string) => {
         }
       }
 
+      // Add orphan installment values to the map
+      for (const orphan of orphans) {
+        const key = `${orphan.reference_month}-${orphan.reference_year}`;
+        const existing = invoiceMap.get(key);
+        if (existing) {
+          existing.value += orphan.value || 0;
+        } else {
+          invoiceMap.set(key, {
+            value: orphan.value || 0,
+            status: 'pendente',
+            count: 0,
+            dueDate: ''
+          });
+        }
+      }
+
       return months.map(m => {
         const key = `${m.month}-${m.year}`;
         const invoice = invoiceMap.get(key);
@@ -104,7 +136,7 @@ export const useMonthlyInvoiceSummary = (agencyId?: string) => {
             totalValue: invoice.value,
             status: invoice.status as MonthSummary['status'],
             invoiceCount: invoice.count,
-            hasInvoice: true,
+            hasInvoice: invoice.count > 0,
             dueDate: invoice.dueDate
           };
         }

@@ -23,11 +23,14 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const body = await req.json().catch(() => ({}));
+    const backfillAll = body.backfill_all === true;
     const targetMonth = body.reference_month || body.month || new Date().getMonth() + 1;
     const targetYear = body.reference_year || body.year || new Date().getFullYear();
     const specificAgencyId = body.agency_id;
 
-    console.log(`[FALLBACK] Checking unfactured installments for ${targetMonth}/${targetYear}`);
+    console.log(backfillAll 
+      ? `[BACKFILL] Processing ALL orphan installments across all months`
+      : `[FALLBACK] Checking unfactured installments for ${targetMonth}/${targetYear}`);
 
     // Buscar parcelas pendentes que NÃO estão vinculadas a nenhuma fatura
     let query = supabase
@@ -52,10 +55,13 @@ serve(async (req) => {
           )
         )
       `)
-      .eq("reference_month", targetMonth)
-      .eq("reference_year", targetYear)
-      .eq("status", "pendente")
+      .in("status", ["pendente", "faturada"])
       .is("invoice_item_id", null);
+
+    // Only filter by month/year if NOT backfilling all
+    if (!backfillAll) {
+      query = query.eq("reference_month", targetMonth).eq("reference_year", targetYear);
+    }
 
     if (specificAgencyId) {
       query = query.eq("agency_id", specificAgencyId);
@@ -86,34 +92,44 @@ serve(async (req) => {
 
     console.log(`[FALLBACK] Found ${orphanInstallments.length} orphan installments to fix`);
 
-    // Agrupar por agency_id
-    const byAgency = new Map<string, typeof orphanInstallments>();
+    // Agrupar por agency_id + month/year
+    const byAgencyMonth = new Map<string, typeof orphanInstallments>();
     for (const inst of orphanInstallments) {
-      const list = byAgency.get(inst.agency_id) || [];
+      const key = `${inst.agency_id}__${inst.reference_month}__${inst.reference_year}`;
+      const list = byAgencyMonth.get(key) || [];
       list.push(inst);
-      byAgency.set(inst.agency_id, list);
+      byAgencyMonth.set(key, list);
     }
 
     let invoicesCreated = 0;
     let invoicesUpdated = 0;
 
-    for (const [agencyId, installments] of byAgency) {
-      // Buscar billing_due_day
-      const { data: agency } = await supabase
-        .from("agencies")
-        .select("billing_due_day")
-        .eq("id", agencyId)
-        .single();
+    // Cache billing_due_day per agency
+    const agencyBillingCache = new Map<string, number>();
 
-      const billingDueDay = agency?.billing_due_day || 10;
+    for (const [key, installments] of byAgencyMonth) {
+      const [agencyId, refMonthStr, refYearStr] = key.split("__");
+      const refMonth = parseInt(refMonthStr);
+      const refYear = parseInt(refYearStr);
 
-      // Verificar se já existe fatura
+      // Buscar billing_due_day (cached)
+      if (!agencyBillingCache.has(agencyId)) {
+        const { data: agency } = await supabase
+          .from("agencies")
+          .select("billing_due_day")
+          .eq("id", agencyId)
+          .single();
+        agencyBillingCache.set(agencyId, agency?.billing_due_day || 10);
+      }
+      const billingDueDay = agencyBillingCache.get(agencyId)!;
+
+      // Verificar se já existe fatura para este mês
       const { data: existingInvoice } = await supabase
         .from("agency_invoices")
         .select("id, total_value")
         .eq("agency_id", agencyId)
-        .eq("reference_month", targetMonth)
-        .eq("reference_year", targetYear)
+        .eq("reference_month", refMonth)
+        .eq("reference_year", refYear)
         .neq("status", "cancelada")
         .maybeSingle();
 
@@ -132,14 +148,14 @@ serve(async (req) => {
         invoicesUpdated++;
       } else {
         const totalValue = installments.reduce((sum, i) => sum + (i.value || 0), 0);
-        const dueDate = new Date(targetYear, targetMonth - 1, billingDueDay);
+        const dueDate = new Date(refYear, refMonth - 1, billingDueDay);
 
         const { data: newInvoice, error: invoiceError } = await supabase
           .from("agency_invoices")
           .insert({
             agency_id: agencyId,
-            reference_month: targetMonth,
-            reference_year: targetYear,
+            reference_month: refMonth,
+            reference_year: refYear,
             status: "rascunho",
             total_value: totalValue,
             due_date: dueDate.toISOString().split('T')[0]
@@ -148,7 +164,7 @@ serve(async (req) => {
           .single();
 
         if (invoiceError) {
-          console.error(`[FALLBACK] Error creating invoice for agency ${agencyId}:`, invoiceError);
+          console.error(`[BACKFILL] Error creating invoice for agency ${agencyId} ${refMonth}/${refYear}:`, invoiceError);
           continue;
         }
 
@@ -160,7 +176,7 @@ serve(async (req) => {
           .insert({
             invoice_id: invoiceId,
             event_type: "created",
-            description: `[FALLBACK] Fatura ${String(targetMonth).padStart(2, '0')}/${targetYear} criada pela verificação de consistência com ${installments.length} parcela(s) órfã(s)`
+            description: `[BACKFILL] Fatura ${String(refMonth).padStart(2, '0')}/${refYear} criada pela verificação de consistência com ${installments.length} parcela(s) órfã(s)`
           });
       }
 
@@ -206,8 +222,9 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        reference: `${targetMonth}/${targetYear}`,
-        agencies_processed: byAgency.size,
+        mode: backfillAll ? "backfill_all" : "single_month",
+        reference: backfillAll ? "all" : `${targetMonth}/${targetYear}`,
+        groups_processed: byAgencyMonth.size,
         invoices_created: invoicesCreated,
         invoices_updated: invoicesUpdated,
         orphan_installments_fixed: orphanInstallments.length
