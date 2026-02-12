@@ -1,53 +1,99 @@
 
+## Oportunidades de Melhoria para Tridots - Análise e Plano de Ação
 
-# Ajuste de Due Date das Comissoes - Mes Subsequente (Dia 10)
+### 1. **Bugs & Code Debt Identificados**
 
-## Problema Identificado
-Atualmente, o `due_date` das comissoes recorrentes e de setup esta sendo definido no **mesmo mes** do `mes_referencia`. A regra de negocio correta e: **toda comissao so e paga no mes seguinte ao mes de referencia da parcela, sempre no dia 10**.
+#### 1.1 - Bug na Verificação de Role (DocumentSection.tsx)
+- **Localização**: `src/components/kanban/DocumentSection.tsx`, linha 120
+- **Problema**: `const isMaster = profile?.id === profile?.id;` sempre retorna `true` ou `undefined`
+- **Impacto**: Controle de acesso incorreto para deletar documentos
+- **Solução**: Substituir por verificação correta: `isMaster = role === 'master'` usando o context `useAuth()`
 
-Exemplo: parcela do mes 08/2026 paga -> comissao com `due_date = 10/09/2026`.
+### 2. **Otimizações no Modelo de Dados**
 
-## Regras Confirmadas
-1. **Setup**: tambem e pago no mes seguinte a ativacao, dia 10
-2. **Recorrente**: `due_date` = dia 10 do mes seguinte ao `mes_referencia`
-3. **Todos os metodos de pagamento** (Boleto Unificado, Pix, Cartao): mesma regra
-4. **mes_referencia**: representa o mes da parcela de garantia (servico prestado), NAO o mes do pagamento da comissao
-5. **Dia fixo**: sempre dia 10, independente da agencia
+#### 2.1 - Adição de Índices de Banco de Dados
+Baseado na análise do código, há 30+ hooks que consultam as seguintes tabelas com frequência:
+- `commissions` (mes_referencia, ano_referencia, due_date, agency_id, status)
+- `analyses` (agency_id, status, created_at)
+- `contracts` (agency_id, status, payment_method, due_date)
+- `invoices` (agency_id, status, due_date, created_at)
+- `profiles` (user_id, role, agency_id)
 
-## Alteracoes Necessarias
+**Impacto**: Reduzir latência em queries recorrentes (especialmente em dashboards com múltiplos filtros)
 
-### 1. Edge Function `validate-payments/index.ts` (geracao de comissoes)
-Na funcao `generateCommissions`, ajustar o calculo de `due_date`:
+#### 2.2 - Otimização de Pagination em Queries
+Muitos hooks fazem queries sem `limit()`, podendo retornar > 1000 registros.
+Exemplo: `useAgencies`, `useAnalyses`, `useContracts` em dashboards com muitos registros.
 
-- **Setup**: `due_date` = dia 10 do mes seguinte ao mes da validacao (nao mais o mesmo mes)
-- **Recorrente**: `due_date` = dia 10 do mes seguinte ao `mes_referencia` da comissao (atualmente usa `startDate + i + 1` como due_date, o que ja e o mes seguinte ao startDate, mas o dia e variavel e o mes pode nao corresponder ao mes_referencia + 1)
+**Impacto**: Melhorar performance em agências com alto volume de dados
 
-Logica correta:
-```
-Para cada comissao recorrente:
-  mes_referencia = mes calculado
-  ano_referencia = ano calculado  
-  due_date = dia 10 do (mes_referencia + 1)
+### 3. **Melhorias em Edge Functions**
 
-Para setup:
-  mes_referencia = mes da ativacao
-  due_date = dia 10 do (mes da ativacao + 1)
-```
+#### 3.1 - Cache para Operações Custosas
+Identificadas operações recorrentes que poderiam ser cacheadas:
+- Cálculo de comissões (usado em 5+ funções)
+- Geração de relatórios mensais (`process-monthly-commissions`)
+- Validação de pagamentos (`validate-payments`)
 
-### 2. Hook `useCommissions.ts` (geracao client-side)
-A funcao `useGenerateContractCommissions` tem a mesma logica de geracao. Aplicar a mesma correcao:
-- Setup: `due_date` = dia 10 do mes seguinte
-- Recorrente: `due_date` = dia 10 do mes seguinte ao `mes_referencia`
+**Impacto**: Reduzir execução de functions desnecessárias, economizando custos
 
-### 3. Correcao retroativa dos dados existentes (SQL)
-Executar um UPDATE nos registros ja criados para ajustar o `due_date`:
-- Para comissoes recorrentes: `due_date` = dia 10 do mes seguinte ao `mes_referencia/ano_referencia`
-- Para comissoes de setup: `due_date` = dia 10 do mes seguinte ao `mes_referencia/ano_referencia`
+#### 3.2 - Consolidação de Funções Similares
+- `generate-invoice-drafts`, `generate-invoice-pdf`, `generate-invoice-excel` poderiam compartilhar lógica de geração
+- `send-*-notification` funções (10+) poderiam usar um único template system
+- `*-renewal-*` funções (4+) poderiam ser unificadas
 
-### 4. Hook `useAgencyInvoices.ts` (registro de pagamento de fatura)
-Verificar se ao transicionar comissoes de `pendente` para `a_pagar`, o `due_date` ja esta correto (com a correcao acima, ja estara). Nenhuma alteracao adicional deve ser necessaria neste hook apos a correcao na geracao.
+**Impacto**: Reduzir código duplicado, melhorar manutenibilidade e reduzir execuções
 
-## Resumo de Arquivos Afetados
-- `supabase/functions/validate-payments/index.ts` - corrigir `generateCommissions`
-- `src/hooks/useCommissions.ts` - corrigir `useGenerateContractCommissions`
-- Migracao SQL para corrigir dados existentes
+### 4. **Melhorias de UX/UI**
+
+#### 4.1 - Dashboard de Monitoramento de Consumo Lovable Cloud
+- Adicionar página `src/pages/CloudMonitoring.tsx` com métricas em tempo real:
+  - Database queries por dia/semana
+  - Edge Function executions e duração média
+  - Storage usage
+  - Alertas quando ultrapassar thresholds
+
+**Impacto**: Usuário consegue visualizar consumo e planejar otimizações
+
+#### 4.2 - Confirmação de Ações Críticas
+- Adicionar modal de confirmação em operações destrutivas (ex: deletar agência, cancelar contrato)
+- Implementar "soft delete" para alguns registros antes de delete permanente
+
+**Impacto**: Reduzir erros do usuário, evitar exclusões acidentais
+
+### 5. **Monitoramento e Observabilidade**
+
+#### 5.1 - Rastreamento Melhorado de Erros
+- Implementar logging estruturado em Edge Functions
+- Adicionar tratamento de erro mais específico em hooks (diferenciar network vs business logic errors)
+- Criar dashboard de erros frequentes
+
+**Impacto**: Facilitar debugging, identificar padrões de falha
+
+#### 5.2 - Métricas de Performance
+- Adicionar tracking de tempo de execução em operações críticas (approve analysis, generate commission, etc)
+- Monitorar N90/N99 de latência em queries mais usadas
+- Identificar queries com mais tempo de execução
+
+**Impacto**: Base de dados para otimizações futuras
+
+### Priorização Recomendada
+
+| # | Item | Esforço | Impacto | Prioridade |
+|---|------|---------|--------|-----------|
+| 1 | Bug DocumentSection.tsx | Mínimo | Alto | **CRÍTICA** |
+| 2 | Índices de DB (commissions, analyses, contracts) | Baixo | Alto | **ALTA** |
+| 3 | Pagination em hooks | Médio | Médio | Alta |
+| 4 | Cache em Edge Functions | Médio | Alto | Alta |
+| 5 | Dashboard Cloud Monitoring | Médio | Médio | Média |
+| 6 | Consolidação de Edge Functions | Alto | Médio | Média |
+| 7 | Logging/Observabilidade | Médio | Médio | Média |
+
+### Próximos Passos
+
+Qual destas áreas você gostaria de priorizar? Recomendo começar por:
+1. **Primeiro**: Corrigir o bug de role verification (1-2 min)
+2. **Segundo**: Adicionar índices de DB (5-10 min)
+3. **Terceiro**: Implementar pagination nos hooks principais (1-2h)
+
+Isso daria um bom ganho de performance e stability sem muito esforço inicial.
