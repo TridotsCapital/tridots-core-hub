@@ -19,6 +19,7 @@ import FinancialInvoices from "./pages/FinancialInvoices";
 import DocumentCenter from "./pages/DocumentCenter";
 import InvoiceDetail from "./pages/InvoiceDetail";
 import AuditViewer from "./pages/AuditViewer";
+import CloudMonitoring from "./pages/CloudMonitoring";
 import UserManagement from "./pages/UserManagement";
 import DigitalAcceptance from "./pages/DigitalAcceptance";
 import TicketCenter from "./pages/TicketCenter";
@@ -81,6 +82,7 @@ function InternalRoutes() {
       <Route path="/financial" element={<FinancialDashboard />} />
       <Route path="/documents" element={<DocumentCenter />} />
       <Route path="/audit" element={<AuditViewer />} />
+      <Route path="/cloud-monitoring" element={<CloudMonitoring />} />
       <Route path="/users" element={<UserManagement />} />
       <Route path="/accept/:analysisId" element={<DigitalAcceptance />} />
       <Route path="/tickets" element={<TicketCenter />} />

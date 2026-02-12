@@ -27,6 +27,7 @@ import {
   ScrollText,
   Users,
   LogOut,
+  Activity,
   Headphones,
   FileCheck,
   AlertTriangle,
@@ -103,6 +104,12 @@ const menuItems = [
     title: 'Logs',
     icon: ScrollText,
     path: '/audit',
+    masterOnly: true,
+  },
+  {
+    title: 'Cloud Monitoring',
+    icon: Activity,
+    path: '/cloud-monitoring',
     masterOnly: true,
   },
 ];
