@@ -1,11 +1,14 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { agencyActivationTemplate, sendEmail } from "../_shared/email-templates.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { agencyActivationTemplate } from "../_shared/email-templates.ts";
+import {
+  corsHeaders,
+  initNotificationContext,
+  validateResendKey,
+  sendAndLog,
+  errorResponse,
+  successResponse,
+  notFoundResponse,
+} from "../_shared/notification-utils.ts";
 
 interface AgencyActivationRequest {
   agency_id: string;
@@ -18,19 +21,11 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const resendApiKey = Deno.env.get('RESEND_API_KEY');
-    const testEmail = Deno.env.get('TRIDOTS_NOTIFICATIONS_EMAIL') || 'testes@tridots.com.br';
-    
-    if (!resendApiKey) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'RESEND_API_KEY não configurada' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    const { supabase, resendApiKey, testEmail } = initNotificationContext();
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const keyError = validateResendKey(resendApiKey);
+    if (keyError) return keyError;
+
     const { agency_id, test_mode = false }: AgencyActivationRequest = await req.json();
 
     // Buscar dados da agência
@@ -41,10 +36,7 @@ serve(async (req) => {
       .single();
 
     if (agencyError || !agency) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Agência não encontrada' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return notFoundResponse('Agência não encontrada');
     }
 
     const recipientEmail = agency.responsavel_email;
@@ -55,59 +47,32 @@ serve(async (req) => {
       );
     }
 
-    // Gerar e-mail
     const { subject, html } = agencyActivationTemplate({
       responsibleName: agency.responsavel_nome || 'Responsável',
       agencyName: agency.nome_fantasia || agency.razao_social,
       loginUrl: 'https://tridots-core-hub.lovable.app/auth'
     });
 
-    // Enviar e-mail
-    const result = await sendEmail(
-      resendApiKey,
+    const result = await sendAndLog(supabase, {
+      resendApiKey: resendApiKey!,
       recipientEmail,
       subject,
       html,
-      test_mode,
-      testEmail
-    );
-
-    // Registrar no log
-    await supabase.from('email_logs').insert({
-      recipient_email: test_mode ? testEmail : recipientEmail,
-      recipient_original: test_mode ? recipientEmail : null,
-      template_type: 'agency_activation',
-      subject,
-      status: result.success ? 'sent' : 'failed',
+      templateType: 'agency_activation',
+      referenceId: agency_id,
+      recipientName: agency.responsavel_nome || agency.nome_fantasia || agency.razao_social,
+      testMode: test_mode,
+      testEmail,
       metadata: { agency_id, test_mode },
-      error_message: result.error,
-      sent_at: result.success ? new Date().toISOString() : null
     });
 
-    // Criar notificação in-app para usuários Tridots
-    await supabase.rpc('create_email_sent_notification', {
-      p_template_type: 'agency_activation',
-      p_recipient_email: recipientEmail,
-      p_recipient_name: agency.responsavel_nome || agency.nome_fantasia || agency.razao_social,
-      p_reference_id: agency_id,
-      p_success: result.success
+    return successResponse({
+      success: result.success,
+      message_id: result.messageId,
+      error: result.error,
     });
 
-    return new Response(
-      JSON.stringify({
-        success: result.success,
-        message_id: result.messageId,
-        error: result.error
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-
-  } catch (error: unknown) {
-    console.error('Erro ao enviar e-mail de ativação:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-    return new Response(
-      JSON.stringify({ success: false, error: errorMessage }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+  } catch (error) {
+    return errorResponse(error, 'send-agency-activation');
   }
 });
