@@ -4,14 +4,18 @@ import type { Agency } from '@/types/database';
 import type { TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
 
-export function useAgencies(activeOnly = true) {
+export function useAgencies(activeOnly = true, page = 1, pageSize = 50) {
   return useQuery({
-    queryKey: ['agencies', activeOnly],
+    queryKey: ['agencies', activeOnly, page, pageSize],
     queryFn: async () => {
+      const offset = (page - 1) * pageSize;
+      
       let query = supabase
         .from('agencies')
         .select('*')
-        .order('razao_social', { ascending: true });
+        .order('razao_social', { ascending: true })
+        .limit(pageSize)
+        .range(offset, offset + pageSize - 1);
 
       if (activeOnly) {
         query = query.eq('active', true);
