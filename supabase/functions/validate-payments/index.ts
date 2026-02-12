@@ -1,5 +1,11 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
+import { 
+  getCachedValue, 
+  setCachedValue, 
+  getCommissionCalculationKey,
+  clearCache 
+} from "../_shared/commission-cache.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -283,6 +289,15 @@ const handler = async (req: Request): Promise<Response> => {
 
 // Generate commissions for the agency
 async function generateCommissions(supabase: any, analysis: any, validationDate: string) {
+  // Check cache first to avoid duplicate calculations
+  const cacheKey = getCommissionCalculationKey(analysis.id);
+  const cachedCommissions = getCachedValue(cacheKey);
+  
+  if (cachedCommissions) {
+    console.log(`Using cached commissions for analysis ${analysis.id}`);
+    return insertCommissionsIfNeeded(supabase, cachedCommissions, analysis.id);
+  }
+
   const planoGarantia = analysis.plano_garantia || 'start';
   const commissionRate = PLAN_COMMISSION_RATES[planoGarantia] || 5;
   const garantiaAnual = analysis.garantia_anual || (analysis.valor_total * (analysis.taxa_garantia_percentual / 100) * 12);
@@ -348,6 +363,27 @@ async function generateCommissions(supabase: any, analysis: any, validationDate:
 
   console.log(`Inserting ${commissions.length} commissions for analysis ${analysis.id}`);
   
+  // Cache the calculated commissions for 1 hour
+  const cacheKey = getCommissionCalculationKey(analysis.id);
+  setCachedValue(cacheKey, commissions, 60);
+  
+  await insertCommissionsIfNeeded(supabase, commissions, analysis.id);
+}
+
+// Insert commissions if they don't already exist
+async function insertCommissionsIfNeeded(supabase: any, commissions: any[], analysisId: string) {
+  // Check if commissions already exist for this analysis
+  const { data: existingCommissions } = await supabase
+    .from('commissions')
+    .select('id')
+    .eq('analysis_id', analysisId)
+    .limit(1);
+
+  if (existingCommissions && existingCommissions.length > 0) {
+    console.log(`Commissions already exist for analysis ${analysisId}, skipping insertion`);
+    return;
+  }
+
   const { error } = await supabase
     .from('commissions')
     .insert(commissions);

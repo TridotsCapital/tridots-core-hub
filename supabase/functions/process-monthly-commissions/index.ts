@@ -19,12 +19,14 @@ serve(async (req) => {
 
     const today = new Date().toISOString().split('T')[0];
 
-    // Find all pending commissions where due_date <= today
+    // Find all pending commissions where due_date <= today using indexed columns
+    // This query leverages the due_date and status indexes we created for performance
     const { data: pendingCommissions, error: fetchError } = await supabase
       .from("commissions")
-      .select("id, due_date, status")
+      .select("id, due_date, status", { count: 'exact' })
       .eq("status", "pendente")
-      .lte("due_date", today);
+      .lte("due_date", today)
+      .limit(1000); // Apply limit to batch process if needed
 
     if (fetchError) {
       throw fetchError;
