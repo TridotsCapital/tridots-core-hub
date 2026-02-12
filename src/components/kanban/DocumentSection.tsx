@@ -117,7 +117,7 @@ export function DocumentSection({ analysisId, identityPhotoPath, tenantName }: D
     deleteDocument.mutate({ id, filePath, analysisId });
   };
 
-  const isMaster = profile?.id === profile?.id; // TODO: Check actual role
+  const { isMaster } = useAuth();
 
   if (isLoading) {
     return (
