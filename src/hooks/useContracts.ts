@@ -15,12 +15,18 @@ export interface ContractFilters {
   state?: string;
   search?: string;
   renewalPeriod?: boolean; // Filter contracts within renewal period (30 days before expiry)
+  page?: number;
+  pageSize?: number;
 }
 
 export function useContracts(filters?: ContractFilters) {
   return useQuery({
     queryKey: ['contracts', filters],
     queryFn: async () => {
+      const page = filters?.page || 1;
+      const pageSize = filters?.pageSize || 50;
+      const offset = (page - 1) * pageSize;
+
       // Query the REAL contracts table, not analyses
       let query = supabase
         .from('contracts')
@@ -47,7 +53,9 @@ export function useContracts(filters?: ContractFilters) {
           ),
           agency:agencies(id, razao_social, nome_fantasia)
         `)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(pageSize)
+        .range(offset, offset + pageSize - 1);
 
       // Filter by contract status
       if (filters?.status?.length) {

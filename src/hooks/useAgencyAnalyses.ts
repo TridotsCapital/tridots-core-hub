@@ -7,6 +7,8 @@ import { Analysis, AnalysisStatus } from "@/types/database";
 interface UseAgencyAnalysesOptions {
   status?: AnalysisStatus;
   search?: string;
+  page?: number;
+  pageSize?: number;
 }
 
 export function useAgencyAnalyses(options: UseAgencyAnalysesOptions = {}) {
@@ -15,9 +17,13 @@ export function useAgencyAnalyses(options: UseAgencyAnalysesOptions = {}) {
   const agencyId = agencyUser?.agency_id;
 
   const query = useQuery({
-    queryKey: ["agency-analyses", agencyId, options.status, options.search],
+    queryKey: ["agency-analyses", agencyId, options.status, options.search, options.page, options.pageSize],
     queryFn: async () => {
       if (!agencyId) return [];
+
+      const page = options.page || 1;
+      const pageSize = options.pageSize || 50;
+      const offset = (page - 1) * pageSize;
 
       let queryBuilder = supabase
         .from("analyses")
@@ -26,7 +32,9 @@ export function useAgencyAnalyses(options: UseAgencyAnalysesOptions = {}) {
           agency:agencies(*)
         `)
         .eq("agency_id", agencyId)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(pageSize)
+        .range(offset, offset + pageSize - 1);
 
       if (options.status) {
         queryBuilder = queryBuilder.eq("status", options.status);
