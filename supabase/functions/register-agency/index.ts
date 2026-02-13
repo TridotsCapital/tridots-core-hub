@@ -69,6 +69,20 @@ Deno.serve(async (req) => {
       data.bairro,
     ].filter(Boolean).join(', ');
 
+    // Check for duplicate CNPJ
+    const { data: existingAgency } = await supabase
+      .from("agencies")
+      .select("id")
+      .eq("cnpj", data.cnpj)
+      .maybeSingle();
+
+    if (existingAgency) {
+      return new Response(
+        JSON.stringify({ error: "CNPJ já cadastrado", details: "Já existe uma imobiliária cadastrada com este CNPJ. Se você acredita que isso é um erro, entre em contato com o suporte." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // 1. Create agency record (active = false, percentual_comissao = 0)
     const { data: agency, error: agencyError } = await supabase
       .from("agencies")
