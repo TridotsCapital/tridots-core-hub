@@ -214,7 +214,7 @@ export default function AnalysisForm() {
                 {statusConfig[analysis.status].label}
               </Badge>
 
-              {isMaster && analysis.status === 'pendente' && (
+              {(isMaster || role === 'analyst') && analysis.status === 'pendente' && (
                 <Button
                   type="button"
                   variant="outline"
@@ -226,13 +226,13 @@ export default function AnalysisForm() {
                 </Button>
               )}
 
-              {isMaster && analysis.status === 'em_analise' && (
+              {(isMaster || role === 'analyst') && analysis.status === 'em_analise' && (
                 <>
                   <Button
                     type="button"
                     variant="default"
                     className="bg-success hover:bg-success/90"
-                    onClick={() => handleStatusChange('aprovada')}
+                    onClick={() => handleStatusChange('aguardando_pagamento')}
                     disabled={updateStatus.isPending}
                   >
                     <CheckCircle className="h-4 w-4 mr-2" />

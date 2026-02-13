@@ -156,7 +156,7 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => {
+              {menuItems.filter(item => !item.masterOnly || role === 'master').map((item) => {
                 const count = getNotificationCount(item.path);
                 return (
                   <SidebarMenuItem key={item.path}>
