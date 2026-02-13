@@ -100,11 +100,23 @@ export function ApprovalModal({ analysis, open, onOpenChange, onConfirm, mode = 
         guarantee_payment_link: isBoletoUnificado ? null : guaranteePaymentLink,
       };
 
-      // If rate was adjusted, save original and mark as adjusted
+      // If rate was adjusted, save original, mark as adjusted, and recalculate garantia_anual
       if (isRateAdjusted) {
         updateData.original_taxa_garantia_percentual = analysis.taxa_garantia_percentual;
         updateData.taxa_garantia_percentual = taxaGarantia;
         updateData.rate_adjusted_by_tridots = true;
+
+        // Recalculate garantia_anual based on new rate
+        const newGarantiaMensal = valorTotal * taxaGarantia / 100;
+        let newGarantiaAnual = newGarantiaMensal * 12;
+
+        // Apply PIX discount if applicable
+        const desconto = (analysis as any)?.agency?.desconto_pix_percentual ?? 0;
+        if (formaPagamento === 'pix' && desconto > 0) {
+          newGarantiaAnual = newGarantiaAnual * (1 - desconto / 100);
+        }
+
+        updateData.garantia_anual = newGarantiaAnual;
       }
 
       onConfirm(updateData);

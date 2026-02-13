@@ -15,8 +15,8 @@ import {
   History,
   RefreshCw,
 } from 'lucide-react';
-import { format, differenceInDays, addMonths } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { differenceInDays, addMonths } from 'date-fns';
+import { formatDateBR } from '@/lib/utils';
 import { formatCurrency } from '@/lib/validators';
 import { useContractRenewals, usePendingRenewal, useApproveRenewal, useRejectRenewal } from '@/hooks/useContractRenewal';
 import { useRenewalNotifications } from '@/hooks/useRenewalNotifications';
@@ -170,7 +170,7 @@ export function ContractRenewalTab({
               <div>
                 <span className="text-muted-foreground">Vencimento Atual:</span>
                 <p className="font-medium">
-                  {format(new Date(dataFimContrato), "dd/MM/yyyy", { locale: ptBR })}
+                  {formatDateBR(dataFimContrato)}
                 </p>
               </div>
               {daysUntilExpiration !== null && (
@@ -205,7 +205,7 @@ export function ContractRenewalTab({
               Solicitação de Renovação Pendente
             </CardTitle>
             <CardDescription>
-              Solicitada em {format(new Date(pendingRenewal.requested_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+              Solicitada em {formatDateBR(pendingRenewal.requested_at, "dd/MM/yyyy 'às' HH:mm")}
               {' '}pela {pendingRenewal.request_source === 'agency' ? 'Imobiliária' : 'Tridots'}
             </CardDescription>
           </CardHeader>
@@ -298,7 +298,7 @@ export function ContractRenewalTab({
                 <div key={renewal.id} className="border rounded-lg p-3 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">
-                      {format(new Date(renewal.requested_at), "dd/MM/yyyy", { locale: ptBR })}
+                      {formatDateBR(renewal.requested_at)}
                     </span>
                     <Badge variant="outline" className={config.color}>
                       <StatusIcon className="h-3 w-3 mr-1" />
@@ -373,7 +373,7 @@ export function ContractRenewalTab({
             </div>
             {dataFimContrato && (
               <p className="text-sm text-muted-foreground">
-                Nova data de vencimento: {format(addMonths(new Date(dataFimContrato), parseInt(durationMonths) || 12), "dd/MM/yyyy", { locale: ptBR })}
+                Nova data de vencimento: {formatDateBR(addMonths(new Date(dataFimContrato), parseInt(durationMonths) || 12).toISOString(), "dd/MM/yyyy")}
               </p>
             )}
           </div>
