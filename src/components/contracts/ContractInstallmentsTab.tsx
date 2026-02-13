@@ -1,7 +1,6 @@
 import { useContractInstallments } from "@/hooks/useContractInstallments";
 import { formatCurrency } from "@/lib/validators";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { formatDateBR } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CheckCircle, Clock, AlertCircle, Ban } from "lucide-react";
@@ -121,7 +120,7 @@ export function ContractInstallmentsTab({ contractId }: ContractInstallmentsTabP
                     <div>
                       <p className="font-medium">{formatCurrency(installment.value)}</p>
                       <p className="text-xs text-muted-foreground">
-                        Vencimento: {format(new Date(installment.due_date), "dd/MM/yyyy", { locale: ptBR })}
+                        Vencimento: {formatDateBR(installment.due_date)}
                       </p>
                     </div>
                   </div>
@@ -136,7 +135,7 @@ export function ContractInstallmentsTab({ contractId }: ContractInstallmentsTabP
 
                 {installment.paid_at && (
                   <p className="text-xs text-muted-foreground mt-1 ml-1">
-                    Pago em: {format(new Date(installment.paid_at), "dd/MM/yyyy", { locale: ptBR })}
+                    Pago em: {formatDateBR(installment.paid_at)}
                   </p>
                 )}
               </div>

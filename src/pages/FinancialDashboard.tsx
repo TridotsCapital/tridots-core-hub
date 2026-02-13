@@ -43,8 +43,9 @@ import {
   Wallet
 } from 'lucide-react';
 import { commissionStatusConfig, CommissionStatus } from '@/types/database';
-import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
+import { startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { formatDateBR } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUpdateCommissionStatus } from '@/hooks/useCommissions';
 
@@ -451,7 +452,7 @@ function CommissionsTable({
                   <TableCell>
                     {commission.data_pagamento ? (
                       <span className="text-sm text-muted-foreground">
-                        {format(new Date(commission.data_pagamento), "dd/MM/yyyy", { locale: ptBR })}
+                        {formatDateBR(commission.data_pagamento)}
                       </span>
                     ) : (
                       '-'

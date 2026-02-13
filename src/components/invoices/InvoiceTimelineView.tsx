@@ -1,5 +1,4 @@
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { formatDateBR } from '@/lib/utils';
 import { MessageCircle, FileText, CheckCircle2, AlertCircle } from 'lucide-react';
 
 interface TimelineEvent {
@@ -65,7 +64,7 @@ export default function InvoiceTimelineView({ events }: InvoiceTimelineViewProps
                     {eventLabels[event.event_type] || event.event_type}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    {format(new Date(event.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                    {formatDateBR(event.created_at, 'dd/MM/yyyy HH:mm')}
                   </p>
                 </div>
               </div>

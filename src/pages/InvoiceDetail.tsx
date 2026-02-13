@@ -12,8 +12,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { formatDateBR } from '@/lib/utils';
 import { ArrowLeft, Download, Send, Upload, X, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import InvoicePaymentModal from '@/components/invoices/InvoicePaymentModal';
@@ -174,7 +173,7 @@ export default function InvoiceDetail() {
           <div className="bg-background rounded-lg border p-4">
             <p className="text-sm text-muted-foreground mb-2">Vencimento</p>
             <p className="text-lg font-semibold">
-              {format(new Date(invoice.due_date), 'dd/MM/yyyy', { locale: ptBR })}
+              {formatDateBR(invoice.due_date)}
             </p>
           </div>
           <div className="bg-background rounded-lg border p-4">
@@ -256,18 +255,18 @@ export default function InvoiceDetail() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Data de Criação</p>
-                <p>{format(new Date(invoice.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}</p>
+                <p>{formatDateBR(invoice.created_at, 'dd/MM/yyyy HH:mm')}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Última Atualização</p>
-                <p>{format(new Date(invoice.updated_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}</p>
+                <p>{formatDateBR(invoice.updated_at, 'dd/MM/yyyy HH:mm')}</p>
               </div>
             </div>
 
             {invoice.status === 'paga' && (
               <div className="bg-primary/5 rounded-lg border border-primary/20 p-4 space-y-2">
                 <p className="font-semibold">Informações de Pagamento</p>
-                <p className="text-sm"><strong>Data:</strong> {format(new Date(invoice.paid_at!), 'dd/MM/yyyy', { locale: ptBR })}</p>
+                <p className="text-sm"><strong>Data:</strong> {formatDateBR(invoice.paid_at!)}</p>
                 <p className="text-sm"><strong>Valor Pago:</strong> R$ {(invoice.paid_value || 0).toFixed(2)}</p>
                 {invoice.payment_notes && <p className="text-sm"><strong>Observações:</strong> {invoice.payment_notes}</p>}
               </div>

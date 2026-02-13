@@ -9,8 +9,8 @@ import { ContractRenewalTab } from '@/components/contracts/ContractRenewalTab';
 import { ArrowLeft, Home, User, Users, DollarSign, Calendar, CheckCircle, Clock, XCircle, CreditCard, FileText, Loader2, MessageSquare, Eye, ExternalLink, FileCheck, Shield, CalendarSync, Receipt } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency, PROPERTY_TYPES } from '@/lib/validators';
-import { format, addDays, isWithinInterval } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { addDays, isWithinInterval } from 'date-fns';
+import { formatDateBR } from '@/lib/utils';
 import { ContractDocumentsSection } from '@/components/contracts/ContractDocumentsSection';
 import { ContractTicketSheet } from './ContractTicketSheet';
 import { AgencyTicketDetail } from './AgencyTicketDetail';
@@ -382,7 +382,7 @@ export function AgencyContractDetail() {
                     <p className="font-medium">Renovação Disponível</p>
                     <p className="text-sm text-muted-foreground">
                       {contract.data_fim_contrato 
-                        ? `Contrato vence em ${format(new Date(contract.data_fim_contrato), "dd/MM/yyyy", { locale: ptBR })}`
+                        ? `Contrato vence em ${formatDateBR(contract.data_fim_contrato)}`
                         : 'Solicite a renovação do contrato'}
                     </p>
                   </div>
@@ -709,7 +709,7 @@ export function AgencyContractDetail() {
                           </div>
                           <p className="text-sm text-muted-foreground">{event.description}</p>
                           <p className="text-xs text-muted-foreground mt-1">
-                            {format(new Date(event.date), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR })}
+                            {formatDateBR(event.date, "dd 'de' MMMM 'de' yyyy 'às' HH:mm")}
                           </p>
                           {event.type === 'ticket' && event.ticketId && (
                             <Button

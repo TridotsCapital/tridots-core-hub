@@ -9,8 +9,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Search, MoreHorizontal, Eye, MessageSquare, FileText, Loader2, FileSearch, CheckCircle, Clock, XCircle, FileCheck, ShieldAlert, CalendarClock } from 'lucide-react';
 import { formatCurrency } from '@/lib/validators';
-import { format, addDays, isWithinInterval, parseISO } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { addDays, isWithinInterval, parseISO } from 'date-fns';
+import { formatDateBR } from '@/lib/utils';
 import { useUnreadItemIds, useMarkItemAsRead } from '@/hooks/useUnreadItemIds';
 import { useContractsWithActiveClaims } from '@/hooks/useContractsWithActiveClaims';
 import { cn } from '@/lib/utils';
@@ -290,10 +290,10 @@ export function AgencyContractList({
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {contract.analysis?.guarantee_payment_date 
-                            ? format(new Date(contract.analysis.guarantee_payment_date), 'dd/MM/yyyy', { locale: ptBR })
+                            ? formatDateBR(contract.analysis.guarantee_payment_date)
                             : contract.analysis?.payments_validated_at 
-                              ? format(new Date(contract.analysis.payments_validated_at), 'dd/MM/yyyy', { locale: ptBR })
-                              : format(new Date(contract.created_at), 'dd/MM/yyyy', { locale: ptBR })}
+                              ? formatDateBR(contract.analysis.payments_validated_at)
+                              : formatDateBR(contract.created_at)}
                         </TableCell>
                         <TableCell className="text-right">
                           <DropdownMenu>

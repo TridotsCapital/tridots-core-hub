@@ -30,8 +30,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Search, DollarSign, MoreHorizontal, CheckCircle, XCircle, RotateCcw, Clock, Wallet, FileCheck } from 'lucide-react';
 import { commissionStatusConfig, CommissionStatus } from '@/types/database';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { formatDateBR } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { GUARANTEE_PLANS, type PlanType } from '@/lib/plans';
 
@@ -239,7 +238,7 @@ export default function Commissions() {
                       <TableCell>
                         {commission.due_date ? (
                           <span className="text-sm text-muted-foreground">
-                            {format(new Date(commission.due_date), "dd/MM/yyyy", { locale: ptBR })}
+                            {formatDateBR(commission.due_date)}
                           </span>
                         ) : (
                           '-'

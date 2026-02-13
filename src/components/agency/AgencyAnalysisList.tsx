@@ -10,8 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Search, MoreHorizontal, Eye, MessageSquare, FileText, XCircle, Loader2, FileSearch } from 'lucide-react';
 import { formatCurrency } from '@/lib/validators';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { formatDateBR } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { Database } from '@/integrations/supabase/types';
@@ -216,7 +215,7 @@ export function AgencyAnalysisList({ analyses, isLoading, onRefresh }: AgencyAna
                           {formatCurrency(analysis.valor_aluguel)}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {format(new Date(analysis.created_at), 'dd/MM/yyyy', { locale: ptBR })}
+                          {formatDateBR(analysis.created_at)}
                         </TableCell>
                         <TableCell className="text-right">
                           <DropdownMenu>

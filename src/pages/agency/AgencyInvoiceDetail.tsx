@@ -2,8 +2,7 @@ import { useParams } from "react-router-dom";
 import { AgencyLayout } from "@/components/layout/AgencyLayout";
 import { useInvoiceDetail } from "@/hooks/useAgencyInvoices";
 import { formatCurrency } from "@/lib/validators";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { formatDateBR } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -64,7 +63,7 @@ export default function AgencyInvoiceDetail() {
               Fatura {invoice.reference_month}/{invoice.reference_year}
             </h1>
             <p className="text-muted-foreground mt-1">
-              Vencimento: {format(new Date(invoice.due_date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+              Vencimento: {formatDateBR(invoice.due_date, "dd 'de' MMMM 'de' yyyy")}
             </p>
           </div>
           <Badge variant={statusConfig[invoice.status]?.variant || "default"} className="text-base px-3 py-1">
@@ -152,7 +151,7 @@ export default function AgencyInvoiceDetail() {
                     <div className="pb-4">
                       <p className="font-medium">{event.description}</p>
                       <p className="text-sm text-muted-foreground">
-                        {format(new Date(event.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                        {formatDateBR(event.created_at, "dd/MM/yyyy HH:mm")}
                       </p>
                     </div>
                   </div>

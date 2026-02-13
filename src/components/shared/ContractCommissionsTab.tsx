@@ -6,9 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { DollarSign, Clock, CheckCircle, ArrowUpRight, CalendarDays, Repeat } from 'lucide-react';
 import { useContractCommissions, useContractCommissionsSummary } from '@/hooks/useContractCommissions';
 import { formatCurrency } from '@/lib/validators';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
+import { cn, formatDateBR } from '@/lib/utils';
 import type { CommissionStatus, CommissionType, PlanType } from '@/types/database';
 import { GUARANTEE_PLANS } from '@/lib/plans';
 
@@ -170,7 +168,7 @@ export function ContractCommissionsTab({ analysisId, planoGarantia }: ContractCo
                       <p className="font-medium">{isSetup ? 'Setup' : `Mês ${commission.mes_referencia}`}</p>
                       <p className="text-xs">{formatCurrency(commission.valor)}</p>
                       <p className="text-xs text-muted-foreground">
-                        Vencimento: {commission.due_date ? format(new Date(commission.due_date), 'dd/MM/yyyy', { locale: ptBR }) : '-'}
+                        Vencimento: {commission.due_date ? formatDateBR(commission.due_date) : '-'}
                       </p>
                     </TooltipContent>
                   </Tooltip>
@@ -221,7 +219,7 @@ export function ContractCommissionsTab({ analysisId, planoGarantia }: ContractCo
                     </TableCell>
                     <TableCell>
                       {commission.due_date 
-                        ? format(new Date(commission.due_date), 'dd/MM/yyyy', { locale: ptBR })
+                        ? formatDateBR(commission.due_date)
                         : '-'}
                     </TableCell>
                     <TableCell className="text-right">
