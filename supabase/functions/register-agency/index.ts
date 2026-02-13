@@ -25,6 +25,7 @@ interface AgencyRegistrationData {
   total_locacoes_ativas?: string;
   garantias_utilizadas?: string[];
   ticket_medio_aluguel?: number;
+  billing_due_day?: number;
 }
 
 Deno.serve(async (req) => {
@@ -104,6 +105,7 @@ Deno.serve(async (req) => {
         total_locacoes_ativas: data.total_locacoes_ativas || null,
         garantias_utilizadas: data.garantias_utilizadas || null,
         ticket_medio_aluguel: data.ticket_medio_aluguel || null,
+        billing_due_day: data.billing_due_day || 10,
       })
       .select()
       .single();
