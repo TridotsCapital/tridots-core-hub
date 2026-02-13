@@ -18,6 +18,7 @@ import { useAgencyUser } from "@/hooks/useAgencyUser";
 import { useAgencyCommissions, useAgencyCommissionsSummary } from "@/hooks/useCommissions";
 import { commissionStatusConfig } from "@/types/database";
 import { format } from "date-fns";
+import { formatDateBR } from "@/lib/utils";
 import { ptBR } from "date-fns/locale";
 import {
   DropdownMenu,
@@ -229,7 +230,7 @@ export default function AgencyCommissions() {
                             </TableCell>
                             <TableCell>
                               {commission.due_date 
-                                ? format(new Date(commission.due_date), 'dd/MM/yyyy', { locale: ptBR })
+                                ? formatDateBR(commission.due_date, 'dd/MM/yyyy')
                                 : '-'
                               }
                             </TableCell>

@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { cn, formatDateBR } from "@/lib/utils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { MonthSummary } from "@/hooks/useMonthlyInvoiceSummary";
@@ -171,7 +171,7 @@ export function MonthlyInvoiceChart({
             </h3>
             {selectedMonthData?.dueDate && (
               <p className="text-sm text-muted-foreground">
-                Vencimento: {format(new Date(selectedMonthData.dueDate), "dd 'de' MMMM", { locale: ptBR })}
+                Vencimento: {formatDateBR(selectedMonthData.dueDate, "dd 'de' MMMM")}
               </p>
             )}
           </div>

@@ -31,6 +31,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Loader2, Search, Filter, Shield, AlertTriangle, Download, Eye, User, Building2 } from "lucide-react";
+import { formatDateBR } from "@/lib/utils";
 import { Navigate } from "react-router-dom";
 import { HumanizedDataView } from "@/components/audit/HumanizedDataView";
 import { getFieldLabel, formatFieldValue } from "@/lib/field-labels";
@@ -81,7 +82,7 @@ const AuditViewer = () => {
 
     const headers = ["Data/Hora", "Organização", "Usuário", "Tabela", "Ação", "ID Registro", "Dados Anteriores", "Dados Novos"];
     const rows = logs.map(log => [
-      format(new Date(log.created_at), "dd/MM/yyyy HH:mm:ss"),
+      formatDateBR(log.created_at, "dd/MM/yyyy HH:mm:ss"),
       log.organization || "Sistema",
       log.user?.full_name || "Sistema",
       TABLE_LABELS[log.table_name] || log.table_name,
@@ -100,7 +101,7 @@ const AuditViewer = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `auditoria_${format(new Date(), "yyyy-MM-dd_HH-mm")}.csv`;
+    link.download = `auditoria_${format(new Date(), "yyyy-MM-dd_HH-mm")}.csv`; // new Date() is fine here as it's for filename timestamp
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -285,9 +286,7 @@ const AuditViewer = () => {
                       return (
                         <TableRow key={log.id}>
                           <TableCell className="whitespace-nowrap">
-                            {format(new Date(log.created_at), "dd/MM/yyyy HH:mm:ss", {
-                              locale: ptBR,
-                            })}
+                            {formatDateBR(log.created_at, "dd/MM/yyyy HH:mm:ss")}
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
@@ -384,7 +383,7 @@ const AuditViewer = () => {
                 <div>
                   <span className="text-muted-foreground">Data/Hora:</span>
                   <p className="font-medium">
-                    {format(new Date(selectedLog.created_at), "dd/MM/yyyy HH:mm:ss", { locale: ptBR })}
+                    {formatDateBR(selectedLog.created_at, "dd/MM/yyyy HH:mm:ss")}
                   </p>
                 </div>
                 <div>

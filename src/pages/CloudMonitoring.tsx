@@ -20,6 +20,7 @@ import {
   AlertTriangle,
   Bug,
 } from 'lucide-react';
+import { formatDateBR } from '@/lib/utils';
 import {
   BarChart,
   Bar,
@@ -467,7 +468,7 @@ export default function CloudMonitoring() {
                         {logs?.map((log) => (
                           <TableRow key={log.id} className={log.level === 'error' ? 'bg-destructive/5' : ''}>
                             <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                              {format(new Date(log.created_at), 'dd/MM HH:mm:ss')}
+                              {formatDateBR(log.created_at, 'dd/MM HH:mm:ss')}
                             </TableCell>
                             <TableCell className="font-mono text-xs">{log.function_name}</TableCell>
                             <TableCell>

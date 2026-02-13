@@ -298,9 +298,52 @@ async function generateCommissions(supabase: any, analysis: any, validationDate:
     return insertCommissionsIfNeeded(supabase, cachedCommissions, analysis.id);
   }
 
-  const planoGarantia = analysis.plano_garantia || 'start';
+  // Infer plan from rate if plano_garantia is null
+  let planoGarantia = analysis.plano_garantia;
+  
+  if (!planoGarantia) {
+    const taxa = analysis.taxa_garantia_percentual;
+    if (taxa >= 10 && taxa <= 12.5) {
+      planoGarantia = 'start';
+    } else if (taxa >= 13 && taxa <= 14.5) {
+      planoGarantia = 'prime';
+    } else if (taxa === 15) {
+      planoGarantia = 'exclusive';
+    } else {
+      planoGarantia = 'start'; // fallback
+    }
+    
+    // Update analysis with inferred plan to avoid reprocessing
+    await supabase
+      .from('analyses')
+      .update({ plano_garantia: planoGarantia })
+      .eq('id', analysis.id);
+      
+    console.log(`Inferred plan for analysis ${analysis.id}: ${planoGarantia} from rate ${taxa}%`);
+  }
+
   const commissionRate = PLAN_COMMISSION_RATES[planoGarantia] || 5;
-  const garantiaAnual = analysis.garantia_anual || (analysis.valor_total * (analysis.taxa_garantia_percentual / 100) * 12);
+  
+  // Security validation: recalculate garantiaAnual if rate was adjusted
+  let garantiaAnual = analysis.garantia_anual;
+  
+  if (analysis.rate_adjusted_by_tridots) {
+    // Recalculate based on adjusted rate
+    const valorTotal = analysis.valor_aluguel + (analysis.valor_condominio || 0) + (analysis.valor_iptu || 0) + (analysis.valor_outros_encargos || 0);
+    const baseGarantia = valorTotal * (analysis.taxa_garantia_percentual / 100) * 12;
+    
+    // Apply PIX discount if applicable
+    if (analysis.forma_pagamento_preferida === 'pix' && analysis.agency?.desconto_pix_percentual) {
+      garantiaAnual = baseGarantia * (1 - analysis.agency.desconto_pix_percentual / 100);
+    } else {
+      garantiaAnual = baseGarantia;
+    }
+    
+    console.log(`Recalculated garantiaAnual for adjusted rate: ${garantiaAnual} (was ${analysis.garantia_anual})`);
+  } else {
+    garantiaAnual = garantiaAnual || (analysis.valor_aluguel + (analysis.valor_condominio || 0) + (analysis.valor_iptu || 0) + (analysis.valor_outros_encargos || 0)) * (analysis.taxa_garantia_percentual / 100) * 12;
+  }
+  
   const comissaoAnual = garantiaAnual * (commissionRate / 100);
   const comissaoMensal = comissaoAnual / 12;
   const setupFee = analysis.setup_fee_exempt ? 0 : (analysis.setup_fee || 0);
@@ -367,6 +410,49 @@ async function generateCommissions(supabase: any, analysis: any, validationDate:
   setCachedValue(cacheKey, commissions, 60);
   
   await insertCommissionsIfNeeded(supabase, commissions, analysis.id);
+  
+  // If rate was adjusted, perform cascading updates to existing installments and invoice items
+  if (analysis.rate_adjusted_by_tridots && contractId) {
+    console.log(`Performing cascading updates for rate adjustment on contract ${contractId}`);
+    
+    // Update guarantee_installments if they exist
+    const { data: existingInstallments } = await supabase
+      .from('guarantee_installments')
+      .select('id, installment_number')
+      .eq('contract_id', contractId);
+    
+    if (existingInstallments && existingInstallments.length > 0) {
+      const monthlyValue = garantiaAnual / 12;
+      for (const installment of existingInstallments) {
+        await supabase
+          .from('guarantee_installments')
+          .update({ value: monthlyValue })
+          .eq('id', installment.id);
+      }
+      console.log(`Updated ${existingInstallments.length} installments with new valor`);
+    }
+    
+    // Update commission values if they exist
+    const { data: existingCommissions } = await supabase
+      .from('commissions')
+      .select('id, tipo_comissao')
+      .eq('contract_id', contractId);
+    
+    if (existingCommissions && existingCommissions.length > 0) {
+      for (const commission of existingCommissions) {
+        const newMonthlyValue = comissaoMensal;
+        await supabase
+          .from('commissions')
+          .update({ 
+            valor: newMonthlyValue,
+            base_calculo: garantiaAnual,
+            percentual_comissao: commissionRate
+          })
+          .eq('id', commission.id);
+      }
+      console.log(`Updated ${existingCommissions.length} commissions with new valores`);
+    }
+  }
 }
 
 // Insert commissions if they don't already exist

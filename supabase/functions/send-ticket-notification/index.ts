@@ -12,6 +12,7 @@ interface NotificationRequest {
   ticket_id: string;
   message_id?: string;
   event_type: 'new_ticket' | 'new_reply';
+  direction?: 'tridots_to_agency' | 'agency_to_tridots'; // added for bidirectional support
 }
 
 serve(async (req) => {
@@ -36,9 +37,10 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const body: NotificationRequest = await req.json();
-    const { ticket_id, message_id, event_type } = body;
-
-    console.log(`Processing ticket notification: ticket_id=${ticket_id}, event_type=${event_type}`);
+    const { ticket_id, message_id, event_type, direction } = body;
+    
+    // Default direction to tridots_to_agency if not specified (legacy behavior)
+    const notificationDirection = direction || 'tridots_to_agency';
 
     // Buscar dados do ticket
     const { data: ticket, error: ticketError } = await supabase
@@ -98,30 +100,53 @@ serve(async (req) => {
       }
     }
 
-    // Coletar destinatários
-    const recipients: { email: string; name: string }[] = [];
+    // Collect recipients based on notification direction
+    const recipients: { email: string; name: string; user_id?: string }[] = [];
 
-    // 1. E-mail principal da imobiliária
-    if (agency.responsavel_email) {
-      recipients.push({
-        email: agency.responsavel_email,
-        name: agency.responsavel_nome || agency.nome_fantasia || agency.razao_social
-      });
-    }
-
-    // 2. Colaborador designado no chamado (se diferente do responsável)
-    if (ticket.assigned_to) {
-      const { data: assignedUser } = await supabase
-        .from('profiles')
-        .select('email, full_name')
-        .eq('id', ticket.assigned_to)
-        .single();
-
-      if (assignedUser?.email && assignedUser.email !== agency.responsavel_email) {
+    if (notificationDirection === 'tridots_to_agency') {
+      // Notify agency: responsavel_email + assigned collaborator
+      // 1. E-mail principal da imobiliária
+      if (agency.responsavel_email) {
         recipients.push({
-          email: assignedUser.email,
-          name: assignedUser.full_name || 'Colaborador'
+          email: agency.responsavel_email,
+          name: agency.responsavel_nome || agency.nome_fantasia || agency.razao_social
         });
+      }
+
+      // 2. Colaborador designado no chamado (se diferente do responsável)
+      if (ticket.assigned_to) {
+        const { data: assignedUser } = await supabase
+          .from('profiles')
+          .select('id, email, full_name')
+          .eq('id', ticket.assigned_to)
+          .single();
+
+        if (assignedUser?.email && assignedUser.email !== agency.responsavel_email) {
+          recipients.push({
+            email: assignedUser.email,
+            name: assignedUser.full_name || 'Colaborador',
+            user_id: assignedUser.id
+          });
+        }
+      }
+    } else if (notificationDirection === 'agency_to_tridots') {
+      // Notify Tridots: all active master/analyst users
+      const { data: tridotsUsers } = await supabase
+        .from('profiles')
+        .select('id, email, full_name')
+        .in('role', ['master', 'analyst'])
+        .eq('active', true);
+
+      if (tridotsUsers) {
+        for (const user of tridotsUsers) {
+          if (user.email) {
+            recipients.push({
+              email: user.email,
+              name: user.full_name || 'Tridots Team',
+              user_id: user.id
+            });
+          }
+        }
       }
     }
 
@@ -165,14 +190,24 @@ serve(async (req) => {
         error: result.error
       });
 
-      // Criar notificação in-app para usuários Tridots
-      await supabase.rpc('create_email_sent_notification', {
-        p_template_type: 'ticket_notification',
-        p_recipient_email: recipient.email,
-        p_recipient_name: recipient.name,
-        p_reference_id: ticket_id,
-        p_success: result.success
-      });
+      // Create in-app notification for the recipient
+      if (recipient.user_id) {
+        await supabase.from('notifications').insert({
+          user_id: recipient.user_id,
+          type: event_type === 'new_ticket' ? 'new_ticket' : 'new_ticket_reply',
+          source: 'chamados',
+          reference_id: ticket_id,
+          title: event_type === 'new_ticket' ? `Novo chamado: ${ticket.subject}` : `Nova resposta: ${ticket.subject}`,
+          message: event_type === 'new_ticket' 
+            ? `${agency.nome_fantasia || agency.razao_social} abriu um novo chamado`
+            : messagePreview || 'Nova resposta no chamado',
+          metadata: {
+            ticket_id,
+            direction: notificationDirection,
+            event_type
+          }
+        }).catch((err) => console.error(`Failed to create in-app notification: ${err}`));
+      }
 
       if (!result.success) {
         console.error(`Failed to send email to ${recipient.email}:`, result.error);

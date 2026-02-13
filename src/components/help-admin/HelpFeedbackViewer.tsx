@@ -6,6 +6,7 @@ import { useHelpAdminFeedback, useHelpFeedbackStats } from "@/hooks/useHelpAdmin
 import { ThumbsUp, ThumbsDown, TrendingUp, Users, MessageSquare, BarChart3 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { formatDateBR } from "@/lib/utils";
 
 export function HelpFeedbackViewer() {
   const { data: feedback, isLoading: loadingFeedback } = useHelpAdminFeedback();
@@ -131,9 +132,7 @@ export function HelpFeedbackViewer() {
                         </span>
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        {format(new Date(item.created_at), "dd/MM/yyyy 'às' HH:mm", {
-                          locale: ptBR,
-                        })}
+                        {formatDateBR(item.created_at, "dd/MM/yyyy 'às' HH:mm")}
                       </p>
                     </div>
                   </div>

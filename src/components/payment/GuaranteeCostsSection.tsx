@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { GUARANTEE_PLANS, type PlanType, getPlanByRate } from '@/lib/plans';
+import { formatDateBR } from '@/lib/utils';
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -138,7 +139,7 @@ export function GuaranteeCostsSection({
             <span>
               Contrato iniciado em:{' '}
               <span className="font-medium text-foreground">
-                {format(new Date(dataInicioContrato), 'dd/MM/yyyy', { locale: ptBR })}
+                {formatDateBR(dataInicioContrato, 'dd/MM/yyyy')}
               </span>
             </span>
           </div>
