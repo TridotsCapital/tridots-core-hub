@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -34,8 +35,11 @@ export interface AgencySignupData {
   bairro: string;
   cidade: string;
   estado: string;
-  // Billing
+  // Billing & General
   billing_due_day?: number;
+  total_locacoes_ativas?: string;
+  garantias_utilizadas?: string[];
+  ticket_medio_aluguel?: number;
 }
 
 interface AgencySignupFormProps {
@@ -48,7 +52,29 @@ const STEPS = [
   { id: 2, title: 'Empresa', icon: Building2 },
   { id: 3, title: 'Responsável', icon: User },
   { id: 4, title: 'Endereço', icon: MapPin },
-  { id: 5, title: 'Vencimento', icon: Building2 },
+  { id: 5, title: 'Geral', icon: Building2 },
+];
+
+const FAIXAS_LOCACOES = [
+  '0 - 50',
+  '51 - 100',
+  '101 - 300',
+  '301 - 500',
+  '501 - 1000',
+  '1001 - 2000',
+  'Acima de 2000',
+];
+
+const GARANTIAS_OPTIONS = [
+  'Fiador',
+  'Cheque caução',
+  'Título Capitalização',
+  'Seguro Fiança (Seguradoras)',
+  'Loft',
+  'CredAluga',
+  'Facility',
+  'Loc Pop',
+  'Outros',
 ];
 
 const ESTADOS_BRASIL = [
@@ -92,6 +118,9 @@ export function AgencySignupForm({ onSubmit, loading }: AgencySignupFormProps) {
   const [loadingCep, setLoadingCep] = useState(false);
   const [loadingCidades, setLoadingCidades] = useState(false);
   const [cidades, setCidades] = useState<CidadeIBGE[]>([]);
+  const [garantiasSelecionadas, setGarantiasSelecionadas] = useState<string[]>([]);
+  const [outrosGarantiaTexto, setOutrosGarantiaTexto] = useState('');
+  const [ticketMedioDisplay, setTicketMedioDisplay] = useState('');
   
   const [formData, setFormData] = useState<AgencySignupData>({
     email: '',
@@ -111,12 +140,78 @@ export function AgencySignupForm({ onSubmit, loading }: AgencySignupFormProps) {
     cidade: '',
     estado: '',
     billing_due_day: 10,
+    total_locacoes_ativas: '',
+    garantias_utilizadas: [],
+    ticket_medio_aluguel: undefined,
   });
   
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  const updateField = (field: keyof AgencySignupData, value: string) => {
+  const updateField = (field: keyof AgencySignupData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  // Format currency for display
+  const formatCurrencyInput = (value: string) => {
+    // Remove non-digits
+    const digits = value.replace(/\D/g, '');
+    if (!digits) return '';
+    
+    // Convert to number (cents)
+    const cents = parseInt(digits, 10);
+    const reais = cents / 100;
+    
+    return reais.toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  };
+
+  const handleTicketMedioChange = (value: string) => {
+    const formatted = formatCurrencyInput(value);
+    setTicketMedioDisplay(formatted);
+    
+    // Parse back to number
+    const digits = value.replace(/\D/g, '');
+    if (digits) {
+      updateField('ticket_medio_aluguel', parseInt(digits, 10) / 100);
+    } else {
+      updateField('ticket_medio_aluguel', undefined);
+    }
+  };
+
+  const handleGarantiaToggle = (garantia: string, checked: boolean) => {
+    let updated: string[];
+    if (checked) {
+      updated = [...garantiasSelecionadas, garantia];
+    } else {
+      updated = garantiasSelecionadas.filter(g => g !== garantia);
+      if (garantia === 'Outros') {
+        setOutrosGarantiaTexto('');
+      }
+    }
+    setGarantiasSelecionadas(updated);
+    
+    // Build the final array for formData
+    const finalArray = updated.map(g => {
+      if (g === 'Outros' && outrosGarantiaTexto.trim()) {
+        return `Outros: ${outrosGarantiaTexto.trim()}`;
+      }
+      return g;
+    });
+    updateField('garantias_utilizadas', finalArray);
+  };
+
+  const handleOutrosTextoChange = (texto: string) => {
+    setOutrosGarantiaTexto(texto);
+    // Update formData with the new text
+    const finalArray = garantiasSelecionadas.map(g => {
+      if (g === 'Outros' && texto.trim()) {
+        return `Outros: ${texto.trim()}`;
+      }
+      return g;
+    });
+    updateField('garantias_utilizadas', finalArray);
   };
 
   // Fetch cities when estado changes
@@ -208,7 +303,6 @@ export function AgencySignupForm({ onSubmit, loading }: AgencySignupFormProps) {
     const formatted = formatCEP(value);
     updateField('cep', formatted);
     
-    // Auto-fetch when CEP is complete
     if (formatted.replace(/\D/g, '').length === 8) {
       buscarCEP(formatted);
     }
@@ -275,6 +369,22 @@ export function AgencySignupForm({ onSubmit, loading }: AgencySignupFormProps) {
       case 5:
         if (!formData.billing_due_day) {
           toast.error('Selecione a data de vencimento');
+          return false;
+        }
+        if (!formData.total_locacoes_ativas) {
+          toast.error('Selecione o total de locações ativas');
+          return false;
+        }
+        if (!garantiasSelecionadas.length) {
+          toast.error('Selecione pelo menos uma garantia utilizada');
+          return false;
+        }
+        if (garantiasSelecionadas.includes('Outros') && !outrosGarantiaTexto.trim()) {
+          toast.error('Preencha o campo "Outros" para garantias');
+          return false;
+        }
+        if (!formData.ticket_medio_aluguel || formData.ticket_medio_aluguel <= 0) {
+          toast.error('Preencha o ticket médio dos aluguéis');
           return false;
         }
         return true;
@@ -576,7 +686,7 @@ export function AgencySignupForm({ onSubmit, loading }: AgencySignupFormProps) {
                 value={formData.estado}
                 onValueChange={(value) => {
                   updateField('estado', value);
-                  updateField('cidade', ''); // Reset city when state changes
+                  updateField('cidade', '');
                 }}
               >
                 <SelectTrigger className="h-11 bg-background">
@@ -622,12 +732,15 @@ export function AgencySignupForm({ onSubmit, loading }: AgencySignupFormProps) {
         </div>
       )}
 
-      {/* Step 5: Billing Configuration */}
+      {/* Step 5: General Configuration */}
       {currentStep === 5 && (
         <div className="space-y-4 animate-fade-in">
           <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mb-4">
             <p className="text-sm text-foreground">
               <strong>Data de Vencimento:</strong> Escolha o dia do mês em que suas faturas vencem. Todas as suas parcelas de garantia serão consolidadas nessa data.
+            </p>
+            <p className="text-sm text-foreground mt-2">
+              <strong>Formas de Pagamento:</strong> A Tridots Capital também oferece pagamento direto com o inquilino via <strong>PIX</strong> ou <strong>cartão de crédito</strong>. A forma de pagamento pode ser escolhida na hora de contratar a garantia para cada inquilino.
             </p>
           </div>
 
@@ -648,10 +761,77 @@ export function AgencySignupForm({ onSubmit, loading }: AgencySignupFormProps) {
             </Select>
           </div>
 
+          {/* Total de Locações Ativas */}
+          <div className="space-y-2">
+            <Label htmlFor="total-locacoes" className="font-medium">Total de Locações Ativas na Carteira *</Label>
+            <Select 
+              value={formData.total_locacoes_ativas || ''} 
+              onValueChange={(v) => updateField('total_locacoes_ativas', v)}
+            >
+              <SelectTrigger id="total-locacoes" className="h-11">
+                <SelectValue placeholder="Selecione a faixa" />
+              </SelectTrigger>
+              <SelectContent>
+                {FAIXAS_LOCACOES.map((faixa) => (
+                  <SelectItem key={faixa} value={faixa}>{faixa}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Ticket Médio dos Aluguéis */}
+          <div className="space-y-2">
+            <Label htmlFor="ticket-medio" className="font-medium">Ticket Médio dos Aluguéis *</Label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">R$</span>
+              <Input
+                id="ticket-medio"
+                type="text"
+                inputMode="numeric"
+                placeholder="0,00"
+                value={ticketMedioDisplay}
+                onChange={(e) => handleTicketMedioChange(e.target.value)}
+                className="h-11 pl-10"
+              />
+            </div>
+          </div>
+
+          {/* Garantias Utilizadas */}
+          <div className="space-y-3">
+            <Label className="font-medium">Garantias Utilizadas Atualmente *</Label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {GARANTIAS_OPTIONS.map((garantia) => (
+                <div key={garantia} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`garantia-${garantia}`}
+                    checked={garantiasSelecionadas.includes(garantia)}
+                    onCheckedChange={(checked) => handleGarantiaToggle(garantia, !!checked)}
+                  />
+                  <label
+                    htmlFor={`garantia-${garantia}`}
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                  >
+                    {garantia}
+                  </label>
+                </div>
+              ))}
+            </div>
+            {garantiasSelecionadas.includes('Outros') && (
+              <Input
+                type="text"
+                placeholder="Especifique a garantia..."
+                value={outrosGarantiaTexto}
+                onChange={(e) => handleOutrosTextoChange(e.target.value)}
+                className="h-11 mt-2"
+                maxLength={100}
+              />
+            )}
+          </div>
+
           <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
             <p className="text-sm font-medium">ℹ️ Informações importantes:</p>
             <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
-              <li>Você pode alterar essa data depois via seu perfil</li>
+              <li>Você pode alterar a data de vencimento depois via seu perfil</li>
               <li>Alterações valem a partir do próximo mês</li>
               <li>A data será posterga­da se cair no fim de semana ou feriado</li>
             </ul>

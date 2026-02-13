@@ -29,6 +29,7 @@ export type Database = {
           email: string
           endereco: string | null
           estado: string | null
+          garantias_utilizadas: string[] | null
           id: string
           internal_observations: string | null
           logo_url: string | null
@@ -41,6 +42,8 @@ export type Database = {
           responsavel_telefone: string | null
           telefone: string | null
           terms_accepted_at: string | null
+          ticket_medio_aluguel: number | null
+          total_locacoes_ativas: string | null
           updated_at: string
         }
         Insert: {
@@ -57,6 +60,7 @@ export type Database = {
           email: string
           endereco?: string | null
           estado?: string | null
+          garantias_utilizadas?: string[] | null
           id?: string
           internal_observations?: string | null
           logo_url?: string | null
@@ -69,6 +73,8 @@ export type Database = {
           responsavel_telefone?: string | null
           telefone?: string | null
           terms_accepted_at?: string | null
+          ticket_medio_aluguel?: number | null
+          total_locacoes_ativas?: string | null
           updated_at?: string
         }
         Update: {
@@ -85,6 +91,7 @@ export type Database = {
           email?: string
           endereco?: string | null
           estado?: string | null
+          garantias_utilizadas?: string[] | null
           id?: string
           internal_observations?: string | null
           logo_url?: string | null
@@ -97,6 +104,8 @@ export type Database = {
           responsavel_telefone?: string | null
           telefone?: string | null
           terms_accepted_at?: string | null
+          ticket_medio_aluguel?: number | null
+          total_locacoes_ativas?: string | null
           updated_at?: string
         }
         Relationships: []
