@@ -364,7 +364,6 @@ async function generateCommissions(supabase: any, analysis: any, validationDate:
   console.log(`Inserting ${commissions.length} commissions for analysis ${analysis.id}`);
   
   // Cache the calculated commissions for 1 hour
-  const cacheKey = getCommissionCalculationKey(analysis.id);
   setCachedValue(cacheKey, commissions, 60);
   
   await insertCommissionsIfNeeded(supabase, commissions, analysis.id);
