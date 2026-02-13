@@ -132,6 +132,7 @@ export default function Auth() {
           total_locacoes_ativas: formData.total_locacoes_ativas || null,
           garantias_utilizadas: formData.garantias_utilizadas || null,
           ticket_medio_aluguel: formData.ticket_medio_aluguel || null,
+          billing_due_day: formData.billing_due_day || 10,
         }
       });
 
