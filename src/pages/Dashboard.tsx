@@ -29,6 +29,13 @@ import { ptBR } from 'date-fns/locale';
 export default function Dashboard() {
   const { user, loading, role } = useAuth();
 
+  // All hooks must be called unconditionally at the top
+  const { data: analyses, isLoading: loadingAnalyses } = useAnalyses();
+  const { data: agencies, isLoading: loadingAgencies } = useAgencies();
+  const { data: commissions, isLoading: loadingCommissions } = useCommissions();
+  const { data: pendingAgenciesCount = 0 } = usePendingAgenciesCount();
+  const { data: paymentInterestMetrics } = usePaymentInterestMetrics();
+
   // Wait for auth to resolve before rendering anything
   if (loading) {
     return (
@@ -59,12 +66,6 @@ export default function Dashboard() {
       </div>
     );
   }
-
-  const { data: analyses, isLoading: loadingAnalyses } = useAnalyses();
-  const { data: agencies, isLoading: loadingAgencies } = useAgencies();
-  const { data: commissions, isLoading: loadingCommissions } = useCommissions();
-  const { data: pendingAgenciesCount = 0 } = usePendingAgenciesCount();
-  const { data: paymentInterestMetrics } = usePaymentInterestMetrics();
 
   const pendingAnalyses = analyses?.filter(a => a.status === 'pendente').length || 0;
   const inProgressAnalyses = analyses?.filter(a => a.status === 'em_analise').length || 0;

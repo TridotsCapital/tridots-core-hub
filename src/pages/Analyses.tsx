@@ -51,6 +51,7 @@ export default function Analyses() {
   const { data: analyses, isLoading } = useAnalyses({
     status: statusFilter !== 'all' ? statusFilter : undefined,
     agency_id: agencyFilter !== 'all' ? agencyFilter : undefined,
+    analyst_id: analystFilter !== 'all' ? analystFilter : undefined,
   });
 
   // Auto-open analysis from notification

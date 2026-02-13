@@ -4,7 +4,7 @@ import type { Analysis, AnalysisStatus } from '@/types/database';
 import type { TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
 
-export function useAnalyses(filters?: { status?: AnalysisStatus; agency_id?: string }) {
+export function useAnalyses(filters?: { status?: AnalysisStatus; agency_id?: string; analyst_id?: string }) {
   return useQuery({
     queryKey: ['analyses', filters],
     queryFn: async () => {
@@ -18,6 +18,9 @@ export function useAnalyses(filters?: { status?: AnalysisStatus; agency_id?: str
       }
       if (filters?.agency_id) {
         query = query.eq('agency_id', filters.agency_id);
+      }
+      if (filters?.analyst_id) {
+        query = query.eq('analyst_id', filters.analyst_id);
       }
 
       const { data, error } = await query;
