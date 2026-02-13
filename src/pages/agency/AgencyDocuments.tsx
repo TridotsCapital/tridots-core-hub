@@ -1,16 +1,9 @@
 import { useState } from "react";
 import { AgencyLayout } from "@/components/layout/AgencyLayout";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { useActiveTermTemplates, useDownloadTermTemplate, TermTemplate } from "@/hooks/useTermTemplates";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -19,7 +12,6 @@ import {
   FileText, 
   Download, 
   ExternalLink, 
-  Eye, 
   FileIcon, 
   FolderOpen 
 } from "lucide-react";
@@ -43,7 +35,6 @@ const formatFileSize = (bytes: number) => {
 export default function AgencyDocuments() {
   const { data: templates, isLoading } = useActiveTermTemplates();
   const downloadMutation = useDownloadTermTemplate();
-  const [selectedTemplate, setSelectedTemplate] = useState<TermTemplate | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   const handleOpenInNewTab = async (template: TermTemplate) => {
@@ -141,22 +132,17 @@ export default function AgencyDocuments() {
               <h4 className="font-medium text-sm mb-1 line-clamp-2 min-h-[2.5rem]">
                 {template.name}
               </h4>
+              {template.description && (
+                <CardDescription className="text-xs line-clamp-2 mb-2">
+                  {template.description}
+                </CardDescription>
+              )}
               <p className="text-xs text-muted-foreground mb-3">
                 {formatFileSize(template.file_size)} • {format(new Date(template.updated_at), "dd/MM/yyyy", { locale: ptBR })}
               </p>
 
               {/* Actions */}
               <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                {template.description && (
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    className="flex-1"
-                    onClick={() => setSelectedTemplate(template)}
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                )}
                 <Button 
                   size="sm" 
                   variant="ghost" 
@@ -178,17 +164,6 @@ export default function AgencyDocuments() {
 
               {/* Always visible actions on mobile */}
               <div className="flex gap-2 sm:hidden mt-3">
-                {template.description && (
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    className="flex-1"
-                    onClick={() => setSelectedTemplate(template)}
-                  >
-                    <Eye className="h-4 w-4 mr-1" />
-                    Ver
-                  </Button>
-                )}
                 <Button 
                   size="sm" 
                   variant="outline" 
@@ -214,38 +189,6 @@ export default function AgencyDocuments() {
         ))}
       </div>
 
-      {/* Description Dialog */}
-      <Dialog open={!!selectedTemplate} onOpenChange={() => setSelectedTemplate(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{selectedTemplate?.name}</DialogTitle>
-            <DialogDescription>
-              Observações sobre este documento
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <p className="text-sm text-foreground whitespace-pre-wrap">
-              {selectedTemplate?.description || "Nenhuma observação disponível."}
-            </p>
-          </div>
-          <div className="flex gap-2 justify-end">
-            <Button 
-              variant="outline"
-              onClick={() => selectedTemplate && handleOpenInNewTab(selectedTemplate)}
-            >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Abrir em nova aba
-            </Button>
-            <Button 
-              onClick={() => selectedTemplate && handleDownload(selectedTemplate)}
-              disabled={downloadingId === selectedTemplate?.id}
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Baixar
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </AgencyLayout>
   );
 }

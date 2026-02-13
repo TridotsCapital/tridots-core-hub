@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -6,6 +6,7 @@ import { QuickReply, TicketStatus } from "@/types/tickets";
 import { Send, Zap, Paperclip, ChevronDown, X, FileIcon, ImageIcon, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { format } from "date-fns";
 
 interface TicketChatInputProps {
   onSendMessage: (message: string, attachments?: string[]) => void;
@@ -47,6 +48,32 @@ export function TicketChatInput({
     setPendingFiles(prev => [...prev, ...newFiles]);
     e.target.value = "";
   };
+
+  const handlePaste = useCallback((e: React.ClipboardEvent) => {
+    const items = Array.from(e.clipboardData.items);
+    const imageItems = items.filter(item => item.type.startsWith('image/'));
+    
+    if (imageItems.length === 0) return;
+    
+    e.preventDefault();
+    
+    const newFiles: PendingFile[] = [];
+    for (const item of imageItems) {
+      const blob = item.getAsFile();
+      if (!blob) continue;
+      const now = new Date();
+      const name = `print-${format(now, "yyyy-MM-dd-HH'h'mm")}.png`;
+      const file = new File([blob], name, { type: blob.type });
+      newFiles.push({
+        file,
+        preview: URL.createObjectURL(file),
+      });
+    }
+    
+    if (newFiles.length > 0) {
+      setPendingFiles(prev => [...prev, ...newFiles]);
+    }
+  }, []);
 
   const removeFile = (index: number) => {
     setPendingFiles(prev => {
@@ -226,6 +253,7 @@ export function TicketChatInput({
             onTyping();
           }}
           onKeyDown={handleKeyDown}
+          onPaste={handlePaste}
           placeholder="Digite sua mensagem..."
           className="min-h-[44px] max-h-32 resize-none"
           disabled={isDisabled || isSending || isUploading}

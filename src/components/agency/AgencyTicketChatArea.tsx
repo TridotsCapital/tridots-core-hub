@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Send, Loader2, Clock, CheckCircle, AlertCircle, MessageSquare, FileText, XCircle, Shield } from "lucide-react";
+import { Send, Loader2, Clock, CheckCircle, AlertCircle, MessageSquare, FileText, XCircle, Shield, Paperclip, X, FileIcon, Download } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,9 +21,16 @@ import { useNps } from "@/contexts/NpsContext";
 import { TicketStatus, TicketCategory } from "@/types/tickets";
 import { CloseTicketDialog } from "./CloseTicketDialog";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface AgencyTicketChatAreaProps {
   ticketId: string | null;
+}
+
+interface PendingFile {
+  file: File;
+  preview?: string;
 }
 
 const statusConfig: Record<TicketStatus, { label: string; className: string; icon: React.ElementType }> = {
@@ -72,13 +79,20 @@ const categoryConfig: Record<TicketCategory, { label: string; className: string 
   },
 };
 
+const isImageUrl = (url: string) => /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
+const getFileName = (url: string) => url.split('/').pop() || 'arquivo';
+
 export function AgencyTicketChatArea({ ticketId }: AgencyTicketChatAreaProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [message, setMessage] = useState("");
   const [showCloseDialog, setShowCloseDialog] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
+  const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { playSound } = useNotificationSound();
   const { openModalAfterClose } = useNps();
 
@@ -103,6 +117,79 @@ export function AgencyTicketChatArea({ ticketId }: AgencyTicketChatAreaProps) {
     scrollToBottom();
   }, [messages]);
 
+  // Paste handler for images
+  const handlePaste = useCallback((e: React.ClipboardEvent) => {
+    const items = Array.from(e.clipboardData.items);
+    const imageItems = items.filter(item => item.type.startsWith('image/'));
+    
+    if (imageItems.length === 0) return;
+    
+    e.preventDefault();
+    
+    const newFiles: PendingFile[] = [];
+    for (const item of imageItems) {
+      const blob = item.getAsFile();
+      if (!blob) continue;
+      const now = new Date();
+      const name = `print-${format(now, "yyyy-MM-dd-HH'h'mm")}.png`;
+      const file = new File([blob], name, { type: blob.type });
+      newFiles.push({
+        file,
+        preview: URL.createObjectURL(file),
+      });
+    }
+    
+    if (newFiles.length > 0) {
+      setPendingFiles(prev => [...prev, ...newFiles]);
+    }
+  }, []);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    const newFiles: PendingFile[] = files.map(file => ({
+      file,
+      preview: file.type.startsWith("image/") ? URL.createObjectURL(file) : undefined,
+    }));
+
+    setPendingFiles(prev => [...prev, ...newFiles]);
+    e.target.value = "";
+  };
+
+  const removeFile = (index: number) => {
+    setPendingFiles(prev => {
+      const file = prev[index];
+      if (file.preview) URL.revokeObjectURL(file.preview);
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
+  const uploadFiles = async (): Promise<string[]> => {
+    if (pendingFiles.length === 0) return [];
+    
+    const urls: string[] = [];
+    
+    for (const { file } of pendingFiles) {
+      const ext = file.name.split('.').pop();
+      const path = `${crypto.randomUUID()}.${ext}`;
+      
+      const { error } = await supabase.storage
+        .from('chat-attachments')
+        .upload(path, file);
+      
+      if (error) throw error;
+      
+      const { data: urlData } = supabase.storage
+        .from('chat-attachments')
+        .getPublicUrl(path);
+      
+      urls.push(urlData.publicUrl);
+    }
+    
+    return urls;
+  };
+
   const handleCloseTicket = async () => {
     if (!ticketId || !user) return;
     
@@ -118,7 +205,6 @@ export function AgencyTicketChatArea({ ticketId }: AgencyTicketChatAreaProps) {
         },
       });
       setShowCloseDialog(false);
-      // Trigger NPS modal after ticket is closed
       await openModalAfterClose();
     } finally {
       setIsClosing(false);
@@ -126,22 +212,35 @@ export function AgencyTicketChatArea({ ticketId }: AgencyTicketChatAreaProps) {
   };
 
   const handleSendMessage = async () => {
-    if (!message.trim() || !ticketId || !user) return;
+    if ((!message.trim() && pendingFiles.length === 0) || !ticketId || !user) return;
 
-    await sendMessage.mutateAsync({
-      ticketId,
-      message: message.trim(),
-    });
+    try {
+      setIsUploading(true);
+      const attachmentUrls = await uploadFiles();
 
-    // If awaiting client response, update to em_atendimento
-    if (ticket?.status === "aguardando_cliente") {
-      await updateTicket.mutateAsync({
+      await sendMessage.mutateAsync({
         ticketId,
-        updates: { status: "em_atendimento" },
+        message: message.trim() || (attachmentUrls.length > 0 ? "📎 Anexo" : ""),
+        attachmentsUrl: attachmentUrls.length > 0 ? attachmentUrls : undefined,
       });
-    }
 
-    setMessage("");
+      // If awaiting client response, update to em_atendimento
+      if (ticket?.status === "aguardando_cliente") {
+        await updateTicket.mutateAsync({
+          ticketId,
+          updates: { status: "em_atendimento" },
+        });
+      }
+
+      setMessage("");
+      pendingFiles.forEach(f => f.preview && URL.revokeObjectURL(f.preview));
+      setPendingFiles([]);
+    } catch (error) {
+      console.error("Error uploading files:", error);
+      toast.error("Erro ao enviar anexos");
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -232,7 +331,6 @@ export function AgencyTicketChatArea({ ticketId }: AgencyTicketChatAreaProps) {
           </h2>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          {/* Close ticket button (only if not resolved) */}
           {!isResolved && (
             <Button
               variant="outline"
@@ -331,7 +429,49 @@ export function AgencyTicketChatArea({ ticketId }: AgencyTicketChatAreaProps) {
                           : "bg-muted rounded-tr-2xl rounded-tl-sm rounded-b-2xl"
                       )}
                     >
-                      <p className="whitespace-pre-wrap">{msg.message}</p>
+                      {msg.message && (
+                        <p className="whitespace-pre-wrap">{msg.message}</p>
+                      )}
+                      
+                      {/* Attachments */}
+                      {msg.attachments_url && msg.attachments_url.length > 0 && (
+                        <div className={cn("mt-2 space-y-2", !msg.message && "mt-0")}>
+                          {msg.attachments_url.map((url: string, idx: number) => (
+                            isImageUrl(url) ? (
+                              <a 
+                                key={idx}
+                                href={url} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="block"
+                              >
+                                <img 
+                                  src={url} 
+                                  alt="Anexo" 
+                                  className="max-w-[200px] rounded-lg border hover:opacity-90 transition-opacity"
+                                />
+                              </a>
+                            ) : (
+                              <a
+                                key={idx}
+                                href={url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={cn(
+                                  "flex items-center gap-2 p-2 rounded-lg border transition-colors",
+                                  isOwnMessage 
+                                    ? "bg-primary-foreground/10 hover:bg-primary-foreground/20 text-primary-foreground" 
+                                    : "bg-background hover:bg-muted"
+                                )}
+                              >
+                                <FileIcon className="h-4 w-4 shrink-0" />
+                                <span className="text-xs truncate max-w-[150px]">{getFileName(url)}</span>
+                                <Download className="h-3 w-3 shrink-0 ml-auto" />
+                              </a>
+                            )
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <div className={cn("flex items-center gap-1 mt-1", isOwnMessage && "justify-end")}>
                       <span className="text-[10px] text-muted-foreground">
@@ -355,28 +495,82 @@ export function AgencyTicketChatArea({ ticketId }: AgencyTicketChatAreaProps) {
             Este chamado foi resolvido
           </div>
         ) : (
-          <div className="flex gap-2 items-end">
-            <Textarea
-              placeholder="Digite sua mensagem..."
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyDown={handleKeyDown}
-              className="min-h-[44px] max-h-[120px] resize-none"
-              disabled={sendMessage.isPending}
-            />
-            <Button
-              size="icon"
-              className="h-[44px] w-11 shrink-0"
-              onClick={handleSendMessage}
-              disabled={!message.trim() || sendMessage.isPending}
-            >
-              {sendMessage.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
+          <>
+            {/* Pending files preview */}
+            {pendingFiles.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-2">
+                {pendingFiles.map((pf, idx) => (
+                  <div 
+                    key={idx} 
+                    className="relative group bg-muted rounded-lg p-2 flex items-center gap-2 pr-8"
+                  >
+                    {pf.preview ? (
+                      <img 
+                        src={pf.preview} 
+                        alt={pf.file.name} 
+                        className="h-10 w-10 object-cover rounded"
+                      />
+                    ) : (
+                      <div className="h-10 w-10 bg-primary/10 rounded flex items-center justify-center">
+                        <FileIcon className="h-5 w-5 text-primary" />
+                      </div>
+                    )}
+                    <span className="text-xs truncate max-w-[100px]">{pf.file.name}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => removeFile(idx)}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex gap-2 items-end">
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="h-[44px] w-11 shrink-0"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={sendMessage.isPending || isUploading}
+              >
+                <Paperclip className="h-4 w-4" />
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                className="hidden"
+                onChange={handleFileSelect}
+                accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+              />
+              <Textarea
+                ref={textareaRef}
+                placeholder="Digite sua mensagem..."
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                onKeyDown={handleKeyDown}
+                onPaste={handlePaste}
+                className="min-h-[44px] max-h-[120px] resize-none"
+                disabled={sendMessage.isPending || isUploading}
+              />
+              <Button
+                size="icon"
+                className="h-[44px] w-11 shrink-0"
+                onClick={handleSendMessage}
+                disabled={(!message.trim() && pendingFiles.length === 0) || sendMessage.isPending || isUploading}
+              >
+                {isUploading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          </>
         )}
       </div>
 
