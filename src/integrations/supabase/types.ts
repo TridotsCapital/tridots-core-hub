@@ -1526,6 +1526,39 @@ export type Database = {
         }
         Relationships: []
       }
+      function_logs: {
+        Row: {
+          created_at: string
+          duration_ms: number | null
+          error_details: Json | null
+          function_name: string
+          id: string
+          level: string
+          message: string
+          metadata: Json | null
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number | null
+          error_details?: Json | null
+          function_name: string
+          id?: string
+          level: string
+          message: string
+          metadata?: Json | null
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number | null
+          error_details?: Json | null
+          function_name?: string
+          id?: string
+          level?: string
+          message?: string
+          metadata?: Json | null
+        }
+        Relationships: []
+      }
       guarantee_installments: {
         Row: {
           agency_id: string
