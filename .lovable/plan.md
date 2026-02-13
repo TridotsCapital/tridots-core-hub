@@ -1,92 +1,41 @@
 
 
-# Plano: Reformulacao do Step 5 "Geral" no Cadastro de Imobiliaria
+# Correcao Critica: billing_due_day nao sendo salvo no cadastro
 
-## Resumo
+## Problema
 
-Renomear o ultimo step de "Vencimento" para "Geral", expandir o texto explicativo sobre formas de pagamento (PIX/cartao direto com inquilino), e adicionar tres novos campos obrigatorios: total de locacoes ativas (select com faixas), garantias utilizadas (checkboxes com "Outros" e texto livre), e ticket medio dos alugueis (input com mascara de moeda R$).
+O formulario de cadastro da imobiliaria coleta o campo "Dia de Vencimento" (billing_due_day) no Step 5, porem esse valor **nao e enviado** para o backend nem salvo no banco de dados. Resultado: todas as agencias ficam com `billing_due_day = NULL` ("Nao definido") no painel Tridots.
 
----
+## Causa Raiz
 
-## 1. Renomear Step 5
+Dois arquivos estao omitindo o campo `billing_due_day`:
 
-No array `STEPS` do `AgencySignupForm.tsx`, alterar o titulo do step 5 de `"Vencimento"` para `"Geral"`.
+1. **Auth.tsx** (linha ~115-135): O objeto `body` enviado para a Edge Function nao inclui `billing_due_day`
+2. **register-agency/index.ts** (linha ~89-107): A interface `AgencyRegistrationData` e o INSERT nao incluem `billing_due_day`
 
-## 2. Expandir Texto Explicativo
+## Correcao
 
-Acrescentar ao quadro informativo azul do step 5 a explicacao de que a Tridots Capital tambem oferece pagamento direto com o inquilino via PIX ou cartao de credito, e que a forma de pagamento pode ser escolhida na hora de contratar a garantia para cada inquilino.
+### 1. Auth.tsx - Adicionar billing_due_day ao body da chamada
 
-## 3. Novo Campo: Total de Locacoes Ativas (obrigatorio)
+Incluir `billing_due_day: formData.billing_due_day || 10` no objeto enviado para `register-agency`.
 
-- Componente: `Select` com as faixas:
-  - 0 - 50
-  - 51 - 100
-  - 101 - 300
-  - 301 - 500
-  - 501 - 1000
-  - 1001 - 2000
-  - Acima de 2000
-- Validacao: obrigatorio para finalizar o cadastro
+### 2. register-agency/index.ts - Aceitar e salvar o campo
 
-## 4. Novo Campo: Garantias Utilizadas (obrigatorio, multi-selecao)
+- Adicionar `billing_due_day?: number` na interface `AgencyRegistrationData`
+- Incluir `billing_due_day: data.billing_due_day || 10` no INSERT da tabela agencies
 
-- Componente: Lista de checkboxes com as opcoes:
-  - Fiador
-  - Cheque caucao
-  - Titulo Capitalizacao
-  - Seguro Fianca (Seguradoras)
-  - Loft
-  - CredAluga
-  - Facility
-  - Loc Pop
-  - Outros (ao marcar, exibe input de texto livre)
-- O valor de "Outros" sera salvo no mesmo array como `"Outros: texto digitado"`
-- Validacao: ao menos uma opcao selecionada
+### 3. Corrigir dado da agencia teste17
 
-## 5. Novo Campo: Ticket Medio dos Alugueis (obrigatorio)
-
-- Componente: Input numerico com mascara de moeda brasileira (R$ 0.000,00)
-- Armazenamento: coluna `ticket_medio_aluguel` do tipo `NUMERIC` na tabela `agencies`
-- Validacao: obrigatorio, valor maior que zero
-
-## 6. Banco de Dados - Nova Migracao
-
-Adicionar tres colunas na tabela `agencies`:
+Executar um UPDATE direto para corrigir o registro da agencia que ja se cadastrou com o valor perdido:
 
 ```text
-total_locacoes_ativas   TEXT       -- faixa selecionada (ex: "51 - 100")
-garantias_utilizadas    TEXT[]     -- array (ex: ['Fiador', 'Outros: Nome'])
-ticket_medio_aluguel    NUMERIC    -- valor em reais (ex: 2500.00)
+UPDATE agencies SET billing_due_day = 15 WHERE email = 'teste17@imobi17.com';
 ```
 
-Todas nullable para compatibilidade com agencias ja existentes.
-
-## 7. Edge Function `register-agency`
-
-Atualizar a interface `AgencyRegistrationData` e o INSERT para incluir os tres novos campos: `total_locacoes_ativas`, `garantias_utilizadas` e `ticket_medio_aluguel`.
-
-## 8. Visibilidade no Painel Tridots (AgencyForm.tsx)
-
-Exibir os tres campos como somente leitura no formulario de detalhes da agencia, para consulta pela equipe Tridots:
-- Total de Locacoes Ativas: texto da faixa
-- Garantias Utilizadas: lista/badges com as opcoes selecionadas
-- Ticket Medio dos Alugueis: valor formatado em R$
-
----
-
-## Secao Tecnica - Arquivos Afetados
+## Arquivos Afetados
 
 | Arquivo | Mudanca |
 |---|---|
-| `src/components/auth/AgencySignupForm.tsx` | Renomear step, expandir texto explicativo, adicionar 3 campos com validacao, mascara de moeda |
-| `supabase/functions/register-agency/index.ts` | Aceitar e salvar 3 novos campos |
-| `src/pages/AgencyForm.tsx` | Exibir 3 campos como somente leitura |
-| Nova migracao SQL | Adicionar colunas `total_locacoes_ativas`, `garantias_utilizadas`, `ticket_medio_aluguel` |
-
-## Ordem de Execucao
-
-1. Migracao SQL (novas colunas)
-2. Atualizar `AgencySignupForm.tsx` (UI, mascara de moeda, validacao)
-3. Atualizar Edge Function `register-agency`
-4. Exibir dados no `AgencyForm.tsx`
+| `src/pages/Auth.tsx` | Adicionar 1 linha: `billing_due_day` no body |
+| `supabase/functions/register-agency/index.ts` | Adicionar campo na interface e no INSERT |
 
