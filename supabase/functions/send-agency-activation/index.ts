@@ -9,6 +9,7 @@ import {
   successResponse,
   notFoundResponse,
 } from "../_shared/notification-utils.ts";
+import { StructuredLogger } from "../_shared/logging-utils.ts";
 
 interface AgencyActivationRequest {
   agency_id: string;
@@ -20,27 +21,38 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  try {
-    const { supabase, resendApiKey, testEmail } = initNotificationContext();
+  const { supabase, resendApiKey, testEmail } = initNotificationContext();
+  const logger = new StructuredLogger('send-agency-activation', supabase);
 
+  try {
     const keyError = validateResendKey(resendApiKey);
-    if (keyError) return keyError;
+    if (keyError) {
+      logger.warn('RESEND_API_KEY não configurada');
+      return keyError;
+    }
 
     const { agency_id, test_mode = false }: AgencyActivationRequest = await req.json();
+    logger.info('Iniciando envio de ativação', { agency_id, test_mode });
 
     // Buscar dados da agência
-    const { data: agency, error: agencyError } = await supabase
-      .from('agencies')
-      .select('id, nome_fantasia, razao_social, responsavel_nome, responsavel_email')
-      .eq('id', agency_id)
-      .single();
+    const { data: agency, error: agencyError } = await logger.measureAsync(
+      'fetch-agency',
+      () => supabase
+        .from('agencies')
+        .select('id, nome_fantasia, razao_social, responsavel_nome, responsavel_email')
+        .eq('id', agency_id)
+        .single(),
+      { agency_id }
+    );
 
     if (agencyError || !agency) {
+      logger.warn('Agência não encontrada', { agency_id });
       return notFoundResponse('Agência não encontrada');
     }
 
     const recipientEmail = agency.responsavel_email;
     if (!recipientEmail) {
+      logger.warn('Agência sem e-mail do responsável', { agency_id });
       return new Response(
         JSON.stringify({ success: false, error: 'Agência não possui e-mail do responsável cadastrado' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -53,18 +65,24 @@ serve(async (req) => {
       loginUrl: 'https://tridots-core-hub.lovable.app/auth'
     });
 
-    const result = await sendAndLog(supabase, {
-      resendApiKey: resendApiKey!,
-      recipientEmail,
-      subject,
-      html,
-      templateType: 'agency_activation',
-      referenceId: agency_id,
-      recipientName: agency.responsavel_nome || agency.nome_fantasia || agency.razao_social,
-      testMode: test_mode,
-      testEmail,
-      metadata: { agency_id, test_mode },
-    });
+    const result = await logger.measureAsync(
+      'send-email',
+      () => sendAndLog(supabase, {
+        resendApiKey: resendApiKey!,
+        recipientEmail,
+        subject,
+        html,
+        templateType: 'agency_activation',
+        referenceId: agency_id,
+        recipientName: agency.responsavel_nome || agency.nome_fantasia || agency.razao_social,
+        testMode: test_mode,
+        testEmail,
+        metadata: { agency_id, test_mode },
+      }),
+      { recipientEmail, test_mode }
+    );
+
+    logger.info('Envio concluído', { success: result.success, agency_id });
 
     return successResponse({
       success: result.success,
@@ -73,6 +91,7 @@ serve(async (req) => {
     });
 
   } catch (error) {
+    logger.error('Erro fatal no envio', error);
     return errorResponse(error, 'send-agency-activation');
   }
 });

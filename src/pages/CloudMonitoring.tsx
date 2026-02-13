@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useCloudMetrics } from '@/hooks/useCloudMetrics';
+import { useFunctionLogs, useFunctionLogsSummary } from '@/hooks/useFunctionLogs';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import {
@@ -16,6 +17,8 @@ import {
   TrendingUp,
   BarChart3,
   Loader2,
+  AlertTriangle,
+  Bug,
 } from 'lucide-react';
 import {
   BarChart,
@@ -29,12 +32,15 @@ import {
   Pie,
   Cell,
 } from 'recharts';
+import { format } from 'date-fns';
 
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--warning))', 'hsl(var(--success))', 'hsl(var(--info))'];
 
 export default function CloudMonitoring() {
   const { user, loading, role } = useAuth();
   const { data: metrics, isLoading } = useCloudMetrics();
+  const { data: logs, isLoading: logsLoading } = useFunctionLogs(100);
+  const { data: logsSummary } = useFunctionLogsSummary();
 
   if (loading) {
     return (
@@ -135,6 +141,10 @@ export default function CloudMonitoring() {
             <TabsTrigger value="7d" className="gap-1.5">
               <BarChart3 className="h-4 w-4" />
               Últimos 7 dias
+            </TabsTrigger>
+            <TabsTrigger value="logs" className="gap-1.5">
+              <Bug className="h-4 w-4" />
+              Observabilidade
             </TabsTrigger>
           </TabsList>
 
@@ -364,6 +374,126 @@ export default function CloudMonitoring() {
                       )}
                     </TableBody>
                   </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="logs" className="space-y-4">
+            {/* Summary by Function */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-warning" />
+                  Resumo por Função
+                </CardTitle>
+                <CardDescription>Erros, warnings e performance por edge function</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Função</TableHead>
+                      <TableHead className="text-center">Total</TableHead>
+                      <TableHead className="text-center">Erros</TableHead>
+                      <TableHead className="text-center">Warnings</TableHead>
+                      <TableHead className="text-right">Duração Média</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {logsSummary?.map((fn) => (
+                      <TableRow key={fn.function_name}>
+                        <TableCell className="font-mono text-xs">{fn.function_name}</TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant="secondary">{fn.total}</Badge>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {fn.errors > 0 ? (
+                            <Badge variant="destructive">{fn.errors}</Badge>
+                          ) : (
+                            <span className="text-muted-foreground">0</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {fn.warnings > 0 ? (
+                            <Badge className="bg-warning/20 text-warning border-warning/30">{fn.warnings}</Badge>
+                          ) : (
+                            <span className="text-muted-foreground">0</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right text-muted-foreground">
+                          {fn.avgDuration > 0 ? `${fn.avgDuration}ms` : '-'}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {(!logsSummary || logsSummary.length === 0) && (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                          Nenhum log registrado ainda. Os logs aparecerão conforme as funções são executadas.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+
+            {/* Recent Logs */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Bug className="h-4 w-4 text-destructive" />
+                  Logs Recentes
+                </CardTitle>
+                <CardDescription>Últimos 100 registros de execução</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {logsLoading ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : (
+                  <div className="max-h-[500px] overflow-y-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[140px]">Data</TableHead>
+                          <TableHead>Função</TableHead>
+                          <TableHead>Nível</TableHead>
+                          <TableHead>Mensagem</TableHead>
+                          <TableHead className="text-right">Duração</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {logs?.map((log) => (
+                          <TableRow key={log.id} className={log.level === 'error' ? 'bg-destructive/5' : ''}>
+                            <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                              {format(new Date(log.created_at), 'dd/MM HH:mm:ss')}
+                            </TableCell>
+                            <TableCell className="font-mono text-xs">{log.function_name}</TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={log.level === 'error' ? 'destructive' : log.level === 'warn' ? 'outline' : 'secondary'}
+                                className={log.level === 'warn' ? 'border-warning text-warning' : ''}
+                              >
+                                {log.level}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-sm max-w-[300px] truncate">{log.message}</TableCell>
+                            <TableCell className="text-right text-muted-foreground">
+                              {log.duration_ms ? `${log.duration_ms}ms` : '-'}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        {(!logs || logs.length === 0) && (
+                          <TableRow>
+                            <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                              Nenhum log registrado
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
                 )}
               </CardContent>
             </Card>
