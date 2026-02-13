@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2, RefreshCw, CheckCircle, XCircle, Clock, CreditCard, Landmark, AlertTriangle } from 'lucide-react';
 import { format, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { formatDateBR } from '@/lib/utils';
 import { formatCurrency } from '@/lib/validators';
 import { 
   useInitiateRenewal, 
@@ -194,7 +195,7 @@ export function TridotsRenewalModal({
                 </Badge>
                 <span className="text-xs text-muted-foreground">
                   Solicitada pela {pendingRenewal.request_source === 'agency' ? 'Imobiliária' : 'Tridots'} em{' '}
-                  {format(new Date(pendingRenewal.requested_at), "dd/MM/yyyy", { locale: ptBR })}
+                  {formatDateBR(pendingRenewal.requested_at, "dd/MM/yyyy")}
                 </span>
               </div>
               

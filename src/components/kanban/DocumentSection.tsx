@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
+import { cn, formatDateBR } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -236,7 +236,7 @@ export function DocumentSection({ analysisId, identityPhotoPath, tenantName }: D
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{doc.file_name}</p>
                   <p className="text-xs text-muted-foreground">
-                    {formatFileSize(doc.file_size)} • {format(new Date(doc.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                    {formatFileSize(doc.file_size)} • {formatDateBR(doc.created_at, "dd/MM/yyyy")}
                   </p>
                 </div>
 

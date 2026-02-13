@@ -23,7 +23,8 @@ import {
 import { useClaimDetail, useUpdateClaimStatus } from "@/hooks/useClaims";
 import { useClaimItems } from "@/hooks/useClaimItems";
 import { useClaimTickets } from "@/hooks/useClaimTickets";
-import { 
+import { formatDateBR } from '@/lib/utils';
+import {
   ClaimPublicStatus, 
   ClaimInternalStatus,
   claimPublicStatusConfig,
@@ -131,7 +132,7 @@ export default function ClaimDetail() {
                 </h1>
                 <p className="text-sm text-muted-foreground">
                   {claim.agency?.nome_fantasia} • Criado em{" "}
-                  {format(new Date(claim.created_at), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                  {formatDateBR(claim.created_at, "dd 'de' MMMM 'de' yyyy")}
                 </p>
               </div>
             </div>

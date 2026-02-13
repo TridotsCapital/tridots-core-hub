@@ -5,7 +5,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { cn } from "@/lib/utils";
+import { cn, formatDateBR } from "@/lib/utils";
 import { CheckCheck, FileIcon, Download, Image as ImageIcon } from "lucide-react";
 
 interface TicketChatMessagesProps {
@@ -146,7 +146,7 @@ export function TicketChatMessages({
                 </div>
                 <div className={cn("flex items-center gap-1 mt-1", isOwn && "justify-end")}>
                   <span className="text-[10px] text-muted-foreground">
-                    {format(new Date(msg.created_at), "HH:mm", { locale: ptBR })}
+                    {formatDateBR(msg.created_at, "HH:mm")}
                   </span>
                   {isOwn && msg.is_read && (
                     <CheckCheck className="h-3 w-3 text-primary" />

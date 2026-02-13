@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { formatDateBR } from '@/lib/utils';
 import { 
   MessageSquare, 
   ExternalLink,
@@ -84,7 +85,7 @@ export function ClaimTicketsTab({ claimId, isAgencyPortal = false }: ClaimTicket
                   <div className="flex items-center gap-3 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <Clock className="h-3 w-3" />
-                      {format(new Date(ticket.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                      {formatDateBR(ticket.created_at, "dd/MM/yyyy 'às' HH:mm")}
                     </span>
                     {ticket.assigned_to_profile && (
                       <span>• {ticket.assigned_to_profile.full_name}</span>
