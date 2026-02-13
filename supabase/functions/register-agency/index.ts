@@ -22,10 +22,12 @@ interface AgencyRegistrationData {
   cidade?: string;
   estado?: string;
   cep?: string;
+  total_locacoes_ativas?: string;
+  garantias_utilizadas?: string[];
+  ticket_medio_aluguel?: number;
 }
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -85,6 +87,9 @@ Deno.serve(async (req) => {
         cep: data.cep || null,
         active: false,
         percentual_comissao_setup: 0,
+        total_locacoes_ativas: data.total_locacoes_ativas || null,
+        garantias_utilizadas: data.garantias_utilizadas || null,
+        ticket_medio_aluguel: data.ticket_medio_aluguel || null,
       })
       .select()
       .single();
@@ -110,7 +115,6 @@ Deno.serve(async (req) => {
 
     if (agencyUserError) {
       console.error("Error creating agency_user:", agencyUserError);
-      // Rollback: delete agency
       await supabase.from("agencies").delete().eq("id", agency.id);
       return new Response(
         JSON.stringify({ error: "Erro ao vincular usuário", details: agencyUserError.message }),
@@ -130,7 +134,6 @@ Deno.serve(async (req) => {
 
     if (roleError) {
       console.error("Error creating user role:", roleError);
-      // Rollback
       await supabase.from("agency_users").delete().eq("user_id", data.user_id);
       await supabase.from("agencies").delete().eq("id", agency.id);
       return new Response(

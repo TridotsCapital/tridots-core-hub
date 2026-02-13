@@ -129,6 +129,9 @@ export default function Auth() {
           bairro: formData.bairro || null,
           cidade: formData.cidade || null,
           estado: formData.estado || null,
+          total_locacoes_ativas: formData.total_locacoes_ativas || null,
+          garantias_utilizadas: formData.garantias_utilizadas || null,
+          ticket_medio_aluguel: formData.ticket_medio_aluguel || null,
         }
       });
 

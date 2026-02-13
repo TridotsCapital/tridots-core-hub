@@ -287,6 +287,52 @@ export default function AgencyForm() {
           </CardContent>
         </Card>
 
+        {/* Agency Registration Info - Read Only */}
+        {isEditing && agency && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Informações do Cadastro</CardTitle>
+              <CardDescription>Dados informados pela imobiliária no momento do cadastro (somente leitura)</CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>Total de Locações Ativas</Label>
+                <Input
+                  value={(agency as any).total_locacoes_ativas || 'Não informado'}
+                  readOnly
+                  className="bg-muted"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Ticket Médio dos Aluguéis</Label>
+                <Input
+                  value={
+                    (agency as any).ticket_medio_aluguel
+                      ? `R$ ${Number((agency as any).ticket_medio_aluguel).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                      : 'Não informado'
+                  }
+                  readOnly
+                  className="bg-muted"
+                />
+              </div>
+
+              <div className="space-y-2 md:col-span-3">
+                <Label>Garantias Utilizadas</Label>
+                <div className="flex flex-wrap gap-2 min-h-[40px] items-center rounded-md border bg-muted px-3 py-2">
+                  {(agency as any).garantias_utilizadas?.length ? (
+                    (agency as any).garantias_utilizadas.map((g: string, i: number) => (
+                      <Badge key={i} variant="secondary">{g}</Badge>
+                    ))
+                  ) : (
+                    <span className="text-sm text-muted-foreground">Não informado</span>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Internal Observations - Only visible to Tridots */}
         <Card>
           <CardHeader>
