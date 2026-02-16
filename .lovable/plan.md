@@ -1,44 +1,37 @@
 
-# Correcao: "column role does not exist"
+# Correcao: Download e Visualizacao de Anexos nos Chamados
 
-## Causa Raiz
+## Problema
 
-Existem **2 triggers** no banco que tentam ler uma coluna `role` da tabela `profiles`, mas essa coluna nao existe — as roles ficam na tabela `user_roles`.
+Ao clicar em um arquivo PDF (ou outro nao-imagem) no chat, ele abre em nova aba mas nao oferece opcao de download. O comportamento esperado e ter **dois botoes**: um para **visualizar** (abrir em nova aba) e outro para **baixar** (download forcado no navegador).
 
-**Triggers com bug:**
+## Solucao
 
-1. `notify_agency_new_ticket` (tabela `tickets`) — dispara ao criar ticket
-2. `notify_agency_new_ticket_message` (tabela `ticket_messages`) — dispara ao enviar mensagem
-
-Ambos fazem:
-```text
-SELECT role INTO _user_role
-FROM public.profiles
-WHERE id = NEW.sender_id
-```
-
-Quando deviam consultar `user_roles`.
-
-## Correcao
-
-Uma migration SQL que recria as duas funcoes, trocando a consulta de `profiles.role` para `user_roles.role`:
-
-```text
--- De (errado):
-SELECT role INTO _user_role
-FROM public.profiles WHERE id = NEW.sender_id;
-
--- Para (correto):
-SELECT role INTO _user_role
-FROM public.user_roles WHERE user_id = NEW.sender_id
-LIMIT 1;
-```
+Implementar download programatico via `fetch` + `Blob` (mesmo padrao ja usado no drive de documentos do projeto) e separar as acoes de "ver" e "baixar" em dois botoes distintos.
 
 ## Arquivos Afetados
 
-| # | Tipo | O que muda |
-|---|------|------------|
-| 1 | Migration SQL | Recriar funcao `notify_agency_new_ticket` corrigindo a consulta de role |
-| 2 | Migration SQL | Recriar funcao `notify_agency_new_ticket_message` corrigindo a consulta de role |
+| # | Arquivo | Mudanca |
+|---|---------|---------|
+| 1 | `src/components/tickets/TicketChatMessages.tsx` | Adicionar funcao de download programatico e dois botoes (visualizar + baixar) para anexos nao-imagem |
+| 2 | `src/components/agency/AgencyTicketChatArea.tsx` | Mesma alteracao no chat do portal da imobiliaria |
 
-Nenhum arquivo de codigo precisa ser alterado — o bug e 100% no banco de dados.
+## Detalhes Tecnicos
+
+### Funcao de download programatico
+
+Sera adicionada uma funcao `handleDownload(url)` em ambos os componentes que:
+1. Faz `fetch` da URL do arquivo
+2. Converte a resposta em `Blob`
+3. Cria uma URL temporaria com `URL.createObjectURL`
+4. Cria um elemento `<a>` invisivel com atributo `download` e o nome do arquivo
+5. Simula o clique para forcar o download
+6. Limpa a URL temporaria
+
+### Layout do card de anexo nao-imagem
+
+O card de arquivo passa a ter dois icones de acao:
+- **Olho (Eye)**: abre o arquivo em nova aba para visualizacao
+- **Download (Download)**: forca o download local do arquivo
+
+Para imagens, o comportamento atual (clique abre em nova aba) sera mantido, pois ja funciona corretamente.
