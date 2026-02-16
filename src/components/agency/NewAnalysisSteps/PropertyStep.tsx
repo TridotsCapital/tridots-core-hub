@@ -3,9 +3,12 @@ import { UseFormReturn } from 'react-hook-form';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { formatCEP, formatCurrencyInput, BRAZILIAN_STATES, PROPERTY_TYPES } from '@/lib/validators';
-import { Loader2, MapPin } from 'lucide-react';
+import { Loader2, MapPin, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
+
+const LIMITE_VALOR_LOCATICIO = 4000;
 
 interface PropertyStepProps {
   form: UseFormReturn<any>;
@@ -286,6 +289,30 @@ export function PropertyStep({ form }: PropertyStepProps) {
             )}
           />
         </div>
+
+        {/* Alerta de limite de valor locatício */}
+        {(() => {
+          const valorAluguel = form.watch('valorAluguel') || 0;
+          const valorCondominio = form.watch('valorCondominio') || 0;
+          const valorIptu = form.watch('valorIptu') || 0;
+          const totalLocaticio = valorAluguel + valorCondominio + valorIptu;
+          const excedeLimite = totalLocaticio > LIMITE_VALOR_LOCATICIO;
+
+          if (!excedeLimite) return null;
+
+          return (
+            <Alert variant="destructive" className="mt-4">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                A Tridots Capital atende apenas locações de até{' '}
+                <strong>R$ {LIMITE_VALOR_LOCATICIO.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>{' '}
+                de valor locatício mensal (aluguel + condomínio + IPTU).
+                O valor informado é de{' '}
+                <strong>R$ {totalLocaticio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>.
+              </AlertDescription>
+            </Alert>
+          );
+        })()}
       </div>
     </div>
   );

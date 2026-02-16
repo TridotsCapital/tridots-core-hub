@@ -339,7 +339,14 @@ export function NewAnalysisForm({ agencyId, descontoPix }: NewAnalysisFormProps)
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 ) : (
-                  <Button type="submit" disabled={isSubmitting || !form.watch('confirmacao')}>
+                  <Button 
+                    type="submit" 
+                    disabled={
+                      isSubmitting || 
+                      !form.watch('confirmacao') || 
+                      ((form.watch('valorAluguel') || 0) + (form.watch('valorCondominio') || 0) + (form.watch('valorIptu') || 0)) > 4000
+                    }
+                  >
                     {isSubmitting ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : (
