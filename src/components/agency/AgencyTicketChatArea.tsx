@@ -20,7 +20,7 @@ import { useNotificationSound } from "@/hooks/useNotificationSound";
 import { useNps } from "@/contexts/NpsContext";
 import { TicketStatus, TicketCategory } from "@/types/tickets";
 import { CloseTicketDialog } from "./CloseTicketDialog";
-import { cn } from "@/lib/utils";
+import { cn, getFileNameFromUrl, viewFileViaBlob, downloadFileViaBlob, buildStoragePath } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -80,20 +80,18 @@ const categoryConfig: Record<TicketCategory, { label: string; className: string 
 };
 
 const isImageUrl = (url: string) => /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
-const getFileName = (url: string) => url.split('/').pop() || 'arquivo';
+
+const handleViewFile = async (url: string) => {
+  try {
+    await viewFileViaBlob(url);
+  } catch {
+    toast.error("Erro ao visualizar arquivo");
+  }
+};
 
 const handleDownloadFile = async (url: string) => {
   try {
-    const response = await fetch(url);
-    const blob = await response.blob();
-    const blobUrl = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = blobUrl;
-    a.download = getFileName(url);
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(blobUrl);
+    await downloadFileViaBlob(url);
   } catch {
     toast.error("Erro ao baixar arquivo");
   }
@@ -188,8 +186,7 @@ export function AgencyTicketChatArea({ ticketId }: AgencyTicketChatAreaProps) {
     const urls: string[] = [];
     
     for (const { file } of pendingFiles) {
-      const ext = file.name.split('.').pop();
-      const path = `${crypto.randomUUID()}.${ext}`;
+      const path = buildStoragePath(file.name);
       
       const { error } = await supabase.storage
         .from('chat-attachments')
@@ -479,17 +476,15 @@ export function AgencyTicketChatArea({ ticketId }: AgencyTicketChatAreaProps) {
                                 )}
                               >
                                 <FileIcon className="h-4 w-4 shrink-0" />
-                                <span className="text-xs truncate max-w-[120px]">{getFileName(url)}</span>
+                                <span className="text-xs truncate max-w-[120px]">{getFileNameFromUrl(url)}</span>
                                 <div className="flex items-center gap-1 ml-auto shrink-0">
-                                  <a
-                                    href={url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
+                                  <button
+                                    onClick={() => handleViewFile(url)}
                                     className="p-1 rounded hover:bg-foreground/10 transition-colors"
                                     title="Visualizar"
                                   >
                                     <Eye className="h-3.5 w-3.5" />
-                                  </a>
+                                  </button>
                                   <button
                                     onClick={() => handleDownloadFile(url)}
                                     className="p-1 rounded hover:bg-foreground/10 transition-colors"

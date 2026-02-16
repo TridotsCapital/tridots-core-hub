@@ -5,8 +5,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { cn, formatDateBR } from "@/lib/utils";
-import { CheckCheck, FileIcon, Download, Eye } from "lucide-react";
+import { cn, formatDateBR, getFileNameFromUrl, viewFileViaBlob, downloadFileViaBlob } from "@/lib/utils";
+import { CheckCheck, FileIcon, Download, Eye, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface TicketChatMessagesProps {
@@ -47,22 +47,17 @@ export function TicketChatMessages({
     return /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
   };
 
-  const getFileName = (url: string) => {
-    return url.split('/').pop() || 'arquivo';
+  const handleView = async (url: string) => {
+    try {
+      await viewFileViaBlob(url);
+    } catch {
+      toast.error("Erro ao visualizar arquivo");
+    }
   };
 
   const handleDownload = async (url: string) => {
     try {
-      const response = await fetch(url);
-      const blob = await response.blob();
-      const blobUrl = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = blobUrl;
-      a.download = getFileName(url);
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(blobUrl);
+      await downloadFileViaBlob(url);
     } catch {
       toast.error("Erro ao baixar arquivo");
     }
@@ -151,17 +146,15 @@ export function TicketChatMessages({
                             )}
                           >
                             <FileIcon className="h-4 w-4 shrink-0" />
-                            <span className="text-xs truncate max-w-[120px]">{getFileName(url)}</span>
+                            <span className="text-xs truncate max-w-[120px]">{getFileNameFromUrl(url)}</span>
                             <div className="flex items-center gap-1 ml-auto shrink-0">
-                              <a
-                                href={url}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                              <button
+                                onClick={() => handleView(url)}
                                 className="p-1 rounded hover:bg-foreground/10 transition-colors"
                                 title="Visualizar"
                               >
                                 <Eye className="h-3.5 w-3.5" />
-                              </a>
+                              </button>
                               <button
                                 onClick={() => handleDownload(url)}
                                 className="p-1 rounded hover:bg-foreground/10 transition-colors"

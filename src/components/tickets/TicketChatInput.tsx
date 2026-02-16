@@ -89,8 +89,8 @@ export function TicketChatInput({
     const urls: string[] = [];
     
     for (const { file } of pendingFiles) {
-      const ext = file.name.split('.').pop();
-      const path = `${crypto.randomUUID()}.${ext}`;
+      const { buildStoragePath } = await import('@/lib/utils');
+      const path = buildStoragePath(file.name);
       
       const { error } = await supabase.storage
         .from('chat-attachments')
