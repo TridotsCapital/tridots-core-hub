@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Calculator, ArrowRight, TrendingUp, Shield } from 'lucide-react';
 import { formatCurrency, formatCurrencyInput, parseCurrencyInput, SETUP_FEE_OPTIONS } from '@/lib/validators';
 import { PaymentOptionsDisplay } from '@/components/payment/PaymentOptionsDisplay';
@@ -92,20 +93,31 @@ export function GuaranteeSimulator({ onStartAnalysis, initialValues, descontoPix
   const canStartAnalysis = isValid && formaPagamento !== '' && !excedeLimite;
 
   return (
-    <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-background">
-      <CardHeader>
-        <div className="flex items-center gap-2">
-          <div className="p-2 rounded-lg bg-primary/10">
-            <Calculator className="h-5 w-5 text-primary" />
+    <div className="space-y-4">
+      {/* Rental limit banner - above card */}
+      {excedeLimite && (
+        <Alert variant="destructive" className="border-destructive bg-destructive/10">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription className="font-medium">
+            🚫 A Tridots Capital atende apenas locações de até R$ 4.000,00 de valor locatício mensal. 
+            O total informado é de {totalEncargos.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}.
+          </AlertDescription>
+        </Alert>
+      )}
+      <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-background">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Calculator className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <CardTitle className="text-xl">Simulador de Garantia</CardTitle>
+              <CardDescription>
+                Calcule os custos para o inquilino antes de iniciar a análise
+              </CardDescription>
+            </div>
           </div>
-          <div>
-            <CardTitle className="text-xl">Simulador de Garantia</CardTitle>
-            <CardDescription>
-              Calcule os custos para o inquilino antes de iniciar a análise
-            </CardDescription>
-          </div>
-        </div>
-      </CardHeader>
+        </CardHeader>
       <CardContent className="space-y-6">
         {/* Input Fields */}
         <div className="grid gap-4 md:grid-cols-3">
@@ -154,18 +166,7 @@ export function GuaranteeSimulator({ onStartAnalysis, initialValues, descontoPix
                 placeholder="0,00"
                 className="pl-10"
               />
-        </div>
-
-        {/* Rental limit alert */}
-        {excedeLimite && (
-          <Alert variant="destructive">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              A Tridots Capital atende apenas locações de até R$ 4.000,00 de valor locatício mensal. 
-              O total informado é de {totalEncargos.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}.
-            </AlertDescription>
-          </Alert>
-        )}
+            </div>
           </div>
         </div>
 
@@ -269,16 +270,30 @@ export function GuaranteeSimulator({ onStartAnalysis, initialValues, descontoPix
         </div>
 
         {/* Start Analysis Button */}
-        <Button
-          onClick={handleStartAnalysis}
-          disabled={!canStartAnalysis}
-          className="w-full"
-          size="lg"
-        >
-          Iniciar Análise
-          <ArrowRight className="ml-2 h-4 w-4" />
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="w-full">
+                <Button
+                  onClick={handleStartAnalysis}
+                  disabled={!canStartAnalysis}
+                  className="w-full"
+                  size="lg"
+                >
+                  Iniciar Análise
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            </TooltipTrigger>
+            {excedeLimite && (
+              <TooltipContent side="top" className="max-w-xs text-center">
+                <p>🔒 A Tridots Capital atende apenas locações de até R$ 4.000,00 de valor locatício mensal.</p>
+              </TooltipContent>
+            )}
+          </Tooltip>
+        </TooltipProvider>
       </CardContent>
     </Card>
+    </div>
   );
 }
