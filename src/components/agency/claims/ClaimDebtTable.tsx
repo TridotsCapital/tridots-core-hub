@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Plus, Trash2, AlertCircle, RotateCcw } from 'lucide-react';
-import { format, isAfter, startOfDay } from 'date-fns';
+import { format, isAfter, isBefore, startOfDay, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+
+const LIMITE_DIAS_VENCIMENTO = 60;
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -142,11 +144,20 @@ export function ClaimDebtTable({ items, onChange, onClearAll, disabled }: ClaimD
 
     const today = startOfDay(new Date());
     const selectedDate = startOfDay(date);
+    const sixtyDaysAgo = subDays(today, LIMITE_DIAS_VENCIMENTO);
 
     if (isAfter(selectedDate, today)) {
       setErrors((prev) => ({
         ...prev,
         [`${id}-due_date`]: 'A data deve ser no passado',
+      }));
+      return;
+    }
+
+    if (isBefore(selectedDate, sixtyDaysAgo)) {
+      setErrors((prev) => ({
+        ...prev,
+        [`${id}-due_date`]: 'Não aceitamos débitos vencidos há mais de 60 dias',
       }));
       return;
     }
@@ -317,7 +328,11 @@ export function ClaimDebtTable({ items, onChange, onClearAll, disabled }: ClaimD
                         mode="single"
                         selected={item.due_date ? parseDateString(item.due_date) : undefined}
                         onSelect={(date) => handleDateSelect(item.id, date)}
-                        disabled={(date) => isAfter(date, new Date())}
+                        disabled={(date) => {
+                          const today = startOfDay(new Date());
+                          const sixtyDaysAgo = subDays(today, LIMITE_DIAS_VENCIMENTO);
+                          return isAfter(date, today) || isBefore(date, sixtyDaysAgo);
+                        }}
                         initialFocus
                         className="p-3 pointer-events-auto"
                       />
