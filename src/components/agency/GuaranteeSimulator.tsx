@@ -118,7 +118,7 @@ export function GuaranteeSimulator({ onStartAnalysis, initialValues, descontoPix
             </div>
           </div>
         </CardHeader>
-      <CardContent className="space-y-6">
+        <CardContent className="space-y-6">
         {/* Input Fields */}
         <div className="grid gap-4 md:grid-cols-3">
           <div className="space-y-2">
