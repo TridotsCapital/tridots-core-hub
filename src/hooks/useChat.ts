@@ -78,7 +78,8 @@ export function useSendMessage() {
 
       // Upload attachment if provided
       if (attachment) {
-        const filePath = `${analysisId}/${Date.now()}-${attachment.name}`;
+        const { buildStoragePath } = await import('@/lib/utils');
+        const filePath = `${analysisId}/${buildStoragePath(attachment.name)}`;
         const { error: uploadError } = await supabase.storage
           .from('chat-attachments')
           .upload(filePath, attachment);
