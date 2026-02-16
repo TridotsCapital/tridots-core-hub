@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertTriangle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -54,6 +56,8 @@ export function GuaranteeSimulator({ onStartAnalysis, initialValues, descontoPix
 
   // Calculations
   const totalEncargos = aluguel + condominio + iptu;
+  const LIMITE_VALOR_LOCATICIO = 4000;
+  const excedeLimite = totalEncargos > LIMITE_VALOR_LOCATICIO;
   const taxaMensal = totalEncargos * (taxaGarantia / 100);
   const garantiaAnual = taxaMensal * 12;
   const custoMensalTotal = totalEncargos + taxaMensal;
@@ -85,7 +89,7 @@ export function GuaranteeSimulator({ onStartAnalysis, initialValues, descontoPix
   };
 
   const isValid = aluguel > 0 && setupFee !== null;
-  const canStartAnalysis = isValid && formaPagamento !== '';
+  const canStartAnalysis = isValid && formaPagamento !== '' && !excedeLimite;
 
   return (
     <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-background">
@@ -150,7 +154,18 @@ export function GuaranteeSimulator({ onStartAnalysis, initialValues, descontoPix
                 placeholder="0,00"
                 className="pl-10"
               />
-            </div>
+        </div>
+
+        {/* Rental limit alert */}
+        {excedeLimite && (
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              A Tridots Capital atende apenas locações de até R$ 4.000,00 de valor locatício mensal. 
+              O total informado é de {totalEncargos.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}.
+            </AlertDescription>
+          </Alert>
+        )}
           </div>
         </div>
 
