@@ -1,37 +1,80 @@
 
-# Correcao: Download e Visualizacao de Anexos nos Chamados
 
-## Problema
+# Correcao: Nome de Arquivo e Visualizacao Bloqueada nos Anexos
 
-Ao clicar em um arquivo PDF (ou outro nao-imagem) no chat, ele abre em nova aba mas nao oferece opcao de download. O comportamento esperado e ter **dois botoes**: um para **visualizar** (abrir em nova aba) e outro para **baixar** (download forcado no navegador).
+## Problemas Identificados
+
+### 1. Nome do arquivo vira UUID
+O upload usa `crypto.randomUUID()` como nome do arquivo no storage, perdendo o nome original. Exemplo: "Termos e condicoes Tridots Capital.pdf" vira "33bfa989-4b14-4664-8b3f-ff4fa67bc157.pdf".
+
+### 2. Visualizacao bloqueada por ad-blockers
+O botao "Visualizar" abre a URL direta do storage (`supabase.co/storage/...`), que e bloqueada por ad-blockers e extensoes de seguranca do Chrome (ERR_BLOCKED_BY_CLIENT).
 
 ## Solucao
 
-Implementar download programatico via `fetch` + `Blob` (mesmo padrao ja usado no drive de documentos do projeto) e separar as acoes de "ver" e "baixar" em dois botoes distintos.
+### A) Upload com nome original no path (4 arquivos)
+
+Alterar o caminho de upload de `${uuid}.${ext}` para `${uuid}__${sanitizedOriginalName}`, preservando o nome original no path do storage. A funcao `sanitizeFileName` ja existe no projeto (`useTermTemplates.ts`) e sera extraida para `src/lib/utils.ts` para reuso.
+
+**Antes:**
+```text
+path = "33bfa989-4b14-4664-8b3f-ff4fa67bc157.pdf"
+```
+
+**Depois:**
+```text
+path = "33bfa989__Termos_e_condicoes_Tridots_Capital.pdf"
+```
+
+### B) Visualizacao via fetch+Blob (2 arquivos)
+
+Substituir o link direto (`<a href={url} target="_blank">`) por uma funcao `handleView(url)` que:
+1. Faz `fetch` da URL do arquivo
+2. Converte em Blob
+3. Abre via `URL.createObjectURL` em nova aba
+
+Isso contorna o bloqueio de ad-blockers pois a nova aba abre uma URL `blob:` local, nao a URL do storage.
+
+### C) Download com nome original (2 arquivos)
+
+Melhorar a funcao `getFileName` para extrair o nome legivel quando o path usa o novo formato (`uuid__NomeOriginal.ext`), e tambem funcionar com arquivos antigos (apenas UUID).
 
 ## Arquivos Afetados
 
 | # | Arquivo | Mudanca |
 |---|---------|---------|
-| 1 | `src/components/tickets/TicketChatMessages.tsx` | Adicionar funcao de download programatico e dois botoes (visualizar + baixar) para anexos nao-imagem |
-| 2 | `src/components/agency/AgencyTicketChatArea.tsx` | Mesma alteracao no chat do portal da imobiliaria |
+| 1 | `src/lib/utils.ts` | Exportar funcao `sanitizeFileName` para reuso |
+| 2 | `src/components/tickets/TicketChatInput.tsx` | Upload com nome original no path |
+| 3 | `src/components/agency/AgencyTicketChatArea.tsx` | Upload com nome original no path + funcao `handleView` via fetch+Blob + `getFileName` melhorado |
+| 4 | `src/components/tickets/TicketChatMessages.tsx` | Funcao `handleView` via fetch+Blob + `getFileName` melhorado |
+| 5 | `src/hooks/useChat.ts` | Upload com nome original no path (chat de analises) |
 
 ## Detalhes Tecnicos
 
-### Funcao de download programatico
+### Funcao `handleView`
+```text
+async handleView(url):
+  1. fetch(url) -> blob
+  2. blobUrl = URL.createObjectURL(blob)
+  3. window.open(blobUrl, '_blank')
+```
 
-Sera adicionada uma funcao `handleDownload(url)` em ambos os componentes que:
-1. Faz `fetch` da URL do arquivo
-2. Converte a resposta em `Blob`
-3. Cria uma URL temporaria com `URL.createObjectURL`
-4. Cria um elemento `<a>` invisivel com atributo `download` e o nome do arquivo
-5. Simula o clique para forcar o download
-6. Limpa a URL temporaria
+### Funcao `getFileName` melhorada
+```text
+getFileName(url):
+  filename = url.split('/').pop()
+  se contem '__':
+    retorna parte apos '__' (nome original)
+  senao:
+    retorna filename inteiro (fallback para arquivos antigos)
+```
 
-### Layout do card de anexo nao-imagem
+### Funcao `sanitizeFileName`
+Ja existe em `useTermTemplates.ts`. Sera movida para `utils.ts`:
+- Remove acentos via `.normalize("NFD")`
+- Substitui espacos e caracteres especiais por underscore
+- Remove underscores duplicados
 
-O card de arquivo passa a ter dois icones de acao:
-- **Olho (Eye)**: abre o arquivo em nova aba para visualizacao
-- **Download (Download)**: forca o download local do arquivo
+### Nota sobre arquivos existentes
+Arquivos ja enviados com nome UUID continuarao aparecendo com o UUID como nome. Apenas novos envios terao o nome original preservado. Isso e aceitavel pois nao ha como recuperar retroativamente os nomes originais.
 
-Para imagens, o comportamento atual (clique abre em nova aba) sera mantido, pois ja funciona corretamente.
