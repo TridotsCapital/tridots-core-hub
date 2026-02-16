@@ -6,7 +6,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn, formatDateBR } from "@/lib/utils";
-import { CheckCheck, FileIcon, Download, Image as ImageIcon } from "lucide-react";
+import { CheckCheck, FileIcon, Download, Eye } from "lucide-react";
+import { toast } from "sonner";
 
 interface TicketChatMessagesProps {
   messages: TicketMessage[];
@@ -48,6 +49,23 @@ export function TicketChatMessages({
 
   const getFileName = (url: string) => {
     return url.split('/').pop() || 'arquivo';
+  };
+
+  const handleDownload = async (url: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = getFileName(url);
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    } catch {
+      toast.error("Erro ao baixar arquivo");
+    }
   };
 
   const otherTypingUsers = typingUsers.filter(t => t.user_id !== currentUserId);
@@ -123,22 +141,36 @@ export function TicketChatMessages({
                             />
                           </a>
                         ) : (
-                          <a
+                          <div
                             key={idx}
-                            href={url}
-                            target="_blank"
-                            rel="noopener noreferrer"
                             className={cn(
-                              "flex items-center gap-2 p-2 rounded-lg border transition-colors",
+                              "flex items-center gap-2 p-2 rounded-lg border",
                               isOwn 
-                                ? "bg-primary-foreground/10 hover:bg-primary-foreground/20 text-primary-foreground" 
-                                : "bg-background hover:bg-muted"
+                                ? "bg-primary-foreground/10 text-primary-foreground" 
+                                : "bg-background"
                             )}
                           >
                             <FileIcon className="h-4 w-4 shrink-0" />
-                            <span className="text-xs truncate max-w-[150px]">{getFileName(url)}</span>
-                            <Download className="h-3 w-3 shrink-0 ml-auto" />
-                          </a>
+                            <span className="text-xs truncate max-w-[120px]">{getFileName(url)}</span>
+                            <div className="flex items-center gap-1 ml-auto shrink-0">
+                              <a
+                                href={url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-1 rounded hover:bg-foreground/10 transition-colors"
+                                title="Visualizar"
+                              >
+                                <Eye className="h-3.5 w-3.5" />
+                              </a>
+                              <button
+                                onClick={() => handleDownload(url)}
+                                className="p-1 rounded hover:bg-foreground/10 transition-colors"
+                                title="Baixar"
+                              >
+                                <Download className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </div>
                         )
                       ))}
                     </div>

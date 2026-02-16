@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Send, Loader2, Clock, CheckCircle, AlertCircle, MessageSquare, FileText, XCircle, Shield, Paperclip, X, FileIcon, Download } from "lucide-react";
+import { Send, Loader2, Clock, CheckCircle, AlertCircle, MessageSquare, FileText, XCircle, Shield, Paperclip, X, FileIcon, Download, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -81,6 +81,23 @@ const categoryConfig: Record<TicketCategory, { label: string; className: string 
 
 const isImageUrl = (url: string) => /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
 const getFileName = (url: string) => url.split('/').pop() || 'arquivo';
+
+const handleDownloadFile = async (url: string) => {
+  try {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = getFileName(url);
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(blobUrl);
+  } catch {
+    toast.error("Erro ao baixar arquivo");
+  }
+};
 
 export function AgencyTicketChatArea({ ticketId }: AgencyTicketChatAreaProps) {
   const navigate = useNavigate();
@@ -452,22 +469,36 @@ export function AgencyTicketChatArea({ ticketId }: AgencyTicketChatAreaProps) {
                                 />
                               </a>
                             ) : (
-                              <a
+                              <div
                                 key={idx}
-                                href={url}
-                                target="_blank"
-                                rel="noopener noreferrer"
                                 className={cn(
-                                  "flex items-center gap-2 p-2 rounded-lg border transition-colors",
+                                  "flex items-center gap-2 p-2 rounded-lg border",
                                   isOwnMessage 
-                                    ? "bg-primary-foreground/10 hover:bg-primary-foreground/20 text-primary-foreground" 
-                                    : "bg-background hover:bg-muted"
+                                    ? "bg-primary-foreground/10 text-primary-foreground" 
+                                    : "bg-background"
                                 )}
                               >
                                 <FileIcon className="h-4 w-4 shrink-0" />
-                                <span className="text-xs truncate max-w-[150px]">{getFileName(url)}</span>
-                                <Download className="h-3 w-3 shrink-0 ml-auto" />
-                              </a>
+                                <span className="text-xs truncate max-w-[120px]">{getFileName(url)}</span>
+                                <div className="flex items-center gap-1 ml-auto shrink-0">
+                                  <a
+                                    href={url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-1 rounded hover:bg-foreground/10 transition-colors"
+                                    title="Visualizar"
+                                  >
+                                    <Eye className="h-3.5 w-3.5" />
+                                  </a>
+                                  <button
+                                    onClick={() => handleDownloadFile(url)}
+                                    className="p-1 rounded hover:bg-foreground/10 transition-colors"
+                                    title="Baixar"
+                                  >
+                                    <Download className="h-3.5 w-3.5" />
+                                  </button>
+                                </div>
+                              </div>
                             )
                           ))}
                         </div>
