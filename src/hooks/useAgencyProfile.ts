@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useAgencyUser } from "@/hooks/useAgencyUser";
 
 export interface AgencyProfileData {
   id: string;
@@ -40,23 +41,14 @@ export interface UpdateAgencyProfileData {
 
 export function useAgencyProfile() {
   const { user } = useAuth();
+  const { data: agencyUserData } = useAgencyUser();
+  const agencyId = agencyUserData?.agency_id || null;
 
   return useQuery({
-    queryKey: ["agency-profile", user?.id],
+    queryKey: ["agency-profile", user?.id, agencyId],
     queryFn: async () => {
-      if (!user?.id) throw new Error("User not authenticated");
+      if (!agencyId) throw new Error("Agency not found");
 
-      // First get the agency_id from agency_users
-      const { data: agencyUser, error: auError } = await supabase
-        .from("agency_users")
-        .select("agency_id")
-        .eq("user_id", user.id)
-        .single();
-
-      if (auError) throw auError;
-      if (!agencyUser?.agency_id) throw new Error("Agency not found");
-
-      // Then get the agency data
       const { data: agency, error: agencyError } = await supabase
         .from("agencies")
         .select(`
@@ -80,13 +72,13 @@ export function useAgencyProfile() {
           terms_accepted_at,
           billing_due_day
         `)
-        .eq("id", agencyUser.agency_id)
+        .eq("id", agencyId)
         .single();
 
       if (agencyError) throw agencyError;
       return agency as AgencyProfileData;
     },
-    enabled: !!user?.id,
+    enabled: !!agencyId,
   });
 }
 

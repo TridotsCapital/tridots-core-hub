@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AgencyLayout } from "@/components/layout/AgencyLayout";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAgencyUser } from "@/hooks/useAgencyUser";
 import { useClaimDraft, DraftClaimItem, DraftClaimFile } from "@/hooks/useClaimDraft";
 import { useCreateClaim } from "@/hooks/useClaims";
 import { useCreateClaimItem } from "@/hooks/useClaimItems";
@@ -70,11 +71,12 @@ export default function AgencyNewClaim() {
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { data: agencyUserData, isLoading: loadingAgency } = useAgencyUser();
+  const agencyId = agencyUserData?.agency_id || null;
+  const isAgencyActive = agencyUserData?.agency?.active ?? null;
   
-  const [agencyId, setAgencyId] = useState<string | null>(null);
-  const [isAgencyActive, setIsAgencyActive] = useState<boolean | null>(null);
   const [contracts, setContracts] = useState<Contract[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingContracts, setLoadingContracts] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Draft state
@@ -103,32 +105,13 @@ export default function AgencyNewClaim() {
   // Check for active claim on selected contract
   const { data: activeClaim, isLoading: checkingActiveClaim } = useActiveClaimByContract(selectedContractId || undefined);
 
-  // Load agency data and contracts
+  // Load contracts once we have agencyId
   useEffect(() => {
-    const fetchData = async () => {
-      if (!user) return;
+    const fetchContracts = async () => {
+      if (!agencyId) return;
       
+      setLoadingContracts(true);
       try {
-        const { data: agencyUser, error: agencyError } = await supabase
-          .from('agency_users')
-          .select('agency_id')
-          .eq('user_id', user.id)
-          .single();
-
-        if (agencyError) throw agencyError;
-        setAgencyId(agencyUser.agency_id);
-
-        // Check if agency is active
-        const { data: agencyData, error: agencyStatusError } = await supabase
-          .from('agencies')
-          .select('active')
-          .eq('id', agencyUser.agency_id)
-          .single();
-
-        if (!agencyStatusError && agencyData) {
-          setIsAgencyActive(agencyData.active);
-        }
-
         const { data: contractsData, error: contractsError } = await supabase
           .from('contracts')
           .select(`
@@ -143,21 +126,23 @@ export default function AgencyNewClaim() {
               valor_aluguel
             )
           `)
-          .eq('agency_id', agencyUser.agency_id)
+          .eq('agency_id', agencyId)
           .in('status', ['ativo', 'documentacao_pendente'])
           .order('created_at', { ascending: false });
 
         if (contractsError) throw contractsError;
         setContracts(contractsData || []);
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error('Error fetching contracts:', error);
       } finally {
-        setLoading(false);
+        setLoadingContracts(false);
       }
     };
 
-    fetchData();
-  }, [user]);
+    fetchContracts();
+  }, [agencyId]);
+
+  const loading = loadingAgency || loadingContracts;
 
   // Restore draft or preselected contract
   useEffect(() => {

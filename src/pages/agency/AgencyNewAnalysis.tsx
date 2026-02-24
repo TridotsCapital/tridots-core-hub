@@ -1,53 +1,14 @@
-import { useState, useEffect } from 'react';
-import { AgencyLayout, useAgencyStatus } from '@/components/layout/AgencyLayout';
+import { AgencyLayout } from '@/components/layout/AgencyLayout';
 import { NewAnalysisForm } from '@/components/agency/NewAnalysisForm';
-import { PendingApprovalBanner } from '@/components/agency/PendingApprovalBanner';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { useAgencyUser } from '@/hooks/useAgencyUser';
 import { Loader2, Lock } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 
 export default function AgencyNewAnalysis() {
-  const { user } = useAuth();
-  const [agencyId, setAgencyId] = useState<string | null>(null);
-  const [descontoPix, setDescontoPix] = useState<number | null>(null);
-  const [isAgencyActive, setIsAgencyActive] = useState(true);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchAgencyId = async () => {
-      if (!user) return;
-      
-      try {
-        const { data, error } = await supabase
-          .from('agency_users')
-          .select('agency_id')
-          .eq('user_id', user.id)
-          .single();
-        
-        if (error) throw error;
-        setAgencyId(data.agency_id);
-
-        // Check if agency is active and get discount
-        const { data: agency } = await supabase
-          .from('agencies')
-          .select('active, desconto_pix_percentual')
-          .eq('id', data.agency_id)
-          .single();
-
-        if (agency) {
-          setIsAgencyActive(agency.active);
-          setDescontoPix(agency.desconto_pix_percentual);
-        }
-      } catch (error) {
-        console.error('Error fetching agency:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAgencyId();
-  }, [user]);
+  const { data: agencyUserData, isLoading: loading } = useAgencyUser();
+  const agencyId = agencyUserData?.agency_id || null;
+  const isAgencyActive = agencyUserData?.agency?.active ?? true;
+  const descontoPix = agencyUserData?.agency?.desconto_pix_percentual ?? null;
 
   if (loading) {
     return (

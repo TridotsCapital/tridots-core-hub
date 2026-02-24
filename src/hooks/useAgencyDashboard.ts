@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AgencyDashboardData, AgencyRanking, AgencyProjection, AgencyApprovalRate, AgencyPeriodFilter } from "@/types/agency-portal";
 import { startOfMonth, subMonths, startOfYear, addDays } from "date-fns";
+import { useAgencyUser } from "@/hooks/useAgencyUser";
 
 const getPeriodStartDate = (period: AgencyPeriodFilter): Date => {
   const now = new Date();
@@ -268,22 +269,12 @@ export const useAgencyPortfolioChart = (agencyId: string | null) => {
   });
 };
 
-// Hook to get agency ID for current user
+// Hook to get agency ID for current user (supports impersonation)
 export const useCurrentAgencyId = () => {
-  return useQuery({
-    queryKey: ['current-agency-id'],
-    queryFn: async (): Promise<string | null> => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
+  const { data: agencyUserData, isLoading } = useAgencyUser();
 
-      const { data, error } = await supabase
-        .from('agency_users' as any)
-        .select('agency_id')
-        .eq('user_id', user.id)
-        .single();
-
-      if (error || !data) return null;
-      return (data as any).agency_id;
-    }
-  });
+  return {
+    data: agencyUserData?.agency_id || null,
+    isLoading,
+  };
 };
