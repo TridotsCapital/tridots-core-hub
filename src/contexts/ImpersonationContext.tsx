@@ -5,6 +5,7 @@ import { useSearchParams } from "react-router-dom";
 
 interface ImpersonationContextType {
   isImpersonating: boolean;
+  impersonationLoading: boolean;
   impersonatedAgencyId: string | null;
   impersonatedAgencyName: string | null;
   isAgencyActive: boolean;
@@ -14,6 +15,7 @@ interface ImpersonationContextType {
 
 const ImpersonationContext = createContext<ImpersonationContextType>({
   isImpersonating: false,
+  impersonationLoading: false,
   impersonatedAgencyId: null,
   impersonatedAgencyName: null,
   isAgencyActive: true,
@@ -45,15 +47,36 @@ export function ImpersonationProvider({ children }: { children: ReactNode }) {
     }
   });
 
+  // Determine if we need to load impersonation data
+  const [impersonationLoading, setImpersonationLoading] = useState(() => {
+    const impersonateId = searchParams.get("impersonate");
+    if (!impersonateId) return false;
+    // If sessionStorage already has this agency cached, no loading needed
+    try {
+      const stored = sessionStorage.getItem(SESSION_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed?.agencyId === impersonateId) return false;
+      }
+    } catch {}
+    return true;
+  });
+
   const isAllowedRole = role === "master" || role === "analyst";
 
   // Check URL param on mount
   useEffect(() => {
     const impersonateId = searchParams.get("impersonate");
-    if (!impersonateId || !isAllowedRole) return;
+    if (!impersonateId || !isAllowedRole) {
+      setImpersonationLoading(false);
+      return;
+    }
 
     // If already impersonating this agency, skip
-    if (state?.agencyId === impersonateId) return;
+    if (state?.agencyId === impersonateId) {
+      setImpersonationLoading(false);
+      return;
+    }
 
     const fetchAgency = async () => {
       const { data: agency } = await supabase
@@ -72,6 +95,7 @@ export function ImpersonationProvider({ children }: { children: ReactNode }) {
         sessionStorage.setItem(SESSION_KEY, JSON.stringify(newState));
         setState(newState);
       }
+      setImpersonationLoading(false);
     };
 
     fetchAgency();
@@ -88,6 +112,7 @@ export function ImpersonationProvider({ children }: { children: ReactNode }) {
     <ImpersonationContext.Provider
       value={{
         isImpersonating,
+        impersonationLoading,
         impersonatedAgencyId: isImpersonating ? state!.agencyId : null,
         impersonatedAgencyName: isImpersonating ? state!.agencyName : null,
         isAgencyActive: state?.isActive ?? true,

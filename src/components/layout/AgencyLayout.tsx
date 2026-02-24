@@ -111,7 +111,9 @@ export function AgencyLayout({ children, title, description, actions }: AgencyLa
   }, [user, isImpersonating, impersonatedAgencyId, impersonatedAgencyName, impersonatedIsActive, impersonatedIsBillingBlocked]);
 
   // Show loading while checking auth
-  if (loading || loadingAgency) {
+  const { impersonationLoading } = useImpersonation();
+
+  if (loading || loadingAgency || impersonationLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
