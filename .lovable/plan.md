@@ -1,90 +1,92 @@
 
-# Correção: Segunda Race Condition - Role ainda não carregou
 
-## Problema Identificado
+# Correção: Dados Zerados no Modo Suporte
 
-A impersonação falha porque existe uma corrida entre o carregamento do `role` (AuthContext) e a decisão do `ImpersonationContext`:
+## Problema
+
+Vários módulos do portal da imobiliária (Contratos, Garantias, Dashboard, Nova Análise, Nova Garantia) buscam o `agency_id` diretamente na tabela `agency_users` filtrando pelo `user_id` do usuário logado. Como o usuário Tridots (master/analyst) **não está** na tabela `agency_users`, essas consultas retornam `null`, resultando em dados zerados.
+
+O hook `useAgencyUser()` já foi corrigido para retornar o `agency_id` da imobiliária impersonada, mas os módulos não o utilizam -- cada um faz sua própria consulta direta.
 
 ```text
-Nova aba abre
-    |
-    v
-AuthContext: loading=true, role=null
-ImpersonationContext useEffect executa:
-    |-- isAllowedRole = (null === "master") = FALSE
-    |-- Seta impersonationLoading = false (desiste)
-    |
-    v
-AuthContext termina: role="master", loading=false
-ImpersonationContext useEffect re-executa:
-    |-- isAllowedRole = true, inicia fetch
-    |-- MAS impersonationLoading ja e false!
-    |
-    v
-AgencyLayout renderiza:
-    |-- loading=false, impersonationLoading=false
-    |-- isImpersonating=false (fetch ainda em andamento)
-    |-- isInternalUser=true, !isProduction=true
-    |-- REDIRECIONA para "/" <--- problema
+Fluxo atual (quebrado):
+  AgencyContracts -> SELECT agency_id FROM agency_users WHERE user_id = ADMIN_ID
+                  -> Resultado: NULL (admin não está em agency_users)
+                  -> Contratos: []
+
+Fluxo correto:
+  AgencyContracts -> useAgencyUser() -> agency_id da imobiliária impersonada
+                  -> Contratos carregam normalmente
 ```
 
 ## Solução
 
-Modificar o `ImpersonationContext` para **não desistir enquanto o auth ainda estiver carregando**. Se há um parametro `?impersonate=` na URL, o loading so pode ser setado como `false` quando:
-1. O `role` ja foi carregado (auth `loading = false`), E
-2. A decisao foi tomada (buscar agencia ou ignorar)
+Substituir todas as consultas diretas a `agency_users` nos módulos do portal por uso do `useAgencyUser()`, que já lida com a impersonação corretamente.
 
-## Detalhes Tecnicos
-
-### ImpersonationContext.tsx
-
-Mudancas:
-- Importar `loading` do `useAuth()` junto com `role`
-- Na logica do `impersonationLoading` inicial: manter `true` se ha `?impersonate=` na URL (independente do role, pois o role pode ainda nao ter carregado)
-- No `useEffect`: so executar `setImpersonationLoading(false)` quando `isAllowedRole` for `false` **E** o auth ja tiver terminado de carregar (`loading === false`). Se `loading` ainda for `true`, nao fazer nada (aguardar re-execucao do effect)
-- Adicionar `loading` (do auth) na lista de dependencias do `useEffect`
-
-Logica revisada:
-```text
-useEffect:
-  Se nao tem ?impersonate= na URL:
-    impersonationLoading = false (nada a fazer)
-    return
-
-  Se auth ainda esta carregando (loading === true):
-    return (manter impersonationLoading = true, aguardar)
-
-  Se isAllowedRole === false (auth carregou, mas nao e master/analyst):
-    impersonationLoading = false
-    return
-
-  Se isAllowedRole === true:
-    Se ja tem cache no sessionStorage:
-      impersonationLoading = false
-      return
-    Senao:
-      Fetch agencia...
-      impersonationLoading = false (apos completar)
-```
-
-### AgencyLayout.tsx
-
-Nenhuma mudanca necessaria - o `impersonationLoading` ja esta sendo verificado corretamente. A correcao e apenas no timing de quando ele e setado como `false`.
+---
 
 ## Arquivos Afetados
 
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/contexts/ImpersonationContext.tsx` | Aguardar auth loading antes de decidir; adicionar `loading` nas deps do useEffect |
+### 1. `src/pages/agency/AgencyContracts.tsx`
+- **Remover** o `useEffect` que busca `agency_id` via `supabase.from('agency_users')` (linhas 48-96)
+- **Usar** `useAgencyUser()` para obter o `agency_id`
+- Passar o `agency_id` do hook para a consulta de contratos
+
+### 2. `src/pages/agency/AgencyClaims.tsx`
+- **Remover** o `useEffect` que busca `agency_id` via `supabase.from('agency_users')` (linhas 40-62)
+- **Usar** `useAgencyUser()` para obter o `agency_id`
+
+### 3. `src/pages/agency/AgencyNewAnalysis.tsx`
+- **Remover** o `useEffect` que busca `agency_id` via `supabase.from('agency_users')` (linhas 17-48)
+- **Usar** `useAgencyUser()` para obter `agency_id`, `active` e `desconto_pix_percentual`
+
+### 4. `src/pages/agency/AgencyNewClaim.tsx`
+- **Remover** o `useEffect` que busca `agency_id` via `supabase.from('agency_users')` (linhas 107-130)
+- **Usar** `useAgencyUser()` para obter o `agency_id`
+
+### 5. `src/hooks/useAgencyDashboard.ts` (hook `useCurrentAgencyId`)
+- **Modificar** para usar `useAgencyUser()` em vez de consultar `agency_users` diretamente
+- Isso corrige o Dashboard (KPIs, gráficos, ranking, etc.)
+
+### 6. `src/hooks/useAgencyProfile.ts`
+- **Modificar** para usar `useAgencyUser()` em vez de consultar `agency_users` diretamente
+
+### 7. `src/components/agency/claims/ClaimTicketSheet.tsx`
+- **Modificar** para usar `useAgencyUser()` em vez de consultar `agency_users` diretamente
+
+---
+
+## Padrão da Correção
+
+Em cada arquivo, a mudança segue o mesmo padrão:
+
+**Antes:**
+```text
+const [agencyId, setAgencyId] = useState(null);
+useEffect(() => {
+  const { data } = await supabase
+    .from('agency_users')
+    .select('agency_id')
+    .eq('user_id', user.id)
+    .single();
+  setAgencyId(data.agency_id);
+}, [user]);
+```
+
+**Depois:**
+```text
+const { data: agencyUserData } = useAgencyUser();
+const agencyId = agencyUserData?.agency_id || null;
+```
+
+O `useAgencyUser()` já retorna o `agency_id` correto tanto para usuários normais da imobiliária quanto para o modo suporte.
 
 ## Resultado Esperado
 
-1. Admin clica "Acessar como Imobiliaria" - nova aba abre
-2. `impersonationLoading = true` (tem ?impersonate= na URL)
-3. AgencyLayout mostra "Carregando..." (auth loading + impersonation loading)
-4. Auth termina: role = "master"
-5. ImpersonationContext: isAllowedRole = true, busca agencia
-6. Fetch completa: isImpersonating = true, impersonationLoading = false
-7. AgencyLayout permite acesso, exibe portal com banner de suporte
+Após a correção, ao acessar o portal como suporte:
+- Dashboard mostrará os KPIs reais da imobiliária
+- Contratos listarão todos os contratos da imobiliária
+- Garantias listarão todas as solicitações
+- Chamados, Comissões e demais módulos funcionarão normalmente
+- Nova Análise e Nova Garantia receberão o `agency_id` correto para criação
 
-Nao ha necessidade de janela anonima - a sessao compartilhada funciona corretamente quando o timing esta certo.
