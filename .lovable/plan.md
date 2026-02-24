@@ -1,84 +1,90 @@
 
-# Correção: Race Condition na Impersonação
+# Correção: Segunda Race Condition - Role ainda não carregou
 
-## Problema
+## Problema Identificado
 
-Quando o admin clica em "Acessar como Imobiliária", uma nova aba abre em `/agency?impersonate=AGENCY_ID`. Porém, o `ImpersonationContext` precisa fazer uma chamada assíncrona ao banco para buscar os dados da agência. Antes dessa chamada completar, o `AgencyLayout` já renderiza com `isImpersonating = false` e redireciona o `master`/`analyst` de volta para `/` (dashboard interno).
+A impersonação falha porque existe uma corrida entre o carregamento do `role` (AuthContext) e a decisão do `ImpersonationContext`:
 
 ```text
 Nova aba abre
     |
     v
-ImpersonationProvider monta
-    |-- sessionStorage vazio (nova aba) --> state = null
-    |-- useEffect dispara fetch assíncrono (ainda não completou)
+AuthContext: loading=true, role=null
+ImpersonationContext useEffect executa:
+    |-- isAllowedRole = (null === "master") = FALSE
+    |-- Seta impersonationLoading = false (desiste)
     |
     v
-AgencyLayout renderiza
-    |-- isImpersonating = false (fetch não completou)
-    |-- role = master, !isProduction
-    |-- REDIRECIONA para "/" <--- problema aqui
+AuthContext termina: role="master", loading=false
+ImpersonationContext useEffect re-executa:
+    |-- isAllowedRole = true, inicia fetch
+    |-- MAS impersonationLoading ja e false!
     |
     v
-useEffect nunca completa (componente desmontou)
+AgencyLayout renderiza:
+    |-- loading=false, impersonationLoading=false
+    |-- isImpersonating=false (fetch ainda em andamento)
+    |-- isInternalUser=true, !isProduction=true
+    |-- REDIRECIONA para "/" <--- problema
 ```
 
 ## Solução
 
-Adicionar um estado `impersonationLoading` ao `ImpersonationContext` que indica quando há um parâmetro `?impersonate=` na URL mas os dados ainda estão sendo carregados. O `AgencyLayout` espera esse loading terminar antes de tomar decisões de redirecionamento.
+Modificar o `ImpersonationContext` para **não desistir enquanto o auth ainda estiver carregando**. Se há um parametro `?impersonate=` na URL, o loading so pode ser setado como `false` quando:
+1. O `role` ja foi carregado (auth `loading = false`), E
+2. A decisao foi tomada (buscar agencia ou ignorar)
 
----
+## Detalhes Tecnicos
 
-## Detalhes Técnicos
+### ImpersonationContext.tsx
 
-### 1. ImpersonationContext - Adicionar estado de loading
+Mudancas:
+- Importar `loading` do `useAuth()` junto com `role`
+- Na logica do `impersonationLoading` inicial: manter `true` se ha `?impersonate=` na URL (independente do role, pois o role pode ainda nao ter carregado)
+- No `useEffect`: so executar `setImpersonationLoading(false)` quando `isAllowedRole` for `false` **E** o auth ja tiver terminado de carregar (`loading === false`). Se `loading` ainda for `true`, nao fazer nada (aguardar re-execucao do effect)
+- Adicionar `loading` (do auth) na lista de dependencias do `useEffect`
 
-**Arquivo:** `src/contexts/ImpersonationContext.tsx`
-
-Mudanças:
-- Adicionar `impersonationLoading: boolean` ao tipo do contexto
-- Inicializar como `true` quando há `?impersonate=` na URL e `sessionStorage` está vazio
-- Setar como `false` após o fetch completar (sucesso ou erro)
-- Se não há `?impersonate=` na URL, `impersonationLoading` começa como `false`
-
-Lógica:
+Logica revisada:
 ```text
-Se URL tem ?impersonate= E sessionStorage está vazio:
-  impersonationLoading = true
-  Fetch agência...
-  impersonationLoading = false (após completar)
+useEffect:
+  Se nao tem ?impersonate= na URL:
+    impersonationLoading = false (nada a fazer)
+    return
 
-Se URL NÃO tem ?impersonate=:
-  impersonationLoading = false (imediato)
+  Se auth ainda esta carregando (loading === true):
+    return (manter impersonationLoading = true, aguardar)
 
-Se sessionStorage já tem dados da agência:
-  impersonationLoading = false (imediato, usa cache)
+  Se isAllowedRole === false (auth carregou, mas nao e master/analyst):
+    impersonationLoading = false
+    return
+
+  Se isAllowedRole === true:
+    Se ja tem cache no sessionStorage:
+      impersonationLoading = false
+      return
+    Senao:
+      Fetch agencia...
+      impersonationLoading = false (apos completar)
 ```
 
-### 2. AgencyLayout - Esperar loading da impersonação
+### AgencyLayout.tsx
 
-**Arquivo:** `src/components/layout/AgencyLayout.tsx`
-
-Mudanças:
-- Importar `impersonationLoading` do contexto
-- Na condição de loading (linha 114), adicionar `impersonationLoading` ao check:
-  - De: `if (loading || loadingAgency)`
-  - Para: `if (loading || loadingAgency || impersonationLoading)`
-
-Isso garante que o layout mostre o spinner "Carregando..." enquanto a impersonação está sendo inicializada, e só depois de confirmar se é ou não impersonação, tome a decisão de redirecionar.
-
----
+Nenhuma mudanca necessaria - o `impersonationLoading` ja esta sendo verificado corretamente. A correcao e apenas no timing de quando ele e setado como `false`.
 
 ## Arquivos Afetados
 
-| Arquivo | Mudança |
+| Arquivo | Mudanca |
 |---------|---------|
-| `src/contexts/ImpersonationContext.tsx` | Adicionar `impersonationLoading` ao contexto com lógica de detecção do param na URL |
-| `src/components/layout/AgencyLayout.tsx` | Incluir `impersonationLoading` na condição de loading inicial |
+| `src/contexts/ImpersonationContext.tsx` | Aguardar auth loading antes de decidir; adicionar `loading` nas deps do useEffect |
 
 ## Resultado Esperado
 
-1. Admin clica "Acessar como Imobiliária" -> abre nova aba
-2. Nova aba mostra spinner "Carregando..." enquanto busca dados da agência
-3. Após fetch completar, `isImpersonating = true` -> portal da agência carrega com banner de suporte
-4. Se o fetch falhar (agency_id inválido), `isImpersonating = false` -> redireciona normalmente
+1. Admin clica "Acessar como Imobiliaria" - nova aba abre
+2. `impersonationLoading = true` (tem ?impersonate= na URL)
+3. AgencyLayout mostra "Carregando..." (auth loading + impersonation loading)
+4. Auth termina: role = "master"
+5. ImpersonationContext: isAllowedRole = true, busca agencia
+6. Fetch completa: isImpersonating = true, impersonationLoading = false
+7. AgencyLayout permite acesso, exibe portal com banner de suporte
+
+Nao ha necessidade de janela anonima - a sessao compartilhada funciona corretamente quando o timing esta certo.
