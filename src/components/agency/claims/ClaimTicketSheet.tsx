@@ -29,6 +29,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Loader2, FileWarning } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAgencyUser } from "@/hooks/useAgencyUser";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useNps } from "@/contexts/NpsContext";
@@ -53,6 +54,8 @@ export function ClaimTicketSheet({ open, onOpenChange, claim }: ClaimTicketSheet
   const { toast } = useToast();
   const { hasPendingNps, showNpsModal } = useNps();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { data: agencyUserData } = useAgencyUser();
+  const agencyId = agencyUserData?.agency_id || null;
 
   // If has pending NPS and sheet opens, show NPS modal instead
   useEffect(() => {
@@ -61,7 +64,6 @@ export function ClaimTicketSheet({ open, onOpenChange, claim }: ClaimTicketSheet
       showNpsModal();
     }
   }, [open, hasPendingNps, showNpsModal, onOpenChange]);
-  const [agencyId, setAgencyId] = useState<string | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -72,18 +74,6 @@ export function ClaimTicketSheet({ open, onOpenChange, claim }: ClaimTicketSheet
     },
   });
 
-  useEffect(() => {
-    const fetchAgencyId = async () => {
-      if (!user) return;
-      const { data } = await supabase
-        .from('agency_users')
-        .select('agency_id')
-        .eq('user_id', user.id)
-        .single();
-      if (data) setAgencyId(data.agency_id);
-    };
-    fetchAgencyId();
-  }, [user]);
 
   const onSubmit = async (values: FormValues) => {
     if (!user || !agencyId) return;

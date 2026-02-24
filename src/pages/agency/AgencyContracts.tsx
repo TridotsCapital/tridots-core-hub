@@ -1,12 +1,12 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { AgencyLayout } from "@/components/layout/AgencyLayout";
 import { AgencyContractList } from "@/components/agency/AgencyContractList";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAgencyUser } from "@/hooks/useAgencyUser";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, AlertTriangle } from "lucide-react";
 import { useRejectedDocumentsCount } from "@/hooks/useRejectedDocumentsCount";
-import { addDays, isWithinInterval, parseISO } from 'date-fns';
+import { useQuery } from "@tanstack/react-query";
 
 interface LocationState {
   contractId?: string;
@@ -16,10 +16,8 @@ interface LocationState {
 
 export default function AgencyContracts() {
   const location = useLocation();
-  const { user } = useAuth();
-  const [agencyId, setAgencyId] = useState<string | null>(null);
-  const [contracts, setContracts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: agencyUserData, isLoading: loadingAgency } = useAgencyUser();
+  const agencyId = agencyUserData?.agency_id || null;
   const [autoOpenContractId, setAutoOpenContractId] = useState<string | null>(null);
   const { data: rejectedDocsCount } = useRejectedDocumentsCount();
   
@@ -45,23 +43,10 @@ export default function AgencyContracts() {
     }
   }, [locationState]);
 
-  const fetchData = async () => {
-    if (!user) return;
-    
-    setLoading(true);
-    try {
-      // First get agency ID
-      const { data: agencyUser, error: agencyError } = await supabase
-        .from('agency_users')
-        .select('agency_id')
-        .eq('user_id', user.id)
-        .single();
-
-      if (agencyError) throw agencyError;
-      setAgencyId(agencyUser.agency_id);
-
-      // Fetch CONTRACTS (not analyses) for this agency
-      const { data: contractsData, error: contractsError } = await supabase
+  const { data: contracts = [], isLoading: loadingContracts, refetch } = useQuery({
+    queryKey: ['agency-contracts', agencyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
         .from('contracts')
         .select(`
           id, 
@@ -83,23 +68,18 @@ export default function AgencyContracts() {
             identity_photo_path
           )
         `)
-        .eq('agency_id', agencyUser.agency_id)
+        .eq('agency_id', agencyId!)
         .order('created_at', { ascending: false });
 
-      if (contractsError) throw contractsError;
-      setContracts(contractsData || []);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!agencyId,
+  });
 
-  useEffect(() => {
-    fetchData();
-  }, [user]);
+  const loading = loadingAgency || loadingContracts;
 
-  if (!agencyId && loading) {
+  if (loading) {
     return (
       <AgencyLayout 
         title="Meus Contratos" 
@@ -137,7 +117,7 @@ export default function AgencyContracts() {
       <AgencyContractList 
         contracts={contracts} 
         isLoading={loading}
-        onRefresh={fetchData}
+        onRefresh={refetch}
         autoOpenContractId={autoOpenContractId}
         onAutoOpenHandled={() => setAutoOpenContractId(null)}
         initialStatusFilter={initialStatusFilter}

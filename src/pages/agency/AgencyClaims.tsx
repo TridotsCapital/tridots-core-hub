@@ -3,9 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { AgencyLayout, useAgencyStatus } from "@/components/layout/AgencyLayout";
 import { AgencyClaimList } from "@/components/agency/claims/AgencyClaimList";
 import { AgencyClaimsKanban } from "@/components/agency/claims/AgencyClaimsKanban";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAgencyUser } from "@/hooks/useAgencyUser";
 import { useClaims } from "@/hooks/useClaims";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -16,10 +15,9 @@ type ViewMode = 'list' | 'kanban';
 export default function AgencyClaims() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
   const { isAgencyActive } = useAgencyStatus();
-  const [agencyId, setAgencyId] = useState<string | null>(null);
-  const [loadingAgency, setLoadingAgency] = useState(true);
+  const { data: agencyUserData, isLoading: loadingAgency } = useAgencyUser();
+  const agencyId = agencyUserData?.agency_id || null;
   const [autoOpenClaimId, setAutoOpenClaimId] = useState<string | null>(null);
   
   // View mode with localStorage persistence
@@ -36,30 +34,6 @@ export default function AgencyClaims() {
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
-
-  useEffect(() => {
-    const fetchAgencyId = async () => {
-      if (!user) return;
-      
-      try {
-        const { data: agencyUser, error } = await supabase
-          .from('agency_users')
-          .select('agency_id')
-          .eq('user_id', user.id)
-          .single();
-
-        if (!error && agencyUser) {
-          setAgencyId(agencyUser.agency_id);
-        }
-      } catch (error) {
-        console.error('Error fetching agency:', error);
-      } finally {
-        setLoadingAgency(false);
-      }
-    };
-
-    fetchAgencyId();
-  }, [user]);
 
   const { data: claims, isLoading, refetch } = useClaims(
     agencyId ? { agencyId } : undefined
