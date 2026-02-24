@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SubdomainProvider, useSubdomain } from "@/contexts/SubdomainContext";
+import { ImpersonationProvider } from "@/contexts/ImpersonationContext";
 import { GlobalNotificationListener } from "@/components/notifications/GlobalNotificationListener";
 import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
@@ -194,7 +195,9 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <AppRoutes />
+            <ImpersonationProvider>
+              <AppRoutes />
+            </ImpersonationProvider>
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>

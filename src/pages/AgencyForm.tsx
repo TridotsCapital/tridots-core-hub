@@ -38,7 +38,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { GeneratePasswordDialog } from '@/components/users/GeneratePasswordDialog';
-import { ArrowLeft, Save, Users, Key, Loader2, FileText, Trash2 } from 'lucide-react';
+import { ArrowLeft, Save, Users, Key, Loader2, FileText, Trash2, Shield } from 'lucide-react';
 import { AgencyActivationDocuments } from '@/components/agency/AgencyActivationDocuments';
 import type { TablesInsert } from '@/integrations/supabase/types';
 
@@ -143,6 +143,17 @@ export default function AgencyForm() {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Voltar
           </Button>
+          {isEditing && id && (
+            <Button
+              type="button"
+              variant="outline"
+              className="gap-2"
+              onClick={() => window.open(`/agency?impersonate=${id}`, '_blank')}
+            >
+              <Shield className="h-4 w-4" />
+              Acessar como Imobiliária
+            </Button>
+          )}
         </div>
 
         {/* Company Data */}
