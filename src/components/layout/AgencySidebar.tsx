@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -31,6 +32,8 @@ import { useAgencyOnboardingStatus } from "@/hooks/useAgencyDocuments";
 import { useAgencyBillingStatus } from "@/hooks/useAgencyBillingStatus";
 import { useNps } from "@/contexts/NpsContext";
 import { useAgencyPath } from "@/hooks/useAgencyPath";
+import { useImpersonation } from "@/contexts/ImpersonationContext";
+import { ImpersonationConfirmDialog } from "@/components/agency/ImpersonationConfirmDialog";
 import { NotificationCenter } from "@/components/notifications";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -83,6 +86,8 @@ export function AgencySidebar() {
   const onboardingStatus = useAgencyOnboardingStatus(agencyUser?.agency?.id);
   const { data: billingStatus } = useAgencyBillingStatus();
   const { data: notificationCounts } = useNotificationCounts();
+  const { isImpersonating, impersonatedAgencyName } = useImpersonation();
+  const [confirmAction, setConfirmAction] = useState<string | null>(null);
 
   const agencyName = agencyUser?.agency?.nome_fantasia || agencyUser?.agency?.razao_social || "Imobiliária";
   
@@ -96,8 +101,11 @@ export function AgencySidebar() {
     onboardingStatus.rejectedDocuments.length > 0
   );
   
-  // Determine if actions should be blocked
-  const isActionsBlocked = isBillingBlocked || !agencyUser?.agency?.active;
+  // When impersonating, actions are never blocked
+  const isActionsBlocked = isImpersonating ? false : (isBillingBlocked || !agencyUser?.agency?.active);
+  
+  // When impersonating, hide NPS
+  const effectiveHasPendingNps = isImpersonating ? false : hasPendingNps;
 
   const handleSignOut = async () => {
     await signOut();
@@ -117,6 +125,7 @@ export function AgencySidebar() {
   }));
 
   return (
+    <>
     <Sidebar className="border-r border-border/30 bg-white">
       <SidebarHeader className="border-b border-border/30 p-4 bg-gradient-to-br from-primary/5 to-transparent">
         <div className="flex items-center justify-between gap-2">
@@ -221,7 +230,13 @@ export function AgencySidebar() {
                           ? "bg-amber-600 hover:bg-amber-700 text-white"
                           : "bg-primary hover:bg-primary/90 text-primary-foreground"
                       }`}
-                      onClick={() => navigate(agencyPath("/analyses/new"))}
+                      onClick={() => {
+                        if (isImpersonating) {
+                          setConfirmAction("analysis");
+                        } else {
+                          navigate(agencyPath("/analyses/new"));
+                        }
+                      }}
                     >
                       {hasAnalysisDraft ? (
                         <>
@@ -274,14 +289,20 @@ export function AgencySidebar() {
                 <Button
                   variant="outline"
                   className="w-full justify-start gap-2 border-amber-300 text-amber-700 hover:bg-amber-50 hover:text-amber-800 mt-2"
-                  onClick={() => navigate(agencyPath("/claims/new"))}
+                  onClick={() => {
+                    if (isImpersonating) {
+                      setConfirmAction("claim");
+                    } else {
+                      navigate(agencyPath("/claims/new"));
+                    }
+                  }}
                 >
                   <Shield className="h-4 w-4" />
                   Solicitar Garantia
                 </Button>
               )}
 
-              {hasPendingNps && (
+              {effectiveHasPendingNps && (
                 <Button
                   variant="outline"
                   className="w-full justify-start gap-2 border-amber-400 bg-amber-50 text-amber-800 hover:bg-amber-100 mt-2"
@@ -343,5 +364,19 @@ export function AgencySidebar() {
         </div>
       </SidebarFooter>
     </Sidebar>
+      <ImpersonationConfirmDialog
+        open={confirmAction !== null}
+        onOpenChange={(open) => !open && setConfirmAction(null)}
+        agencyName={impersonatedAgencyName || agencyName}
+        onConfirm={() => {
+          if (confirmAction === "analysis") {
+            navigate(agencyPath("/analyses/new"));
+          } else if (confirmAction === "claim") {
+            navigate(agencyPath("/claims/new"));
+          }
+          setConfirmAction(null);
+        }}
+      />
+    </>
   );
 }
