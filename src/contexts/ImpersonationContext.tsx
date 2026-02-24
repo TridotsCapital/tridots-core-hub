@@ -35,7 +35,7 @@ interface StoredImpersonation {
 }
 
 export function ImpersonationProvider({ children }: { children: ReactNode }) {
-  const { role } = useAuth();
+  const { role, loading: authLoading } = useAuth();
   const [searchParams] = useSearchParams();
 
   const [state, setState] = useState<StoredImpersonation | null>(() => {
@@ -51,7 +51,7 @@ export function ImpersonationProvider({ children }: { children: ReactNode }) {
   const [impersonationLoading, setImpersonationLoading] = useState(() => {
     const impersonateId = searchParams.get("impersonate");
     if (!impersonateId) return false;
-    // If sessionStorage already has this agency cached, no loading needed
+    // Always start loading if there's an impersonate param - we need to wait for auth + fetch
     try {
       const stored = sessionStorage.getItem(SESSION_KEY);
       if (stored) {
@@ -64,10 +64,17 @@ export function ImpersonationProvider({ children }: { children: ReactNode }) {
 
   const isAllowedRole = role === "master" || role === "analyst";
 
-  // Check URL param on mount
   useEffect(() => {
     const impersonateId = searchParams.get("impersonate");
-    if (!impersonateId || !isAllowedRole) {
+    if (!impersonateId) {
+      setImpersonationLoading(false);
+      return;
+    }
+
+    // Wait for auth to finish loading before making any decisions
+    if (authLoading) return;
+
+    if (!isAllowedRole) {
       setImpersonationLoading(false);
       return;
     }
@@ -99,7 +106,7 @@ export function ImpersonationProvider({ children }: { children: ReactNode }) {
     };
 
     fetchAgency();
-  }, [searchParams, isAllowedRole]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [searchParams, authLoading, isAllowedRole]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const stopImpersonation = useCallback(() => {
     sessionStorage.removeItem(SESSION_KEY);
