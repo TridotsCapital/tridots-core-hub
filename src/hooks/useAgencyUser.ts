@@ -34,8 +34,8 @@ interface AgencyUserData {
 }
 
 export function useAgencyUser() {
-  const { user } = useAuth();
-  const { isImpersonating, impersonatedAgencyId } = useImpersonation();
+  const { user, loading: authLoading } = useAuth();
+  const { isImpersonating, impersonatedAgencyId, impersonationLoading } = useImpersonation();
 
   const query = useQuery({
     queryKey: ["agency-user", user?.id, isImpersonating ? impersonatedAgencyId : null],
@@ -83,7 +83,7 @@ export function useAgencyUser() {
 
       return data as AgencyUserData;
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && !authLoading && !impersonationLoading,
   });
 
   // Derived state for easy access
