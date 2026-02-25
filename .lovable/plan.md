@@ -1,73 +1,51 @@
 
-# Correção: Parcelas Não Geradas para Contratos Boleto Unificado
 
-## Problema
+# Alteração: Contrato #948535E3 - Cartão 12x para Boleto Unificado
 
-O contrato #5327229E (Canah Imóveis) e o contrato a54256b8 (Morar Bem) não tiveram suas parcelas geradas. A causa:
+## Situação Atual
 
-1. A agência "Canah Imóveis" tem `billing_due_day = NULL` no banco
-2. A edge function `generate-installments` (linha 83) retorna erro 400 se `billing_due_day` é null
-3. O `validate-payments` chama `generate-installments` mas apenas loga o erro (linhas 161-162), sem ação corretiva
-4. Resultado: contrato criado com 0 parcelas, 0 faturas, sem alerta ao usuário
+| Campo | Valor |
+|-------|-------|
+| Contrato | 948535e3-8195-4799-9fec-fd05b814c4d0 |
+| Inquilino | Gustavo Henrique Jacob Magioni |
+| Imobiliária | Canah Imóveis (billing_due_day = 10) |
+| Status | documentacao_pendente (NAO ativado) |
+| Forma de pagamento | card_12x |
+| Parcelas geradas | 0 |
+| Faturas geradas | 0 |
+| Stripe vinculado | Nenhum |
 
-```text
-validate-payments -> generate-installments({ contract_id })
-                        |
-                        v
-                  Agency billing_due_day = NULL
-                        |
-                        v
-                  Return 400: "Agency billing_due_day not configured"
-                        |
-                        v
-                  validate-payments: console.error(...)  <-- erro silencioso
-                        |
-                        v
-                  Contrato criado SEM parcelas
-```
+## Impedimentos
 
-## Solução
+**Nenhum.** O contrato ainda nao foi ativado, nao possui parcelas, faturas ou assinatura Stripe. A alteracao e segura.
 
-### 1. Edge Function `generate-installments/index.ts`
+## Acao Necessaria
 
-Usar fallback de `billing_due_day = 10` (padrão do sistema) quando o campo é null, em vez de rejeitar:
+Atualizar o campo `forma_pagamento_preferida` na tabela `analyses` de `card_12x` para `boleto_imobiliaria`:
 
 ```text
-Antes (linha 83-89):
-  if (agencyError || !agency?.billing_due_day) {
-    return Response 400: "Agency billing_due_day not configured"
-  }
-
-Depois:
-  const billingDueDay = agency?.billing_due_day || 10;
-  // Log warning mas continua a execução
+UPDATE analyses
+SET forma_pagamento_preferida = 'boleto_imobiliaria'
+WHERE id = 'd3010928-ee0d-4d5f-b934-f6afe00f017c';
 ```
 
-### 2. Migração SQL
+## Detalhes Tecnicos
 
-- Definir `billing_due_day = 10` para todas as agências que tenham o valor null (padrão do sistema conforme regra de negócio)
+Como o banco de consultas e somente leitura, a alteracao sera feita via uma edge function utilitaria que executa o UPDATE com service role e retorna o resultado.
 
-### 3. Regenerar parcelas dos contratos afetados
+### Arquivo: `supabase/functions/fix-payment-method/index.ts`
 
-Chamar a edge function `generate-installments` para os 2 contratos que estão com 0 parcelas:
-- `5327229e-9125-480d-84d0-96ce3df4bc7d` (Canah Imóveis)
-- `a54256b8-fb91-42af-b557-fa3bd2ab4e43` (Morar Bem)
+Edge function temporaria que:
+1. Recebe o `analysis_id` e o novo `forma_pagamento_preferida`
+2. Executa o UPDATE na tabela `analyses`
+3. Retorna confirmacao
 
-### 4. Edge Function `validate-payments/index.ts`
-
-Melhorar o tratamento de erro: se `generate-installments` falhar, tentar novamente ou lançar erro mais visível (timeline event de warning).
-
-## Arquivos Afetados
-
-| Arquivo | Mudança |
-|---------|---------|
-| `supabase/functions/generate-installments/index.ts` | Fallback billing_due_day = 10 |
-| `supabase/functions/validate-payments/index.ts` | Melhor tratamento de erro na chamada de installments |
-| Migração SQL | `UPDATE agencies SET billing_due_day = 10 WHERE billing_due_day IS NULL` |
-| Chamada manual | Invocar generate-installments para os 2 contratos afetados |
+Apos a execucao bem-sucedida, a edge function sera removida (nao e necessaria em producao permanentemente).
 
 ## Resultado Esperado
 
-1. Contratos existentes sem parcelas terão as 12 parcelas e faturas geradas
-2. Novos contratos boleto unificado nunca mais falharão silenciosamente por falta de billing_due_day
-3. Todas as agências terão um billing_due_day definido (padrão 10)
+Quando o contrato for ativado futuramente, o sistema seguira o fluxo correto de Boleto Unificado:
+- Geracao automatica de 12 parcelas em `guarantee_installments`
+- Vinculacao as faturas mensais da Canah Imoveis em `agency_invoices`
+- Sem criacao de checkout Stripe
+
