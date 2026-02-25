@@ -1,97 +1,122 @@
 
-## Diagnóstico confirmado (já validado no banco)
 
-Encontrei a causa raiz do erro crítico e os contratos afetados:
+# Boleto: Download no Portal + Notificacoes + Campo de Observacao
 
-1. **Contrato `948535e3-8195-4799-9fec-fd05b814c4d0` (#948535E3)**  
-   - `analyses.forma_pagamento_preferida = 'boleto_imobiliaria'`  
-   - `contracts.payment_method = NULL`  
-   - `guarantee_installments = 0`  
-   - `invoice_items = 0`
+## Problema
 
-2. **Contrato `60d06af6-ed51-4df9-873a-d24962c02c15`**  
-   - Mesmo padrão acima (forma na análise em boleto, contrato sem payment_method e sem parcelas/faturas)
+Quando a Tridots faz upload de um boleto para uma fatura:
+1. A imobiliaria nao consegue baixar o PDF no portal (nenhum botao existe)
+2. Nao recebe e-mail avisando que o boleto esta disponivel
+3. Nao recebe notificacao in-app (sino)
+4. Nao existe campo de observacao para a Tridots adicionar notas ao enviar o boleto
 
-### Por que acontece
-- A geração de parcelas/faturas depende do contrato estar com `payment_method = 'boleto_imobiliaria'`.
-- No histórico, alguns contratos ficaram com **inconsistência entre análise e contrato** (forma em boleto na análise, mas contrato sem `payment_method` em boleto).
-- Quando isso ocorre, a função de geração não processa esses contratos (ou não é disparada), e nada aparece em ambos os portais.
+## Solucao Completa
 
-## Impedimentos de regra de negócio
+### 1. Migracao SQL - Novo campo `boleto_observations`
 
-**Não há impedimento para correção** nesses casos:
-- Contratos estão em `documentacao_pendente`
-- Sem assinatura/cartão Stripe vinculada
-- Sem parcelas/faturas já geradas para esses contratos inconsistentes
+Adicionar coluna `boleto_observations TEXT` na tabela `agency_invoices`:
 
-## Plano de correção (implementação)
+```text
+ALTER TABLE public.agency_invoices ADD COLUMN boleto_observations text;
+```
 
-### 1) Blindar a função de geração para aceitar inconsistência histórica
-**Arquivo:** `supabase/functions/generate-installments/index.ts`
+### 2. BoletoUploadDialog - Campo de observacao + disparo de notificacao
 
-Ajustes:
-- Incluir no `select` do contrato:
-  - `contracts.created_at`
-  - `analysis.forma_pagamento_preferida`
-- Trocar a validação rígida de `contract.payment_method` por lógica resiliente:
-  - Se `contract.payment_method === boleto_imobiliaria`: processa normal
-  - Se `contract.payment_method` não é boleto **mas** `analysis.forma_pagamento_preferida === boleto_imobiliaria`:  
-    - sincroniza `contracts.payment_method = 'boleto_imobiliaria'`
-    - segue geração normalmente
-- Manter idempotência atual (se já houver parcelas, retorna `skipped`).
-- Ajustar data base para cálculo da 1ª parcela:
-  - usar `activated_at || created_at` (evita distorção em backfill tardio).
+**Arquivo:** `src/components/invoices/BoletoUploadDialog.tsx`
 
-### 2) Criar rotina de reparo em massa (para garantir “todos os outros contratos”)
-**Novo arquivo:** `supabase/functions/reconcile-boleto-contracts/index.ts`
+- Adicionar campo Textarea "Observacoes (opcional)" abaixo do codigo de barras
+- Salvar o valor em `boleto_observations` no UPDATE da fatura
+- Apos upload bem-sucedido, chamar a edge function `send-invoice-notification` com tipo `boleto_uploaded`
+- Importar Textarea de `@/components/ui/textarea`
 
-Função administrativa que:
-- Busca todos os contratos com:
-  - `analyses.forma_pagamento_preferida = 'boleto_imobiliaria'`
-  - e (`contracts.payment_method IS DISTINCT FROM 'boleto_imobiliaria'` **ou** sem parcelas)
-- Para cada contrato encontrado:
-  1. sincroniza `contracts.payment_method` para boleto
-  2. invoca `generate-installments` com `contract_id`
-  3. registra evento em timeline (reparo automático)
-- Retorna relatório final (`total_encontrados`, `corrigidos`, `falhas`, lista de contratos).
+### 3. Portal da Imobiliaria - Botao de download + codigo de barras + observacoes
 
-### 3) Prevenção permanente para futuras mudanças manuais de forma de pagamento
-**Migração SQL nova (em `supabase/migrations/...sql`)**
+**Arquivo:** `src/pages/agency/AgencyInvoiceDetail.tsx`
 
-Adicionar trigger em `analyses`:
-- Quando `forma_pagamento_preferida` mudar para `boleto_imobiliaria` e já existir contrato vinculado:
-  - sincroniza `contracts.payment_method`
-  - dispara processamento automático de parcelas/faturas via backend function
-Assim, futuras alterações manuais não voltam a quebrar.
+Adicionar secao (Card) visivel quando `boleto_url` existir:
+- Botao "Baixar Boleto" (download via `window.open` do `boleto_url`)
+- Campo de codigo de barras com botao "Copiar" (se `boleto_barcode` existir)
+- Observacoes da Tridots exibidas em bloco informativo (se `boleto_observations` existir)
 
-### 4) Executar reparo imediato dos casos atuais
-Após deploy:
-- Rodar `reconcile-boleto-contracts`.
-- Esperado hoje: corrigir **2 contratos** (`948...` e `60d...`).
+### 4. Portal Tridots - Botao de reenvio de notificacao
 
-## Validação obrigatória pós-correção
+**Arquivo:** `src/pages/InvoiceDetail.tsx`
 
-1. Contratos afetados:
-- `contracts.payment_method = 'boleto_imobiliaria'`
+Adicionar botao "Reenviar Notificacao" ao lado do botao "Ver Boleto", que chama `send-invoice-notification` com tipo `boleto_uploaded`.
 
-2. Financeiro:
-- `guarantee_installments = 12` por contrato
-- `invoice_items = 12` por contrato
-- `agency_invoices` criadas/atualizadas nos meses de referência corretos
+### 5. Edge Function - Novo tipo `boleto_uploaded`
 
-3. Portais (ambos):
-- Aba/visão de parcelas aparece
-- Parcelas listadas no detalhe do contrato
-- Faturas mensais aparecem na relação financeira da imobiliária e do time interno
+**Arquivo:** `supabase/functions/send-invoice-notification/index.ts`
 
-## Arquivos previstos no escopo
+- Adicionar `boleto_uploaded` ao tipo `notificationType`
+- Buscar `boleto_url` da fatura para gerar link no e-mail
+- Incluir observacoes no corpo do e-mail (se existirem)
+- Criar signed URL temporaria (24h) para download seguro do PDF
 
-- `supabase/functions/generate-installments/index.ts` (edição)
-- `supabase/functions/reconcile-boleto-contracts/index.ts` (novo)
-- `supabase/migrations/<timestamp>_auto_sync_boleto_contracts.sql` (novo trigger/prevenção)
+**Arquivo:** `supabase/functions/_shared/email-templates.ts`
 
-## Resultado esperado
+Adicionar template `boletoUploadedTemplate`:
+- Assunto: "Boleto disponivel - Fatura MM/AAAA"
+- Corpo: nome da imobiliaria, valor, vencimento, observacoes (se houver), botao "Baixar Boleto"
 
-- O contrato #948535E3 passa a ter parcelas e vínculo em faturas corretamente.
-- Todos os contratos já existentes nessa mesma situação serão reparados em lote.
-- O problema não se repete quando a forma de pagamento for alterada para boleto unificado no futuro.
+### 6. Notificacao In-App
+
+Na edge function `send-invoice-notification`, apos envio do e-mail para tipo `boleto_uploaded`:
+- Buscar todos os `agency_users` da imobiliaria
+- Inserir notificacao em `ticket_notifications` para cada usuario com:
+  - `type`: `boleto_available`
+  - `title`: "Boleto disponivel"
+  - `message`: "O boleto da fatura de MM/AAAA esta disponivel para download"
+
+**Arquivo:** `src/types/notifications.ts`
+
+Adicionar `'invoice_boleto_available'` ao `NotificationType` com config visual (icone FileDown, cor azul).
+
+### 7. Atualizar types.ts
+
+O arquivo `src/integrations/supabase/types.ts` sera regenerado automaticamente apos a migracao para incluir `boleto_observations`.
+
+## Arquivos Afetados
+
+| Arquivo | Mudanca |
+|---------|---------|
+| Migracao SQL | `ADD COLUMN boleto_observations text` |
+| `src/components/invoices/BoletoUploadDialog.tsx` | Campo observacao + disparo notificacao |
+| `src/pages/agency/AgencyInvoiceDetail.tsx` | Download boleto + copiar barcode + observacoes |
+| `src/pages/InvoiceDetail.tsx` | Botao reenviar notificacao |
+| `supabase/functions/send-invoice-notification/index.ts` | Tipo `boleto_uploaded` |
+| `supabase/functions/_shared/email-templates.ts` | Template `boletoUploadedTemplate` |
+| `src/types/notifications.ts` | Novo tipo `invoice_boleto_available` |
+
+## Fluxo Completo
+
+```text
+Tridots faz upload do boleto (BoletoUploadDialog)
+  |
+  v
+1. Upload PDF no storage
+2. UPDATE agency_invoices (boleto_url, boleto_barcode, boleto_observations, status)
+3. Invoke send-invoice-notification({ type: boleto_uploaded })
+  |
+  v
+Edge Function:
+  a) Envia e-mail para imobiliaria com link + observacoes
+  b) Insere notificacao in-app para usuarios da agencia
+  |
+  v
+Imobiliaria:
+  - Recebe e-mail com botao "Baixar Boleto"
+  - Ve notificacao no sino do portal
+  - Acessa detalhe da fatura: botao download, codigo de barras, observacoes
+```
+
+## Resultado Esperado
+
+1. Campo de observacao disponivel no upload do boleto pela Tridots
+2. Observacoes visiveis no portal da imobiliaria (se preenchidas)
+3. E-mail automatico enviado no momento do upload
+4. Botao de reenvio manual disponivel no portal Tridots
+5. Notificacao in-app no sino da imobiliaria
+6. Botao de download funcional no portal da imobiliaria
+7. Codigo de barras copiavel no portal da imobiliaria
+
