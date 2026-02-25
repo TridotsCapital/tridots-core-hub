@@ -160,11 +160,45 @@ const handler = async (req: Request): Promise<Response> => {
 
           if (installmentsError) {
             console.error('Error generating installments:', installmentsError);
+            // Log a warning timeline event so the issue is visible
+            await supabase.rpc("log_analysis_timeline_event", {
+              _analysis_id: analysisId,
+              _event_type: "warning",
+              _description: `⚠️ Falha ao gerar parcelas do boleto unificado para o contrato. Erro: ${installmentsError.message || 'Erro desconhecido'}. Tentativa automática de retry será feita.`,
+              _metadata: { contract_id: contractId, error: String(installmentsError.message || installmentsError) },
+              _created_by: userId,
+            });
+            
+            // Retry once after a short delay
+            console.log('Retrying installment generation...');
+            const { data: retryResult, error: retryError } = await supabase.functions.invoke('generate-installments', {
+              body: { contract_id: contractId }
+            });
+            
+            if (retryError) {
+              console.error('Retry also failed:', retryError);
+              await supabase.rpc("log_analysis_timeline_event", {
+                _analysis_id: analysisId,
+                _event_type: "error",
+                _description: `❌ Retry de geração de parcelas também falhou. Intervenção manual necessária.`,
+                _metadata: { contract_id: contractId, error: String(retryError.message || retryError) },
+                _created_by: userId,
+              });
+            } else {
+              console.log('Installments generated on retry:', retryResult);
+            }
           } else {
             console.log('Installments generated successfully:', installmentsResult);
           }
         } catch (installmentsErr) {
           console.error('Exception generating installments:', installmentsErr);
+          await supabase.rpc("log_analysis_timeline_event", {
+            _analysis_id: analysisId,
+            _event_type: "error",
+            _description: `❌ Exceção ao gerar parcelas do boleto unificado. Intervenção manual necessária.`,
+            _metadata: { contract_id: contractId, error: String(installmentsErr) },
+            _created_by: userId,
+          });
         }
       }
 

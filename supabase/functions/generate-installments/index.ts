@@ -80,12 +80,18 @@ serve(async (req) => {
       .eq("id", contract.agency_id)
       .single();
 
-    if (agencyError || !agency?.billing_due_day) {
-      console.error("Agency billing_due_day not configured:", agencyError);
+    if (agencyError) {
+      console.error("Error fetching agency:", agencyError);
       return new Response(
-        JSON.stringify({ error: "Agency billing_due_day not configured" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "Error fetching agency data" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // Fallback: usar dia 10 como padrão do sistema se billing_due_day não estiver configurado
+    const billingDueDay = agency?.billing_due_day || 10;
+    if (!agency?.billing_due_day) {
+      console.warn(`Agency ${contract.agency_id} has no billing_due_day configured, using default: 10`);
     }
 
     // 4. Verificar se já existem parcelas
@@ -107,7 +113,7 @@ serve(async (req) => {
 
     // 6. Calcular primeira data de vencimento usando regra de corte
     const activationDate = new Date(contract.activated_at || new Date());
-    const billingDueDay = agency.billing_due_day;
+    // billingDueDay already defined above with fallback
     const activationDay = activationDate.getDate();
 
     let firstMonth: number;
