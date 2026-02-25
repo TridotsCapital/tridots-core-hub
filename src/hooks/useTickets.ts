@@ -13,6 +13,7 @@ interface CreateTicketData {
   description?: string;
   category: TicketCategory;
   priority?: TicketPriority;
+  assigned_to?: string;
 }
 
 export function useCreateTicket() {
@@ -36,6 +37,7 @@ export function useCreateTicket() {
           description: data.description,
           category: data.category,
           priority: data.priority || "media",
+          assigned_to: data.assigned_to || null,
           status: "aberto",
         })
         .select()
