@@ -1,95 +1,73 @@
 
-
-# Correção: E-mail de Chamado Não Chega ao Colaborador Destinatário
+# Correção: Parcelas Não Geradas para Contratos Boleto Unificado
 
 ## Problema
 
-Quando a Tridots abre um chamado selecionando um colaborador específico da imobiliária, o e-mail de notificação vai **apenas** para o master (responsavel_email da agência). O colaborador selecionado não recebe nada.
+O contrato #5327229E (Canah Imóveis) e o contrato a54256b8 (Morar Bem) não tiveram suas parcelas geradas. A causa:
 
-### Causa Raiz
-
-O formulário de criação (`NewTicketDialog`) coleta o colaborador no campo `selectedCollaboratorId`, mas **nunca envia esse valor** para o banco. O campo `assigned_to` do ticket fica `null`.
-
-A edge function `send-ticket-notification` já tem a lógica correta para enviar e-mail ao `assigned_to`, mas como o valor é sempre `null`, apenas o master recebe.
+1. A agência "Canah Imóveis" tem `billing_due_day = NULL` no banco
+2. A edge function `generate-installments` (linha 83) retorna erro 400 se `billing_due_day` é null
+3. O `validate-payments` chama `generate-installments` mas apenas loga o erro (linhas 161-162), sem ação corretiva
+4. Resultado: contrato criado com 0 parcelas, 0 faturas, sem alerta ao usuário
 
 ```text
-NewTicketDialog:
-  selectedCollaboratorId = "uuid-do-colaborador"  (coletado)
-  createTicket({ agency_id, subject, ... })        (NÃO inclui assigned_to)
-      |
-      v
-tickets INSERT: assigned_to = NULL
-      |
-      v
-Edge Function: ticket.assigned_to = NULL -> só envia para master
+validate-payments -> generate-installments({ contract_id })
+                        |
+                        v
+                  Agency billing_due_day = NULL
+                        |
+                        v
+                  Return 400: "Agency billing_due_day not configured"
+                        |
+                        v
+                  validate-payments: console.error(...)  <-- erro silencioso
+                        |
+                        v
+                  Contrato criado SEM parcelas
 ```
-
-### Bug Secundário
-
-Na direção `agency_to_tridots`, a edge function busca masters/analysts filtrando por `profiles.role`, mas essa coluna não existe na tabela `profiles`. Deveria consultar `user_roles`.
-
----
 
 ## Solução
 
-### 1. `src/components/tickets/NewTicketDialog.tsx`
+### 1. Edge Function `generate-installments/index.ts`
 
-Passar o `selectedCollaboratorId` como `assigned_to` ao chamar `createTicket.mutateAsync()`:
+Usar fallback de `billing_due_day = 10` (padrão do sistema) quando o campo é null, em vez de rejeitar:
 
 ```text
-Antes:
-  createTicket.mutateAsync({ agency_id, subject, description, category, priority })
+Antes (linha 83-89):
+  if (agencyError || !agency?.billing_due_day) {
+    return Response 400: "Agency billing_due_day not configured"
+  }
 
 Depois:
-  createTicket.mutateAsync({ agency_id, subject, description, category, priority, assigned_to: selectedCollaboratorId || undefined })
+  const billingDueDay = agency?.billing_due_day || 10;
+  // Log warning mas continua a execução
 ```
 
-### 2. `src/hooks/useTickets.ts`
+### 2. Migração SQL
 
-Adicionar `assigned_to` ao `CreateTicketData` interface e incluí-lo no INSERT:
+- Definir `billing_due_day = 10` para todas as agências que tenham o valor null (padrão do sistema conforme regra de negócio)
 
-```text
-interface CreateTicketData {
-  ...campos existentes...
-  assigned_to?: string;    // <-- novo campo
-}
+### 3. Regenerar parcelas dos contratos afetados
 
-// No insert:
-assigned_to: data.assigned_to || null,
-```
+Chamar a edge function `generate-installments` para os 2 contratos que estão com 0 parcelas:
+- `5327229e-9125-480d-84d0-96ce3df4bc7d` (Canah Imóveis)
+- `a54256b8-fb91-42af-b557-fa3bd2ab4e43` (Morar Bem)
 
-### 3. `supabase/functions/send-ticket-notification/index.ts`
+### 4. Edge Function `validate-payments/index.ts`
 
-Corrigir a busca de destinatários na direção `agency_to_tridots` (linhas 134-138):
-
-```text
-Antes:
-  .from('profiles')
-  .select('id, email, full_name')
-  .in('role', ['master', 'analyst'])   <-- coluna 'role' não existe em profiles
-  .eq('active', true);
-
-Depois:
-  Buscar user_ids da tabela user_roles onde role IN ('master', 'analyst'),
-  depois buscar profiles desses user_ids
-```
-
----
+Melhorar o tratamento de erro: se `generate-installments` falhar, tentar novamente ou lançar erro mais visível (timeline event de warning).
 
 ## Arquivos Afetados
 
 | Arquivo | Mudança |
 |---------|---------|
-| `src/components/tickets/NewTicketDialog.tsx` | Passar `assigned_to: selectedCollaboratorId` no submit |
-| `src/hooks/useTickets.ts` | Adicionar `assigned_to` na interface e no INSERT |
-| `supabase/functions/send-ticket-notification/index.ts` | Corrigir query `agency_to_tridots` para usar `user_roles` |
+| `supabase/functions/generate-installments/index.ts` | Fallback billing_due_day = 10 |
+| `supabase/functions/validate-payments/index.ts` | Melhor tratamento de erro na chamada de installments |
+| Migração SQL | `UPDATE agencies SET billing_due_day = 10 WHERE billing_due_day IS NULL` |
+| Chamada manual | Invocar generate-installments para os 2 contratos afetados |
 
 ## Resultado Esperado
 
-1. Tridots cria chamado selecionando colaborador "João" da imobiliária
-2. Ticket é criado com `assigned_to = uuid-do-joao`
-3. Edge function envia e-mail para:
-   - Master da imobiliária (responsavel_email)
-   - João (e-mail do colaborador designado)
-4. Na direção contrária (imobiliária responde), masters/analysts da Tridots recebem corretamente
-
+1. Contratos existentes sem parcelas terão as 12 parcelas e faturas geradas
+2. Novos contratos boleto unificado nunca mais falharão silenciosamente por falta de billing_due_day
+3. Todas as agências terão um billing_due_day definido (padrão 10)
