@@ -1825,6 +1825,32 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Authenticate the caller - master only
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const authToken = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: authError } = await supabase.auth.getUser(authToken);
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: "Invalid token" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { data: isMaster } = await supabase.rpc('is_master', { _user_id: user.id });
+    if (!isMaster) {
+      return new Response(
+        JSON.stringify({ error: "Forbidden: only masters can upload documentation" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const fileName = "manual-portal-imobiliaria-v1.md";
     const documentName = "Manual do Portal Imobiliária - Base para Design";
     const description = "Documento base v1.0 para diagramação - Janeiro 2026. Contém os 12 capítulos completos, FAQs por seção e lista de elementos visuais necessários (screenshots e fluxogramas).";
@@ -1854,19 +1880,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get admin user for uploaded_by field
-    const { data: adminUser } = await supabase
-      .from("profiles")
-      .select("id")
-      .limit(1)
-      .single();
-
-    if (!adminUser) {
-      return new Response(
-        JSON.stringify({ error: "No admin user found" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    // Use authenticated user for uploaded_by field
+    const adminUserId = user.id;
 
     // Create record in term_templates
     const { data: templateData, error: insertError } = await supabase
@@ -1880,7 +1895,7 @@ Deno.serve(async (req) => {
         file_type: "text/markdown",
         is_active: true,
         visible_in_agency_drive: visibleInAgencyDrive,
-        uploaded_by: adminUser.id,
+        uploaded_by: adminUserId,
         version: 1,
       })
       .select()
