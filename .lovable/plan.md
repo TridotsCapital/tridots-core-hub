@@ -1,76 +1,95 @@
 
 
-# Correção: "Imobiliária não encontrada" no Modo Suporte
+# Correção: E-mail de Chamado Não Chega ao Colaborador Destinatário
 
 ## Problema
 
-Quando o admin navega internamente no portal (ex: clica em "Nova Análise"), a URL muda para `/agency/analyses/new` **sem** o parametro `?impersonate=`. Nesse momento:
+Quando a Tridots abre um chamado selecionando um colaborador específico da imobiliária, o e-mail de notificação vai **apenas** para o master (responsavel_email da agência). O colaborador selecionado não recebe nada.
 
-1. O `AuthContext` ainda pode estar carregando o `role`
-2. `isAllowedRole = (null === "master") = false`
-3. `isImpersonating = false` (apesar do sessionStorage ter os dados)
-4. `useAgencyUser` executa o caminho nao-impersonado: busca em `agency_users` pelo user_id do admin
-5. Retorna `null` -> componente mostra "Erro: Imobiliária não encontrada"
+### Causa Raiz
 
-Mesmo quando o `role` carrega depois e `isImpersonating` vira `true`, o componente ja renderizou o estado de erro.
+O formulário de criação (`NewTicketDialog`) coleta o colaborador no campo `selectedCollaboratorId`, mas **nunca envia esse valor** para o banco. O campo `assigned_to` do ticket fica `null`.
+
+A edge function `send-ticket-notification` já tem a lógica correta para enviar e-mail ao `assigned_to`, mas como o valor é sempre `null`, apenas o master recebe.
 
 ```text
-Admin navega para /agency/analyses/new
-    |
-    v
-AuthContext: loading=true, role=null
-ImpersonationContext: isAllowedRole=false, isImpersonating=false
-    |                  (sessionStorage TEM dados, mas isAllowedRole bloqueia)
-    v
-useAgencyUser: isImpersonating=false
-    |-- Busca em agency_users WHERE user_id = admin_id
-    |-- Resultado: null
-    |
-    v
-AgencyNewAnalysis: agencyId=null -> "Erro: Imobiliária não encontrada"
+NewTicketDialog:
+  selectedCollaboratorId = "uuid-do-colaborador"  (coletado)
+  createTicket({ agency_id, subject, ... })        (NÃO inclui assigned_to)
+      |
+      v
+tickets INSERT: assigned_to = NULL
+      |
+      v
+Edge Function: ticket.assigned_to = NULL -> só envia para master
 ```
 
-## Solucao
+### Bug Secundário
 
-Modificar o `useAgencyUser` para considerar o estado de carregamento do auth. Se o auth ainda esta carregando e ha dados de impersonacao no sessionStorage, o hook deve aguardar antes de executar a query.
+Na direção `agency_to_tridots`, a edge function busca masters/analysts filtrando por `profiles.role`, mas essa coluna não existe na tabela `profiles`. Deveria consultar `user_roles`.
 
-## Detalhes Tecnicos
+---
 
-### 1. `src/hooks/useAgencyUser.ts`
+## Solução
 
-Mudancas:
-- Importar `loading` (authLoading) do `useAuth()`
-- Importar `impersonationLoading` do `useImpersonation()`
-- Na query, verificar se o auth ainda esta carregando: se `authLoading` e `true` e ha dados no sessionStorage, retornar `undefined` (manter estado de loading)
-- Adicionar `authLoading` e `impersonationLoading` ao `enabled` da query: so habilitar quando ambos terminarem
-- Isso garante que a query so executa quando `isImpersonating` tem seu valor definitivo
+### 1. `src/components/tickets/NewTicketDialog.tsx`
 
-Logica:
+Passar o `selectedCollaboratorId` como `assigned_to` ao chamar `createTicket.mutateAsync()`:
+
 ```text
-enabled: !!user?.id && !authLoading && !impersonationLoading
+Antes:
+  createTicket.mutateAsync({ agency_id, subject, description, category, priority })
+
+Depois:
+  createTicket.mutateAsync({ agency_id, subject, description, category, priority, assigned_to: selectedCollaboratorId || undefined })
 ```
 
-Com isso, a query so roda quando:
-- O usuario esta autenticado
-- O role ja foi carregado (auth nao esta loading)
-- A impersonacao ja foi inicializada (impersonationLoading = false)
+### 2. `src/hooks/useTickets.ts`
 
-Nesse ponto, `isImpersonating` tera o valor correto e a query seguira o caminho adequado.
+Adicionar `assigned_to` ao `CreateTicketData` interface e incluí-lo no INSERT:
 
-### 2. Demais paginas
+```text
+interface CreateTicketData {
+  ...campos existentes...
+  assigned_to?: string;    // <-- novo campo
+}
 
-**Nenhuma mudanca necessaria** nas paginas (`AgencyNewAnalysis`, `AgencyContracts`, `AgencyClaims`, etc.) pois todas ja usam `isLoading` do `useAgencyUser()`. Como a query ficara desabilitada enquanto o auth carrega, `isLoading` sera `true` e os componentes mostrarao o spinner em vez do erro.
+// No insert:
+assigned_to: data.assigned_to || null,
+```
+
+### 3. `supabase/functions/send-ticket-notification/index.ts`
+
+Corrigir a busca de destinatários na direção `agency_to_tridots` (linhas 134-138):
+
+```text
+Antes:
+  .from('profiles')
+  .select('id, email, full_name')
+  .in('role', ['master', 'analyst'])   <-- coluna 'role' não existe em profiles
+  .eq('active', true);
+
+Depois:
+  Buscar user_ids da tabela user_roles onde role IN ('master', 'analyst'),
+  depois buscar profiles desses user_ids
+```
+
+---
 
 ## Arquivos Afetados
 
-| Arquivo | Mudanca |
+| Arquivo | Mudança |
 |---------|---------|
-| `src/hooks/useAgencyUser.ts` | Adicionar `authLoading` e `impersonationLoading` ao `enabled` da query |
+| `src/components/tickets/NewTicketDialog.tsx` | Passar `assigned_to: selectedCollaboratorId` no submit |
+| `src/hooks/useTickets.ts` | Adicionar `assigned_to` na interface e no INSERT |
+| `supabase/functions/send-ticket-notification/index.ts` | Corrigir query `agency_to_tridots` para usar `user_roles` |
 
 ## Resultado Esperado
 
-1. Admin navega pelo portal da imobiliaria (modo suporte)
-2. `useAgencyUser` aguarda auth + impersonation carregarem
-3. Query executa com `isImpersonating = true` -> busca agencia correta
-4. Todas as paginas (Analises, Contratos, Garantias, etc.) carregam dados normalmente
+1. Tridots cria chamado selecionando colaborador "João" da imobiliária
+2. Ticket é criado com `assigned_to = uuid-do-joao`
+3. Edge function envia e-mail para:
+   - Master da imobiliária (responsavel_email)
+   - João (e-mail do colaborador designado)
+4. Na direção contrária (imobiliária responde), masters/analysts da Tridots recebem corretamente
 
