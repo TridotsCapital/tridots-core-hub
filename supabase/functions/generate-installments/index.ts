@@ -36,13 +36,14 @@ serve(async (req) => {
       );
     }
 
-    // 1. Buscar dados do contrato e análise
+    // 1. Buscar dados do contrato e análise (inclui created_at e forma_pagamento_preferida)
     const { data: contract, error: contractError } = await supabase
       .from("contracts")
       .select(`
         id,
         agency_id,
         activated_at,
+        created_at,
         payment_method,
         analysis:analyses!contracts_analysis_id_fkey (
           id,
@@ -51,7 +52,8 @@ serve(async (req) => {
           imovel_endereco,
           imovel_numero,
           imovel_bairro,
-          imovel_cidade
+          imovel_cidade,
+          forma_pagamento_preferida
         )
       `)
       .eq("id", contract_id)
@@ -65,12 +67,34 @@ serve(async (req) => {
       );
     }
 
-    // 2. Verificar se é boleto_imobiliaria
-    if (contract.payment_method !== 'boleto_imobiliaria') {
+    // 2. Verificar se é boleto_imobiliaria (com lógica resiliente)
+    const analysisPagamento = contract.analysis?.forma_pagamento_preferida;
+    const isBoletoContract = contract.payment_method === 'boleto_imobiliaria';
+    const isBoletoAnalysis = analysisPagamento === 'boleto_imobiliaria';
+
+    if (!isBoletoContract && !isBoletoAnalysis) {
       return new Response(
         JSON.stringify({ error: "Contract is not boleto_imobiliaria", skipped: true }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // Se a análise diz boleto mas o contrato não, sincronizar
+    if (!isBoletoContract && isBoletoAnalysis) {
+      console.log(`Syncing payment_method for contract ${contract_id}: analysis says boleto but contract was ${contract.payment_method}`);
+      const { error: syncError } = await supabase
+        .from("contracts")
+        .update({ payment_method: 'boleto_imobiliaria' })
+        .eq("id", contract_id);
+
+      if (syncError) {
+        console.error("Error syncing payment_method:", syncError);
+        return new Response(
+          JSON.stringify({ error: "Failed to sync payment_method", details: syncError }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      console.log(`Successfully synced payment_method to boleto_imobiliaria for contract ${contract_id}`);
     }
 
     // 3. Buscar billing_due_day da agência
@@ -112,7 +136,7 @@ serve(async (req) => {
     const valorParcela = garantiaAnual / 12;
 
     // 6. Calcular primeira data de vencimento usando regra de corte
-    const activationDate = new Date(contract.activated_at || new Date());
+    const activationDate = new Date(contract.activated_at || contract.created_at || new Date());
     // billingDueDay already defined above with fallback
     const activationDay = activationDate.getDate();
 
