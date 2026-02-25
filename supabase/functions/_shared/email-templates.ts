@@ -927,3 +927,71 @@ export function blockingConfirmationTemplate(data: {
     html: generateEmailWrapper(content, `Sua conta foi bloqueada por falta de pagamento`, IMAGES.keys)
   };
 }
+
+// Template 6: Boleto Disponível (Imobiliária)
+export function boletoUploadedTemplate(data: {
+  agencyName: string;
+  invoiceMonth: string;
+  invoiceYear: number;
+  totalValue: number;
+  dueDate: string;
+  boletoUrl: string;
+  observations?: string;
+}): { subject: string; html: string } {
+  const observationsSection = data.observations ? `
+    <div style="background-color:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:16px;margin:20px 0;">
+      <p style="margin:0 0 8px 0;font-size:14px;font-weight:600;color:#0c4a6e;">📋 Observações</p>
+      <p style="margin:0;font-size:14px;color:#374151;line-height:1.6;white-space:pre-wrap;">${data.observations}</p>
+    </div>
+  ` : '';
+
+  const content = `
+    <h1 style="margin:0 0 20px 0;font-size:24px;color:${TRIDOTS_BLUE};font-weight:600;">
+      Boleto disponível! 📄
+    </h1>
+    <p style="margin:0 0 20px 0;font-size:16px;color:#374151;line-height:1.6;">
+      Olá, <strong>${data.agencyName}</strong>!
+    </p>
+    <p style="margin:0 0 20px 0;font-size:16px;color:#374151;line-height:1.6;">
+      O boleto da sua fatura de garantias está disponível para download.
+    </p>
+    
+    <div style="background-color:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:20px;margin:20px 0;">
+      <h3 style="margin:0 0 15px 0;font-size:16px;color:#166534;">Dados da Fatura</h3>
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+        <tr>
+          <td style="padding:8px 0;color:#4b5563;font-size:14px;">Período:</td>
+          <td style="padding:8px 0;color:#111827;font-size:14px;text-align:right;font-weight:500;">${data.invoiceMonth}/${data.invoiceYear}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;color:#4b5563;font-size:14px;">Valor Total:</td>
+          <td style="padding:8px 0;color:#111827;font-size:14px;text-align:right;font-weight:500;font-size:18px;">R$ ${data.totalValue.toFixed(2)}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;color:#4b5563;font-size:14px;">Vencimento:</td>
+          <td style="padding:8px 0;color:#111827;font-size:14px;text-align:right;font-weight:500;">${data.dueDate}</td>
+        </tr>
+      </table>
+    </div>
+
+    ${observationsSection}
+
+    <div style="text-align:center;margin:30px 0;">
+      <a href="${data.boletoUrl}" style="display:inline-block;background-color:${TRIDOTS_ACCENT};color:#ffffff;font-size:16px;font-weight:600;padding:14px 32px;border-radius:8px;text-decoration:none;">
+        Baixar Boleto
+      </a>
+    </div>
+    
+    <p style="margin:20px 0 0 0;font-size:14px;color:#6b7280;line-height:1.6;">
+      Você também pode acessar o boleto pelo portal da imobiliária, na tela de detalhes da fatura.
+    </p>
+    <p style="margin:10px 0 0 0;font-size:12px;color:#9ca3af;">
+      ⏰ O link de download é válido por 24 horas.
+    </p>
+  `;
+
+  return {
+    subject: `Boleto disponível - Fatura ${data.invoiceMonth}/${data.invoiceYear} - Tridots Capital`,
+    html: generateEmailWrapper(content, `Boleto da fatura ${data.invoiceMonth}/${data.invoiceYear} disponível para download`, IMAGES.office)
+  };
+}

@@ -6,10 +6,12 @@ import { formatDateBR } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Download, Copy, Info } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAgencyPath } from "@/hooks/useAgencyPath";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Table,
   TableBody,
@@ -41,6 +43,47 @@ export default function AgencyInvoiceDetail() {
       </AgencyLayout>
     );
   }
+
+  const invoiceAny = invoice as any;
+
+  const handleDownloadBoleto = async () => {
+    if (!invoiceAny.boleto_url) return;
+    try {
+      // Extract the storage path from the public URL
+      const url = invoiceAny.boleto_url as string;
+      const pathMatch = url.match(/\/storage\/v1\/object\/public\/invoices\/(.*)/);
+      if (pathMatch) {
+        const filePath = decodeURIComponent(pathMatch[1]);
+        const { data, error } = await supabase.storage
+          .from("invoices")
+          .download(filePath);
+        if (error) throw error;
+        const blobUrl = URL.createObjectURL(data);
+        const a = document.createElement("a");
+        a.href = blobUrl;
+        a.download = `boleto-${invoice.reference_month}-${invoice.reference_year}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(blobUrl);
+      } else {
+        window.open(url, "_blank");
+      }
+    } catch (error) {
+      console.error("Download error:", error);
+      window.open(invoiceAny.boleto_url, "_blank");
+    }
+  };
+
+  const handleCopyBarcode = () => {
+    if (invoiceAny.boleto_barcode) {
+      navigator.clipboard.writeText(invoiceAny.boleto_barcode);
+      toast({
+        title: "Código copiado",
+        description: "O código de barras foi copiado para a área de transferência",
+      });
+    }
+  };
 
   return (
     <AgencyLayout title="Detalhes da Fatura">
@@ -92,6 +135,54 @@ export default function AgencyInvoiceDetail() {
             </Card>
           )}
         </div>
+
+        {/* Boleto Section */}
+        {invoiceAny.boleto_url && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Download className="h-5 w-5" />
+                Boleto
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Download button */}
+              <Button onClick={handleDownloadBoleto} className="gap-2">
+                <Download className="h-4 w-4" />
+                Baixar Boleto (PDF)
+              </Button>
+
+              {/* Barcode */}
+              {invoiceAny.boleto_barcode && (
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-muted-foreground">Código de Barras</p>
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 bg-muted px-3 py-2 rounded text-sm font-mono break-all">
+                      {invoiceAny.boleto_barcode}
+                    </code>
+                    <Button variant="outline" size="sm" onClick={handleCopyBarcode} className="gap-1 shrink-0">
+                      <Copy className="h-4 w-4" />
+                      Copiar
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Observations from Tridots */}
+              {invoiceAny.boleto_observations && (
+                <div className="bg-muted/50 border rounded-lg p-4 flex gap-3">
+                  <Info className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium mb-1">Observações da Tridots</p>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                      {invoiceAny.boleto_observations}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Items Table */}
         <Card>

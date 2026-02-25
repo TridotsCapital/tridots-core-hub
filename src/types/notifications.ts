@@ -5,7 +5,8 @@ export type NotificationType =
   | 'analysis_status'
   | 'contract_status'
   | 'contract_document_rejected'
-  | 'email_sent';
+  | 'email_sent'
+  | 'invoice_boleto_available';
 
 export type NotificationSource = 'chamados' | 'analises' | 'contratos' | 'sinistros' | 'sistema';
 
@@ -100,6 +101,13 @@ export const getNotificationConfig = (type: NotificationType): {
         bgColor: 'bg-emerald-50',
         borderColor: 'border-emerald-200'
       };
+    case 'invoice_boleto_available':
+      return {
+        icon: 'FileDown',
+        color: 'text-blue-600',
+        bgColor: 'bg-blue-50',
+        borderColor: 'border-blue-200'
+      };
     default:
       return {
         icon: 'Bell',
@@ -118,6 +126,8 @@ export const getSourceLabel = (source: NotificationSource): string => {
       return 'Análise';
     case 'contratos':
       return 'Contrato';
+    case 'sinistros':
+      return 'Sinistro';
     case 'sistema':
       return 'Sistema';
     default:

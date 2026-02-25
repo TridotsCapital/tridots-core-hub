@@ -6,6 +6,7 @@ import {
   invoiceOverdueTemplate,
   preBlockingAlertTemplate,
   blockingConfirmationTemplate,
+  boletoUploadedTemplate,
   sendEmail,
   LOGO_BASE64
 } from "../_shared/email-templates.ts";
@@ -18,7 +19,7 @@ const corsHeaders = {
 interface InvoiceNotificationRequest {
   invoiceId: string;
   agencyId: string;
-  notificationType: 'invoice_available' | 'due_reminder' | 'overdue' | 'pre_blocking' | 'blocking_confirmation';
+  notificationType: 'invoice_available' | 'due_reminder' | 'overdue' | 'pre_blocking' | 'blocking_confirmation' | 'boleto_uploaded';
 }
 
 serve(async (req: Request): Promise<Response> => {
@@ -44,10 +45,10 @@ serve(async (req: Request): Promise<Response> => {
 
     console.log(`[send-invoice-notification] Processing: invoice=${invoiceId}, type=${notificationType}`);
 
-    // Buscar dados da fatura
+    // Buscar dados da fatura (include boleto fields for boleto_uploaded)
     const { data: invoice, error: invoiceError } = await supabase
       .from('agency_invoices')
-      .select('id, reference_month, reference_year, total_value, due_date, status')
+      .select('id, reference_month, reference_year, total_value, due_date, status, boleto_url, boleto_barcode, boleto_observations')
       .eq('id', invoiceId)
       .single();
 
@@ -103,6 +104,26 @@ serve(async (req: Request): Promise<Response> => {
       totalOverdueValue = overdueInvoices?.reduce((sum, inv) => sum + (inv.total_value || 0), 0) || 0;
     }
 
+    // Generate signed URL for boleto_uploaded
+    let boletoSignedUrl: string | null = null;
+    if (notificationType === 'boleto_uploaded' && invoice.boleto_url) {
+      try {
+        const url = invoice.boleto_url as string;
+        const pathMatch = url.match(/\/storage\/v1\/object\/public\/invoices\/(.*)/);
+        if (pathMatch) {
+          const filePath = decodeURIComponent(pathMatch[1]);
+          const { data: signedData, error: signedError } = await supabase.storage
+            .from('invoices')
+            .createSignedUrl(filePath, 86400); // 24h
+          if (!signedError && signedData?.signedUrl) {
+            boletoSignedUrl = signedData.signedUrl;
+          }
+        }
+      } catch (e) {
+        console.error("Failed to generate signed URL:", e);
+      }
+    }
+
     let template;
     switch (notificationType) {
       case 'invoice_available':
@@ -154,6 +175,18 @@ serve(async (req: Request): Promise<Response> => {
         });
         break;
 
+      case 'boleto_uploaded':
+        template = boletoUploadedTemplate({
+          agencyName: agency.nome_fantasia || agency.razao_social,
+          invoiceMonth,
+          invoiceYear: invoice.reference_year,
+          totalValue: invoice.total_value,
+          dueDate,
+          boletoUrl: boletoSignedUrl || invoice.boleto_url || '',
+          observations: invoice.boleto_observations || undefined,
+        });
+        break;
+
       default:
         throw new Error('Tipo de notificação inválido');
     }
@@ -202,6 +235,27 @@ serve(async (req: Request): Promise<Response> => {
       p_reference_id: invoiceId,
       p_success: true
     });
+
+    // For boleto_uploaded, also create in-app notifications for agency users
+    if (notificationType === 'boleto_uploaded') {
+      const monthStr = String(invoice.reference_month).padStart(2, '0');
+      const { data: agencyUsers } = await supabase
+        .from('agency_users')
+        .select('user_id')
+        .eq('agency_id', agencyId);
+
+      if (agencyUsers && agencyUsers.length > 0) {
+        const notifications = agencyUsers.map((au) => ({
+          user_id: au.user_id,
+          ticket_id: invoiceId, // using ticket_id field as reference
+          type: 'boleto_available' as const,
+          title: 'Boleto disponível',
+          message: `O boleto da fatura de ${monthStr}/${invoice.reference_year} está disponível para download`,
+        }));
+
+        await supabase.from('ticket_notifications').insert(notifications);
+      }
+    }
 
     console.log(`[send-invoice-notification] Success for invoice ${invoiceId}`);
 
