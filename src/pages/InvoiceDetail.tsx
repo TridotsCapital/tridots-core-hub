@@ -128,14 +128,37 @@ export default function InvoiceDetail() {
 
             {/* Download Boleto (se existir) */}
             {(invoice as any).boleto_url && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => window.open((invoice as any).boleto_url, '_blank')}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Ver Boleto
-              </Button>
+              <>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => window.open((invoice as any).boleto_url, '_blank')}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Ver Boleto
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      await supabase.functions.invoke("send-invoice-notification", {
+                        body: {
+                          invoiceId: invoice.id,
+                          agencyId: invoice.agency_id,
+                          notificationType: "boleto_uploaded",
+                        },
+                      });
+                      toast({ title: "Notificação reenviada", description: "E-mail de boleto disponível reenviado para a imobiliária" });
+                    } catch (err: any) {
+                      toast({ title: "Erro", description: err.message, variant: "destructive" });
+                    }
+                  }}
+                >
+                  <Send className="h-4 w-4 mr-2" />
+                  Reenviar Notificação
+                </Button>
+              </>
             )}
 
             {/* Enviar Fatura (mudar status para 'enviada') */}
@@ -300,6 +323,7 @@ export default function InvoiceDetail() {
         invoiceId={invoice.id}
         currentBoletoUrl={(invoice as any).boleto_url}
         onSuccess={handleRefresh}
+        agencyId={invoice.agency_id}
       />
 
       {/* Dialog de Cancelamento */}

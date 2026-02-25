@@ -1,0 +1,1 @@
+ALTER TABLE public.agency_invoices ADD COLUMN boleto_observations text;

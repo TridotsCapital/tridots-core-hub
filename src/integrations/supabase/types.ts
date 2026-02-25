@@ -181,6 +181,7 @@ export type Database = {
           adjusted_value: number | null
           agency_id: string
           boleto_barcode: string | null
+          boleto_observations: string | null
           boleto_url: string | null
           canceled_at: string | null
           canceled_by: string | null
@@ -206,6 +207,7 @@ export type Database = {
           adjusted_value?: number | null
           agency_id: string
           boleto_barcode?: string | null
+          boleto_observations?: string | null
           boleto_url?: string | null
           canceled_at?: string | null
           canceled_by?: string | null
@@ -231,6 +233,7 @@ export type Database = {
           adjusted_value?: number | null
           agency_id?: string
           boleto_barcode?: string | null
+          boleto_observations?: string | null
           boleto_url?: string | null
           canceled_at?: string | null
           canceled_by?: string | null

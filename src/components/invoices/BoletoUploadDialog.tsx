@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Upload, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -20,6 +21,7 @@ interface BoletoUploadDialogProps {
   invoiceId: string;
   currentBoletoUrl?: string | null;
   onSuccess: () => void;
+  agencyId?: string;
 }
 
 export function BoletoUploadDialog({
@@ -28,10 +30,12 @@ export function BoletoUploadDialog({
   invoiceId,
   currentBoletoUrl,
   onSuccess,
+  agencyId,
 }: BoletoUploadDialogProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [boletoBarcode, setBoletoBarcode] = useState("");
+  const [boletoObservations, setBoletoObservations] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -80,11 +84,28 @@ export function BoletoUploadDialog({
         .update({
           boleto_url: urlData.publicUrl,
           boleto_barcode: boletoBarcode || null,
+          boleto_observations: boletoObservations || null,
           status: "gerada", // Move to "gerada" status after uploading boleto
-        })
+        } as any)
         .eq("id", invoiceId);
 
       if (updateError) throw updateError;
+
+      // Send notification to agency
+      if (agencyId) {
+        try {
+          await supabase.functions.invoke("send-invoice-notification", {
+            body: {
+              invoiceId,
+              agencyId,
+              notificationType: "boleto_uploaded",
+            },
+          });
+        } catch (notifError) {
+          console.error("Failed to send boleto notification:", notifError);
+          // Don't block the upload success
+        }
+      }
 
       toast({
         title: "Boleto enviado",
@@ -95,6 +116,7 @@ export function BoletoUploadDialog({
       onOpenChange(false);
       setSelectedFile(null);
       setBoletoBarcode("");
+      setBoletoObservations("");
     } catch (error: any) {
       console.error("Upload error:", error);
       toast({
@@ -158,6 +180,18 @@ export function BoletoUploadDialog({
               placeholder="Digite o código de barras do boleto"
               value={boletoBarcode}
               onChange={(e) => setBoletoBarcode(e.target.value)}
+            />
+          </div>
+
+          {/* Observations textarea */}
+          <div className="space-y-2">
+            <Label htmlFor="observations">Observações (opcional)</Label>
+            <Textarea
+              id="observations"
+              placeholder="Adicione observações para a imobiliária sobre este boleto..."
+              value={boletoObservations}
+              onChange={(e) => setBoletoObservations(e.target.value)}
+              rows={3}
             />
           </div>
         </div>
