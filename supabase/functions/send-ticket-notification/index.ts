@@ -131,11 +131,21 @@ serve(async (req) => {
       }
     } else if (notificationDirection === 'agency_to_tridots') {
       // Notify Tridots: all active master/analyst users
-      const { data: tridotsUsers } = await supabase
-        .from('profiles')
-        .select('id, email, full_name')
-        .in('role', ['master', 'analyst'])
-        .eq('active', true);
+      // First get user_ids from user_roles table (roles are NOT stored in profiles)
+      const { data: roleEntries } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .in('role', ['master', 'analyst']);
+
+      const tridotsUserIds = roleEntries?.map(r => r.user_id) || [];
+
+      const { data: tridotsUsers } = tridotsUserIds.length > 0
+        ? await supabase
+            .from('profiles')
+            .select('id, email, full_name')
+            .in('id', tridotsUserIds)
+            .eq('active', true)
+        : { data: [] };
 
       if (tridotsUsers) {
         for (const user of tridotsUsers) {

@@ -162,6 +162,7 @@ export function NewTicketDialog({ open, onOpenChange, onSuccess }: NewTicketDial
       description,
       category,
       priority,
+      assigned_to: selectedCollaboratorId || undefined,
     });
 
     // Reset form
