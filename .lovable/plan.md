@@ -1,92 +1,113 @@
 
+Objetivo: corrigir de forma definitiva para que a imobiliária veja boleto/código/observações no portal e receba notificação por e-mail + in-app, tanto para novos uploads quanto para boletos já existentes.
 
-# Correcao: Boleto nao aparece no portal da imobiliaria + notificacoes falhando
+Diagnóstico confirmado no projeto (causas reais)
+1) A tela que a imobiliária usa hoje (/agency/invoices) não leva para o detalhe da fatura
+- O boleto/código/observações foram implementados em /agency/invoices/:invoiceId (AgencyInvoiceDetail), mas na listagem atual só existe “Ver Contrato”.
+- Resultado: a imobiliária não chega na tela onde os dados aparecem, então parece que “não existe boleto”.
 
-## Diagnostico - 3 causas raiz encontradas
+2) E-mail de boleto está sendo disparado com assinatura de função errada
+- Em send-invoice-notification, a chamada de sendEmail está com os parâmetros na posição errada (o array de anexo entra no lugar do testMode).
+- Isso pode desviar envio para e-mail de teste e mascarar sucesso no log.
 
-### Causa 1: Edge function quebrada (CRITICO)
-A funcao `send-invoice-notification` esta **crashando no boot** com o erro:
-```
-The requested module '../_shared/email-templates.ts' does not provide an export named 'LOGO_BASE64'
-```
-No arquivo `email-templates.ts`, linha 10, o `LOGO_BASE64` e declarado como `const` mas **nao tem `export`**. A funcao importa esse simbolo na linha 11 do index.ts, causando falha imediata. Isso impede:
-- Envio de e-mail para a imobiliaria
-- Criacao de notificacoes in-app (sino)
-- Qualquer outro tipo de notificacao de fatura
+3) Notificação in-app está sendo gravada na tabela errada e com tipo incompatível
+- O código grava em ticket_notifications, mas o sino do portal lê a tabela notifications.
+- Além disso, o type usado (“boleto_available”) não bate com o modelo da UI (“invoice_boleto_available”).
+- E o insert não checa erro (falha silenciosa).
 
-### Causa 2: Bucket privado com URL publica
-O bucket `invoices` e **privado** (`public: false`), mas o `BoletoUploadDialog` salva a URL usando `getPublicUrl()`, que gera um link no formato `/storage/v1/object/public/invoices/...`. Esse link retorna **403 Forbidden** para qualquer usuario.
+4) Há erros intermitentes de agencyId undefined na função
+- Logs mostram tentativas com agencyId inválido.
+- Isso bloqueia parte das tentativas de envio.
 
-O download no portal da imobiliaria tenta extrair o path via regex e usar `supabase.storage.download()`, que depende de autenticacao e RLS do storage. Se nao houver policy de SELECT para agency users no bucket, o download falha silenciosamente.
+5) Os dados do boleto já estão no banco
+- boleto_url, boleto_barcode e boleto_observations existem em faturas antigas e novas.
+- O problema principal não é ausência de dados; é fluxo/UI + notificação.
 
-### Causa 3: Dados existem no banco
-Confirmei que os boletos JA estao salvos corretamente:
-- Fatura `e8fc87b7`: tem `boleto_url` (sem barcode/observacoes)
-- Fatura `fdb83cfd`: tem `boleto_url` + `boleto_barcode` + `boleto_observations`
+Plano de correção (implementação)
+Fase 1 — Corrigir acesso visual no portal da imobiliária
+- Arquivos: src/pages/agency/AgencyInvoices.tsx e src/hooks/useMonthlyInvoiceSummary.ts
+- Ações:
+  - Expor o invoiceId da fatura do mês selecionado no hook de parcelas/mês.
+  - Incluir botão “Ver detalhes da fatura” na tela /agency/invoices quando houver fatura no mês.
+  - Opcional visual imediato: badge “Boleto disponível” na listagem quando houver boleto_url, para reduzir dúvida operacional.
+- Resultado esperado:
+  - A imobiliária sempre consegue chegar ao detalhe da fatura onde boleto/código/observações são exibidos.
 
-A secao de boleto no portal (linhas 140-185 do AgencyInvoiceDetail) so renderiza se `invoiceAny.boleto_url` existir. O hook `useInvoiceDetail` usa `select('*')`, que deve retornar todos os campos incluindo boleto. Portanto, o problema visual pode ser RLS impedindo o download, nao a renderizacao.
+Fase 2 — Tornar o detalhe de fatura robusto para baixar/visualizar boleto
+- Arquivo: src/pages/agency/AgencyInvoiceDetail.tsx
+- Ações:
+  - Manter exibição de código de barras e observações (já existe).
+  - Fortalecer resolução de caminho do arquivo para bucket privado:
+    - suportar URL antiga (/object/public/invoices/...) e variações futuras;
+    - fallback seguro quando não conseguir extrair caminho.
+  - Oferecer “Visualizar” e “Baixar” com fluxo autenticado (sem depender de URL pública).
+- Resultado esperado:
+  - Boletos antigos e novos ficam acessíveis para visualização/download.
 
-## Plano de Correcao
+Fase 3 — Corrigir disparo de e-mail de boleto (novo upload e reenvio)
+- Arquivo: supabase/functions/send-invoice-notification/index.ts
+- Ações:
+  - Ajustar chamada de sendEmail com assinatura correta (sem deslocar argumentos).
+  - Tornar agencyId opcional no payload e buscar da própria fatura quando ausente.
+  - Garantir geração de link temporário de download válida para e-mail.
+  - Validar e tratar erro em todas as operações críticas (envio, logs, inserts).
+- Resultado esperado:
+  - E-mail real chega para a imobiliária (não para endereço de teste), de forma consistente.
 
-### 1. Exportar `LOGO_BASE64` no email-templates.ts
-**Arquivo:** `supabase/functions/_shared/email-templates.ts`
+Fase 4 — Corrigir notificação in-app do sino da imobiliária
+- Arquivos: supabase/functions/send-invoice-notification/index.ts, src/types/notifications.ts (alinhamento final)
+- Ações:
+  - Inserir notificações na tabela notifications (não ticket_notifications).
+  - Usar type compatível com a UI: invoice_boleto_available.
+  - source = sistema, reference_id = invoiceId, título/mensagem claros.
+  - Inserir para todos os agency_users da agência.
+- Resultado esperado:
+  - Notificação aparece no sino do portal da imobiliária.
 
-Alterar linha 10 de:
-```
-const LOGO_BASE64 = '...'
-```
-para:
-```
-export const LOGO_BASE64 = '...'
-```
+Fase 5 — Retroativo para boletos já existentes
+- Estratégia idempotente (sem duplicar envios):
+  - Varrer faturas com boleto_url preenchido.
+  - Reenviar notificação apenas se faltar evidência prévia (email_logs/template e/ou notification in-app).
+- Implementação:
+  - Criar rotina de backfill controlada (função administrativa) com relatório final:
+    - processadas, enviadas, ignoradas (já notificadas), falhas.
+- Resultado esperado:
+  - Corrige histórico já subido na plataforma, não só os próximos uploads.
 
-Isso corrige o crash da edge function e restaura todas as notificacoes (e-mail + in-app).
+Fase 6 — Ajustes no upload para confiabilidade futura
+- Arquivo: src/components/invoices/BoletoUploadDialog.tsx
+- Ações:
+  - Manter gravação de barcode e observações.
+  - Garantir que invoke de notificação sempre envie invoiceId e que agencyId possa ser dispensável (função resolve internamente).
+  - Melhorar feedback quando envio de notificação falhar (sem perder upload).
+- Resultado esperado:
+  - Novos boletos entram com dados completos e notificação confiável.
 
-### 2. Corrigir o acesso ao boleto no bucket privado
-**Arquivo:** `src/pages/agency/AgencyInvoiceDetail.tsx`
+Validação final (checklist de aceite)
+1) Novo upload de boleto
+- Tridots sobe PDF + código + observações.
+- Imobiliária abre /agency/invoices → “Ver detalhes da fatura”.
+- Vê botão de boleto, código copiável e observações.
+- Recebe e-mail de boleto.
+- Recebe notificação no sino.
 
-Trocar a logica de download para usar **signed URL via edge function** ou **download autenticado direto**. Como o bucket e privado, a abordagem mais segura:
+2) Boleto antigo já existente
+- Acessa detalhe da fatura antiga e visualiza/baixa boleto.
+- Backfill dispara e-mail/in-app quando faltante.
+- Sem duplicidade excessiva para registros já notificados.
 
-- Extrair o path do storage a partir da URL salva (remover o prefixo do Supabase URL)
-- Usar `supabase.storage.from('invoices').download(path)` que ja usa o token do usuario logado
-- Se falhar (sem RLS), usar fallback via `createSignedUrl` no backend
+3) Reenvio manual
+- Botão “Reenviar notificação” continua funcional após correções.
 
-### 3. Garantir RLS no bucket invoices para agency users
-**Migracao SQL**
+Sequenciamento (ordem de execução)
+1. Corrigir função de notificação (e-mail + in-app + agencyId fallback)
+2. Corrigir navegação do portal da imobiliária para detalhe da fatura
+3. Fortalecer download/visualização no detalhe da fatura
+4. Rodar backfill retroativo com relatório
+5. Validar ponta a ponta com casos novo + histórico
 
-Verificar e criar policy de SELECT no `storage.objects` para que usuarios da agencia possam baixar boletos das suas proprias faturas:
-
-```text
-CREATE POLICY "Agency users can download their invoices boletos"
-ON storage.objects FOR SELECT
-USING (
-  bucket_id = 'invoices'
-  AND (storage.foldername(name))[1] = 'boletos'
-  AND EXISTS (
-    SELECT 1 FROM agency_invoices ai
-    JOIN agency_users au ON au.agency_id = ai.agency_id
-    WHERE au.user_id = auth.uid()
-    AND ai.id::text = (storage.foldername(name))[2]
-  )
-);
-```
-
-### 4. Redesplegar a edge function
-Apos a correcao do export, redesplegar `send-invoice-notification` para que pare de crashar.
-
-## Arquivos afetados
-
-| Arquivo | Mudanca |
-|---------|---------|
-| `supabase/functions/_shared/email-templates.ts` | Adicionar `export` ao `LOGO_BASE64` |
-| `src/pages/agency/AgencyInvoiceDetail.tsx` | Ajustar logica de download para bucket privado |
-| Migracao SQL | RLS policy para agency users no bucket invoices |
-
-## Resultado esperado
-
-1. Edge function `send-invoice-notification` volta a funcionar (sem crash no boot)
-2. E-mails de boleto enviados automaticamente ao fazer upload
-3. Notificacoes in-app criadas para usuarios da agencia
-4. Botao "Baixar Boleto" funcional no portal da imobiliaria
-5. Codigo de barras e observacoes visiveis no detalhe da fatura
-
+Risco e mitigação
+- Risco: duplicar notificações no retroativo.
+- Mitigação: backfill idempotente com critérios de “já notificado” antes de enviar.
+- Risco: falhas silenciosas.
+- Mitigação: checagem explícita de error em todos os inserts/invokes e logs estruturados por invoiceId.
