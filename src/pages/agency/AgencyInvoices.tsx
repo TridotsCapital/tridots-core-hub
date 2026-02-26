@@ -7,10 +7,12 @@ import { formatCurrency } from "@/lib/validators";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, FileText, ExternalLink } from "lucide-react";
+import { AlertCircle, FileText, ExternalLink, Download, Copy, Info, Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAgencyPath } from "@/hooks/useAgencyPath";
 import { Skeleton } from "@/components/ui/skeleton";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import {
   Table,
   TableBody,
@@ -87,41 +89,89 @@ export default function AgencyInvoices() {
           showStatus={true}
         />
 
-        {/* Invoice Detail Button — when there's an invoice for the selected month */}
+        {/* Seção inline de boleto — entre gráfico e tabela */}
         {(() => {
           const selectedSummary = monthlySummary.find(
             (m) => m.month === selectedMonth && m.year === selectedYear
           );
-          if (selectedSummary?.invoiceId) {
-            return (
-              <Card className="border-primary/30 bg-primary/5">
-                <CardContent className="flex items-center justify-between py-4">
-                  <div className="flex items-center gap-3">
-                    <FileText className="h-5 w-5 text-primary" />
-                    <div>
-                      <p className="font-medium">Fatura de {selectedMonth}/{selectedYear}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {selectedSummary.hasBoleto && (
-                          <Badge variant="default" className="mr-2 text-xs bg-green-600">
-                            Boleto disponível
-                          </Badge>
-                        )}
-                        Clique para ver boleto, código de barras e observações
-                      </p>
+          if (!selectedSummary?.hasBoleto) return null;
+
+          const handleDownloadBoleto = async () => {
+            if (!selectedSummary.boletoUrl) return;
+            try {
+              // Extract storage path from URL
+              let storagePath = selectedSummary.boletoUrl;
+              const publicMatch = storagePath.match(/\/object\/public\/invoices\/(.+)/);
+              const signMatch = storagePath.match(/\/object\/sign\/invoices\/(.+?)(\?|$)/);
+              if (publicMatch) storagePath = publicMatch[1];
+              else if (signMatch) storagePath = signMatch[1];
+              else if (storagePath.startsWith('invoices/')) storagePath = storagePath.replace('invoices/', '');
+
+              const { data, error } = await supabase.storage.from('invoices').download(storagePath);
+              if (error) throw error;
+              const url = URL.createObjectURL(data);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `boleto-${selectedMonth}-${selectedYear}.pdf`;
+              a.click();
+              URL.revokeObjectURL(url);
+            } catch (err) {
+              console.error('Erro ao baixar boleto:', err);
+              toast.error('Não foi possível baixar o boleto. Tente novamente.');
+            }
+          };
+
+          const handleCopyBarcode = () => {
+            if (!selectedSummary.boletoBarcode) return;
+            navigator.clipboard.writeText(selectedSummary.boletoBarcode);
+            toast.success('Código de barras copiado!');
+          };
+
+          return (
+            <Card className="border-primary/30 bg-primary/5">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <FileText className="h-5 w-5 text-primary" />
+                  Boleto — {selectedMonth.toString().padStart(2, '0')}/{selectedYear}
+                  <Badge variant="default" className="ml-2 text-xs">
+                    Boleto disponível
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Download button */}
+                <Button onClick={handleDownloadBoleto} className="gap-2">
+                  <Download className="h-4 w-4" />
+                  Baixar Boleto (PDF)
+                </Button>
+
+                {/* Barcode */}
+                {selectedSummary.boletoBarcode && (
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-muted-foreground">Código de barras</p>
+                    <div className="flex items-center gap-2 bg-muted rounded-md px-3 py-2">
+                      <code className="text-sm flex-1 break-all font-mono">{selectedSummary.boletoBarcode}</code>
+                      <Button variant="ghost" size="sm" onClick={handleCopyBarcode} className="flex-shrink-0 gap-1">
+                        <Copy className="h-4 w-4" />
+                        Copiar
+                      </Button>
                     </div>
                   </div>
-                  <Button
-                    onClick={() => navigate(agencyPath(`/invoices/${selectedSummary.invoiceId}`))}
-                    className="gap-2"
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                    Ver detalhes da fatura
-                  </Button>
-                </CardContent>
-              </Card>
-            );
-          }
-          return null;
+                )}
+
+                {/* Observations */}
+                {selectedSummary.boletoObservations && (
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-muted-foreground">Observações da Tridots</p>
+                    <div className="flex gap-2 bg-muted rounded-md px-3 py-2">
+                      <Info className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <p className="text-sm">{selectedSummary.boletoObservations}</p>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          );
         })()}
 
         {/* QUADRANTE 2: Detalhes dos contratos/parcelas */}
