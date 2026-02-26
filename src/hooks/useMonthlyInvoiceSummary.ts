@@ -9,6 +9,8 @@ export interface MonthSummary {
   invoiceCount: number;
   hasInvoice: boolean;
   dueDate?: string;
+  invoiceId?: string;
+  hasBoleto?: boolean;
 }
 
 export interface AgencyInvoiceSummary {
@@ -63,7 +65,7 @@ export const useMonthlyInvoiceSummary = (agencyId?: string) => {
       // Faturas existentes
       let invoiceQuery = supabase
         .from('agency_invoices')
-        .select('reference_month, reference_year, total_value, status, due_date, agency_id');
+        .select('id, reference_month, reference_year, total_value, status, due_date, agency_id, boleto_url');
       
       if (agencyId) {
         invoiceQuery = invoiceQuery.eq('agency_id', agencyId);
@@ -89,7 +91,7 @@ export const useMonthlyInvoiceSummary = (agencyId?: string) => {
       const orphans = orphanResult.data || [];
 
       // Mapear faturas existentes
-      const invoiceMap = new Map<string, { value: number; status: string; count: number; dueDate: string }>();
+      const invoiceMap = new Map<string, { value: number; status: string; count: number; dueDate: string; invoiceId?: string; hasBoleto: boolean }>();
       
       for (const inv of invoices) {
         const key = `${inv.reference_month}-${inv.reference_year}`;
@@ -100,12 +102,16 @@ export const useMonthlyInvoiceSummary = (agencyId?: string) => {
           if (inv.status === 'atrasada' || (inv.status !== 'paga' && existing.status === 'paga')) {
             existing.status = inv.status;
           }
+          if (!existing.invoiceId) existing.invoiceId = inv.id;
+          if (inv.boleto_url) existing.hasBoleto = true;
         } else {
           invoiceMap.set(key, {
             value: inv.total_value || 0,
             status: inv.status,
             count: 1,
-            dueDate: inv.due_date
+            dueDate: inv.due_date,
+            invoiceId: inv.id,
+            hasBoleto: !!inv.boleto_url,
           });
         }
       }
@@ -121,7 +127,8 @@ export const useMonthlyInvoiceSummary = (agencyId?: string) => {
             value: orphan.value || 0,
             status: 'pendente',
             count: 0,
-            dueDate: ''
+            dueDate: '',
+            hasBoleto: false,
           });
         }
       }
@@ -137,7 +144,9 @@ export const useMonthlyInvoiceSummary = (agencyId?: string) => {
             status: invoice.status as MonthSummary['status'],
             invoiceCount: invoice.count,
             hasInvoice: invoice.count > 0,
-            dueDate: invoice.dueDate
+            dueDate: invoice.dueDate,
+            invoiceId: invoice.invoiceId,
+            hasBoleto: invoice.hasBoleto,
           };
         }
         

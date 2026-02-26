@@ -49,11 +49,20 @@ export default function AgencyInvoiceDetail() {
   const handleDownloadBoleto = async () => {
     if (!invoiceAny.boleto_url) return;
     try {
-      // Extract the storage path from the public URL
       const url = invoiceAny.boleto_url as string;
-      const pathMatch = url.match(/\/storage\/v1\/object\/public\/invoices\/(.*)/);
+      // Extract storage path from various URL formats
+      let filePath: string | null = null;
+      
+      // Format: .../storage/v1/object/public/invoices/... or .../storage/v1/object/sign/invoices/...
+      const pathMatch = url.match(/\/storage\/v1\/object\/(?:public|sign)\/invoices\/(.*?)(?:\?.*)?$/);
       if (pathMatch) {
-        const filePath = decodeURIComponent(pathMatch[1]);
+        filePath = decodeURIComponent(pathMatch[1]);
+      } else if (!url.startsWith('http')) {
+        // Already a relative path
+        filePath = url;
+      }
+
+      if (filePath) {
         const { data, error } = await supabase.storage
           .from("invoices")
           .download(filePath);
@@ -67,11 +76,16 @@ export default function AgencyInvoiceDetail() {
         document.body.removeChild(a);
         URL.revokeObjectURL(blobUrl);
       } else {
+        // Fallback: open URL directly
         window.open(url, "_blank");
       }
     } catch (error) {
       console.error("Download error:", error);
-      window.open(invoiceAny.boleto_url, "_blank");
+      toast({
+        title: "Erro no download",
+        description: "Não foi possível baixar o boleto. Tente novamente.",
+        variant: "destructive",
+      });
     }
   };
 

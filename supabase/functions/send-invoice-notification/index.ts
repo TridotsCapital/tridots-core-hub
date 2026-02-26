@@ -8,7 +8,6 @@ import {
   blockingConfirmationTemplate,
   boletoUploadedTemplate,
   sendEmail,
-  LOGO_BASE64
 } from "../_shared/email-templates.ts";
 
 const corsHeaders = {
@@ -18,7 +17,7 @@ const corsHeaders = {
 
 interface InvoiceNotificationRequest {
   invoiceId: string;
-  agencyId: string;
+  agencyId?: string; // Now optional – resolved from invoice if missing
   notificationType: 'invoice_available' | 'due_reminder' | 'overdue' | 'pre_blocking' | 'blocking_confirmation' | 'boleto_uploaded';
 }
 
@@ -41,20 +40,27 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    const { invoiceId, agencyId, notificationType }: InvoiceNotificationRequest = await req.json();
+    const { invoiceId, agencyId: providedAgencyId, notificationType }: InvoiceNotificationRequest = await req.json();
 
     console.log(`[send-invoice-notification] Processing: invoice=${invoiceId}, type=${notificationType}`);
 
-    // Buscar dados da fatura (include boleto fields for boleto_uploaded)
+    // Buscar dados da fatura (include boleto fields + agency_id for fallback)
     const { data: invoice, error: invoiceError } = await supabase
       .from('agency_invoices')
-      .select('id, reference_month, reference_year, total_value, due_date, status, boleto_url, boleto_barcode, boleto_observations')
+      .select('id, agency_id, reference_month, reference_year, total_value, due_date, status, boleto_url, boleto_barcode, boleto_observations')
       .eq('id', invoiceId)
       .single();
 
     if (invoiceError || !invoice) {
       console.error("Invoice not found:", invoiceError);
       throw new Error('Fatura não encontrada');
+    }
+
+    // Resolve agencyId: use provided or fallback to invoice's agency_id
+    const agencyId = providedAgencyId || invoice.agency_id;
+
+    if (!agencyId) {
+      throw new Error('agencyId não encontrado nem no payload nem na fatura');
     }
 
     // Buscar dados da agência
@@ -109,14 +115,24 @@ serve(async (req: Request): Promise<Response> => {
     if (notificationType === 'boleto_uploaded' && invoice.boleto_url) {
       try {
         const url = invoice.boleto_url as string;
-        const pathMatch = url.match(/\/storage\/v1\/object\/public\/invoices\/(.*)/);
-        if (pathMatch) {
-          const filePath = decodeURIComponent(pathMatch[1]);
+        // Support multiple URL formats
+        let filePath: string | null = null;
+        const publicMatch = url.match(/\/storage\/v1\/object\/(?:public|sign)\/invoices\/(.*)/);
+        if (publicMatch) {
+          filePath = decodeURIComponent(publicMatch[1]);
+        } else if (!url.startsWith('http')) {
+          // Already a relative path
+          filePath = url;
+        }
+        
+        if (filePath) {
           const { data: signedData, error: signedError } = await supabase.storage
             .from('invoices')
             .createSignedUrl(filePath, 86400); // 24h
           if (!signedError && signedData?.signedUrl) {
             boletoSignedUrl = signedData.signedUrl;
+          } else {
+            console.error("Failed to create signed URL:", signedError);
           }
         }
       } catch (e) {
@@ -191,17 +207,13 @@ serve(async (req: Request): Promise<Response> => {
         throw new Error('Tipo de notificação inválido');
     }
 
-    // Enviar e-mail
+    // Enviar e-mail — FIX: correct argument order (no extra attachment, logo is auto-included by sendEmail)
     console.log(`Sending email to ${recipientEmail}`);
     const result = await sendEmail(
       resendApiKey,
       recipientEmail,
       template.subject,
-      template.html,
-      [{
-        filename: 'tridots-logo.png',
-        content: LOGO_BASE64,
-      }]
+      template.html
     );
 
     if (!result.success) {
@@ -210,7 +222,7 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     // Registrar na tabela de logs de e-mail
-    await supabase
+    const { error: logError } = await supabase
       .from('email_logs')
       .insert({
         recipient_email: recipientEmail,
@@ -227,8 +239,12 @@ serve(async (req: Request): Promise<Response> => {
         }
       });
 
+    if (logError) {
+      console.error("Failed to insert email_log:", logError);
+    }
+
     // Criar notificação in-app para usuários Tridots
-    await supabase.rpc('create_email_sent_notification', {
+    const { error: rpcError } = await supabase.rpc('create_email_sent_notification', {
       p_template_type: `invoice_${notificationType}`,
       p_recipient_email: recipientEmail,
       p_recipient_name: recipientName,
@@ -236,24 +252,42 @@ serve(async (req: Request): Promise<Response> => {
       p_success: true
     });
 
-    // For boleto_uploaded, also create in-app notifications for agency users
+    if (rpcError) {
+      console.error("Failed to create tridots notification:", rpcError);
+    }
+
+    // For boleto_uploaded, create in-app notifications for agency users
+    // FIX: Insert into 'notifications' table (not ticket_notifications) with correct type
     if (notificationType === 'boleto_uploaded') {
       const monthStr = String(invoice.reference_month).padStart(2, '0');
-      const { data: agencyUsers } = await supabase
+      const { data: agencyUsers, error: auError } = await supabase
         .from('agency_users')
         .select('user_id')
         .eq('agency_id', agencyId);
 
-      if (agencyUsers && agencyUsers.length > 0) {
+      if (auError) {
+        console.error("Failed to fetch agency_users:", auError);
+      } else if (agencyUsers && agencyUsers.length > 0) {
         const notifications = agencyUsers.map((au) => ({
           user_id: au.user_id,
-          ticket_id: invoiceId, // using ticket_id field as reference
-          type: 'boleto_available' as const,
+          type: 'invoice_boleto_available',
+          source: 'sistema',
+          reference_id: invoiceId,
           title: 'Boleto disponível',
           message: `O boleto da fatura de ${monthStr}/${invoice.reference_year} está disponível para download`,
+          metadata: {
+            invoice_month: invoice.reference_month,
+            invoice_year: invoice.reference_year,
+            total_value: invoice.total_value,
+          },
         }));
 
-        await supabase.from('ticket_notifications').insert(notifications);
+        const { error: notifError } = await supabase.from('notifications').insert(notifications);
+        if (notifError) {
+          console.error("Failed to insert agency notifications:", notifError);
+        } else {
+          console.log(`Created ${notifications.length} in-app notifications for agency users`);
+        }
       }
     }
 
