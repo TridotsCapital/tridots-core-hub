@@ -1,122 +1,92 @@
 
 
-# Boleto: Download no Portal + Notificacoes + Campo de Observacao
+# Correcao: Boleto nao aparece no portal da imobiliaria + notificacoes falhando
 
-## Problema
+## Diagnostico - 3 causas raiz encontradas
 
-Quando a Tridots faz upload de um boleto para uma fatura:
-1. A imobiliaria nao consegue baixar o PDF no portal (nenhum botao existe)
-2. Nao recebe e-mail avisando que o boleto esta disponivel
-3. Nao recebe notificacao in-app (sino)
-4. Nao existe campo de observacao para a Tridots adicionar notas ao enviar o boleto
-
-## Solucao Completa
-
-### 1. Migracao SQL - Novo campo `boleto_observations`
-
-Adicionar coluna `boleto_observations TEXT` na tabela `agency_invoices`:
-
-```text
-ALTER TABLE public.agency_invoices ADD COLUMN boleto_observations text;
+### Causa 1: Edge function quebrada (CRITICO)
+A funcao `send-invoice-notification` esta **crashando no boot** com o erro:
 ```
+The requested module '../_shared/email-templates.ts' does not provide an export named 'LOGO_BASE64'
+```
+No arquivo `email-templates.ts`, linha 10, o `LOGO_BASE64` e declarado como `const` mas **nao tem `export`**. A funcao importa esse simbolo na linha 11 do index.ts, causando falha imediata. Isso impede:
+- Envio de e-mail para a imobiliaria
+- Criacao de notificacoes in-app (sino)
+- Qualquer outro tipo de notificacao de fatura
 
-### 2. BoletoUploadDialog - Campo de observacao + disparo de notificacao
+### Causa 2: Bucket privado com URL publica
+O bucket `invoices` e **privado** (`public: false`), mas o `BoletoUploadDialog` salva a URL usando `getPublicUrl()`, que gera um link no formato `/storage/v1/object/public/invoices/...`. Esse link retorna **403 Forbidden** para qualquer usuario.
 
-**Arquivo:** `src/components/invoices/BoletoUploadDialog.tsx`
+O download no portal da imobiliaria tenta extrair o path via regex e usar `supabase.storage.download()`, que depende de autenticacao e RLS do storage. Se nao houver policy de SELECT para agency users no bucket, o download falha silenciosamente.
 
-- Adicionar campo Textarea "Observacoes (opcional)" abaixo do codigo de barras
-- Salvar o valor em `boleto_observations` no UPDATE da fatura
-- Apos upload bem-sucedido, chamar a edge function `send-invoice-notification` com tipo `boleto_uploaded`
-- Importar Textarea de `@/components/ui/textarea`
+### Causa 3: Dados existem no banco
+Confirmei que os boletos JA estao salvos corretamente:
+- Fatura `e8fc87b7`: tem `boleto_url` (sem barcode/observacoes)
+- Fatura `fdb83cfd`: tem `boleto_url` + `boleto_barcode` + `boleto_observations`
 
-### 3. Portal da Imobiliaria - Botao de download + codigo de barras + observacoes
+A secao de boleto no portal (linhas 140-185 do AgencyInvoiceDetail) so renderiza se `invoiceAny.boleto_url` existir. O hook `useInvoiceDetail` usa `select('*')`, que deve retornar todos os campos incluindo boleto. Portanto, o problema visual pode ser RLS impedindo o download, nao a renderizacao.
 
-**Arquivo:** `src/pages/agency/AgencyInvoiceDetail.tsx`
+## Plano de Correcao
 
-Adicionar secao (Card) visivel quando `boleto_url` existir:
-- Botao "Baixar Boleto" (download via `window.open` do `boleto_url`)
-- Campo de codigo de barras com botao "Copiar" (se `boleto_barcode` existir)
-- Observacoes da Tridots exibidas em bloco informativo (se `boleto_observations` existir)
-
-### 4. Portal Tridots - Botao de reenvio de notificacao
-
-**Arquivo:** `src/pages/InvoiceDetail.tsx`
-
-Adicionar botao "Reenviar Notificacao" ao lado do botao "Ver Boleto", que chama `send-invoice-notification` com tipo `boleto_uploaded`.
-
-### 5. Edge Function - Novo tipo `boleto_uploaded`
-
-**Arquivo:** `supabase/functions/send-invoice-notification/index.ts`
-
-- Adicionar `boleto_uploaded` ao tipo `notificationType`
-- Buscar `boleto_url` da fatura para gerar link no e-mail
-- Incluir observacoes no corpo do e-mail (se existirem)
-- Criar signed URL temporaria (24h) para download seguro do PDF
-
+### 1. Exportar `LOGO_BASE64` no email-templates.ts
 **Arquivo:** `supabase/functions/_shared/email-templates.ts`
 
-Adicionar template `boletoUploadedTemplate`:
-- Assunto: "Boleto disponivel - Fatura MM/AAAA"
-- Corpo: nome da imobiliaria, valor, vencimento, observacoes (se houver), botao "Baixar Boleto"
+Alterar linha 10 de:
+```
+const LOGO_BASE64 = '...'
+```
+para:
+```
+export const LOGO_BASE64 = '...'
+```
 
-### 6. Notificacao In-App
+Isso corrige o crash da edge function e restaura todas as notificacoes (e-mail + in-app).
 
-Na edge function `send-invoice-notification`, apos envio do e-mail para tipo `boleto_uploaded`:
-- Buscar todos os `agency_users` da imobiliaria
-- Inserir notificacao em `ticket_notifications` para cada usuario com:
-  - `type`: `boleto_available`
-  - `title`: "Boleto disponivel"
-  - `message`: "O boleto da fatura de MM/AAAA esta disponivel para download"
+### 2. Corrigir o acesso ao boleto no bucket privado
+**Arquivo:** `src/pages/agency/AgencyInvoiceDetail.tsx`
 
-**Arquivo:** `src/types/notifications.ts`
+Trocar a logica de download para usar **signed URL via edge function** ou **download autenticado direto**. Como o bucket e privado, a abordagem mais segura:
 
-Adicionar `'invoice_boleto_available'` ao `NotificationType` com config visual (icone FileDown, cor azul).
+- Extrair o path do storage a partir da URL salva (remover o prefixo do Supabase URL)
+- Usar `supabase.storage.from('invoices').download(path)` que ja usa o token do usuario logado
+- Se falhar (sem RLS), usar fallback via `createSignedUrl` no backend
 
-### 7. Atualizar types.ts
+### 3. Garantir RLS no bucket invoices para agency users
+**Migracao SQL**
 
-O arquivo `src/integrations/supabase/types.ts` sera regenerado automaticamente apos a migracao para incluir `boleto_observations`.
+Verificar e criar policy de SELECT no `storage.objects` para que usuarios da agencia possam baixar boletos das suas proprias faturas:
 
-## Arquivos Afetados
+```text
+CREATE POLICY "Agency users can download their invoices boletos"
+ON storage.objects FOR SELECT
+USING (
+  bucket_id = 'invoices'
+  AND (storage.foldername(name))[1] = 'boletos'
+  AND EXISTS (
+    SELECT 1 FROM agency_invoices ai
+    JOIN agency_users au ON au.agency_id = ai.agency_id
+    WHERE au.user_id = auth.uid()
+    AND ai.id::text = (storage.foldername(name))[2]
+  )
+);
+```
+
+### 4. Redesplegar a edge function
+Apos a correcao do export, redesplegar `send-invoice-notification` para que pare de crashar.
+
+## Arquivos afetados
 
 | Arquivo | Mudanca |
 |---------|---------|
-| Migracao SQL | `ADD COLUMN boleto_observations text` |
-| `src/components/invoices/BoletoUploadDialog.tsx` | Campo observacao + disparo notificacao |
-| `src/pages/agency/AgencyInvoiceDetail.tsx` | Download boleto + copiar barcode + observacoes |
-| `src/pages/InvoiceDetail.tsx` | Botao reenviar notificacao |
-| `supabase/functions/send-invoice-notification/index.ts` | Tipo `boleto_uploaded` |
-| `supabase/functions/_shared/email-templates.ts` | Template `boletoUploadedTemplate` |
-| `src/types/notifications.ts` | Novo tipo `invoice_boleto_available` |
+| `supabase/functions/_shared/email-templates.ts` | Adicionar `export` ao `LOGO_BASE64` |
+| `src/pages/agency/AgencyInvoiceDetail.tsx` | Ajustar logica de download para bucket privado |
+| Migracao SQL | RLS policy para agency users no bucket invoices |
 
-## Fluxo Completo
+## Resultado esperado
 
-```text
-Tridots faz upload do boleto (BoletoUploadDialog)
-  |
-  v
-1. Upload PDF no storage
-2. UPDATE agency_invoices (boleto_url, boleto_barcode, boleto_observations, status)
-3. Invoke send-invoice-notification({ type: boleto_uploaded })
-  |
-  v
-Edge Function:
-  a) Envia e-mail para imobiliaria com link + observacoes
-  b) Insere notificacao in-app para usuarios da agencia
-  |
-  v
-Imobiliaria:
-  - Recebe e-mail com botao "Baixar Boleto"
-  - Ve notificacao no sino do portal
-  - Acessa detalhe da fatura: botao download, codigo de barras, observacoes
-```
-
-## Resultado Esperado
-
-1. Campo de observacao disponivel no upload do boleto pela Tridots
-2. Observacoes visiveis no portal da imobiliaria (se preenchidas)
-3. E-mail automatico enviado no momento do upload
-4. Botao de reenvio manual disponivel no portal Tridots
-5. Notificacao in-app no sino da imobiliaria
-6. Botao de download funcional no portal da imobiliaria
-7. Codigo de barras copiavel no portal da imobiliaria
+1. Edge function `send-invoice-notification` volta a funcionar (sem crash no boot)
+2. E-mails de boleto enviados automaticamente ao fazer upload
+3. Notificacoes in-app criadas para usuarios da agencia
+4. Botao "Baixar Boleto" funcional no portal da imobiliaria
+5. Codigo de barras e observacoes visiveis no detalhe da fatura
 
