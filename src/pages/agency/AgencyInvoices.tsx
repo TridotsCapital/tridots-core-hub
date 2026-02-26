@@ -87,6 +87,43 @@ export default function AgencyInvoices() {
           showStatus={true}
         />
 
+        {/* Invoice Detail Button — when there's an invoice for the selected month */}
+        {(() => {
+          const selectedSummary = monthlySummary.find(
+            (m) => m.month === selectedMonth && m.year === selectedYear
+          );
+          if (selectedSummary?.invoiceId) {
+            return (
+              <Card className="border-primary/30 bg-primary/5">
+                <CardContent className="flex items-center justify-between py-4">
+                  <div className="flex items-center gap-3">
+                    <FileText className="h-5 w-5 text-primary" />
+                    <div>
+                      <p className="font-medium">Fatura de {selectedMonth}/{selectedYear}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {selectedSummary.hasBoleto && (
+                          <Badge variant="default" className="mr-2 text-xs bg-green-600">
+                            Boleto disponível
+                          </Badge>
+                        )}
+                        Clique para ver boleto, código de barras e observações
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => navigate(agencyPath(`/invoices/${selectedSummary.invoiceId}`))}
+                    className="gap-2"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Ver detalhes da fatura
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          }
+          return null;
+        })()}
+
         {/* QUADRANTE 2: Detalhes dos contratos/parcelas */}
         <Card>
           <CardHeader className="pb-3">
