@@ -1,49 +1,33 @@
 
-# Boleto, codigo de barras e observacoes inline na pagina de faturas
 
-## Objetivo
-Mover a secao de boleto (download PDF, codigo de barras, observacoes) para dentro da pagina `/agency/invoices`, logo abaixo do grafico de meses e acima da tabela de parcelas. Sem navegacao para pagina separada.
+# Melhorar design da secao de boleto e adicionar status
 
-## Mudancas
+## Problema
+A secao de boleto atual usa `bg-primary/5` com `border-primary/30` que gera um visual azulado forte demais, nao harmonioso com o resto da pagina. Alem disso, falta um indicador claro do status do pagamento (disponivel, pago, atrasado).
 
-### 1. Hook `useMonthlyInvoiceSummary.ts` — expor campos do boleto
+## Mudancas no arquivo `src/pages/agency/AgencyInvoices.tsx`
 
-Adicionar `boleto_barcode` e `boleto_observations` ao select da query de `agency_invoices` (linha 68) e ao `MonthSummary`:
+### 1. Redesign visual do card de boleto
+- Trocar `bg-primary/5 border-primary/30` por fundo branco neutro com borda suave (`border border-border`)
+- Usar fundo neutro `bg-muted/50` para o bloco de codigo de barras (ja esta ok)
+- Badge de status com cores contextuais em vez de azul fixo
 
-```text
-MonthSummary {
-  ...campos existentes
-  boletoUrl?: string
-  boletoBarcode?: string
-  boletoObservations?: string
-}
-```
+### 2. Adicionar status dinamico do boleto
+Mostrar o status real da fatura no header do card:
+- **Boleto disponivel** (badge azul): quando `hasBoleto = true` e status != `paga`
+- **Fatura paga** (badge verde): quando status = `paga`
+- **Fatura atrasada** (badge vermelho): quando status = `atrasada`
+- **Fatura pendente** (badge amarelo): quando status = `pendente` e nao tem boleto
 
-No mapeamento (linha 96-116), propagar esses campos para o MonthSummary do mes correspondente.
+### 3. Layout mais limpo
+- Separar visualmente o botao de download, o codigo de barras e as observacoes com espacamento adequado
+- Usar `Separator` entre as subsecoes para clareza
+- Remover excesso de cor de fundo que polui o visual
+- Manter consistencia com o design system existente (cards brancos, bordas sutis)
 
-### 2. Pagina `AgencyInvoices.tsx` — secao inline de boleto
-
-Substituir o card atual (linhas 90-125) que diz "Clique para ver boleto..." por uma secao completa inline com:
-
-- **Botao "Baixar Boleto (PDF)"** — logica de download autenticado via `supabase.storage.download()` (mesma do AgencyInvoiceDetail)
-- **Codigo de barras** com botao "Copiar" — exibido se `boletoBarcode` existir
-- **Observacoes da Tridots** — bloco informativo se `boletoObservations` existir
-
-Essa secao fica **entre o grafico e a tabela de parcelas**, na ordem:
-1. Alerta de atraso (se houver)
-2. Grafico de meses
-3. **Secao de boleto** (novo, inline)
-4. Tabela de parcelas
-
-Se nao houver boleto no mes selecionado, a secao nao aparece (mesmo comportamento condicional).
-
-### 3. Remover botao de navegacao
-
-Eliminar o botao "Ver detalhes da fatura" e a referencia a `navigate(agencyPath('/invoices/...'))`. A pagina AgencyInvoiceDetail continua existindo para links de e-mail/notificacao, mas nao e mais promovida na UI.
-
-## Arquivos afetados
+## Arquivo afetado
 
 | Arquivo | Mudanca |
 |---------|---------|
-| `src/hooks/useMonthlyInvoiceSummary.ts` | Adicionar `boleto_barcode`, `boleto_observations` ao select e ao MonthSummary |
-| `src/pages/agency/AgencyInvoices.tsx` | Secao inline com download, barcode e observacoes; remover navegacao para detalhe |
+| `src/pages/agency/AgencyInvoices.tsx` | Redesign do card de boleto: cores neutras, status dinamico, layout limpo |
+
