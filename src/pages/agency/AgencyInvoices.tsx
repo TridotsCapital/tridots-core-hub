@@ -127,32 +127,53 @@ export default function AgencyInvoices() {
             toast.success('Código de barras copiado!');
           };
 
+          const statusBadge = (() => {
+            if (selectedSummary.status === 'paga') {
+              return <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800"><Check className="h-3 w-3 mr-1" />Fatura Paga</Badge>;
+            }
+            if (selectedSummary.status === 'atrasada') {
+              return <Badge className="bg-destructive/10 text-destructive border-destructive/20"><AlertCircle className="h-3 w-3 mr-1" />Fatura Atrasada</Badge>;
+            }
+            if (selectedSummary.hasBoleto) {
+              return <Badge className="bg-sky-100 text-sky-700 border-sky-200 dark:bg-sky-900/30 dark:text-sky-400 dark:border-sky-800"><FileText className="h-3 w-3 mr-1" />Boleto Disponível</Badge>;
+            }
+            return <Badge className="bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800">Pendente</Badge>;
+          })();
+
           return (
-            <Card className="border-primary/30 bg-primary/5">
+            <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <FileText className="h-5 w-5 text-primary" />
-                  Boleto — {selectedMonth.toString().padStart(2, '0')}/{selectedYear}
-                  <Badge variant="default" className="ml-2 text-xs">
-                    Boleto disponível
-                  </Badge>
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <FileText className="h-5 w-5 text-muted-foreground" />
+                    Boleto — {selectedMonth.toString().padStart(2, '0')}/{selectedYear}
+                  </CardTitle>
+                  {statusBadge}
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Download button */}
-                <Button onClick={handleDownloadBoleto} className="gap-2">
-                  <Download className="h-4 w-4" />
-                  Baixar Boleto (PDF)
-                </Button>
+                {selectedSummary.status !== 'paga' && (
+                  <Button onClick={handleDownloadBoleto} className="gap-2">
+                    <Download className="h-4 w-4" />
+                    Baixar Boleto (PDF)
+                  </Button>
+                )}
+                {selectedSummary.status === 'paga' && (
+                  <Button variant="outline" onClick={handleDownloadBoleto} className="gap-2">
+                    <Download className="h-4 w-4" />
+                    Baixar Boleto (PDF)
+                  </Button>
+                )}
 
                 {/* Barcode */}
                 {selectedSummary.boletoBarcode && (
-                  <div className="space-y-1">
+                  <div className="space-y-1.5">
                     <p className="text-sm font-medium text-muted-foreground">Código de barras</p>
-                    <div className="flex items-center gap-2 bg-muted rounded-md px-3 py-2">
-                      <code className="text-sm flex-1 break-all font-mono">{selectedSummary.boletoBarcode}</code>
-                      <Button variant="ghost" size="sm" onClick={handleCopyBarcode} className="flex-shrink-0 gap-1">
-                        <Copy className="h-4 w-4" />
+                    <div className="flex items-center gap-2 bg-muted/50 border border-border rounded-md px-3 py-2">
+                      <code className="text-xs flex-1 break-all font-mono text-foreground/80">{selectedSummary.boletoBarcode}</code>
+                      <Button variant="outline" size="sm" onClick={handleCopyBarcode} className="flex-shrink-0 gap-1">
+                        <Copy className="h-3.5 w-3.5" />
                         Copiar
                       </Button>
                     </div>
@@ -161,11 +182,11 @@ export default function AgencyInvoices() {
 
                 {/* Observations */}
                 {selectedSummary.boletoObservations && (
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-muted-foreground">Observações da Tridots</p>
-                    <div className="flex gap-2 bg-muted rounded-md px-3 py-2">
+                  <div className="space-y-1.5">
+                    <p className="text-sm font-medium text-muted-foreground">Observações</p>
+                    <div className="flex gap-2 bg-muted/50 border border-border rounded-md px-3 py-2.5">
                       <Info className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-                      <p className="text-sm">{selectedSummary.boletoObservations}</p>
+                      <p className="text-sm text-foreground/80">{selectedSummary.boletoObservations}</p>
                     </div>
                   </div>
                 )}
