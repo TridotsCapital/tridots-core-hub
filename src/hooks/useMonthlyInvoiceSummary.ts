@@ -11,6 +11,9 @@ export interface MonthSummary {
   dueDate?: string;
   invoiceId?: string;
   hasBoleto?: boolean;
+  boletoUrl?: string;
+  boletoBarcode?: string;
+  boletoObservations?: string;
 }
 
 export interface AgencyInvoiceSummary {
@@ -65,7 +68,7 @@ export const useMonthlyInvoiceSummary = (agencyId?: string) => {
       // Faturas existentes
       let invoiceQuery = supabase
         .from('agency_invoices')
-        .select('id, reference_month, reference_year, total_value, status, due_date, agency_id, boleto_url');
+        .select('id, reference_month, reference_year, total_value, status, due_date, agency_id, boleto_url, boleto_barcode, boleto_observations');
       
       if (agencyId) {
         invoiceQuery = invoiceQuery.eq('agency_id', agencyId);
@@ -91,7 +94,7 @@ export const useMonthlyInvoiceSummary = (agencyId?: string) => {
       const orphans = orphanResult.data || [];
 
       // Mapear faturas existentes
-      const invoiceMap = new Map<string, { value: number; status: string; count: number; dueDate: string; invoiceId?: string; hasBoleto: boolean }>();
+      const invoiceMap = new Map<string, { value: number; status: string; count: number; dueDate: string; invoiceId?: string; hasBoleto: boolean; boletoUrl?: string; boletoBarcode?: string; boletoObservations?: string }>();
       
       for (const inv of invoices) {
         const key = `${inv.reference_month}-${inv.reference_year}`;
@@ -112,6 +115,9 @@ export const useMonthlyInvoiceSummary = (agencyId?: string) => {
             dueDate: inv.due_date,
             invoiceId: inv.id,
             hasBoleto: !!inv.boleto_url,
+            boletoUrl: inv.boleto_url || undefined,
+            boletoBarcode: inv.boleto_barcode || undefined,
+            boletoObservations: inv.boleto_observations || undefined,
           });
         }
       }
@@ -147,6 +153,9 @@ export const useMonthlyInvoiceSummary = (agencyId?: string) => {
             dueDate: invoice.dueDate,
             invoiceId: invoice.invoiceId,
             hasBoleto: invoice.hasBoleto,
+            boletoUrl: invoice.boletoUrl,
+            boletoBarcode: invoice.boletoBarcode,
+            boletoObservations: invoice.boletoObservations,
           };
         }
         
