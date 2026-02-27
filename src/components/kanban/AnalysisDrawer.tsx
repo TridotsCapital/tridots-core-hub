@@ -7,6 +7,16 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -34,6 +44,7 @@ import { GuaranteeCostsSection } from '@/components/payment/GuaranteeCostsSectio
 import { ComposicaoAnaliseCard } from '@/components/payment/ComposicaoAnaliseCard';
 import { CoverageCard } from '@/components/shared/CoverageCard';
 import { useMoveAnalysis } from '@/hooks/useAnalysesKanban';
+import { useDeleteAnalysis } from '@/hooks/useAnalyses';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useLinkedEntitiesForAnalysis } from '@/hooks/useLinkedEntities';
@@ -67,6 +78,7 @@ import {
   FileCheck,
   Shield,
   CalendarDays,
+  Trash2,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -108,10 +120,12 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
   const [approvalModalOpen, setApprovalModalOpen] = useState(false);
   const [regenerateModalOpen, setRegenerateModalOpen] = useState(false);
   const [validationModalOpen, setValidationModalOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
   const [setupPaymentDate, setSetupPaymentDate] = useState('');
   const [guaranteePaymentDate, setGuaranteePaymentDate] = useState('');
   const moveAnalysis = useMoveAnalysis();
+  const deleteAnalysis = useDeleteAnalysis();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { data: linkedEntities = [] } = useLinkedEntitiesForAnalysis(analysis?.id);
@@ -308,39 +322,47 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
             </div>
 
             {/* Action Buttons */}
-            {(canStartAnalysis || canReject || canApprove) && (
-              <div className="flex gap-2 mt-4 pt-4 border-t">
-                {canStartAnalysis && (
-                  <Button 
-                    onClick={() => setStartModalOpen(true)}
-                    className="flex-1"
-                  >
-                    <PlayCircle className="h-4 w-4 mr-2" />
-                    Iniciar Análise
-                  </Button>
-                )}
-                {canApprove && (
-                  <Button 
-                    variant="default"
-                    className="flex-1 bg-success hover:bg-success/90"
-                    onClick={() => setApprovalModalOpen(true)}
-                  >
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Aprovar
-                  </Button>
-                )}
-                {canReject && (
-                  <Button 
-                    variant="destructive"
-                    onClick={() => setRejectionModalOpen(true)}
-                    className="flex-1"
-                  >
-                    <XCircle className="h-4 w-4 mr-2" />
-                    Reprovar
-                  </Button>
-                )}
-              </div>
-            )}
+            <div className="flex gap-2 mt-4 pt-4 border-t">
+              {canStartAnalysis && (
+                <Button 
+                  onClick={() => setStartModalOpen(true)}
+                  className="flex-1"
+                >
+                  <PlayCircle className="h-4 w-4 mr-2" />
+                  Iniciar Análise
+                </Button>
+              )}
+              {canApprove && (
+                <Button 
+                  variant="default"
+                  className="flex-1 bg-success hover:bg-success/90"
+                  onClick={() => setApprovalModalOpen(true)}
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Aprovar
+                </Button>
+              )}
+              {canReject && (
+                <Button 
+                  variant="destructive"
+                  onClick={() => setRejectionModalOpen(true)}
+                  className="flex-1"
+                >
+                  <XCircle className="h-4 w-4 mr-2" />
+                  Reprovar
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                size="icon"
+                className="shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                onClick={() => setDeleteDialogOpen(true)}
+                disabled={deleteAnalysis.isPending}
+                title="Excluir análise"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
           </SheetHeader>
 
           <Tabs defaultValue="resumo" className="flex flex-col flex-1 overflow-hidden">
@@ -866,6 +888,52 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
         mode="regenerate"
         onConfirm={handleRegenerateConfirm}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-destructive" />
+              Excluir análise?
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <p>Esta ação é irreversível. Todos os documentos, timeline e dados relacionados serão removidos permanentemente.</p>
+                <div className="rounded-md bg-muted p-3 text-sm">
+                  <p><strong>Inquilino:</strong> {analysis.inquilino_nome}</p>
+                  <p><strong>ID:</strong> <span className="font-mono">#{analysis.id.slice(0, 8).toUpperCase()}</span></p>
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteAnalysis.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteAnalysis.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                deleteAnalysis.mutate(analysis.id, {
+                  onSuccess: () => {
+                    setDeleteDialogOpen(false);
+                    onOpenChange(false);
+                  },
+                });
+              }}
+            >
+              {deleteAnalysis.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Excluindo...
+                </>
+              ) : (
+                'Excluir definitivamente'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
     </>
   );

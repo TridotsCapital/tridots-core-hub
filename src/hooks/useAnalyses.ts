@@ -131,3 +131,77 @@ export function useUpdateAnalysisStatus() {
     },
   });
 }
+
+export function useDeleteAnalysis() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (analysisId: string) => {
+      // 1. Check if a contract is linked (cannot delete if contract exists)
+      const { data: contract } = await supabase
+        .from('contracts')
+        .select('id')
+        .eq('analysis_id', analysisId)
+        .maybeSingle();
+
+      if (contract) {
+        throw new Error('Não é possível excluir uma análise que já possui contrato vinculado.');
+      }
+
+      // 2. Get documents to clean storage
+      const { data: docs } = await supabase
+        .from('analysis_documents')
+        .select('file_path')
+        .eq('analysis_id', analysisId);
+
+      // 3. Delete storage files
+      if (docs && docs.length > 0) {
+        const paths = docs.map(d => d.file_path);
+        await supabase.storage.from('analysis-documents').remove(paths);
+      }
+
+      // 4. Get tickets to delete their messages first
+      const { data: tickets } = await supabase
+        .from('tickets')
+        .select('id')
+        .eq('analysis_id', analysisId);
+
+      if (tickets && tickets.length > 0) {
+        const ticketIds = tickets.map(t => t.id);
+        // Delete ticket messages
+        for (const ticketId of ticketIds) {
+          await supabase.from('ticket_messages').delete().eq('ticket_id', ticketId);
+        }
+        // Delete ticket notifications
+        for (const ticketId of ticketIds) {
+          await supabase.from('ticket_notifications').delete().eq('ticket_id', ticketId);
+        }
+        // Delete tickets
+        await supabase.from('tickets').delete().eq('analysis_id', analysisId);
+      }
+
+      // 5. Delete child records in order
+      await supabase.from('analysis_documents').delete().eq('analysis_id', analysisId);
+      await supabase.from('analysis_timeline').delete().eq('analysis_id', analysisId);
+      await supabase.from('commissions').delete().eq('analysis_id', analysisId);
+      await supabase.from('digital_acceptances').delete().eq('analysis_id', analysisId);
+      await supabase.from('internal_notes').delete().eq('reference_id', analysisId);
+
+      // 6. Delete the analysis itself
+      const { error } = await supabase
+        .from('analyses')
+        .delete()
+        .eq('id', analysisId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['analyses'] });
+      queryClient.invalidateQueries({ queryKey: ['analyses-kanban'] });
+      toast.success('Análise excluída com sucesso!');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Erro ao excluir análise');
+    },
+  });
+}
