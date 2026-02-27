@@ -33,8 +33,8 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    const authToken = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: authError } = await supabase.auth.getUser(authToken);
     if (authError || !user) {
       return new Response(
         JSON.stringify({ error: "Invalid token" }),
