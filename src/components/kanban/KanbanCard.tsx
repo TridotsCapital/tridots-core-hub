@@ -1,22 +1,34 @@
-import { forwardRef } from 'react';
+import { forwardRef, useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Analysis } from '@/types/database';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Clock, Building2, UserPlus, Bell, MoreHorizontal, AlertTriangle, MessageSquare } from 'lucide-react';
+import { Clock, Building2, UserPlus, Bell, MoreHorizontal, AlertTriangle, MessageSquare, Trash2, Loader2 } from 'lucide-react';
 import { formatDistanceToNow, differenceInHours } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useAssignAnalyst, useTeamMembers } from '@/hooks/useAnalysesKanban';
 import { useTicketCountWithStatus } from '@/hooks/useTickets';
+import { useDeleteAnalysis } from '@/hooks/useAnalyses';
 
 interface KanbanCardProps {
   analysis: Analysis;
@@ -66,6 +78,8 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
     const assignAnalyst = useAssignAnalyst();
     const { data: teamMembers } = useTeamMembers();
     const { data: ticketData } = useTicketCountWithStatus(analysis.id);
+    const deleteAnalysis = useDeleteAnalysis();
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
     const style = {
       transform: CSS.Transform.toString(transform),
@@ -138,6 +152,7 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
     };
 
     return (
+      <>
       <div
         ref={handleRef}
         style={style}
@@ -208,6 +223,17 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="text-destructive focus:text-destructive"
+              onClick={(e) => {
+                e.stopPropagation();
+                setDeleteDialogOpen(true);
+              }}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Excluir análise
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -282,6 +308,51 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
         </div>
       </div>
     </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-destructive" />
+              Excluir análise?
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <p>Esta ação é irreversível. Todos os documentos, timeline e dados relacionados serão removidos permanentemente.</p>
+                <div className="rounded-md bg-muted p-3 text-sm">
+                  <p><strong>Inquilino:</strong> {analysis.inquilino_nome}</p>
+                  <p><strong>ID:</strong> <span className="font-mono">#{analysis.id.slice(0, 8).toUpperCase()}</span></p>
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteAnalysis.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteAnalysis.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                deleteAnalysis.mutate(analysis.id, {
+                  onSuccess: () => setDeleteDialogOpen(false),
+                });
+              }}
+            >
+              {deleteAnalysis.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Excluindo...
+                </>
+              ) : (
+                'Excluir definitivamente'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
     );
   }
 );
