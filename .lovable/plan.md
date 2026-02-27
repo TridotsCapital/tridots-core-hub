@@ -1,59 +1,29 @@
 
 
-# Excluir analise — master e analista, qualquer status
+# Corrigir erro de variavel duplicada na Edge Function `generate-acceptance-link`
 
-## Situacao atual
-- A politica de RLS `Masters can delete analyses` so permite exclusao por masters.
-- Nao existe nenhum hook `useDeleteAnalysis` nem botao de excluir na UI.
-- Tabelas relacionadas (analysis_documents, analysis_timeline, commissions, tickets) possuem foreign keys que podem bloquear o DELETE se nao tratadas.
+## Problema
+A Edge Function `generate-acceptance-link` declara `const token` duas vezes:
+- Linha 36: `const token = authHeader.replace("Bearer ", "");` (token de autenticacao)
+- Linha 65: `const token = crypto.randomUUID();` (token de aceite)
 
-## Mudancas
+Isso causa um erro de runtime `SyntaxError: Identifier 'token' has already been declared`, impedindo a geracao do link de aceite.
 
-### 1. Migrar RLS para incluir analistas
-Alterar a politica de DELETE na tabela `analyses` para permitir tanto `master` quanto `analyst`:
+## Correcao
+Renomear a variavel da linha 36 de `token` para `authToken` e atualizar sua referencia na linha 37.
 
-```text
-DROP POLICY "Masters can delete analyses" ON analyses;
-CREATE POLICY "Team members can delete analyses"
-  ON analyses FOR DELETE
-  TO authenticated
-  USING (has_any_role(auth.uid()));
-```
-
-Isso permite que qualquer membro da equipe Tridots (master ou analyst) exclua analises.
-
-### 2. Criar hook `useDeleteAnalysis` em `src/hooks/useAnalyses.ts`
-Adicionar uma mutation que:
-- Exclui documentos relacionados do storage (bucket `analysis-documents`)
-- Exclui registros dependentes na ordem correta (analysis_documents, analysis_timeline, commissions vinculadas, tickets vinculados)
-- Por fim, exclui a analise em si
-- Invalida queries relevantes apos sucesso
-
-### 3. Adicionar botao "Excluir" no AnalysisDrawer
-No header do drawer (onde ficam os botoes de acao), adicionar um botao "Excluir Analise" com icone de lixeira, visivel para master e analyst, em qualquer status.
-
-### 4. Dialog de confirmacao
-Antes de excluir, exibir um `AlertDialog` com:
-- Titulo: "Excluir analise?"
-- Descricao: "Esta acao e irreversivel. Todos os documentos, timeline e dados relacionados serao removidos permanentemente."
-- Nome do inquilino e ID para conferencia
-- Botao vermelho "Excluir definitivamente"
-
-### 5. Opcao no menu de contexto do KanbanCard (opcional)
-Adicionar item "Excluir analise" no DropdownMenu do card do kanban, com a mesma confirmacao.
-
-## Arquivos afetados
+## Arquivo afetado
 
 | Arquivo | Mudanca |
 |---------|---------|
-| Migracao SQL | Atualizar politica de DELETE para `has_any_role` |
-| `src/hooks/useAnalyses.ts` | Adicionar `useDeleteAnalysis` mutation |
-| `src/components/kanban/AnalysisDrawer.tsx` | Botao + AlertDialog de exclusao |
-| `src/components/kanban/KanbanCard.tsx` | Item "Excluir" no dropdown menu |
+| `supabase/functions/generate-acceptance-link/index.ts` | Renomear `token` (linha 36) para `authToken` e atualizar uso na linha 37 |
 
-## Cuidados
-- Limpar registros filhos antes do DELETE principal para evitar violacao de FK
-- Limpar arquivos do storage para nao deixar lixo
-- Fechar o drawer apos exclusao bem-sucedida
-- Registrar no audit_log (opcional, ja que o registro sera apagado)
+## Detalhe tecnico
+
+```text
+Linha 36: const token → const authToken
+Linha 37: supabase.auth.getUser(token) → supabase.auth.getUser(authToken)
+```
+
+Nenhuma outra mudanca necessaria. O `token` da linha 65 (UUID de aceite) permanece inalterado e continua sendo usado corretamente no restante da funcao.
 
