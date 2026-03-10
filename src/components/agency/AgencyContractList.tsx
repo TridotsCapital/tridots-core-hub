@@ -257,6 +257,12 @@ export function AgencyContractList({
                                 Doc. Rejeitado
                               </Badge>
                             )}
+                            {contract.is_migrated && (
+                              <Badge variant="outline" className="text-purple-600 border-purple-300 bg-purple-50 dark:bg-purple-950/30 dark:border-purple-700 dark:text-purple-400 text-xs">
+                                <ArrowRightLeft className="h-3 w-3 mr-1" />
+                                Migrado
+                              </Badge>
+                            )}
                             {hasActiveClaim && (
                               <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-700 dark:text-amber-400 text-xs">
                                 <span className="relative flex h-2 w-2 mr-1.5">

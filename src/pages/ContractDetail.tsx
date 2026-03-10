@@ -363,6 +363,12 @@ export default function ContractDetail() {
               <StatusIcon className="h-3.5 w-3.5 mr-1.5" />
               {statusConfig.label}
             </Badge>
+            {(contract as any).is_migrated && (
+              <Badge variant="outline" className="text-purple-600 border-purple-300 bg-purple-50 dark:bg-purple-950/30 dark:border-purple-700 dark:text-purple-400 px-3 py-1">
+                <ArrowRightLeft className="h-3.5 w-3.5 mr-1.5" />
+                Migrado
+              </Badge>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <Button 
