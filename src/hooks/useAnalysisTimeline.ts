@@ -191,6 +191,12 @@ export const timelineEventConfig: Record<string, {
     bgColor: 'bg-green-100',
     iconName: 'CheckCircle',
   },
+  manual_date_correction: {
+    label: 'Correção Manual de Datas',
+    color: 'text-orange-600',
+    bgColor: 'bg-orange-100',
+    iconName: 'Pencil',
+  },
 };
 
 export function getEventConfig(eventType: string) {
