@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, MoreHorizontal, Eye, MessageSquare, FileText, Loader2, FileSearch, CheckCircle, Clock, XCircle, FileCheck, ShieldAlert, CalendarClock } from 'lucide-react';
+import { Search, MoreHorizontal, Eye, MessageSquare, FileText, Loader2, FileSearch, CheckCircle, Clock, XCircle, FileCheck, ShieldAlert, CalendarClock, ArrowRightLeft } from 'lucide-react';
 import { formatCurrency } from '@/lib/validators';
 import { addDays, isWithinInterval, parseISO } from 'date-fns';
 import { formatDateBR } from '@/lib/utils';
