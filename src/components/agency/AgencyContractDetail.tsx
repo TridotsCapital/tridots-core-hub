@@ -170,8 +170,8 @@ export function AgencyContractDetail() {
     );
   }
 
-  // DEBUG: Verify is_migrated and timeline data
-  console.log('[AgencyContractDetail] contract?.is_migrated:', contract?.is_migrated, 'manualCorrectionEvents:', manualCorrectionEvents);
+  // DEBUG v2: Verify is_migrated and timeline data
+  console.log('[AgencyContractDetail] DEBUG v2 - contract?.is_migrated:', contract?.is_migrated, 'manualCorrectionEvents:', manualCorrectionEvents, 'contract?.id:', contract?.id);
   
   // Determine which status to show
   const hasContract = !!contract;
