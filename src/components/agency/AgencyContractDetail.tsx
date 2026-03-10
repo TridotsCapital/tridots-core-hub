@@ -170,6 +170,9 @@ export function AgencyContractDetail() {
     );
   }
 
+  // DEBUG: Verify is_migrated and timeline data
+  console.log('[AgencyContractDetail] contract?.is_migrated:', contract?.is_migrated, 'manualCorrectionEvents:', manualCorrectionEvents);
+  
   // Determine which status to show
   const hasContract = !!contract;
   const statusConfig = hasContract 

@@ -347,6 +347,9 @@ export default function ContractDetail() {
   const totalEncargos = (analysis.valor_aluguel || 0) + (analysis.valor_condominio || 0) + (analysis.valor_iptu || 0);
   const taxaMensal = totalEncargos * ((analysis.taxa_garantia_percentual || 0) / 100);
 
+  // DEBUG: Verify is_migrated and timeline data
+  console.log('[ContractDetail] contract.is_migrated:', (contract as any).is_migrated, 'manualCorrectionEvents:', manualCorrectionEvents);
+
   return (
     <DashboardLayout
       title={`Contrato #${contract.id.slice(0, 8).toUpperCase()}`}
