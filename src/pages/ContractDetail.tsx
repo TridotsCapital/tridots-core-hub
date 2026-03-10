@@ -117,6 +117,23 @@ export default function ContractDetail() {
     enabled: !!contract?.id,
   });
 
+  // Fetch manual_date_correction events from analysis_timeline
+  const { data: manualCorrectionEvents = [] } = useQuery({
+    queryKey: ['manual-date-corrections', analysisId],
+    queryFn: async () => {
+      if (!analysisId) return [];
+      const { data, error } = await supabase
+        .from('analysis_timeline')
+        .select('*')
+        .eq('analysis_id', analysisId)
+        .eq('event_type', 'manual_date_correction')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!analysisId,
+  });
+
   if (isLoading) {
     return (
       <DashboardLayout title="Carregando...">
