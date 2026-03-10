@@ -28,6 +28,7 @@ interface Contract {
   doc_contrato_locacao_status?: string | null;
   doc_vistoria_inicial_status?: string | null;
   doc_seguro_incendio_status?: string | null;
+  is_migrated?: boolean;
   analysis: {
     id: string;
     inquilino_nome: string;
