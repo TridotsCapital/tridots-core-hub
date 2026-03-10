@@ -137,6 +137,8 @@ export function AgencyContractList({
   return (
     <div className="space-y-4">
       {/* Filters */}
+      {/* DEBUG: Verify is_migrated data */}
+      {console.log('[AgencyContractList] contracts with is_migrated:', contracts.filter(c => c.is_migrated).map(c => ({ id: c.id, is_migrated: c.is_migrated })))}
       <Card>
         <CardContent className="pt-4">
           <div className="flex flex-col sm:flex-row gap-4">
