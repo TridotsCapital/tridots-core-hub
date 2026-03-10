@@ -31,6 +31,7 @@ import {
   StickyNote,
   CalendarSync,
   Edit,
+  Pencil,
   XCircle as XCircleAction,
   Loader2 as Loader2Action,
 } from 'lucide-react';
