@@ -1,29 +1,30 @@
 
 
-# Corrigir erro de variavel duplicada na Edge Function `generate-acceptance-link`
+# Exibir eventos de correção manual na timeline do contrato (Tridots + Imobiliária)
 
 ## Problema
-A Edge Function `generate-acceptance-link` declara `const token` duas vezes:
-- Linha 36: `const token = authHeader.replace("Bearer ", "");` (token de autenticacao)
-- Linha 65: `const token = crypto.randomUUID();` (token de aceite)
+Os eventos `manual_date_correction` foram inseridos na tabela `analysis_timeline`, mas as timelines dos contratos (tanto na visão Tridots quanto na visão da imobiliária) são construídas localmente a partir de campos do contrato/análise — não consultam a `analysis_timeline`. Por isso, a correção manual não aparece.
 
-Isso causa um erro de runtime `SyntaxError: Identifier 'token' has already been declared`, impedindo a geracao do link de aceite.
+## Solução
+Buscar eventos do tipo `manual_date_correction` da tabela `analysis_timeline` e injetá-los na timeline de eventos do contrato em ambas as páginas.
 
-## Correcao
-Renomear a variavel da linha 36 de `token` para `authToken` e atualizar sua referencia na linha 37.
+## Arquivos afetados
 
-## Arquivo afetado
-
-| Arquivo | Mudanca |
+| Arquivo | Mudança |
 |---------|---------|
-| `supabase/functions/generate-acceptance-link/index.ts` | Renomear `token` (linha 36) para `authToken` e atualizar uso na linha 37 |
+| `src/pages/ContractDetail.tsx` | Adicionar query para buscar eventos `manual_date_correction` da `analysis_timeline` pelo `analysisId` e injetá-los no array `timelineEvents` com ícone `Pencil` e cor laranja |
+| `src/components/agency/AgencyContractDetail.tsx` | Mesma lógica: buscar eventos `manual_date_correction` da `analysis_timeline` pelo `id` (analysis_id) e injetá-los no array `timelineEvents` |
 
-## Detalhe tecnico
+## Detalhe da implementação
 
-```text
-Linha 36: const token → const authToken
-Linha 37: supabase.auth.getUser(token) → supabase.auth.getUser(authToken)
-```
+Em cada arquivo:
 
-Nenhuma outra mudanca necessaria. O `token` da linha 65 (UUID de aceite) permanece inalterado e continua sendo usado corretamente no restante da funcao.
+1. Adicionar uma query `useQuery` para buscar da `analysis_timeline` filtrando por `analysis_id` e `event_type = 'manual_date_correction'`
+2. No bloco de construção do `timelineEvents`, iterar os resultados e adicionar entradas com:
+   - `icon: Pencil` (importar de lucide-react)
+   - `iconColor: 'text-orange-500'`
+   - `title: 'Correção Manual de Datas'`
+   - `description`: usar o campo `description` do evento
+   - `type: 'contract'`
+3. O tipo `TimelineEvent` já suporta isso sem alterações
 
