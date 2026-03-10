@@ -31,7 +31,7 @@ export function TicketChatArea({ ticketId, onClose }: TicketChatAreaProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [isTyping, setIsTyping] = useState(false);
-  const typingTimeoutRef = useRef<NodeJS.Timeout>();
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const { playSound } = useNotificationSound();
 
   // Play sound when new message arrives from someone else

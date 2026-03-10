@@ -29,7 +29,7 @@ export function TicketDetail({ ticketId, onClose }: TicketDetailProps) {
   const [message, setMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const typingTimeoutRef = useRef<NodeJS.Timeout>();
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   const { data: ticket, isLoading: ticketLoading } = useTicket(ticketId);
   const { data: messages, isLoading: messagesLoading } = useTicketMessages(ticketId);
