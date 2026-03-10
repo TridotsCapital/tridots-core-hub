@@ -347,8 +347,8 @@ export default function ContractDetail() {
   const totalEncargos = (analysis.valor_aluguel || 0) + (analysis.valor_condominio || 0) + (analysis.valor_iptu || 0);
   const taxaMensal = totalEncargos * ((analysis.taxa_garantia_percentual || 0) / 100);
 
-  // DEBUG: Verify is_migrated and timeline data
-  console.log('[ContractDetail] contract.is_migrated:', (contract as any).is_migrated, 'manualCorrectionEvents:', manualCorrectionEvents);
+  // DEBUG v2: Verify is_migrated and timeline data
+  console.log('[ContractDetail] DEBUG v2 - contract.is_migrated:', (contract as any).is_migrated, 'manualCorrectionEvents:', manualCorrectionEvents, 'contract.id:', contract.id);
 
   return (
     <DashboardLayout

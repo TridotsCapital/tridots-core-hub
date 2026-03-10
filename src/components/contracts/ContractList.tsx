@@ -150,8 +150,9 @@ export function ContractList({ contracts, isLoading, onRenew, onFlagPendency, on
     );
   }
 
-  // DEBUG: Verify is_migrated data is reaching frontend
-  console.log('[ContractList] contracts with is_migrated:', contracts.filter((c: any) => c.is_migrated).map((c: any) => ({ id: c.id, is_migrated: c.is_migrated })));
+  // DEBUG v2: Force rebuild - Verify is_migrated data
+  console.log('[ContractList] DEBUG v2 - contracts with is_migrated:', contracts.filter((c: any) => c.is_migrated).map((c: any) => ({ id: c.id, is_migrated: c.is_migrated })));
+  console.log('[ContractList] Total contracts loaded:', contracts.length);
 
   if (contracts.length === 0) {
     return (

@@ -137,7 +137,7 @@ export function AgencyContractList({
   return (
     <div className="space-y-4">
       {/* Filters */}
-      {(() => { console.log('[AgencyContractList] contracts with is_migrated:', contracts.filter(c => c.is_migrated).map(c => ({ id: c.id, is_migrated: c.is_migrated }))); return null; })()}
+      {(() => { console.log('[AgencyContractList] DEBUG v2 - contracts with is_migrated:', contracts.filter(c => c.is_migrated).map(c => ({ id: c.id, is_migrated: c.is_migrated })), 'total:', contracts.length); return null; })()}
       <Card>
         <CardContent className="pt-4">
           <div className="flex flex-col sm:flex-row gap-4">
