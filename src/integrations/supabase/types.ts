@@ -1282,6 +1282,7 @@ export type Database = {
           doc_vistoria_inicial_status: string | null
           doc_vistoria_inicial_uploaded_at: string | null
           id: string
+          is_migrated: boolean
           last_renewal_id: string | null
           payer_address: string | null
           payer_cep: string | null
@@ -1333,6 +1334,7 @@ export type Database = {
           doc_vistoria_inicial_status?: string | null
           doc_vistoria_inicial_uploaded_at?: string | null
           id?: string
+          is_migrated?: boolean
           last_renewal_id?: string | null
           payer_address?: string | null
           payer_cep?: string | null
@@ -1384,6 +1386,7 @@ export type Database = {
           doc_vistoria_inicial_status?: string | null
           doc_vistoria_inicial_uploaded_at?: string | null
           id?: string
+          is_migrated?: boolean
           last_renewal_id?: string | null
           payer_address?: string | null
           payer_cep?: string | null

@@ -1,0 +1,1 @@
+ALTER TABLE contracts ADD COLUMN is_migrated boolean NOT NULL DEFAULT false;
