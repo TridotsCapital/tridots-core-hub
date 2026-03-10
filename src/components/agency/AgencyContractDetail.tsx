@@ -101,6 +101,23 @@ export function AgencyContractDetail() {
     enabled: !!contract?.id,
   });
 
+  // Fetch manual_date_correction events from analysis_timeline
+  const { data: manualCorrectionEvents = [] } = useQuery({
+    queryKey: ['agency-manual-date-corrections', id],
+    queryFn: async () => {
+      if (!id) return [];
+      const { data, error } = await supabase
+        .from('analysis_timeline')
+        .select('*')
+        .eq('analysis_id', id)
+        .eq('event_type', 'manual_date_correction')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!id,
+  });
+
   const fetchData = async () => {
     if (!id) return;
     
