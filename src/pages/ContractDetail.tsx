@@ -329,6 +329,18 @@ export default function ContractDetail() {
     }
   });
 
+  // Add manual date correction events
+  manualCorrectionEvents.forEach((event) => {
+    timelineEvents.push({
+      date: event.created_at,
+      title: 'Correção Manual de Datas',
+      description: event.description,
+      icon: Pencil,
+      iconColor: 'text-orange-500',
+      type: 'contract',
+    });
+  });
+
   timelineEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   const totalEncargos = (analysis.valor_aluguel || 0) + (analysis.valor_condominio || 0) + (analysis.valor_iptu || 0);
