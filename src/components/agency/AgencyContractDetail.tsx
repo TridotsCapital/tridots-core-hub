@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { ContractRenewalTab } from '@/components/contracts/ContractRenewalTab';
-import { ArrowLeft, Home, User, Users, DollarSign, Calendar, CheckCircle, Clock, XCircle, CreditCard, FileText, Loader2, MessageSquare, Eye, ExternalLink, FileCheck, Shield, CalendarSync, Receipt } from 'lucide-react';
+import { ArrowLeft, Home, User, Users, DollarSign, Calendar, CheckCircle, Clock, XCircle, CreditCard, FileText, Loader2, MessageSquare, Eye, ExternalLink, FileCheck, Shield, CalendarSync, Receipt, Pencil } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency, PROPERTY_TYPES } from '@/lib/validators';
 import { addDays, isWithinInterval } from 'date-fns';
@@ -99,6 +99,23 @@ export function AgencyContractDetail() {
       return data || [];
     },
     enabled: !!contract?.id,
+  });
+
+  // Fetch manual_date_correction events from analysis_timeline
+  const { data: manualCorrectionEvents = [] } = useQuery({
+    queryKey: ['agency-manual-date-corrections', id],
+    queryFn: async () => {
+      if (!id) return [];
+      const { data, error } = await supabase
+        .from('analysis_timeline')
+        .select('*')
+        .eq('analysis_id', id)
+        .eq('event_type', 'manual_date_correction')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!id,
   });
 
   const fetchData = async () => {
@@ -278,6 +295,18 @@ export function AgencyContractDetail() {
         claimId: claim.id,
       });
     }
+  });
+
+  // Add manual date correction events
+  manualCorrectionEvents.forEach((event) => {
+    timelineEvents.push({
+      date: event.created_at,
+      title: 'Correção Manual de Datas',
+      description: event.description,
+      icon: Pencil,
+      iconColor: 'text-orange-500',
+      type: 'contract',
+    });
   });
 
   timelineEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());

@@ -31,6 +31,7 @@ import {
   StickyNote,
   CalendarSync,
   Edit,
+  Pencil,
   XCircle as XCircleAction,
   Loader2 as Loader2Action,
 } from 'lucide-react';
@@ -114,6 +115,23 @@ export default function ContractDetail() {
       return data || [];
     },
     enabled: !!contract?.id,
+  });
+
+  // Fetch manual_date_correction events from analysis_timeline
+  const { data: manualCorrectionEvents = [] } = useQuery({
+    queryKey: ['manual-date-corrections', analysisId],
+    queryFn: async () => {
+      if (!analysisId) return [];
+      const { data, error } = await supabase
+        .from('analysis_timeline')
+        .select('*')
+        .eq('analysis_id', analysisId)
+        .eq('event_type', 'manual_date_correction')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!analysisId,
   });
 
   if (isLoading) {
@@ -309,6 +327,18 @@ export default function ContractDetail() {
         claimId: claim.id,
       });
     }
+  });
+
+  // Add manual date correction events
+  manualCorrectionEvents.forEach((event) => {
+    timelineEvents.push({
+      date: event.created_at,
+      title: 'Correção Manual de Datas',
+      description: event.description,
+      icon: Pencil,
+      iconColor: 'text-orange-500',
+      type: 'contract',
+    });
   });
 
   timelineEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
