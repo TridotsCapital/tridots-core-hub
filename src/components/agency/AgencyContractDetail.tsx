@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { ContractRenewalTab } from '@/components/contracts/ContractRenewalTab';
-import { ArrowLeft, Home, User, Users, DollarSign, Calendar, CheckCircle, Clock, XCircle, CreditCard, FileText, Loader2, MessageSquare, Eye, ExternalLink, FileCheck, Shield, CalendarSync, Receipt, Pencil } from 'lucide-react';
+import { ArrowLeft, Home, User, Users, DollarSign, Calendar, CheckCircle, Clock, XCircle, CreditCard, FileText, Loader2, MessageSquare, Eye, ExternalLink, FileCheck, Shield, CalendarSync, Receipt, Pencil, ArrowRightLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency, PROPERTY_TYPES } from '@/lib/validators';
 import { addDays, isWithinInterval } from 'date-fns';
@@ -337,6 +337,12 @@ export function AgencyContractDetail() {
             <StatusIcon className="h-3.5 w-3.5 mr-1.5" />
             {statusConfig.label}
           </Badge>
+          {contract?.is_migrated && (
+            <Badge variant="outline" className="text-purple-600 border-purple-300 bg-purple-50 dark:bg-purple-950/30 dark:border-purple-700 dark:text-purple-400 px-3 py-1">
+              <ArrowRightLeft className="h-3.5 w-3.5 mr-1.5" />
+              Migrado
+            </Badge>
+          )}
           {ticketCount > 0 && (
             <Button 
               variant="outline" 

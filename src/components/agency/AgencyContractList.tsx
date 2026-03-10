@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, MoreHorizontal, Eye, MessageSquare, FileText, Loader2, FileSearch, CheckCircle, Clock, XCircle, FileCheck, ShieldAlert, CalendarClock } from 'lucide-react';
+import { Search, MoreHorizontal, Eye, MessageSquare, FileText, Loader2, FileSearch, CheckCircle, Clock, XCircle, FileCheck, ShieldAlert, CalendarClock, ArrowRightLeft } from 'lucide-react';
 import { formatCurrency } from '@/lib/validators';
 import { addDays, isWithinInterval, parseISO } from 'date-fns';
 import { formatDateBR } from '@/lib/utils';
@@ -28,6 +28,7 @@ interface Contract {
   doc_contrato_locacao_status?: string | null;
   doc_vistoria_inicial_status?: string | null;
   doc_seguro_incendio_status?: string | null;
+  is_migrated?: boolean;
   analysis: {
     id: string;
     inquilino_nome: string;
@@ -254,6 +255,12 @@ export function AgencyContractList({
                             {hasRejectedDoc && (
                               <Badge variant="destructive" className="text-xs animate-pulse">
                                 Doc. Rejeitado
+                              </Badge>
+                            )}
+                            {contract.is_migrated && (
+                              <Badge variant="outline" className="text-purple-600 border-purple-300 bg-purple-50 dark:bg-purple-950/30 dark:border-purple-700 dark:text-purple-400 text-xs">
+                                <ArrowRightLeft className="h-3 w-3 mr-1" />
+                                Migrado
                               </Badge>
                             )}
                             {hasActiveClaim && (

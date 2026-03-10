@@ -54,6 +54,7 @@ export default function AgencyContracts() {
           created_at, 
           activated_at,
           data_fim_contrato,
+          is_migrated,
           doc_contrato_locacao_status,
           doc_vistoria_inicial_status,
           doc_seguro_incendio_status,
