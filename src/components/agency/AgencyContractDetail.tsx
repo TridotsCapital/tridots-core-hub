@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { ContractRenewalTab } from '@/components/contracts/ContractRenewalTab';
-import { ArrowLeft, Home, User, Users, DollarSign, Calendar, CheckCircle, Clock, XCircle, CreditCard, FileText, Loader2, MessageSquare, Eye, ExternalLink, FileCheck, Shield, CalendarSync, Receipt, Pencil } from 'lucide-react';
+import { ArrowLeft, Home, User, Users, DollarSign, Calendar, CheckCircle, Clock, XCircle, CreditCard, FileText, Loader2, MessageSquare, Eye, ExternalLink, FileCheck, Shield, CalendarSync, Receipt, Pencil, ArrowRightLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency, PROPERTY_TYPES } from '@/lib/validators';
 import { addDays, isWithinInterval } from 'date-fns';
