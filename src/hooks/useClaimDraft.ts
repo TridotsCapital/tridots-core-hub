@@ -35,7 +35,7 @@ export function useClaimDraft() {
   const [hasDraft, setHasDraft] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   const storageKey = user ? `${DRAFT_KEY_PREFIX}${user.id}` : null;
   
