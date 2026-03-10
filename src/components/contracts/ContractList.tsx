@@ -150,6 +150,9 @@ export function ContractList({ contracts, isLoading, onRenew, onFlagPendency, on
     );
   }
 
+  // DEBUG: Verify is_migrated data is reaching frontend
+  console.log('[ContractList] contracts with is_migrated:', contracts.filter((c: any) => c.is_migrated).map((c: any) => ({ id: c.id, is_migrated: c.is_migrated })));
+
   if (contracts.length === 0) {
     return (
       <div className="text-center py-12">
