@@ -255,7 +255,7 @@ export function paymentConfirmationTemplate(data: {
     </div>
     
     <p style="margin:20px 0 0 0;font-size:14px;color:#6b7280;line-height:1.6;">
-      Aguarde a ativação do contrato pela sua imobiliária. Você receberá um e-mail quando estiver tudo pronto!
+      Aguarde a ativação do seu contrato pela <strong>Tridots Capital</strong>. Você receberá um e-mail quando estiver tudo pronto!
     </p>
   `;
 
