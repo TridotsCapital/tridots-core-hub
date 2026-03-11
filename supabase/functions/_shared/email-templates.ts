@@ -117,7 +117,7 @@ export function acceptanceDigitalTemplate(data: {
       Olá, <strong>${data.tenantName}</strong>!
     </p>
     <p style="margin:0 0 20px 0;font-size:16px;color:#374151;line-height:1.6;">
-      Sua análise de garantia locatícia foi aprovada pela <strong>${data.agencyName}</strong>! 
+      Sua análise de garantia locatícia foi aprovada pela <strong>Tridots Capital</strong>! 
       Agora você precisa concluir o processo de aceite digital para ativar sua garantia.
     </p>
     
@@ -149,7 +149,7 @@ export function acceptanceDigitalTemplate(data: {
     </div>
     
     <p style="margin:20px 0 0 0;font-size:14px;color:#6b7280;line-height:1.6;">
-      Ao concluir o aceite digital, você confirma a contratação da garantia locatícia e 
+      Ao concluir o aceite digital, você confirma a contratação da garantia locatícia junto à <strong>Tridots Capital</strong> e 
       autoriza a cobrança conforme os termos apresentados.
     </p>
   `;
@@ -207,8 +207,8 @@ export function renewalReminderTemplate(data: {
     </div>
     
     <p style="margin:20px 0 0 0;font-size:14px;color:#6b7280;line-height:1.6;">
-      Entre em contato com a <strong>${data.agencyName}</strong> para renovar sua garantia 
-      e continuar protegido pela Tridots Capital.
+      Entre em contato com sua imobiliária ou acesse o portal para renovar sua garantia 
+      e continuar protegido pela <strong>Tridots Capital</strong>.
     </p>
   `;
 
@@ -255,7 +255,7 @@ export function paymentConfirmationTemplate(data: {
     </div>
     
     <p style="margin:20px 0 0 0;font-size:14px;color:#6b7280;line-height:1.6;">
-      Aguarde a ativação do contrato pela sua imobiliária. Você receberá um e-mail quando estiver tudo pronto!
+      Aguarde a ativação do seu contrato pela <strong>Tridots Capital</strong>. Você receberá um e-mail quando estiver tudo pronto!
     </p>
   `;
 
@@ -309,7 +309,7 @@ export function contractActivatedTenantTemplate(data: {
     </div>
     
     <p style="margin:20px 0 0 0;font-size:14px;color:#6b7280;line-height:1.6;">
-      Mantenha seus pagamentos em dia para continuar protegido. Em caso de dúvidas, entre em contato com sua imobiliária.
+      Mantenha seus pagamentos em dia para continuar protegido. Em caso de dúvidas, entre em contato pelo portal da <strong>Tridots Capital</strong>.
     </p>
   `;
 

@@ -1,49 +1,29 @@
 
 
-# Plano: Remover menção à imobiliária do corpo dos e-mails para inquilinos
+# Corrigir erro de variavel duplicada na Edge Function `generate-acceptance-link`
 
 ## Problema
+A Edge Function `generate-acceptance-link` declara `const token` duas vezes:
+- Linha 36: `const token = authHeader.replace("Bearer ", "");` (token de autenticacao)
+- Linha 65: `const token = crypto.randomUUID();` (token de aceite)
 
-Em e-mails destinados ao inquilino, o nome da imobiliária aparece no texto introdutório, dando a entender que a garantia é da imobiliária. A imobiliária deve aparecer apenas na tabela de "Dados da Garantia", nunca no corpo/introdução. A garantia é da Tridots Capital.
+Isso causa um erro de runtime `SyntaxError: Identifier 'token' has already been declared`, impedindo a geracao do link de aceite.
 
-## Templates afetados (todos no arquivo `supabase/functions/_shared/email-templates.ts`)
+## Correcao
+Renomear a variavel da linha 36 de `token` para `authToken` e atualizar sua referencia na linha 37.
 
-### 1. Aceite Digital (linha 120)
-**Atual:** `"Sua análise de garantia locatícia foi aprovada pela ${data.agencyName}!"`
-**Novo:** `"Sua análise de garantia locatícia foi aprovada pela Tridots Capital! Agora você precisa concluir o processo de aceite digital para ativar sua garantia."`
-(remover a frase duplicada "Agora você precisa..." que vem logo depois)
+## Arquivo afetado
 
-### 2. Lembrete de Renovação (linha 210)
-**Atual:** `"Entre em contato com a ${data.agencyName} para renovar sua garantia e continuar protegido pela Tridots Capital."`
-**Novo:** `"Entre em contato com sua imobiliária ou acesse o portal para renovar sua garantia e continuar protegido pela Tridots Capital."`
+| Arquivo | Mudanca |
+|---------|---------|
+| `supabase/functions/generate-acceptance-link/index.ts` | Renomear `token` (linha 36) para `authToken` e atualizar uso na linha 37 |
 
-### 3. Confirmação de Pagamento (linha 258)
-**Atual:** `"Aguarde a ativação do contrato pela sua imobiliária."`
-**Novo:** `"Aguarde a ativação do seu contrato pela Tridots Capital. Você receberá um e-mail quando estiver tudo pronto!"`
+## Detalhe tecnico
 
-### 4. Contrato Ativado - Inquilino (linha 312)
-**Atual:** `"Mantenha seus pagamentos em dia para continuar protegido. Em caso de dúvidas, entre em contato com sua imobiliária."`
-**Novo:** `"Mantenha seus pagamentos em dia para continuar protegido. Em caso de dúvidas, entre em contato pelo portal da Tridots Capital."`
+```text
+Linha 36: const token → const authToken
+Linha 37: supabase.auth.getUser(token) → supabase.auth.getUser(authToken)
+```
 
-### 5. Aceite Digital — cláusula final (linha 152)
-**Atual:** `"...confirma a contratação da garantia locatícia e autoriza a cobrança conforme os termos apresentados."`
-**Novo:** `"...confirma a contratação da garantia locatícia junto à Tridots Capital e autoriza a cobrança conforme os termos apresentados."`
-
-## Templates que NÃO precisam de alteração
-- Templates para imobiliárias (ativação de cadastro, faturas, boletos, bloqueio, comissões, chamados) — esses são destinados à imobiliária, então mencionar o nome dela é correto.
-
-## Arquivo alterado
-- `supabase/functions/_shared/email-templates.ts` — 5 trechos
-
-## Exemplo final — E-mail de Aceite Digital
-
-> Olá, **Rayana**!
->
-> Sua análise de garantia locatícia foi aprovada pela **Tridots Capital**! Agora você precisa concluir o processo de aceite digital para ativar sua garantia.
->
-> **Dados da Garantia**
-> Imóvel: Rua João Carlos Polo, 1363 ...
-> Imobiliária: Massaru Imóveis *(apenas aqui, na tabela)*
->
-> Ao concluir o aceite digital, você confirma a contratação da garantia locatícia **junto à Tridots Capital** e autoriza a cobrança conforme os termos apresentados.
+Nenhuma outra mudanca necessaria. O `token` da linha 65 (UUID de aceite) permanece inalterado e continua sendo usado corretamente no restante da funcao.
 
