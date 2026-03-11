@@ -149,7 +149,7 @@ export function acceptanceDigitalTemplate(data: {
     </div>
     
     <p style="margin:20px 0 0 0;font-size:14px;color:#6b7280;line-height:1.6;">
-      Ao concluir o aceite digital, você confirma a contratação da garantia locatícia e 
+      Ao concluir o aceite digital, você confirma a contratação da garantia locatícia junto à <strong>Tridots Capital</strong> e 
       autoriza a cobrança conforme os termos apresentados.
     </p>
   `;
