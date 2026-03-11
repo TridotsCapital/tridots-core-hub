@@ -1,29 +1,42 @@
 
 
-# Corrigir erro de variavel duplicada na Edge Function `generate-acceptance-link`
+# Plano: Correção do Contrato #56620556 — Angela Pereira dos Santos
 
-## Problema
-A Edge Function `generate-acceptance-link` declara `const token` duas vezes:
-- Linha 36: `const token = authHeader.replace("Bearer ", "");` (token de autenticacao)
-- Linha 65: `const token = crypto.randomUUID();` (token de aceite)
+## Dados Atuais vs Novos
 
-Isso causa um erro de runtime `SyntaxError: Identifier 'token' has already been declared`, impedindo a geracao do link de aceite.
+| Campo | Atual | Novo |
+|-------|-------|------|
+| Valor do aluguel | R$ 1.600,00 | R$ 1.800,00 |
+| Taxa de garantia | 10% (START) | 13% (PRIME) |
+| Plano | sem plano definido | PRIME |
+| Garantia anual | R$ 1.920,00 | R$ 2.808,00 |
+| Parcela mensal | R$ 160,00 | R$ 234,00 |
+| Cobertura total (20x) | R$ 32.000,00 | R$ 36.000,00 |
+| Limite custos de saída | R$ 4.000 | R$ 6.000 |
+| Comissão (10% PRIME) | — | R$ 280,80/ano (R$ 23,40/mês) |
 
-## Correcao
-Renomear a variavel da linha 36 de `token` para `authToken` e atualizar sua referencia na linha 37.
+Cálculos:
+- Garantia anual = R$ 1.800 × 12 × 13% = **R$ 2.808,00**
+- Parcela mensal = R$ 2.808 / 12 = **R$ 234,00**
+- Cobertura = R$ 1.800 × 20 = **R$ 36.000,00**
 
-## Arquivo afetado
+## Atualizações no Banco de Dados
 
-| Arquivo | Mudanca |
-|---------|---------|
-| `supabase/functions/generate-acceptance-link/index.ts` | Renomear `token` (linha 36) para `authToken` e atualizar uso na linha 37 |
+### 1. Tabela `analyses` (analysis_id: `8f84ff82-...`)
+- `valor_aluguel` → 1800
+- `valor_total` → 1800
+- `taxa_garantia_percentual` → 13
+- `plano_garantia` → 'prime'
+- `garantia_anual` → 2808
 
-## Detalhe tecnico
+### 2. Tabela `guarantee_installments` (12 parcelas)
+- `value` → 234 para todas as 12 parcelas
 
-```text
-Linha 36: const token → const authToken
-Linha 37: supabase.auth.getUser(token) → supabase.auth.getUser(authToken)
-```
+### 3. Tabela `invoice_items` (12 itens vinculados)
+- `value` → 234 para todos os 12 itens
 
-Nenhuma outra mudanca necessaria. O `token` da linha 65 (UUID de aceite) permanece inalterado e continua sendo usado corretamente no restante da funcao.
+### 4. Registro na `analysis_timeline`
+- Inserir evento `manual_date_correction` documentando a alteração dos valores
+
+Não existem comissões geradas para essa análise, então não há necessidade de atualizar a tabela `commissions`.
 
