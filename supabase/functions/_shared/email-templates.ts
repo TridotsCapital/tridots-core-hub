@@ -117,7 +117,7 @@ export function acceptanceDigitalTemplate(data: {
       Olá, <strong>${data.tenantName}</strong>!
     </p>
     <p style="margin:0 0 20px 0;font-size:16px;color:#374151;line-height:1.6;">
-      Sua análise de garantia locatícia foi aprovada pela <strong>${data.agencyName}</strong>! 
+      Sua análise de garantia locatícia foi aprovada pela <strong>Tridots Capital</strong>! 
       Agora você precisa concluir o processo de aceite digital para ativar sua garantia.
     </p>
     
