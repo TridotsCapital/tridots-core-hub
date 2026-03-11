@@ -207,8 +207,8 @@ export function renewalReminderTemplate(data: {
     </div>
     
     <p style="margin:20px 0 0 0;font-size:14px;color:#6b7280;line-height:1.6;">
-      Entre em contato com a <strong>${data.agencyName}</strong> para renovar sua garantia 
-      e continuar protegido pela Tridots Capital.
+      Entre em contato com sua imobiliária ou acesse o portal para renovar sua garantia 
+      e continuar protegido pela <strong>Tridots Capital</strong>.
     </p>
   `;
 
