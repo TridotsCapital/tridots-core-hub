@@ -309,7 +309,7 @@ export function contractActivatedTenantTemplate(data: {
     </div>
     
     <p style="margin:20px 0 0 0;font-size:14px;color:#6b7280;line-height:1.6;">
-      Mantenha seus pagamentos em dia para continuar protegido. Em caso de dúvidas, entre em contato com sua imobiliária.
+      Mantenha seus pagamentos em dia para continuar protegido. Em caso de dúvidas, entre em contato pelo portal da <strong>Tridots Capital</strong>.
     </p>
   `;
 
