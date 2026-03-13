@@ -143,18 +143,12 @@ serve(async (req) => {
     let firstMonth: number;
     let firstYear: number;
     
-    if (activationDay < billingDueDay) {
-      // Primeira parcela no mesmo mês
-      firstMonth = activationDate.getMonth();
-      firstYear = activationDate.getFullYear();
-    } else {
-      // Primeira parcela no próximo mês
-      firstMonth = activationDate.getMonth() + 1;
-      firstYear = activationDate.getFullYear();
-      if (firstMonth > 11) {
-        firstMonth = 0;
-        firstYear++;
-      }
+    // REGRA: Primeira parcela SEMPRE no mês seguinte à ativação
+    firstMonth = activationDate.getMonth() + 1;
+    firstYear = activationDate.getFullYear();
+    if (firstMonth > 11) {
+      firstMonth = 0;
+      firstYear++;
     }
 
     // 7. Gerar as 12 parcelas (SEM ajuste de dia útil conforme regra de negócio)
