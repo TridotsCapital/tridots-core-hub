@@ -1,56 +1,46 @@
 
 
-# Plano: Alterar Data de Ativação de 3 Contratos para 27/02/2026 + Etiqueta MIGRADO
+# Plano: Nova Regra de Corte — Primeira Parcela Sempre no Mês Seguinte + Parcela Extra no Cancelamento
 
-## Contratos Afetados
+## Resumo da Mudança
 
-| Contrato | Inquilino | Parcela Mensal | Criado no Sistema |
-|----------|-----------|----------------|-------------------|
-| #844217A0 | Nathaniely Marciely Morais Gomes | R$ 130,78 | 10/03/2026 |
-| #298E7156 | Paulo Ricardo Assumpção | R$ 243,50 | 11/03/2026 |
-| #73D93CA5 | Rayana Nayara Semezatto de Almeida | R$ 105,00 | 12/03/2026 |
+**Regra atual**: Se o contrato é ativado antes do `billing_due_day`, a primeira parcela entra no mesmo mês.
 
-Agência: `0fac5f2d-a537-4db9-b6b5-a138803d83c0`
+**Nova regra**: A primeira parcela é **sempre no mês seguinte** à ativação, independentemente do dia. Se o contrato for cancelado antes do fim da vigência e ainda faltar 1 parcela (porque a primeira foi deslocada), a imobiliária paga uma parcela extra no mês seguinte ao cancelamento.
 
-## Atualizações no Banco de Dados
+## Alterações
 
-### 1. Tabela `analyses` (3 registros)
-- `guarantee_payment_date` → `2026-02-27`
+### 1. Edge Function `generate-installments/index.ts` — Regra de corte
 
-IDs: `6f552368`, `a5cabe20`, `39d3a884`
+Remover a condição `if (activationDay < billingDueDay)` (linhas 146-158) e sempre iniciar no mês seguinte:
 
-### 2. Tabela `contracts` (3 registros)
-- `data_fim_contrato` → `2027-02-27`
-- `is_migrated` → `true`
+```typescript
+// SEMPRE começa no mês seguinte à ativação
+firstMonth = activationDate.getMonth() + 1;
+firstYear = activationDate.getFullYear();
+if (firstMonth > 11) {
+  firstMonth = 0;
+  firstYear++;
+}
+```
 
-IDs: `844217a0`, `298e7156`, `73d93ca5`
+### 2. Lógica de cancelamento — `ContractActions.tsx`
 
-### 3. Tabela `guarantee_installments` (36 registros)
-Deslocar 1 mes para tras em todas as 36 parcelas:
-- `reference_month` -1 (com wrap 1→12 e year -1)
-- `due_date` -1 mes (04-10 → 03-10, ..., 03-10/2027 → 02-10/2027)
+Ao cancelar um contrato, após atualizar o status para `cancelado`, adicionar lógica para:
 
-**Status de migração**: parcelas com vencimento anterior ao `created_at` do contrato marcadas como `paga`:
-- **Paulo** (criado 11/03): parcela 1 vence 10/03 → `paga`
-- **Rayana** (criado 12/03): parcela 1 vence 10/03 → `paga`
-- **Nathaniely** (criada 10/03): parcela 1 vence 10/03 → mesmo dia, mantém status atual
+1. Contar quantas parcelas já foram pagas (`status = 'paga'`)
+2. Verificar se são menos de 12
+3. Se sim, gerar **1 parcela extra** no mês seguinte ao cancelamento, vinculando-a à fatura correspondente da agência (criando ou atualizando `agency_invoices` e `invoice_items`)
+4. Registrar evento na `analysis_timeline` documentando a parcela compensatória
 
-### 4. Tabela `invoice_items` (36 registros)
-Mover cada item para a fatura do mes anterior:
-- Itens de abr/2026 → fatura mar/2026 (`a51ad834`)
-- Itens de mai/2026 → fatura abr/2026 (`64d75298`)
-- ... e assim por diante
-- Itens de mar/2027 → fatura fev/2027 (`58694171`)
+### 3. Documentação visual (sem alteração de código UI)
 
-### 5. Tabela `agency_invoices` — recalcular totais
-Faturas afetadas (mar/2026 a mar/2027): recalcular `total_value` baseado na soma dos `invoice_items` de cada fatura.
+A regra não altera interfaces visuais — apenas a lógica de geração de parcelas e o fluxo de cancelamento.
 
-### 6. Tabela `analysis_timeline` (3 eventos)
-Inserir evento `manual_date_correction` para cada analise documentando:
-- Data de ativacao definida para 27/02/2026
-- Contrato marcado como MIGRADO
-- Deslocamento das parcelas de abr-mar para mar-fev
+### Resumo de arquivos afetados
 
-## Nenhuma alteração de código necessária
-O campo `is_migrated` ja é suportado nas listas e detalhes dos contratos com o badge roxo "Migrado".
+| Arquivo | Alteração |
+|---------|-----------|
+| `supabase/functions/generate-installments/index.ts` | Primeira parcela sempre no mês seguinte |
+| `src/components/contracts/ContractActions.tsx` | Gerar parcela compensatória no cancelamento |
 
