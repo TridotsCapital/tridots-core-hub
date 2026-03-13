@@ -197,6 +197,12 @@ export const timelineEventConfig: Record<string, {
     bgColor: 'bg-orange-100',
     iconName: 'Pencil',
   },
+  compensatory_installment: {
+    label: 'Parcela Compensatória',
+    color: 'text-amber-600',
+    bgColor: 'bg-amber-100',
+    iconName: 'CreditCard',
+  },
 };
 
 export function getEventConfig(eventType: string) {
