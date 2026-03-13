@@ -1,38 +1,56 @@
 
 
-# Plano: Correção do Contrato #F6B6F948 — Leticia Renata de Oliveira
+# Plano: Alterar Data de Ativação de 3 Contratos para 27/02/2026 + Etiqueta MIGRADO
 
-## Dados Atuais vs Novos
+## Contratos Afetados
 
-| Campo | Atual | Novo |
-|-------|-------|------|
-| Valor do aluguel | R$ 661,50 | **R$ 800,00** |
-| Taxa de garantia | 10% (START) | 10% (START) — sem alteração |
-| Garantia anual | R$ 793,80 | **R$ 960,00** |
-| Parcela mensal | R$ 66,15 | **R$ 80,00** |
-| Cobertura total (20x) | R$ 13.230,00 | **R$ 16.000,00** |
-| Limite custos de saída | R$ 4.000 | R$ 4.000 — sem alteração |
+| Contrato | Inquilino | Parcela Mensal | Criado no Sistema |
+|----------|-----------|----------------|-------------------|
+| #844217A0 | Nathaniely Marciely Morais Gomes | R$ 130,78 | 10/03/2026 |
+| #298E7156 | Paulo Ricardo Assumpção | R$ 243,50 | 11/03/2026 |
+| #73D93CA5 | Rayana Nayara Semezatto de Almeida | R$ 105,00 | 12/03/2026 |
 
-Cálculos:
-- Garantia anual = R$ 800 × 12 × 10% = **R$ 960,00**
-- Parcela mensal = R$ 960 / 12 = **R$ 80,00**
+Agência: `0fac5f2d-a537-4db9-b6b5-a138803d83c0`
 
 ## Atualizações no Banco de Dados
 
-### 1. Tabela `analyses` (ID: `c5ecbff1-7ee9-4c5f-a606-cfc276845784`)
-- `valor_aluguel` → 800
-- `valor_total` → 800
-- `plano_garantia` → 'start'
-- `garantia_anual` → 960
+### 1. Tabela `analyses` (3 registros)
+- `guarantee_payment_date` → `2026-02-27`
 
-### 2. Tabela `guarantee_installments` (12 parcelas)
-- `value` → 80 para todas as 12 parcelas
+IDs: `6f552368`, `a5cabe20`, `39d3a884`
 
-### 3. Tabela `invoice_items` (12 itens)
-- `value` → 80 para todos os 12 itens
+### 2. Tabela `contracts` (3 registros)
+- `data_fim_contrato` → `2027-02-27`
+- `is_migrated` → `true`
 
-### 4. Registro na `analysis_timeline`
-- Inserir evento `manual_date_correction` documentando a alteração (valor antigo R$ 661,50 → R$ 800,00)
+IDs: `844217a0`, `298e7156`, `73d93ca5`
 
-Sem comissões geradas — nada a atualizar nessa tabela.
+### 3. Tabela `guarantee_installments` (36 registros)
+Deslocar 1 mes para tras em todas as 36 parcelas:
+- `reference_month` -1 (com wrap 1→12 e year -1)
+- `due_date` -1 mes (04-10 → 03-10, ..., 03-10/2027 → 02-10/2027)
+
+**Status de migração**: parcelas com vencimento anterior ao `created_at` do contrato marcadas como `paga`:
+- **Paulo** (criado 11/03): parcela 1 vence 10/03 → `paga`
+- **Rayana** (criado 12/03): parcela 1 vence 10/03 → `paga`
+- **Nathaniely** (criada 10/03): parcela 1 vence 10/03 → mesmo dia, mantém status atual
+
+### 4. Tabela `invoice_items` (36 registros)
+Mover cada item para a fatura do mes anterior:
+- Itens de abr/2026 → fatura mar/2026 (`a51ad834`)
+- Itens de mai/2026 → fatura abr/2026 (`64d75298`)
+- ... e assim por diante
+- Itens de mar/2027 → fatura fev/2027 (`58694171`)
+
+### 5. Tabela `agency_invoices` — recalcular totais
+Faturas afetadas (mar/2026 a mar/2027): recalcular `total_value` baseado na soma dos `invoice_items` de cada fatura.
+
+### 6. Tabela `analysis_timeline` (3 eventos)
+Inserir evento `manual_date_correction` para cada analise documentando:
+- Data de ativacao definida para 27/02/2026
+- Contrato marcado como MIGRADO
+- Deslocamento das parcelas de abr-mar para mar-fev
+
+## Nenhuma alteração de código necessária
+O campo `is_migrated` ja é suportado nas listas e detalhes dos contratos com o badge roxo "Migrado".
 
