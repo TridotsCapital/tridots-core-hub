@@ -87,6 +87,7 @@ export function ContractActions({ contract, onEdit }: ContractActionsProps) {
 
     setLoading(true);
     try {
+      // 1. Cancelar o contrato
       const { error } = await supabase
         .from('contracts')
         .update({
@@ -98,16 +99,192 @@ export function ContractActions({ contract, onEdit }: ContractActionsProps) {
 
       if (error) throw error;
 
+      // 2. Verificar parcelas pagas vs total para parcela compensatória
+      await generateCompensatoryInstallmentIfNeeded(contract.id, contract.agency_id, contract.analysis_id);
+
       toast.success('Contrato cancelado com sucesso');
       setCancelOpen(false);
       setCancelReason('');
       queryClient.invalidateQueries({ queryKey: ['contract'] });
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
+      queryClient.invalidateQueries({ queryKey: ['contract-installments'] });
     } catch (error) {
       console.error('Error canceling contract:', error);
       toast.error('Erro ao cancelar contrato');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const generateCompensatoryInstallmentIfNeeded = async (
+    contractId: string,
+    agencyId: string,
+    analysisId: string
+  ) => {
+    try {
+      // Contar parcelas pagas
+      const { count: paidCount } = await supabase
+        .from('guarantee_installments')
+        .select('*', { count: 'exact', head: true })
+        .eq('contract_id', contractId)
+        .eq('status', 'paga');
+
+      // Se já pagou 12 ou mais, não precisa compensar
+      if ((paidCount || 0) >= 12) return;
+
+      // Buscar dados necessários
+      const [{ data: lastInstallment }, { data: agency }, { data: analysis }] = await Promise.all([
+        supabase
+          .from('guarantee_installments')
+          .select('value, reference_month, reference_year')
+          .eq('contract_id', contractId)
+          .order('installment_number', { ascending: false })
+          .limit(1)
+          .single(),
+        supabase
+          .from('agencies')
+          .select('billing_due_day')
+          .eq('id', agencyId)
+          .single(),
+        supabase
+          .from('analyses')
+          .select('inquilino_nome, imovel_endereco, imovel_numero, imovel_bairro, imovel_cidade')
+          .eq('id', analysisId)
+          .single(),
+      ]);
+
+      if (!lastInstallment) return;
+
+      const billingDueDay = agency?.billing_due_day || 10;
+      const now = new Date();
+      // Parcela compensatória no mês seguinte ao cancelamento
+      let compMonth = now.getMonth() + 1; // próximo mês (0-indexed)
+      let compYear = now.getFullYear();
+      if (compMonth > 11) {
+        compMonth = 0;
+        compYear++;
+      }
+      const refMonth = compMonth + 1; // 1-12
+      const refYear = compYear;
+      const dueDate = new Date(compYear, compMonth, billingDueDay);
+
+      // Contar total de parcelas existentes para definir o número
+      const { count: totalCount } = await supabase
+        .from('guarantee_installments')
+        .select('*', { count: 'exact', head: true })
+        .eq('contract_id', contractId);
+
+      const installmentNumber = (totalCount || 12) + 1;
+
+      // Inserir parcela compensatória
+      const { data: newInstallment, error: instError } = await supabase
+        .from('guarantee_installments')
+        .insert({
+          contract_id: contractId,
+          agency_id: agencyId,
+          installment_number: installmentNumber,
+          reference_month: refMonth,
+          reference_year: refYear,
+          value: lastInstallment.value,
+          due_date: dueDate.toISOString().split('T')[0],
+          status: 'pendente' as const,
+        })
+        .select()
+        .single();
+
+      if (instError) {
+        console.error('Error creating compensatory installment:', instError);
+        return;
+      }
+
+      // Vincular à fatura existente ou criar nova
+      const { data: existingInvoice } = await supabase
+        .from('agency_invoices')
+        .select('id, total_value')
+        .eq('agency_id', agencyId)
+        .eq('reference_month', refMonth)
+        .eq('reference_year', refYear)
+        .neq('status', 'cancelada')
+        .maybeSingle();
+
+      let invoiceId: string;
+      const tenantName = analysis?.inquilino_nome || 'N/A';
+      const propertyAddress = [
+        analysis?.imovel_endereco,
+        analysis?.imovel_numero,
+        analysis?.imovel_bairro,
+        analysis?.imovel_cidade,
+      ].filter(Boolean).join(', ') || 'N/A';
+
+      if (existingInvoice) {
+        invoiceId = existingInvoice.id;
+        await supabase
+          .from('agency_invoices')
+          .update({
+            total_value: (existingInvoice.total_value || 0) + lastInstallment.value,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', invoiceId);
+      } else {
+        const { data: newInvoice, error: invError } = await supabase
+          .from('agency_invoices')
+          .insert({
+            agency_id: agencyId,
+            reference_month: refMonth,
+            reference_year: refYear,
+            status: 'rascunho',
+            total_value: lastInstallment.value,
+            due_date: dueDate.toISOString().split('T')[0],
+          })
+          .select()
+          .single();
+
+        if (invError) {
+          console.error('Error creating compensatory invoice:', invError);
+          return;
+        }
+        invoiceId = newInvoice.id;
+      }
+
+      // Criar invoice_item
+      const { data: invoiceItem } = await supabase
+        .from('invoice_items')
+        .insert({
+          invoice_id: invoiceId,
+          installment_id: newInstallment.id,
+          contract_id: contractId,
+          tenant_name: tenantName,
+          property_address: propertyAddress,
+          installment_number: installmentNumber,
+          value: lastInstallment.value,
+        })
+        .select()
+        .single();
+
+      if (invoiceItem) {
+        await supabase
+          .from('guarantee_installments')
+          .update({ status: 'faturada', invoice_item_id: invoiceItem.id })
+          .eq('id', newInstallment.id);
+      }
+
+      // Registrar na timeline
+      await supabase.rpc('log_analysis_timeline_event', {
+        _analysis_id: analysisId,
+        _event_type: 'compensatory_installment',
+        _description: `Parcela compensatória #${installmentNumber} gerada (R$ ${lastInstallment.value.toFixed(2)}) para ${String(refMonth).padStart(2, '0')}/${refYear} devido ao cancelamento antecipado do contrato. Parcelas pagas: ${paidCount || 0}/12.`,
+        _metadata: {
+          contract_id: contractId,
+          installment_id: newInstallment.id,
+          paid_count: paidCount || 0,
+          compensatory_month: refMonth,
+          compensatory_year: refYear,
+        },
+      });
+
+      console.log(`Compensatory installment created for contract ${contractId}: ${refMonth}/${refYear}`);
+    } catch (err) {
+      console.error('Error generating compensatory installment:', err);
     }
   };
 
