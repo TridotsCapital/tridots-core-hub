@@ -535,10 +535,11 @@ export function AgencyTicketChatArea({ ticketId }: AgencyTicketChatAreaProps) {
                     </div>
                     <div className={cn("flex items-center gap-1 mt-1", isOwnMessage && "justify-end")}>
                       <span className="text-[10px] text-muted-foreground">
-                        {format(new Date(msg.created_at), "HH:mm", { locale: ptBR })}
+                        {formatDateBR(msg.created_at, "HH:mm")}
                       </span>
                     </div>
                   </div>
+                </div>
                 </div>
               );
             })
