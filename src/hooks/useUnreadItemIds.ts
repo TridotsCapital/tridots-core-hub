@@ -155,6 +155,7 @@ export function useMarkItemAsUnread() {
           source,
           title: 'Marcado como não lido',
           message: '',
+          type: 'info',
           read_at: null,
         });
     }
