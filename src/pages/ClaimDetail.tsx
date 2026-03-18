@@ -36,9 +36,10 @@ import { InternalClaimTicketSheet } from "@/components/claims";
 import { InternalNotesTab } from "@/components/shared/InternalNotesTab";
 import { GuaranteeCostsSection } from "@/components/payment/GuaranteeCostsSection";
 import { CoverageCard } from "@/components/shared/CoverageCard";
-import { format } from "date-fns";
+import { format, differenceInDays, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
+import { Timer } from "lucide-react";
 
 export default function ClaimDetail() {
   const { id } = useParams<{ id: string }>();
