@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { format, formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow, parseISO, isToday, isYesterday } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Send, Loader2, Clock, CheckCircle, AlertCircle, MessageSquare, FileText, XCircle, Shield, Paperclip, X, FileIcon, Download, Eye } from "lucide-react";
+import { Send, Loader2, Clock, CheckCircle, AlertCircle, MessageSquare, FileText, XCircle, Shield, Paperclip, X, FileIcon, Download, Eye, MailOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
