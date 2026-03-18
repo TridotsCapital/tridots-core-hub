@@ -54,6 +54,7 @@ export function TicketChatArea({ ticketId, onClose }: TicketChatAreaProps) {
   const sendMessage = useSendTicketMessage();
   const updateTicket = useUpdateTicket();
   const setTypingIndicator = useSetTypingIndicator();
+  const markAsUnread = useMarkItemAsUnread();
 
 
   // Handle typing indicator
