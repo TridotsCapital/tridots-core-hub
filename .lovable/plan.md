@@ -1,29 +1,25 @@
 
 
-# Corrigir erro de variavel duplicada na Edge Function `generate-acceptance-link`
+# Plano: Indicador Visual de Prazo de Pagamento no Detalhe da Garantia (Tridots)
 
-## Problema
-A Edge Function `generate-acceptance-link` declara `const token` duas vezes:
-- Linha 36: `const token = authHeader.replace("Bearer ", "");` (token de autenticacao)
-- Linha 65: `const token = crypto.randomUUID();` (token de aceite)
+## O que será feito
 
-Isso causa um erro de runtime `SyntaxError: Identifier 'token' has already been declared`, impedindo a geracao do link de aceite.
+Adicionar um banner/card de contagem regressiva no topo da página de detalhe da garantia (`ClaimDetail.tsx`) que mostra quantos dias restam dos 30 dias para pagamento, com cores escalonadas conforme a urgência.
 
-## Correcao
-Renomear a variavel da linha 36 de `token` para `authToken` e atualizar sua referencia na linha 37.
+## Regras visuais
 
-## Arquivo afetado
+- **Verde** (> 20 dias restantes): "X dias restantes para pagamento"
+- **Amarelo** (10-20 dias): tom informativo
+- **Laranja** (3-9 dias): tom de alerta
+- **Vermelho** (1-2 dias): tom urgente
+- **Vermelho piscante** (0 ou expirado): "PRAZO EXPIRADO — X dias em atraso"
+- Oculto quando `public_status === 'finalizado'`
 
-| Arquivo | Mudanca |
-|---------|---------|
-| `supabase/functions/generate-acceptance-link/index.ts` | Renomear `token` (linha 36) para `authToken` e atualizar uso na linha 37 |
+## Alteração
 
-## Detalhe tecnico
+| Arquivo | Ação |
+|---------|------|
+| `src/pages/ClaimDetail.tsx` | Adicionar card de prazo entre o header e os controles de status, calculando `daysElapsed` e `daysRemaining` a partir de `claim.created_at` |
 
-```text
-Linha 36: const token → const authToken
-Linha 37: supabase.auth.getUser(token) → supabase.auth.getUser(authToken)
-```
-
-Nenhuma outra mudanca necessaria. O `token` da linha 65 (UUID de aceite) permanece inalterado e continua sendo usado corretamente no restante da funcao.
+A lógica é puramente frontend (cálculo de `differenceInDays(now, created_at)`), sem necessidade de alteração no banco.
 
