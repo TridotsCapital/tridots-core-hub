@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { format, formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow, parseISO, isToday, isYesterday } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Send, Loader2, Clock, CheckCircle, AlertCircle, MessageSquare, FileText, XCircle, Shield, Paperclip, X, FileIcon, Download, Eye } from "lucide-react";
+import { Send, Loader2, Clock, CheckCircle, AlertCircle, MessageSquare, FileText, XCircle, Shield, Paperclip, X, FileIcon, Download, Eye, MailOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,9 +20,17 @@ import { useNotificationSound } from "@/hooks/useNotificationSound";
 import { useNps } from "@/contexts/NpsContext";
 import { TicketStatus, TicketCategory } from "@/types/tickets";
 import { CloseTicketDialog } from "./CloseTicketDialog";
-import { cn, getFileNameFromUrl, viewFileViaBlob, downloadFileViaBlob, buildStoragePath } from "@/lib/utils";
+import { cn, getFileNameFromUrl, viewFileViaBlob, downloadFileViaBlob, buildStoragePath, formatDateBR } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useMarkItemAsUnread } from "@/hooks/useUnreadItemIds";
+
+function getDateLabel(dateStr: string): string {
+  const date = parseISO(dateStr);
+  if (isToday(date)) return "Hoje";
+  if (isYesterday(date)) return "Ontem";
+  return format(date, "dd/MM/yyyy", { locale: ptBR });
+}
 
 interface AgencyTicketChatAreaProps {
   ticketId: string | null;
@@ -110,6 +118,7 @@ export function AgencyTicketChatArea({ ticketId }: AgencyTicketChatAreaProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { playSound } = useNotificationSound();
   const { openModalAfterClose } = useNps();
+  const markAsUnread = useMarkItemAsUnread();
 
   const handleNewMessage = useCallback((senderId: string) => {
     if (senderId !== user?.id) {
@@ -345,6 +354,18 @@ export function AgencyTicketChatArea({ ticketId }: AgencyTicketChatAreaProps) {
           </h2>
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            title="Marcar como não lido"
+            onClick={async () => {
+              await markAsUnread(ticketId, 'chamados');
+              toast.info("Chamado marcado como não lido");
+            }}
+          >
+            <MailOpen className="h-3.5 w-3.5" />
+          </Button>
           {!isResolved && (
             <Button
               variant="outline"
@@ -398,7 +419,7 @@ export function AgencyTicketChatArea({ ticketId }: AgencyTicketChatAreaProps) {
               <p className="text-sm">Aguarde a resposta da equipe Tridots.</p>
             </div>
           ) : (
-            messages.map((msg: any) => {
+            messages.map((msg: any, index: number) => {
               const isOwnMessage = msg.sender_id === user?.id;
               const senderName = msg.sender?.full_name || "Usuário";
               const initials = senderName
@@ -408,9 +429,22 @@ export function AgencyTicketChatArea({ ticketId }: AgencyTicketChatAreaProps) {
                 .join("")
                 .toUpperCase();
 
+              const currentDate = getDateLabel(msg.created_at);
+              const prevDate = index > 0 ? getDateLabel(messages[index - 1].created_at) : null;
+              const showDateSeparator = index === 0 || currentDate !== prevDate;
+
               return (
+                <div key={msg.id}>
+                  {showDateSeparator && (
+                    <div className="flex items-center gap-3 my-3">
+                      <div className="flex-1 h-px bg-border" />
+                      <span className="text-[10px] font-medium text-muted-foreground bg-background px-2">
+                        {currentDate}
+                      </span>
+                      <div className="flex-1 h-px bg-border" />
+                    </div>
+                  )}
                 <div
-                  key={msg.id}
                   className={cn(
                     "flex gap-3",
                     isOwnMessage ? "flex-row-reverse" : "flex-row"
@@ -501,10 +535,11 @@ export function AgencyTicketChatArea({ ticketId }: AgencyTicketChatAreaProps) {
                     </div>
                     <div className={cn("flex items-center gap-1 mt-1", isOwnMessage && "justify-end")}>
                       <span className="text-[10px] text-muted-foreground">
-                        {format(new Date(msg.created_at), "HH:mm", { locale: ptBR })}
+                        {formatDateBR(msg.created_at, "HH:mm")}
                       </span>
                     </div>
                   </div>
+                </div>
                 </div>
               );
             })

@@ -1,12 +1,19 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useMemo } from "react";
 import { TicketMessage, TypingIndicator } from "@/types/tickets";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { format } from "date-fns";
+import { format, parseISO, isToday, isYesterday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn, formatDateBR, getFileNameFromUrl, viewFileViaBlob, downloadFileViaBlob } from "@/lib/utils";
 import { CheckCheck, FileIcon, Download, Eye, Loader2 } from "lucide-react";
+
+function getDateLabel(dateStr: string): string {
+  const date = parseISO(dateStr);
+  if (isToday(date)) return "Hoje";
+  if (isYesterday(date)) return "Ontem";
+  return format(date, "dd/MM/yyyy", { locale: ptBR });
+}
 import { toast } from "sonner";
 
 interface TicketChatMessagesProps {
@@ -83,13 +90,27 @@ export function TicketChatMessages({
           </div>
         )}
 
-        {/* Messages */}
-        {messages.map((msg) => {
+        {/* Messages with date separators */}
+        {messages.map((msg, index) => {
           const isOwn = msg.sender_id === currentUserId;
           const senderName = msg.sender?.full_name || 'Usuário';
           const initials = senderName.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase();
+          
+          const currentDate = getDateLabel(msg.created_at);
+          const prevDate = index > 0 ? getDateLabel(messages[index - 1].created_at) : null;
+          const showDateSeparator = index === 0 || currentDate !== prevDate;
 
           return (
+            <div key={msg.id}>
+              {showDateSeparator && (
+                <div className="flex items-center gap-3 my-3">
+                  <div className="flex-1 h-px bg-border" />
+                  <span className="text-[10px] font-medium text-muted-foreground bg-background px-2">
+                    {currentDate}
+                  </span>
+                  <div className="flex-1 h-px bg-border" />
+                </div>
+              )}
             <div
               key={msg.id}
               className={cn("flex gap-3", isOwn && "flex-row-reverse")}
@@ -178,6 +199,7 @@ export function TicketChatMessages({
                   )}
                 </div>
               </div>
+            </div>
             </div>
           );
         })}

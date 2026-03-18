@@ -1,37 +1,29 @@
 
 
-# Plano: Correções no Chat de Chamados — Data/Hora nas Mensagens + Marcar como Não Lido
+# Corrigir erro de variavel duplicada na Edge Function `generate-acceptance-link`
 
-## Problemas Identificados
+## Problema
+A Edge Function `generate-acceptance-link` declara `const token` duas vezes:
+- Linha 36: `const token = authHeader.replace("Bearer ", "");` (token de autenticacao)
+- Linha 65: `const token = crypto.randomUUID();` (token de aceite)
 
-1. **Data das mensagens**: O componente `TicketChatMessages.tsx` (portal Tridots, linha 174) mostra apenas `HH:mm` sem a data. O `AgencyTicketChatArea.tsx` (portal imobiliária, linha 504) tem o mesmo problema.
-2. **Marcar como não lido**: Nenhuma funcionalidade existe no sistema para reverter um chamado para "não lido". Atualmente, ao abrir um chamado, ele e marcado como lido automaticamente e nao ha como desfazer.
+Isso causa um erro de runtime `SyntaxError: Identifier 'token' has already been declared`, impedindo a geracao do link de aceite.
 
-## Alteracoes
+## Correcao
+Renomear a variavel da linha 36 de `token` para `authToken` e atualizar sua referencia na linha 37.
 
-### 1. Exibir data + hora nas mensagens do chat
+## Arquivo afetado
 
-**Arquivos**: `TicketChatMessages.tsx` e `AgencyTicketChatArea.tsx`
+| Arquivo | Mudanca |
+|---------|---------|
+| `supabase/functions/generate-acceptance-link/index.ts` | Renomear `token` (linha 36) para `authToken` e atualizar uso na linha 37 |
 
-- Agrupar mensagens por dia (separador visual com a data, ex: "Hoje", "Ontem", "14/03/2025")
-- Em cada mensagem, exibir `HH:mm` (como ja faz), mas com o separador de dia provendo contexto
-- Usar `formatDateBR` com `parseISO` para evitar bug de timezone
+## Detalhe tecnico
 
-### 2. Botao "Marcar como nao lido" nos chamados
+```text
+Linha 36: const token → const authToken
+Linha 37: supabase.auth.getUser(token) → supabase.auth.getUser(authToken)
+```
 
-**Arquivos**: `useUnreadItemIds.ts`, `TicketConversationItem.tsx`, `AgencyTicketList.tsx`, `TicketChatArea.tsx`, `AgencyTicketChatArea.tsx`
-
-- Adicionar funcao `useMarkItemAsUnread()` em `useUnreadItemIds.ts` que insere uma notificacao sintetica com `read_at = null` na tabela `notifications` para o chamado, reativando o indicador de nao lido
-- Adicionar botao de contexto (icone de envelope) no header do chat em ambos os portais (Tridots e Imobiliaria) que chama essa funcao e fecha/deseleciona o chamado
-- O botao estara visivel no header do chat aberto, ao lado do status/acoes existentes
-
-### Resumo de arquivos
-
-| Arquivo | Alteracao |
-|---------|-----------|
-| `src/components/tickets/TicketChatMessages.tsx` | Separadores de data entre mensagens + formato data/hora |
-| `src/components/agency/AgencyTicketChatArea.tsx` | Separadores de data + botao marcar como nao lido |
-| `src/components/tickets/TicketChatArea.tsx` | Botao marcar como nao lido |
-| `src/hooks/useUnreadItemIds.ts` | Adicionar `useMarkItemAsUnread()` |
-| `src/components/tickets/TicketConversationItem.tsx` | Nenhuma alteracao (ja suporta `hasUnread`) |
+Nenhuma outra mudanca necessaria. O `token` da linha 65 (UUID de aceite) permanece inalterado e continua sendo usado corretamente no restante da funcao.
 

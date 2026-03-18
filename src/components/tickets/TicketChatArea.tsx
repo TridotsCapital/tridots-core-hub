@@ -19,8 +19,10 @@ import { Button } from "@/components/ui/button";
 import { ticketStatusConfig, ticketCategoryConfig, ticketPriorityConfig, TicketStatus } from "@/types/tickets";
 import { TicketChatMessages } from "./TicketChatMessages";
 import { TicketChatInput } from "./TicketChatInput";
-import { MessageSquare, X, FileText, Shield } from "lucide-react";
+import { MessageSquare, X, FileText, Shield, MailOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useMarkItemAsUnread } from "@/hooks/useUnreadItemIds";
+import { toast } from "sonner";
 
 interface TicketChatAreaProps {
   ticketId: string | null;
@@ -52,6 +54,7 @@ export function TicketChatArea({ ticketId, onClose }: TicketChatAreaProps) {
   const sendMessage = useSendTicketMessage();
   const updateTicket = useUpdateTicket();
   const setTypingIndicator = useSetTypingIndicator();
+  const markAsUnread = useMarkItemAsUnread();
 
 
   // Handle typing indicator
@@ -203,6 +206,19 @@ export function TicketChatArea({ ticketId, onClose }: TicketChatAreaProps) {
             </SelectContent>
           </Select>
 
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            title="Marcar como não lido"
+            onClick={async () => {
+              await markAsUnread(ticketId, 'chamados');
+              toast.info("Chamado marcado como não lido");
+              onClose();
+            }}
+          >
+            <MailOpen className="h-4 w-4" />
+          </Button>
 
           <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
             <X className="h-4 w-4" />
