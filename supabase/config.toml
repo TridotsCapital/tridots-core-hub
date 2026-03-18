@@ -74,3 +74,6 @@ verify_jwt = false
 
 [functions.reconcile-boleto-contracts]
 verify_jwt = false
+
+[functions.send-claim-notification]
+verify_jwt = false
