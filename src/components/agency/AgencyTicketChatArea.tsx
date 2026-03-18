@@ -419,7 +419,7 @@ export function AgencyTicketChatArea({ ticketId }: AgencyTicketChatAreaProps) {
               <p className="text-sm">Aguarde a resposta da equipe Tridots.</p>
             </div>
           ) : (
-            messages.map((msg: any) => {
+            messages.map((msg: any, index: number) => {
               const isOwnMessage = msg.sender_id === user?.id;
               const senderName = msg.sender?.full_name || "Usuário";
               const initials = senderName
@@ -429,9 +429,22 @@ export function AgencyTicketChatArea({ ticketId }: AgencyTicketChatAreaProps) {
                 .join("")
                 .toUpperCase();
 
+              const currentDate = getDateLabel(msg.created_at);
+              const prevDate = index > 0 ? getDateLabel(messages[index - 1].created_at) : null;
+              const showDateSeparator = index === 0 || currentDate !== prevDate;
+
               return (
+                <div key={msg.id}>
+                  {showDateSeparator && (
+                    <div className="flex items-center gap-3 my-3">
+                      <div className="flex-1 h-px bg-border" />
+                      <span className="text-[10px] font-medium text-muted-foreground bg-background px-2">
+                        {currentDate}
+                      </span>
+                      <div className="flex-1 h-px bg-border" />
+                    </div>
+                  )}
                 <div
-                  key={msg.id}
                   className={cn(
                     "flex gap-3",
                     isOwnMessage ? "flex-row-reverse" : "flex-row"
