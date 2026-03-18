@@ -1045,6 +1045,83 @@ export function claimCreatedTemplate(data: {
   };
 }
 
+// Template: Alerta de Prazo de Garantia (para equipe Tridots)
+export function claimDeadlineAlertTemplate(data: {
+  tenantName: string;
+  agencyName: string;
+  claimId: string;
+  totalClaimedValue: number;
+  daysElapsed: number;
+  daysRemaining: number;
+  claimCreatedAt: string;
+}): { subject: string; html: string } {
+  const urgencyConfig = data.daysRemaining <= 1
+    ? { emoji: '🔴', label: 'URGENTE', color: '#dc2626', bgColor: '#fef2f2', borderColor: '#fca5a5' }
+    : data.daysRemaining <= 3
+    ? { emoji: '🟠', label: 'ALERTA', color: '#ea580c', bgColor: '#fff7ed', borderColor: '#fdba74' }
+    : { emoji: '🟡', label: 'ATENÇÃO', color: '#ca8a04', bgColor: '#fefce8', borderColor: '#fde047' };
+
+  const openedAt = new Date(data.claimCreatedAt).toLocaleDateString('pt-BR');
+  const deadlineDate = new Date(new Date(data.claimCreatedAt).getTime() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('pt-BR');
+
+  const content = `
+    <div style="background-color:${urgencyConfig.bgColor};border:2px solid ${urgencyConfig.borderColor};border-radius:8px;padding:20px;margin:0 0 20px 0;text-align:center;">
+      <p style="margin:0 0 5px 0;font-size:14px;color:#6b7280;">${urgencyConfig.emoji} ${urgencyConfig.label}</p>
+      <p style="margin:0;font-size:42px;font-weight:700;color:${urgencyConfig.color};">${data.daysRemaining}</p>
+      <p style="margin:5px 0 0 0;font-size:14px;color:#6b7280;">dias restantes para o pagamento</p>
+    </div>
+
+    <h1 style="margin:0 0 20px 0;font-size:24px;color:${TRIDOTS_BLUE};font-weight:600;">
+      Prazo de pagamento de garantia
+    </h1>
+    <p style="margin:0 0 20px 0;font-size:16px;color:#374151;line-height:1.6;">
+      A garantia do inquilino <strong>${data.tenantName}</strong> (${data.agencyName}) está aberta há <strong>${data.daysElapsed} dias</strong>. 
+      O prazo regulamentar de 30 dias para pagamento encerra em <strong>${deadlineDate}</strong>.
+    </p>
+    
+    <div style="background-color:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:20px;margin:20px 0;">
+      <h3 style="margin:0 0 15px 0;font-size:16px;color:#374151;">Dados da Garantia</h3>
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+        <tr>
+          <td style="padding:8px 0;color:#4b5563;font-size:14px;">Protocolo:</td>
+          <td style="padding:8px 0;color:#111827;font-size:14px;text-align:right;font-weight:500;">${data.claimId.slice(0, 8).toUpperCase()}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;color:#4b5563;font-size:14px;">Inquilino:</td>
+          <td style="padding:8px 0;color:#111827;font-size:14px;text-align:right;font-weight:500;">${data.tenantName}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;color:#4b5563;font-size:14px;">Imobiliária:</td>
+          <td style="padding:8px 0;color:#111827;font-size:14px;text-align:right;font-weight:500;">${data.agencyName}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;color:#4b5563;font-size:14px;">Valor reclamado:</td>
+          <td style="padding:8px 0;color:#dc2626;font-size:18px;text-align:right;font-weight:700;">R$ ${data.totalClaimedValue.toFixed(2)}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;color:#4b5563;font-size:14px;">Aberta em:</td>
+          <td style="padding:8px 0;color:#111827;font-size:14px;text-align:right;font-weight:500;">${openedAt}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;color:#4b5563;font-size:14px;">Prazo final:</td>
+          <td style="padding:8px 0;color:${urgencyConfig.color};font-size:14px;text-align:right;font-weight:700;">${deadlineDate}</td>
+        </tr>
+      </table>
+    </div>
+    
+    <p style="margin:20px 0 0 0;font-size:14px;color:#6b7280;line-height:1.6;">
+      Acesse o painel administrativo para verificar o andamento e providenciar o pagamento dentro do prazo.
+    </p>
+  `;
+
+  const subjectPrefix = data.daysRemaining <= 1 ? '🔴 URGENTE' : data.daysRemaining <= 3 ? '🟠 ALERTA' : '🟡 Atenção';
+
+  return {
+    subject: `${subjectPrefix}: Garantia ${data.claimId.slice(0, 8).toUpperCase()} - ${data.daysRemaining} dias restantes - Tridots Capital`,
+    html: generateEmailWrapper(content, `Prazo de pagamento: ${data.daysRemaining} dias restantes para garantia de ${data.tenantName}`)
+  };
+}
+
 // Template: Status da Garantia Alterado (para imobiliária)
 export function claimStatusChangedTemplate(data: {
   agencyName: string;

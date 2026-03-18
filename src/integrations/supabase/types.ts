@@ -982,6 +982,7 @@ export type Database = {
           assigned_to: string | null
           canceled_at: string | null
           canceled_by: string | null
+          claim_deadline_alerts_sent: Json | null
           contract_id: string
           created_at: string
           created_by: string
@@ -999,6 +1000,7 @@ export type Database = {
           assigned_to?: string | null
           canceled_at?: string | null
           canceled_by?: string | null
+          claim_deadline_alerts_sent?: Json | null
           contract_id: string
           created_at?: string
           created_by: string
@@ -1016,6 +1018,7 @@ export type Database = {
           assigned_to?: string | null
           canceled_at?: string | null
           canceled_by?: string | null
+          claim_deadline_alerts_sent?: Json | null
           contract_id?: string
           created_at?: string
           created_by?: string
@@ -2709,6 +2712,7 @@ export type Database = {
         Args: { target_date: string }
         Returns: string
       }
+      check_claim_deadline_alerts: { Args: never; Returns: undefined }
       cleanup_stale_typing_indicators: { Args: never; Returns: undefined }
       create_contract_from_analysis: {
         Args: { _analysis_id: string }
