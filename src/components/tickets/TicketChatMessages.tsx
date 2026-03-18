@@ -200,6 +200,7 @@ export function TicketChatMessages({
                 </div>
               </div>
             </div>
+            </div>
           );
         })}
 

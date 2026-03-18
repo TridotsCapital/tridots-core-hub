@@ -117,3 +117,52 @@ export function useMarkItemAsRead() {
 
   return markAsRead;
 }
+
+// Helper hook to mark item as unread
+export function useMarkItemAsUnread() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const markAsUnread = async (referenceId: string, source: string) => {
+    if (!user?.id || !referenceId) return;
+
+    // Set read_at back to null for existing notifications
+    const { data: existing, error: fetchError } = await supabase
+      .from('notifications')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('reference_id', referenceId)
+      .eq('source', source)
+      .limit(1);
+
+    if (fetchError) return;
+
+    if (existing && existing.length > 0) {
+      // Update existing notification to unread
+      await supabase
+        .from('notifications')
+        .update({ read_at: null })
+        .eq('user_id', user.id)
+        .eq('reference_id', referenceId)
+        .eq('source', source);
+    } else {
+      // Insert a synthetic unread notification
+      await supabase
+        .from('notifications')
+        .insert({
+          user_id: user.id,
+          reference_id: referenceId,
+          source,
+          title: 'Marcado como não lido',
+          message: '',
+          read_at: null,
+        });
+    }
+
+    queryClient.invalidateQueries({ queryKey: ['unread-item-ids', user.id] });
+    queryClient.invalidateQueries({ queryKey: ['notification-counts', user.id] });
+    queryClient.invalidateQueries({ queryKey: ['notifications'] });
+  };
+
+  return markAsUnread;
+}
