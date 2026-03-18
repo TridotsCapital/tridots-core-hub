@@ -19,8 +19,10 @@ import { Button } from "@/components/ui/button";
 import { ticketStatusConfig, ticketCategoryConfig, ticketPriorityConfig, TicketStatus } from "@/types/tickets";
 import { TicketChatMessages } from "./TicketChatMessages";
 import { TicketChatInput } from "./TicketChatInput";
-import { MessageSquare, X, FileText, Shield } from "lucide-react";
+import { MessageSquare, X, FileText, Shield, MailOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useMarkItemAsUnread } from "@/hooks/useUnreadItemIds";
+import { toast } from "sonner";
 
 interface TicketChatAreaProps {
   ticketId: string | null;
