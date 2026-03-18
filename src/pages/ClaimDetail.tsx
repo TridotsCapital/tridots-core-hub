@@ -36,9 +36,10 @@ import { InternalClaimTicketSheet } from "@/components/claims";
 import { InternalNotesTab } from "@/components/shared/InternalNotesTab";
 import { GuaranteeCostsSection } from "@/components/payment/GuaranteeCostsSection";
 import { CoverageCard } from "@/components/shared/CoverageCard";
-import { format } from "date-fns";
+import { format, differenceInDays, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
+import { Timer } from "lucide-react";
 
 export default function ClaimDetail() {
   const { id } = useParams<{ id: string }>();
@@ -142,6 +143,62 @@ export default function ClaimDetail() {
             Abrir Chamado
           </Button>
         </div>
+
+        {/* Payment Deadline Banner */}
+        {claim.public_status !== 'finalizado' && (() => {
+          const daysElapsed = differenceInDays(new Date(), parseISO(claim.created_at));
+          const daysRemaining = 30 - daysElapsed;
+          const isExpired = daysRemaining <= 0;
+          const daysOverdue = Math.abs(daysRemaining);
+
+          let bgClass = 'bg-emerald-500/10 border-emerald-500/30';
+          let textClass = 'text-emerald-700 dark:text-emerald-400';
+          let iconBgClass = 'bg-emerald-500/20';
+          let label = `${daysRemaining} dias restantes para pagamento`;
+
+          if (isExpired) {
+            bgClass = 'bg-destructive/10 border-destructive/40 animate-pulse';
+            textClass = 'text-destructive';
+            iconBgClass = 'bg-destructive/20';
+            label = `PRAZO EXPIRADO — ${daysOverdue} dia${daysOverdue !== 1 ? 's' : ''} em atraso`;
+          } else if (daysRemaining <= 2) {
+            bgClass = 'bg-destructive/10 border-destructive/30';
+            textClass = 'text-destructive';
+            iconBgClass = 'bg-destructive/20';
+            label = `⚠️ URGENTE — ${daysRemaining} dia${daysRemaining !== 1 ? 's' : ''} restante${daysRemaining !== 1 ? 's' : ''}`;
+          } else if (daysRemaining <= 9) {
+            bgClass = 'bg-orange-500/10 border-orange-500/30';
+            textClass = 'text-orange-700 dark:text-orange-400';
+            iconBgClass = 'bg-orange-500/20';
+            label = `${daysRemaining} dias restantes para pagamento`;
+          } else if (daysRemaining <= 20) {
+            bgClass = 'bg-yellow-500/10 border-yellow-500/30';
+            textClass = 'text-yellow-700 dark:text-yellow-400';
+            iconBgClass = 'bg-yellow-500/20';
+            label = `${daysRemaining} dias restantes para pagamento`;
+          }
+
+          return (
+            <Card className={`${bgClass} border`}>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-lg ${iconBgClass}`}>
+                    <Timer className={`h-5 w-5 ${textClass}`} />
+                  </div>
+                  <div className="flex-1">
+                    <p className={`font-semibold ${textClass}`}>{label}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Prazo de 30 dias a partir de {formatDateBR(claim.created_at, "dd/MM/yyyy")}
+                    </p>
+                  </div>
+                  <div className={`text-2xl font-bold ${textClass}`}>
+                    {isExpired ? `-${daysOverdue}` : daysRemaining}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })()}
 
         {/* Status Controls */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
