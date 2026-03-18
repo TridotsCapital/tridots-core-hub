@@ -995,3 +995,122 @@ export function boletoUploadedTemplate(data: {
     html: generateEmailWrapper(content, `Boleto da fatura ${data.invoiceMonth}/${data.invoiceYear} disponível para download`, IMAGES.office)
   };
 }
+
+// Template: Nova Garantia Solicitada (para equipe Tridots)
+export function claimCreatedTemplate(data: {
+  agencyName: string;
+  tenantName: string;
+  claimId: string;
+  contractId: string;
+  totalClaimedValue: number;
+}): { subject: string; html: string } {
+  const content = `
+    <h1 style="margin:0 0 20px 0;font-size:24px;color:${TRIDOTS_BLUE};font-weight:600;">
+      Nova solicitação de garantia! 🚨
+    </h1>
+    <p style="margin:0 0 20px 0;font-size:16px;color:#374151;line-height:1.6;">
+      A imobiliária <strong>${data.agencyName}</strong> abriu uma nova solicitação de garantia.
+    </p>
+    
+    <div style="background-color:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:20px;margin:20px 0;">
+      <h3 style="margin:0 0 15px 0;font-size:16px;color:#991b1b;">Dados da Solicitação</h3>
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+        <tr>
+          <td style="padding:8px 0;color:#4b5563;font-size:14px;">Protocolo:</td>
+          <td style="padding:8px 0;color:#111827;font-size:14px;text-align:right;font-weight:500;">${data.claimId.slice(0, 8).toUpperCase()}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;color:#4b5563;font-size:14px;">Inquilino:</td>
+          <td style="padding:8px 0;color:#111827;font-size:14px;text-align:right;font-weight:500;">${data.tenantName}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;color:#4b5563;font-size:14px;">Imobiliária:</td>
+          <td style="padding:8px 0;color:#111827;font-size:14px;text-align:right;font-weight:500;">${data.agencyName}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;color:#4b5563;font-size:14px;">Valor Total:</td>
+          <td style="padding:8px 0;color:#dc2626;font-size:18px;text-align:right;font-weight:700;">R$ ${data.totalClaimedValue.toFixed(2)}</td>
+        </tr>
+      </table>
+    </div>
+    
+    <p style="margin:20px 0 0 0;font-size:14px;color:#6b7280;line-height:1.6;">
+      Acesse o painel administrativo para analisar a solicitação e dar andamento ao processo.
+    </p>
+  `;
+
+  return {
+    subject: `Nova garantia solicitada - ${data.tenantName} (${data.agencyName}) - Tridots Capital`,
+    html: generateEmailWrapper(content, `Nova solicitação de garantia de ${data.agencyName}`)
+  };
+}
+
+// Template: Status da Garantia Alterado (para imobiliária)
+export function claimStatusChangedTemplate(data: {
+  agencyName: string;
+  tenantName: string;
+  claimId: string;
+  oldStatus: string;
+  newStatus: string;
+}): { subject: string; html: string } {
+  const statusLabels: Record<string, string> = {
+    'solicitado': 'Solicitado',
+    'em_analise_tecnica': 'Em Análise Técnica',
+    'exoneracao_despejo': 'Exoneração/Despejo',
+    'pagamento_programado': 'Pagamento Programado',
+    'finalizado': 'Finalizado',
+  };
+
+  const newStatusLabel = statusLabels[data.newStatus] || data.newStatus;
+  const oldStatusLabel = statusLabels[data.oldStatus] || data.oldStatus;
+
+  const statusColor = data.newStatus === 'finalizado' ? '#166534' 
+    : data.newStatus === 'pagamento_programado' ? '#1e40af' 
+    : '#92400e';
+
+  const statusBgColor = data.newStatus === 'finalizado' ? '#f0fdf4' 
+    : data.newStatus === 'pagamento_programado' ? '#eff6ff' 
+    : '#fffbeb';
+
+  const statusBorderColor = data.newStatus === 'finalizado' ? '#86efac' 
+    : data.newStatus === 'pagamento_programado' ? '#93c5fd' 
+    : '#fcd34d';
+
+  const content = `
+    <h1 style="margin:0 0 20px 0;font-size:24px;color:${TRIDOTS_BLUE};font-weight:600;">
+      Atualização na sua garantia 📋
+    </h1>
+    <p style="margin:0 0 20px 0;font-size:16px;color:#374151;line-height:1.6;">
+      Olá, <strong>${data.agencyName}</strong>!
+    </p>
+    <p style="margin:0 0 20px 0;font-size:16px;color:#374151;line-height:1.6;">
+      A solicitação de garantia do inquilino <strong>${data.tenantName}</strong> teve seu status atualizado.
+    </p>
+    
+    <div style="background-color:${statusBgColor};border:1px solid ${statusBorderColor};border-radius:8px;padding:20px;margin:20px 0;">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+        <tr>
+          <td style="padding:8px 0;color:#4b5563;font-size:14px;">Protocolo:</td>
+          <td style="padding:8px 0;color:#111827;font-size:14px;text-align:right;font-weight:500;">${data.claimId.slice(0, 8).toUpperCase()}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;color:#4b5563;font-size:14px;">Status anterior:</td>
+          <td style="padding:8px 0;color:#6b7280;font-size:14px;text-align:right;">${oldStatusLabel}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;color:#4b5563;font-size:14px;">Novo status:</td>
+          <td style="padding:8px 0;color:${statusColor};font-size:16px;text-align:right;font-weight:700;">${newStatusLabel}</td>
+        </tr>
+      </table>
+    </div>
+    
+    <p style="margin:20px 0 0 0;font-size:14px;color:#6b7280;line-height:1.6;">
+      Acompanhe os detalhes da solicitação pelo portal da imobiliária.
+    </p>
+  `;
+
+  return {
+    subject: `Garantia atualizada: ${newStatusLabel} - ${data.tenantName} - Tridots Capital`,
+    html: generateEmailWrapper(content, `Status da garantia de ${data.tenantName} atualizado para ${newStatusLabel}`)
+  };
+}
