@@ -90,13 +90,27 @@ export function TicketChatMessages({
           </div>
         )}
 
-        {/* Messages */}
-        {messages.map((msg) => {
+        {/* Messages with date separators */}
+        {messages.map((msg, index) => {
           const isOwn = msg.sender_id === currentUserId;
           const senderName = msg.sender?.full_name || 'Usuário';
           const initials = senderName.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase();
+          
+          const currentDate = getDateLabel(msg.created_at);
+          const prevDate = index > 0 ? getDateLabel(messages[index - 1].created_at) : null;
+          const showDateSeparator = index === 0 || currentDate !== prevDate;
 
           return (
+            <div key={msg.id}>
+              {showDateSeparator && (
+                <div className="flex items-center gap-3 my-3">
+                  <div className="flex-1 h-px bg-border" />
+                  <span className="text-[10px] font-medium text-muted-foreground bg-background px-2">
+                    {currentDate}
+                  </span>
+                  <div className="flex-1 h-px bg-border" />
+                </div>
+              )}
             <div
               key={msg.id}
               className={cn("flex gap-3", isOwn && "flex-row-reverse")}
