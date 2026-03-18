@@ -1,12 +1,19 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useMemo } from "react";
 import { TicketMessage, TypingIndicator } from "@/types/tickets";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { format } from "date-fns";
+import { format, parseISO, isToday, isYesterday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn, formatDateBR, getFileNameFromUrl, viewFileViaBlob, downloadFileViaBlob } from "@/lib/utils";
 import { CheckCheck, FileIcon, Download, Eye, Loader2 } from "lucide-react";
+
+function getDateLabel(dateStr: string): string {
+  const date = parseISO(dateStr);
+  if (isToday(date)) return "Hoje";
+  if (isYesterday(date)) return "Ontem";
+  return format(date, "dd/MM/yyyy", { locale: ptBR });
+}
 import { toast } from "sonner";
 
 interface TicketChatMessagesProps {
