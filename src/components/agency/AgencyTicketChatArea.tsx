@@ -20,9 +20,17 @@ import { useNotificationSound } from "@/hooks/useNotificationSound";
 import { useNps } from "@/contexts/NpsContext";
 import { TicketStatus, TicketCategory } from "@/types/tickets";
 import { CloseTicketDialog } from "./CloseTicketDialog";
-import { cn, getFileNameFromUrl, viewFileViaBlob, downloadFileViaBlob, buildStoragePath } from "@/lib/utils";
+import { cn, getFileNameFromUrl, viewFileViaBlob, downloadFileViaBlob, buildStoragePath, formatDateBR } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useMarkItemAsUnread } from "@/hooks/useUnreadItemIds";
+
+function getDateLabel(dateStr: string): string {
+  const date = parseISO(dateStr);
+  if (isToday(date)) return "Hoje";
+  if (isYesterday(date)) return "Ontem";
+  return format(date, "dd/MM/yyyy", { locale: ptBR });
+}
 
 interface AgencyTicketChatAreaProps {
   ticketId: string | null;
