@@ -354,6 +354,18 @@ export function AgencyTicketChatArea({ ticketId }: AgencyTicketChatAreaProps) {
           </h2>
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            title="Marcar como não lido"
+            onClick={async () => {
+              await markAsUnread(ticketId, 'chamados');
+              toast.info("Chamado marcado como não lido");
+            }}
+          >
+            <MailOpen className="h-3.5 w-3.5" />
+          </Button>
           {!isResolved && (
             <Button
               variant="outline"
