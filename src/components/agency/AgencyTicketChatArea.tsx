@@ -118,6 +118,7 @@ export function AgencyTicketChatArea({ ticketId }: AgencyTicketChatAreaProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { playSound } = useNotificationSound();
   const { openModalAfterClose } = useNps();
+  const markAsUnread = useMarkItemAsUnread();
 
   const handleNewMessage = useCallback((senderId: string) => {
     if (senderId !== user?.id) {
