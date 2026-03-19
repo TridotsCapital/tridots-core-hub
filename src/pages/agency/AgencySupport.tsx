@@ -85,7 +85,7 @@ export default function AgencySupport() {
   );
   const { data: unreadIds } = useUnreadItemIds();
   const markAsRead = useMarkItemAsRead();
-
+  const markAsUnread = useMarkItemAsUnread();
   // Read contract filter from URL
   useEffect(() => {
     const contract = searchParams.get('contract');
