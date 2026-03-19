@@ -59,9 +59,11 @@ export function TicketConversationItem({
       className={cn(
         "group flex items-start gap-3 p-4 cursor-pointer transition-all duration-200 border-l-4 relative",
         "hover:bg-muted/50",
-        getWaitTimeColor(),
-        isSelected ? "bg-primary/5 border-l-primary" : "border-l-transparent",
-        hasUnread && !isSelected && "bg-red-50/50 dark:bg-red-950/20"
+        isSelected 
+          ? "bg-primary/5 border-l-primary" 
+          : hasUnread 
+            ? "bg-blue-50 dark:bg-blue-950/30 border-l-blue-500" 
+            : getWaitTimeColor()
       )}
     >
       {/* Read/Unread toggle on hover — replaces unread dot */}
@@ -112,7 +114,7 @@ export function TicketConversationItem({
           </span>
         </div>
 
-        <p className="text-sm font-medium line-clamp-2 break-words mt-0.5 pr-6">{ticket.subject}</p>
+        <p className={cn("text-sm line-clamp-2 break-words mt-0.5 pr-6", hasUnread ? "font-bold" : "font-medium")}>{ticket.subject}</p>
 
         <p className="text-xs text-muted-foreground line-clamp-2 break-words mt-1 pr-6">
           {lastMessage || ticket.description || 'Sem mensagens ainda'}

@@ -187,8 +187,9 @@ export function AgencyTicketList({
                     "hover:border-primary/50 hover:shadow-sm",
                     selectedTicketId === ticket.id
                       ? "border-primary bg-primary/5"
-                      : "border-border bg-card",
-                    hasUnread && selectedTicketId !== ticket.id && "bg-red-50/50 dark:bg-red-950/20 border-red-200"
+                      : hasUnread
+                        ? "bg-blue-50 dark:bg-blue-950/30 border-l-4 border-l-blue-500 border-blue-200"
+                        : "border-border bg-card"
                   )}
                 >
                   {/* Read/Unread toggle */}
@@ -259,7 +260,7 @@ export function AgencyTicketList({
                   </div>
 
                   {/* Subject */}
-                  <h4 className="font-medium text-foreground line-clamp-2 break-words mb-2 pr-6">
+                  <h4 className={cn("text-foreground line-clamp-2 break-words mb-2 pr-6", hasUnread ? "font-bold" : "font-medium")}>
                     {ticket.subject}
                   </h4>
 

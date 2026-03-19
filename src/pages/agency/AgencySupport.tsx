@@ -5,13 +5,14 @@ import { AgencyTicketForm } from "@/components/agency/AgencyTicketForm";
 import { AgencyTicketChatArea } from "@/components/agency/AgencyTicketChatArea";
 import { useAgencyUser } from "@/hooks/useAgencyUser";
 import { useAgencyTickets } from "@/hooks/useTickets";
-import { useUnreadItemIds, useMarkItemAsRead } from "@/hooks/useUnreadItemIds";
-import { Loader2, Search, MessageSquare, Clock, FileText, X, Shield } from "lucide-react";
+import { useUnreadItemIds, useMarkItemAsRead, useMarkItemAsUnread } from "@/hooks/useUnreadItemIds";
+import { Loader2, Search, MessageSquare, Clock, FileText, X, Shield, Mail, MailOpen } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { TicketStatus, TicketCategory } from "@/types/tickets";
@@ -84,7 +85,7 @@ export default function AgencySupport() {
   );
   const { data: unreadIds } = useUnreadItemIds();
   const markAsRead = useMarkItemAsRead();
-
+  const markAsUnread = useMarkItemAsUnread();
   // Read contract filter from URL
   useEffect(() => {
     const contract = searchParams.get('contract');
@@ -267,20 +268,50 @@ export default function AgencySupport() {
                         key={ticket.id}
                         onClick={() => handleSelectTicket(ticket.id)}
                         className={cn(
-                          "w-full text-left p-4 transition-all relative hover:bg-muted/50",
+                          "group w-full text-left p-4 transition-all relative hover:bg-muted/50 border-l-4",
                           selectedTicketId === ticket.id
-                            ? "bg-primary/5 border-l-2 border-l-primary"
-                            : "",
-                          hasUnread && selectedTicketId !== ticket.id && "bg-red-50/50 dark:bg-red-950/20"
+                            ? "bg-primary/5 border-l-primary"
+                            : hasUnread
+                              ? "bg-blue-50 dark:bg-blue-950/30 border-l-blue-500"
+                              : "border-l-transparent"
                         )}
                       >
-                        {/* Unread indicator */}
-                        {hasUnread && (
-                          <span className="absolute top-2 right-2 flex h-3 w-3">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-                          </span>
-                        )}
+                        {/* Read/Unread toggle */}
+                        <div className="absolute top-2 right-2">
+                          {hasUnread && (
+                            <span className="flex h-3 w-3 group-hover:hidden">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                            </span>
+                          )}
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className={cn(
+                                  "h-7 w-7 rounded-full hidden group-hover:flex",
+                                  hasUnread
+                                    ? "text-primary hover:bg-primary/10"
+                                    : "text-muted-foreground hover:bg-muted"
+                                )}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (hasUnread) {
+                                    markAsRead(ticket.id, 'chamados');
+                                  } else {
+                                    markAsUnread(ticket.id, 'chamados');
+                                  }
+                                }}
+                              >
+                                {hasUnread ? <MailOpen className="h-4 w-4" /> : <Mail className="h-4 w-4" />}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="left" className="text-xs">
+                              {hasUnread ? "Marcar como lido" : "Marcar como não lido"}
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
                         
                         {/* Header row: ID + Category + Contract badge */}
                         <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
@@ -312,7 +343,7 @@ export default function AgencySupport() {
                         </div>
 
                         {/* Subject */}
-                        <h4 className="font-medium text-foreground line-clamp-2 break-words mb-2 pr-6">
+                        <h4 className={cn("text-foreground line-clamp-2 break-words mb-2 pr-6", hasUnread ? "font-bold" : "font-medium")}>
                           {ticket.subject}
                         </h4>
 
