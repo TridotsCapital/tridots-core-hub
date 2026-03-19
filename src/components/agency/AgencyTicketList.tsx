@@ -1,14 +1,15 @@
 import { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Search, MessageSquare, Clock, Shield } from "lucide-react";
+import { Search, MessageSquare, Clock, Shield, Mail, MailOpen } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { TicketStatus, TicketCategory } from "@/types/tickets";
 import { cn } from "@/lib/utils";
-import { useUnreadItemIds, useMarkItemAsRead } from "@/hooks/useUnreadItemIds";
+import { useUnreadItemIds, useMarkItemAsRead, useMarkItemAsUnread } from "@/hooks/useUnreadItemIds";
 
 interface Ticket {
   id: string;
