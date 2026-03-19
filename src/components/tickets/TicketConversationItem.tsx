@@ -114,7 +114,7 @@ export function TicketConversationItem({
           </span>
         </div>
 
-        <p className="text-sm font-medium line-clamp-2 break-words mt-0.5 pr-6">{ticket.subject}</p>
+        <p className={cn("text-sm line-clamp-2 break-words mt-0.5 pr-6", hasUnread ? "font-bold" : "font-medium")}>{ticket.subject}</p>
 
         <p className="text-xs text-muted-foreground line-clamp-2 break-words mt-1 pr-6">
           {lastMessage || ticket.description || 'Sem mensagens ainda'}

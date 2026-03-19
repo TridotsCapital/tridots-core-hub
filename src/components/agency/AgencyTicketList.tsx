@@ -260,7 +260,7 @@ export function AgencyTicketList({
                   </div>
 
                   {/* Subject */}
-                  <h4 className="font-medium text-foreground line-clamp-2 break-words mb-2 pr-6">
+                  <h4 className={cn("text-foreground line-clamp-2 break-words mb-2 pr-6", hasUnread ? "font-bold" : "font-medium")}>
                     {ticket.subject}
                   </h4>
 
