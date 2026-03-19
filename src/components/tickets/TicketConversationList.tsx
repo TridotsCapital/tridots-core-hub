@@ -237,6 +237,8 @@ export function TicketConversationList({
                 lastMessage={lastMessages[ticket.id]}
                 hasUnread={unreadIds?.chamados.has(ticket.id) ?? false}
                 onClick={() => handleSelectTicket(ticket.id)}
+                onMarkAsRead={(id) => markAsRead(id, 'chamados')}
+                onMarkAsUnread={(id) => markAsUnread(id, 'chamados')}
               />
             ))}
           </div>

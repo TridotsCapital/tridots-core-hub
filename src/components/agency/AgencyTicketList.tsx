@@ -183,7 +183,7 @@ export function AgencyTicketList({
                   key={ticket.id}
                   onClick={() => handleSelectTicket(ticket.id)}
                   className={cn(
-                    "w-full text-left p-4 rounded-lg border transition-all relative",
+                    "group w-full text-left p-4 rounded-lg border transition-all relative",
                     "hover:border-primary/50 hover:shadow-sm",
                     selectedTicketId === ticket.id
                       ? "border-primary bg-primary/5"
@@ -191,13 +191,42 @@ export function AgencyTicketList({
                     hasUnread && selectedTicketId !== ticket.id && "bg-red-50/50 dark:bg-red-950/20 border-red-200"
                   )}
                 >
-                  {/* Unread indicator */}
-                  {hasUnread && (
-                    <span className="absolute top-2 right-2 flex h-3 w-3">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-                    </span>
-                  )}
+                  {/* Read/Unread toggle */}
+                  <div className="absolute top-2 right-2">
+                    {hasUnread && (
+                      <span className="flex h-3 w-3 group-hover:hidden">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                      </span>
+                    )}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className={cn(
+                            "h-7 w-7 rounded-full hidden group-hover:flex",
+                            hasUnread
+                              ? "text-primary hover:bg-primary/10"
+                              : "text-muted-foreground hover:bg-muted"
+                          )}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (hasUnread) {
+                              markAsRead(ticket.id, 'chamados');
+                            } else {
+                              markAsUnread(ticket.id, 'chamados');
+                            }
+                          }}
+                        >
+                          {hasUnread ? <MailOpen className="h-4 w-4" /> : <Mail className="h-4 w-4" />}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="left" className="text-xs">
+                        {hasUnread ? "Marcar como lido" : "Marcar como não lido"}
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
                   
                   {/* Header: ID + Category */}
                   <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
