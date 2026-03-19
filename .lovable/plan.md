@@ -1,29 +1,42 @@
 
 
-# Corrigir erro de variavel duplicada na Edge Function `generate-acceptance-link`
+# Plano: Toggle Lido/Não Lido nos Chamados (Ambos Portais)
 
-## Problema
-A Edge Function `generate-acceptance-link` declara `const token` duas vezes:
-- Linha 36: `const token = authHeader.replace("Bearer ", "");` (token de autenticacao)
-- Linha 65: `const token = crypto.randomUUID();` (token de aceite)
+## Situação Atual
 
-Isso causa um erro de runtime `SyntaxError: Identifier 'token' has already been declared`, impedindo a geracao do link de aceite.
+O sistema **já possui**:
+- Indicador visual de não lido (bolinha vermelha pulsante) nas listas de chamados
+- Marcação automática como lido ao abrir um chamado
+- Botão "Marcar como não lido" no header do chat (MailOpen)
+- Filtro "Não lidos" no portal da imobiliária
 
-## Correcao
-Renomear a variavel da linha 36 de `token` para `authToken` e atualizar sua referencia na linha 37.
+O que **falta**:
+- Não há como marcar como lido/não lido **diretamente da lista**, sem abrir o chamado
+- No portal Tridots (`TicketConversationItem`), não há ação de contexto para toggle
 
-## Arquivo afetado
+## Alterações
 
-| Arquivo | Mudanca |
-|---------|---------|
-| `supabase/functions/generate-acceptance-link/index.ts` | Renomear `token` (linha 36) para `authToken` e atualizar uso na linha 37 |
+### 1. Portal Tridots — `TicketConversationItem.tsx`
 
-## Detalhe tecnico
+Adicionar um botão de toggle (ícone `Mail`/`MailOpen`) que aparece no hover sobre cada item da lista:
+- Se não lido: ícone `MailOpen` → ao clicar, marca como lido (chama `markAsRead`)
+- Se lido: ícone `Mail` → ao clicar, marca como não lido (chama `markAsUnread`)
+- Posicionado no canto superior direito, substituindo/complementando a bolinha vermelha
+- Passa `onMarkAsRead` e `onMarkAsUnread` como props do `TicketConversationList`
 
-```text
-Linha 36: const token → const authToken
-Linha 37: supabase.auth.getUser(token) → supabase.auth.getUser(authToken)
-```
+### 2. Portal Tridots — `TicketConversationList.tsx`
 
-Nenhuma outra mudanca necessaria. O `token` da linha 65 (UUID de aceite) permanece inalterado e continua sendo usado corretamente no restante da funcao.
+Passar as callbacks `markAsRead` e `markAsUnread` para cada `TicketConversationItem`, propagando as ações dos hooks existentes.
+
+### 3. Portal Imobiliária — `AgencyTicketList.tsx`
+
+Mesmo padrão: botão de toggle lido/não lido visível no hover de cada card de chamado, usando os mesmos hooks `useMarkItemAsRead` e `useMarkItemAsUnread`.
+
+### Resumo de arquivos
+
+| Arquivo | Alteração |
+|---------|-----------|
+| `src/components/tickets/TicketConversationItem.tsx` | Adicionar botão toggle lido/não lido no hover |
+| `src/components/tickets/TicketConversationList.tsx` | Passar callbacks de read/unread para os items |
+| `src/components/agency/AgencyTicketList.tsx` | Adicionar botão toggle lido/não lido no hover de cada card |
 
