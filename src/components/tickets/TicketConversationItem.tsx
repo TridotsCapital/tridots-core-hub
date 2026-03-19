@@ -4,7 +4,9 @@ import { Ticket, ticketStatusConfig, ticketPriorityConfig } from "@/types/ticket
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { FileText, Shield } from "lucide-react";
+import { FileText, Shield, Mail, MailOpen } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface TicketConversationItemProps {
   ticket: Ticket;
@@ -13,6 +15,8 @@ interface TicketConversationItemProps {
   unreadCount?: number;
   hasUnread?: boolean;
   onClick: () => void;
+  onMarkAsRead?: (ticketId: string) => void;
+  onMarkAsUnread?: (ticketId: string) => void;
 }
 
 export function TicketConversationItem({
@@ -22,6 +26,8 @@ export function TicketConversationItem({
   unreadCount = 0,
   hasUnread = false,
   onClick,
+  onMarkAsRead,
+  onMarkAsUnread,
 }: TicketConversationItemProps) {
   const statusConfig = ticketStatusConfig[ticket.status];
   const priorityConfig = ticketPriorityConfig[ticket.priority];
@@ -38,24 +44,55 @@ export function TicketConversationItem({
   const agencyName = ticket.agency?.nome_fantasia || ticket.agency?.razao_social || 'Imobiliária';
   const initials = agencyName.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase();
 
+  const handleToggleRead = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (hasUnread) {
+      onMarkAsRead?.(ticket.id);
+    } else {
+      onMarkAsUnread?.(ticket.id);
+    }
+  };
+
   return (
     <div
       onClick={onClick}
       className={cn(
-        "flex items-start gap-3 p-4 cursor-pointer transition-all duration-200 border-l-4 relative",
+        "group flex items-start gap-3 p-4 cursor-pointer transition-all duration-200 border-l-4 relative",
         "hover:bg-muted/50",
         getWaitTimeColor(),
         isSelected ? "bg-primary/5 border-l-primary" : "border-l-transparent",
         hasUnread && !isSelected && "bg-red-50/50 dark:bg-red-950/20"
       )}
     >
-      {/* Unread indicator */}
-      {hasUnread && (
-        <span className="absolute top-2 right-2 flex h-3 w-3">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-        </span>
-      )}
+      {/* Read/Unread toggle on hover — replaces unread dot */}
+      <div className="absolute top-2 right-2">
+        {hasUnread && (
+          <span className="flex h-3 w-3 group-hover:hidden">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+          </span>
+        )}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className={cn(
+                "h-7 w-7 rounded-full hidden group-hover:flex",
+                hasUnread
+                  ? "text-primary hover:bg-primary/10"
+                  : "text-muted-foreground hover:bg-muted"
+              )}
+              onClick={handleToggleRead}
+            >
+              {hasUnread ? <MailOpen className="h-4 w-4" /> : <Mail className="h-4 w-4" />}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="left" className="text-xs">
+            {hasUnread ? "Marcar como lido" : "Marcar como não lido"}
+          </TooltipContent>
+        </Tooltip>
+      </div>
       
       <Avatar className="h-12 w-12 shrink-0">
         <AvatarImage 

@@ -6,7 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Ticket, TicketStatus, TicketCategory, TicketPriority, ticketStatusConfig, ticketCategoryConfig, ticketPriorityConfig } from "@/types/tickets";
 import { TicketConversationItem } from "./TicketConversationItem";
 import { SlidersHorizontal, X, MessageSquare, FileText } from "lucide-react";
-import { useUnreadItemIds, useMarkItemAsRead } from "@/hooks/useUnreadItemIds";
+import { useUnreadItemIds, useMarkItemAsRead, useMarkItemAsUnread } from "@/hooks/useUnreadItemIds";
 
 interface TicketConversationListProps {
   tickets: Ticket[];
@@ -36,6 +36,7 @@ export function TicketConversationList({
   const [filtersOpen, setFiltersOpen] = useState(false);
   const { data: unreadIds } = useUnreadItemIds();
   const markAsRead = useMarkItemAsRead();
+  const markAsUnread = useMarkItemAsUnread();
 
   const handleSelectTicket = (ticketId: string) => {
     if (unreadIds?.chamados.has(ticketId)) {
@@ -236,6 +237,8 @@ export function TicketConversationList({
                 lastMessage={lastMessages[ticket.id]}
                 hasUnread={unreadIds?.chamados.has(ticket.id) ?? false}
                 onClick={() => handleSelectTicket(ticket.id)}
+                onMarkAsRead={(id) => markAsRead(id, 'chamados')}
+                onMarkAsUnread={(id) => markAsUnread(id, 'chamados')}
               />
             ))}
           </div>
