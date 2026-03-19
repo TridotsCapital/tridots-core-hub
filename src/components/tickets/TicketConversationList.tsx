@@ -6,7 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Ticket, TicketStatus, TicketCategory, TicketPriority, ticketStatusConfig, ticketCategoryConfig, ticketPriorityConfig } from "@/types/tickets";
 import { TicketConversationItem } from "./TicketConversationItem";
 import { SlidersHorizontal, X, MessageSquare, FileText } from "lucide-react";
-import { useUnreadItemIds, useMarkItemAsRead } from "@/hooks/useUnreadItemIds";
+import { useUnreadItemIds, useMarkItemAsRead, useMarkItemAsUnread } from "@/hooks/useUnreadItemIds";
 
 interface TicketConversationListProps {
   tickets: Ticket[];
