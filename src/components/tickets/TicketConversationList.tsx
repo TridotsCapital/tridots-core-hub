@@ -36,6 +36,7 @@ export function TicketConversationList({
   const [filtersOpen, setFiltersOpen] = useState(false);
   const { data: unreadIds } = useUnreadItemIds();
   const markAsRead = useMarkItemAsRead();
+  const markAsUnread = useMarkItemAsUnread();
 
   const handleSelectTicket = (ticketId: string) => {
     if (unreadIds?.chamados.has(ticketId)) {
