@@ -93,6 +93,7 @@ export function AgencyTicketList({
   const [statusFilter, setStatusFilter] = useState<TicketStatus | "all" | "unread">("all");
   const { data: unreadIds } = useUnreadItemIds();
   const markAsRead = useMarkItemAsRead();
+  const markAsUnread = useMarkItemAsUnread();
 
   const handleSelectTicket = (ticketId: string) => {
     if (unreadIds?.chamados.has(ticketId)) {
