@@ -46,6 +46,8 @@ import { CoverageCard } from '@/components/shared/CoverageCard';
 import { useMoveAnalysis } from '@/hooks/useAnalysesKanban';
 import { useDeleteAnalysis } from '@/hooks/useAnalyses';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { CascadeDeleteModal } from '@/components/shared/CascadeDeleteModal';
 import { useQueryClient } from '@tanstack/react-query';
 import { useLinkedEntitiesForAnalysis } from '@/hooks/useLinkedEntities';
 import { useTicketCountByAnalysis } from '@/hooks/useTickets';
