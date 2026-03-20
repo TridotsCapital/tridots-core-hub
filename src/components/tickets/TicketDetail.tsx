@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ticketCategoryConfig, ticketStatusConfig, ticketPriorityConfig, TicketStatus } from "@/types/tickets";
-import { X, Send, Zap, Building2, Phone, Mail, FileText, DollarSign, Clock, User, ChevronDown, Shield } from "lucide-react";
+import { X, Send, Zap, Building2, Phone, Mail, FileText, DollarSign, Clock, User, ChevronDown, Shield, AlertTriangle } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
