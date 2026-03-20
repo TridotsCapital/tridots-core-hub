@@ -97,7 +97,8 @@ export default function ContractDetail() {
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [isCanceling, setIsCanceling] = useState(false);
-
+  const [cascadeDeleteOpen, setCascadeDeleteOpen] = useState(false);
+  const { isMaster } = useAuth();
   const { data: contract, isLoading, refetch } = useContract(id);
   const analysisId = contract?.analysis_id;
   const { data: ticketCount = 0 } = useTicketCountByAnalysis(analysisId);
