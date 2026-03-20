@@ -48,6 +48,8 @@ export default function ClaimDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [ticketSheetOpen, setTicketSheetOpen] = useState(false);
+  const [cascadeDeleteOpen, setCascadeDeleteOpen] = useState(false);
+  const { isMaster } = useAuth();
 
   const { data: claim, isLoading, refetch } = useClaimDetail(id!);
   const { data: items } = useClaimItems(id!);
