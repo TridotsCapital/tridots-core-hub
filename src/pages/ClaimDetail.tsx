@@ -462,6 +462,16 @@ export default function ClaimDetail() {
         onOpenChange={setTicketSheetOpen}
         claim={claim}
       />
+
+      {/* Cascade Delete Modal */}
+      <CascadeDeleteModal
+        open={cascadeDeleteOpen}
+        onOpenChange={setCascadeDeleteOpen}
+        entityType="claim"
+        entityId={claim.id}
+        entityLabel="Garantia"
+        onDeleted={() => navigate('/claims')}
+      />
     </DashboardLayout>
   );
 }

@@ -404,6 +404,17 @@ export default function ContractDetail() {
                 Cancelar Contrato
               </Button>
             )}
+            {isMaster && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                onClick={() => setCascadeDeleteOpen(true)}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Excluir
+              </Button>
+            )}
           </div>
         </div>
 
