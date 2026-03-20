@@ -18,8 +18,11 @@ import {
   Clock,
   DollarSign,
   FileCheck,
-  StickyNote
+  StickyNote,
+  Trash2,
 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { CascadeDeleteModal } from "@/components/shared/CascadeDeleteModal";
 import { useClaimDetail, useUpdateClaimStatus } from "@/hooks/useClaims";
 import { useClaimItems } from "@/hooks/useClaimItems";
 import { useClaimTickets } from "@/hooks/useClaimTickets";
