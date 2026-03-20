@@ -948,6 +948,18 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Cascade Delete Modal (master-only, for analyses with contracts) */}
+      {analysis && (
+        <CascadeDeleteModal
+          open={cascadeDeleteOpen}
+          onOpenChange={setCascadeDeleteOpen}
+          entityType="analysis"
+          entityId={analysis.id}
+          entityLabel="Análise"
+          onDeleted={() => onOpenChange(false)}
+        />
+      )}
+
     </>
   );
 }
