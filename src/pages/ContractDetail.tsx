@@ -35,6 +35,7 @@ import {
   XCircle as XCircleAction,
   Loader2 as Loader2Action,
   ArrowRightLeft,
+  Trash2,
 } from 'lucide-react';
 import { useContract } from '@/hooks/useContracts';
 import { useTicketCountByAnalysis, useTicketsByAnalysis } from '@/hooks/useTickets';
@@ -59,6 +60,8 @@ import type { Database } from '@/integrations/supabase/types';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
+import { CascadeDeleteModal } from '@/components/shared/CascadeDeleteModal';
 
 type ContractStatus = Database['public']['Enums']['contract_status'];
 
@@ -94,7 +97,8 @@ export default function ContractDetail() {
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [isCanceling, setIsCanceling] = useState(false);
-
+  const [cascadeDeleteOpen, setCascadeDeleteOpen] = useState(false);
+  const { isMaster } = useAuth();
   const { data: contract, isLoading, refetch } = useContract(id);
   const analysisId = contract?.analysis_id;
   const { data: ticketCount = 0 } = useTicketCountByAnalysis(analysisId);
@@ -398,6 +402,17 @@ export default function ContractDetail() {
               >
                 <XCircleAction className="h-4 w-4 mr-2" />
                 Cancelar Contrato
+              </Button>
+            )}
+            {isMaster && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                onClick={() => setCascadeDeleteOpen(true)}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Excluir
               </Button>
             )}
           </div>
@@ -1036,6 +1051,16 @@ export default function ContractDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Cascade Delete Modal */}
+      <CascadeDeleteModal
+        open={cascadeDeleteOpen}
+        onOpenChange={setCascadeDeleteOpen}
+        entityType="contract"
+        entityId={contract.id}
+        entityLabel="Contrato"
+        onDeleted={() => navigate('/contracts')}
+      />
     </DashboardLayout>
   );
 }

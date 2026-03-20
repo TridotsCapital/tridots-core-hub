@@ -46,6 +46,8 @@ import { CoverageCard } from '@/components/shared/CoverageCard';
 import { useMoveAnalysis } from '@/hooks/useAnalysesKanban';
 import { useDeleteAnalysis } from '@/hooks/useAnalyses';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { CascadeDeleteModal } from '@/components/shared/CascadeDeleteModal';
 import { useQueryClient } from '@tanstack/react-query';
 import { useLinkedEntitiesForAnalysis } from '@/hooks/useLinkedEntities';
 import { useTicketCountByAnalysis } from '@/hooks/useTickets';
@@ -121,15 +123,18 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
   const [regenerateModalOpen, setRegenerateModalOpen] = useState(false);
   const [validationModalOpen, setValidationModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [cascadeDeleteOpen, setCascadeDeleteOpen] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
   const [setupPaymentDate, setSetupPaymentDate] = useState('');
   const [guaranteePaymentDate, setGuaranteePaymentDate] = useState('');
   const moveAnalysis = useMoveAnalysis();
   const deleteAnalysis = useDeleteAnalysis();
+  const { isMaster } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { data: linkedEntities = [] } = useLinkedEntitiesForAnalysis(analysis?.id);
   const { data: ticketCount = 0 } = useTicketCountByAnalysis(analysis?.id);
+  const hasLinkedContract = linkedEntities.some(e => e.type === 'contract');
 
   // Calculate acceptance link status
   const acceptanceStatus = useMemo(() => {
@@ -356,7 +361,15 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
                 variant="outline"
                 size="icon"
                 className="shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                onClick={() => setDeleteDialogOpen(true)}
+                onClick={() => {
+                  if (hasLinkedContract && isMaster) {
+                    setCascadeDeleteOpen(true);
+                  } else if (hasLinkedContract) {
+                    toast.error('Apenas Masters podem excluir análises com contrato vinculado');
+                  } else {
+                    setDeleteDialogOpen(true);
+                  }
+                }}
                 disabled={deleteAnalysis.isPending}
                 title="Excluir análise"
               >
@@ -934,6 +947,18 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Cascade Delete Modal (master-only, for analyses with contracts) */}
+      {analysis && (
+        <CascadeDeleteModal
+          open={cascadeDeleteOpen}
+          onOpenChange={setCascadeDeleteOpen}
+          entityType="analysis"
+          entityId={analysis.id}
+          entityLabel="Análise"
+          onDeleted={() => onOpenChange(false)}
+        />
+      )}
 
     </>
   );

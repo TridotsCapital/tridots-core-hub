@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ticketCategoryConfig, ticketStatusConfig, ticketPriorityConfig, TicketStatus } from "@/types/tickets";
-import { X, Send, Zap, Building2, Phone, Mail, FileText, DollarSign, Clock, User, ChevronDown, Shield } from "lucide-react";
+import { X, Send, Zap, Building2, Phone, Mail, FileText, DollarSign, Clock, User, ChevronDown, Shield, AlertTriangle } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -142,6 +142,22 @@ export function TicketDetail({ ticketId, onClose }: TicketDetailProps) {
 
   return (
     <div className="h-full flex">
+      {/* Deleted link banner */}
+      {(ticket as any).deleted_link_info && (
+        <div className="absolute top-0 left-0 right-72 z-10">
+          <div className="mx-4 mt-2 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 p-3">
+            <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+            <p className="text-xs text-amber-700 dark:text-amber-400">
+              {(() => {
+                const info = (ticket as any).deleted_link_info;
+                const entityLabel = info.entity_type === 'analysis' ? 'análise' : info.entity_type === 'contract' ? 'contrato' : 'garantia';
+                const deletedDate = new Date(info.deleted_at).toLocaleDateString('pt-BR');
+                return `A ${entityLabel} vinculada (${info.tenant_name}) foi excluída em ${deletedDate} por ${info.deleted_by}. O link original não está mais disponível.`;
+              })()}
+            </p>
+          </div>
+        </div>
+      )}
       {/* Main chat area */}
       <div className="flex-1 flex flex-col">
         {/* Header */}

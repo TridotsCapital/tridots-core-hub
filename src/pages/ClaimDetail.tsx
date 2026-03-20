@@ -18,8 +18,11 @@ import {
   Clock,
   DollarSign,
   FileCheck,
-  StickyNote
+  StickyNote,
+  Trash2,
 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { CascadeDeleteModal } from "@/components/shared/CascadeDeleteModal";
 import { useClaimDetail, useUpdateClaimStatus } from "@/hooks/useClaims";
 import { useClaimItems } from "@/hooks/useClaimItems";
 import { useClaimTickets } from "@/hooks/useClaimTickets";
@@ -45,6 +48,8 @@ export default function ClaimDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [ticketSheetOpen, setTicketSheetOpen] = useState(false);
+  const [cascadeDeleteOpen, setCascadeDeleteOpen] = useState(false);
+  const { isMaster } = useAuth();
 
   const { data: claim, isLoading, refetch } = useClaimDetail(id!);
   const { data: items } = useClaimItems(id!);
@@ -138,10 +143,23 @@ export default function ClaimDetail() {
               </div>
             </div>
           </div>
-          <Button variant="outline" onClick={() => setTicketSheetOpen(true)}>
-            <MessageSquare className="h-4 w-4 mr-2" />
-            Abrir Chamado
-          </Button>
+          <div className="flex items-center gap-2">
+            {isMaster && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                onClick={() => setCascadeDeleteOpen(true)}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Excluir
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => setTicketSheetOpen(true)}>
+              <MessageSquare className="h-4 w-4 mr-2" />
+              Abrir Chamado
+            </Button>
+          </div>
         </div>
 
         {/* Payment Deadline Banner */}
@@ -443,6 +461,16 @@ export default function ClaimDetail() {
         open={ticketSheetOpen}
         onOpenChange={setTicketSheetOpen}
         claim={claim}
+      />
+
+      {/* Cascade Delete Modal */}
+      <CascadeDeleteModal
+        open={cascadeDeleteOpen}
+        onOpenChange={setCascadeDeleteOpen}
+        entityType="claim"
+        entityId={claim.id}
+        entityLabel="Garantia"
+        onDeleted={() => navigate('/claims')}
       />
     </DashboardLayout>
   );
