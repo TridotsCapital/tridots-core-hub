@@ -60,6 +60,8 @@ import type { Database } from '@/integrations/supabase/types';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
+import { CascadeDeleteModal } from '@/components/shared/CascadeDeleteModal';
 
 type ContractStatus = Database['public']['Enums']['contract_status'];
 
