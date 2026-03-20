@@ -143,10 +143,23 @@ export default function ClaimDetail() {
               </div>
             </div>
           </div>
-          <Button variant="outline" onClick={() => setTicketSheetOpen(true)}>
-            <MessageSquare className="h-4 w-4 mr-2" />
-            Abrir Chamado
-          </Button>
+          <div className="flex items-center gap-2">
+            {isMaster && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                onClick={() => setCascadeDeleteOpen(true)}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Excluir
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => setTicketSheetOpen(true)}>
+              <MessageSquare className="h-4 w-4 mr-2" />
+              Abrir Chamado
+            </Button>
+          </div>
         </div>
 
         {/* Payment Deadline Banner */}
