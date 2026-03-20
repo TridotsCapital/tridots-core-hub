@@ -35,6 +35,7 @@ import {
   XCircle as XCircleAction,
   Loader2 as Loader2Action,
   ArrowRightLeft,
+  Trash2,
 } from 'lucide-react';
 import { useContract } from '@/hooks/useContracts';
 import { useTicketCountByAnalysis, useTicketsByAnalysis } from '@/hooks/useTickets';
