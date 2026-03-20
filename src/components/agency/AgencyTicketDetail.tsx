@@ -135,6 +135,20 @@ export function AgencyTicketDetail({ ticketId, onClose }: AgencyTicketDetailProp
           </div>
         ) : ticket ? (
           <>
+            {/* Deleted link banner */}
+            {(ticket as any).deleted_link_info && (
+              <div className="mx-6 mt-4 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 p-3">
+                <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+                <p className="text-xs text-amber-700 dark:text-amber-400">
+                  {(() => {
+                    const info = (ticket as any).deleted_link_info;
+                    const entityLabel = info.entity_type === 'analysis' ? 'análise' : info.entity_type === 'contract' ? 'contrato' : 'garantia';
+                    const deletedDate = new Date(info.deleted_at).toLocaleDateString('pt-BR');
+                    return `A ${entityLabel} vinculada foi excluída em ${deletedDate}. O link original não está mais disponível.`;
+                  })()}
+                </p>
+              </div>
+            )}
             {/* Header */}
             <SheetHeader className="p-6 pb-4 border-b">
               <div className="flex items-start justify-between gap-4">
