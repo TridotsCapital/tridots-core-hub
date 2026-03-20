@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { X, Send, Loader2, Clock, CheckCircle, AlertCircle, User, FileCheck, Shield, FileText } from "lucide-react";
+import { X, Send, Loader2, Clock, CheckCircle, AlertCircle, User, FileCheck, Shield, FileText, AlertTriangle } from "lucide-react";
 import {
   Sheet,
   SheetContent,
