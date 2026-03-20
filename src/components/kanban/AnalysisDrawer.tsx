@@ -361,7 +361,15 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
                 variant="outline"
                 size="icon"
                 className="shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                onClick={() => setDeleteDialogOpen(true)}
+                onClick={() => {
+                  if (hasLinkedContract && isMaster) {
+                    setCascadeDeleteOpen(true);
+                  } else if (hasLinkedContract) {
+                    toast.error('Apenas Masters podem excluir análises com contrato vinculado');
+                  } else {
+                    setDeleteDialogOpen(true);
+                  }
+                }}
                 disabled={deleteAnalysis.isPending}
                 title="Excluir análise"
               >
