@@ -123,15 +123,18 @@ export function AnalysisDrawer({ analysis, open, onOpenChange }: AnalysisDrawerP
   const [regenerateModalOpen, setRegenerateModalOpen] = useState(false);
   const [validationModalOpen, setValidationModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [cascadeDeleteOpen, setCascadeDeleteOpen] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
   const [setupPaymentDate, setSetupPaymentDate] = useState('');
   const [guaranteePaymentDate, setGuaranteePaymentDate] = useState('');
   const moveAnalysis = useMoveAnalysis();
   const deleteAnalysis = useDeleteAnalysis();
+  const { isMaster } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { data: linkedEntities = [] } = useLinkedEntitiesForAnalysis(analysis?.id);
   const { data: ticketCount = 0 } = useTicketCountByAnalysis(analysis?.id);
+  const hasLinkedContract = linkedEntities.some(e => e.type === 'contract');
 
   // Calculate acceptance link status
   const acceptanceStatus = useMemo(() => {
