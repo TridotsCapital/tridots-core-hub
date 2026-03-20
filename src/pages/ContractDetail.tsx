@@ -1051,6 +1051,16 @@ export default function ContractDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Cascade Delete Modal */}
+      <CascadeDeleteModal
+        open={cascadeDeleteOpen}
+        onOpenChange={setCascadeDeleteOpen}
+        entityType="contract"
+        entityId={contract.id}
+        entityLabel="Contrato"
+        onDeleted={() => navigate('/contracts')}
+      />
     </DashboardLayout>
   );
 }
