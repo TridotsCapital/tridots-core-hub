@@ -195,7 +195,7 @@ export function AgencyTicketList({
                   {/* Read/Unread toggle */}
                   <div className="absolute top-2 right-2">
                     {hasUnread && (
-                      <span className="flex h-3 w-3 group-hover:hidden">
+                      <span className="relative flex h-3 w-3 group-hover:hidden">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                         <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
                       </span>
