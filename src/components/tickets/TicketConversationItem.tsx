@@ -32,14 +32,8 @@ export function TicketConversationItem({
   const statusConfig = ticketStatusConfig[ticket.status];
   const priorityConfig = ticketPriorityConfig[ticket.priority];
 
-  // Calculate wait time color
-  const getWaitTimeColor = () => {
-    const hours = (Date.now() - new Date(ticket.updated_at).getTime()) / (1000 * 60 * 60);
-    if (ticket.status === 'resolvido') return 'border-l-green-500';
-    if (hours > 48 || ticket.category === 'urgente') return 'border-l-red-500';
-    if (hours > 24) return 'border-l-yellow-500';
-    return 'border-l-green-500';
-  };
+
+
 
   const agencyName = ticket.agency?.nome_fantasia || ticket.agency?.razao_social || 'Imobiliária';
   const initials = agencyName.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase();
