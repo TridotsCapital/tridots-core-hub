@@ -200,24 +200,9 @@ serve(async (req) => {
         error: result.error
       });
 
-      // Create in-app notification for the recipient
-      if (recipient.user_id) {
-        await supabase.from('notifications').insert({
-          user_id: recipient.user_id,
-          type: event_type === 'new_ticket' ? 'new_ticket' : 'new_ticket_reply',
-          source: 'chamados',
-          reference_id: ticket_id,
-          title: event_type === 'new_ticket' ? `Novo chamado: ${ticket.subject}` : `Nova resposta: ${ticket.subject}`,
-          message: event_type === 'new_ticket' 
-            ? `${agency.nome_fantasia || agency.razao_social} abriu um novo chamado`
-            : messagePreview || 'Nova resposta no chamado',
-          metadata: {
-            ticket_id,
-            direction: notificationDirection,
-            event_type
-          }
-        }).catch((err) => console.error(`Failed to create in-app notification: ${err}`));
-      }
+      // In-app notifications are handled by database triggers
+      // (create_new_ticket_notification / create_ticket_message_notification)
+      // This edge function only handles EMAIL delivery
 
       if (!result.success) {
         console.error(`Failed to send email to ${recipient.email}:`, result.error);
