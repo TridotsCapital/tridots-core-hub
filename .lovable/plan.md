@@ -1,57 +1,65 @@
 
 
-# Plano: Corrigir Regra de 1ª Parcela e Retroatividade
+# Plano: Corrigir Sistema de Não Lidos nos Chamados (Ambos Portais)
 
-## Entendimento da Regra
+## Problema Raiz
 
-A regra correta (e que já está documentada nas memórias do sistema) é:
+O sistema de chamados não lidos **nunca funcionou corretamente** porque existem 2 bugs encadeados:
 
-> **A primeira parcela do Boleto Unificado é SEMPRE agendada para o mês SUBSEQUENTE ao da ativação/criação do contrato.**
+### Bug 1: Trigger detecta direção errada
+As funções de trigger `notify_agency_new_ticket()` e `notify_agency_new_ticket_message()` tentam detectar a role do remetente assim:
+```sql
+SELECT role INTO _user_role FROM public.profiles WHERE id = NEW.sender_id;
+```
+Mas a tabela `profiles` **não tem coluna `role`** — roles ficam em `user_roles`. Resultado: `_user_role` é sempre NULL, e a direção da notificação é determinada incorretamente.
 
-Exemplo: contrato criado em março → 1ª parcela = abril, não março.
+### Bug 2: Notificações in-app não alcançam todos os usuários da agência
+O edge function `send-ticket-notification` só cria notificação in-app (`notifications` table) para:
+- `tridots_to_agency`: apenas o `assigned_to` (se tiver). O `responsavel_email` é adicionado sem `user_id`, então não recebe notificação in-app.
+- `agency_to_tridots`: masters/analysts recebem corretamente.
 
-## O Bug (já corrigido no código)
+Resultado: a maioria dos usuários da agência **nunca** recebe registro em `notifications` com `source = 'chamados'`, e o `useUnreadItemIds` nunca os identifica como não lidos.
 
-A Edge Function `generate-installments` **já está com o código correto** (linhas 143-152). Porém, em versões anteriores do deploy, a lógica gerava a 1ª parcela no **mesmo mês** da criação. Os contratos criados **antes da correção** ficaram com parcelas erradas.
+## Solução
 
-## Diagnóstico — 4 Contratos Afetados
+### 1. Corrigir triggers — consultar `user_roles` em vez de `profiles`
 
-| # | Contract ID | Inquilino | Imobiliária | created_at | 1ª parcela atual | 1ª parcela correta |
-|---|-------------|-----------|-------------|------------|------------------|--------------------|
-| 1 | `c3e5c4f8` | teste boleto unificado 3 | teste 15 | 06/02/2026 | Fev/2026 | Mar/2026 |
-| 2 | `56620556` | Angela Pereira dos Santos | EMPRECOL | 04/03/2026 | Mar/2026 | Abr/2026 |
-| 3 | `5254aa81` | Teste Goreti | Demo | 06/03/2026 | Mar/2026 | Abr/2026 |
-| 4 | `580d4934` | Teste Isme | Demo | 09/03/2026 | Mar/2026 | Abr/2026 |
+Migração SQL para recriar as funções de trigger:
 
-Todos têm `is_migrated = false` e `guarantee_payment_date = null`.
+```sql
+CREATE OR REPLACE FUNCTION public.notify_agency_new_ticket()
+  -- SELECT role INTO _user_role FROM user_roles WHERE user_id = NEW.created_by
 
-## Operações (via insert tool — dados, não schema)
+CREATE OR REPLACE FUNCTION public.notify_agency_new_ticket_message()
+  -- SELECT role INTO _user_role FROM user_roles WHERE user_id = NEW.sender_id
+```
 
-### 1. Para cada contrato afetado:
+### 2. Corrigir edge function — notificar TODOS os usuários da agência
 
-a. **Desvincular parcelas** — SET `invoice_item_id = null` em `guarantee_installments`
+No `send-ticket-notification/index.ts`, para direção `tridots_to_agency`:
+- Buscar **todos os `agency_users`** da agência do ticket (não só o `assigned_to`)
+- Criar notificação in-app para cada um deles (com `user_id`)
+- Manter e-mail apenas para `responsavel_email` (sem duplicar)
 
-b. **Deletar `invoice_items`** vinculados a essas parcelas
+### 3. Nenhuma alteração no frontend
 
-c. **Recalcular `total_value`** das `agency_invoices` afetadas (ou deletar se ficarem vazias)
+O frontend já está correto:
+- `useUnreadItemIds` consulta `notifications` com `source = 'chamados'` 
+- `TicketConversationItem` e `AgencyTicketList` já aplicam `bg-blue-50/60` + bold para não lidos
+- Toggle de leitura (Mail/MailOpen) já funciona
+- `useMarkItemAsRead`/`useMarkItemAsUnread` já atualizam a tabela `notifications`
 
-d. **Deletar parcelas** atuais (12 por contrato)
+## Arquivos Alterados
 
-e. **Inserir 12 novas parcelas** com `reference_month` e `due_date` deslocados +1 mês (1ª parcela = mês seguinte ao da criação)
+| Arquivo | Alteração |
+|---------|-----------|
+| Migração SQL (nova) | Recriar 2 trigger functions consultando `user_roles` |
+| `supabase/functions/send-ticket-notification/index.ts` | Notificar todos `agency_users` (não só `assigned_to`) |
 
-f. **Criar/atualizar faturas** para os novos meses e vincular via `invoice_items`
+## Resultado Esperado
 
-### 2. INSERT eventos `installment_date_correction` na `analysis_timeline`
-Um evento por análise registrando a correção retroativa, visível em ambos os portais.
-
-## Resumo de Impacto
-
-| Tabela | Operação | Registros estimados |
-|--------|----------|---------------------|
-| guarantee_installments | DELETE + INSERT | 48 removidos, 48 inseridos |
-| invoice_items | DELETE + INSERT | 48 removidos, 48 inseridos |
-| agency_invoices | UPDATE/DELETE + INSERT | ~48 ajustes |
-| analysis_timeline | INSERT | 4 |
-
-A Edge Function `generate-installments` **não precisa de alteração** — o código atual já está correto. Contratos futuros serão gerados com a 1ª parcela no mês subsequente.
+- Novo chamado → todos os usuários do portal oposto recebem `notifications` com `source: 'chamados'`
+- Nova resposta → idem
+- Ambos portais exibem destaque visual (fundo azul + bold) para chamados com notificações não lidas
+- Marcar como não lido manualmente também funciona (já implementado)
 
