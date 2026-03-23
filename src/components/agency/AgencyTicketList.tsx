@@ -188,7 +188,7 @@ export function AgencyTicketList({
                     selectedTicketId === ticket.id
                       ? "border-primary bg-primary/5"
                       : hasUnread
-                        ? "bg-blue-50 dark:bg-blue-950/30 border-l-4 border-l-blue-500 border-blue-200"
+                        ? "bg-blue-50/60 dark:bg-blue-950/30 border-border"
                         : "border-border bg-card"
                   )}
                 >
