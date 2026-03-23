@@ -88,6 +88,11 @@ export function TicketChatMessages({
                 <p className="text-sm font-medium text-muted-foreground mb-1">Descrição do chamado:</p>
                 <p className="text-sm whitespace-pre-wrap">{description}</p>
               </div>
+              {descriptionCreatedAt && (
+                <span className="text-[10px] text-muted-foreground mt-1 block">
+                  {formatDateBR(descriptionCreatedAt, "HH:mm")}
+                </span>
+              )}
             </div>
           </div>
         )}

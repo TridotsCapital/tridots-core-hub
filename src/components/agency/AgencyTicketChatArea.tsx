@@ -405,6 +405,9 @@ export function AgencyTicketChatArea({ ticketId }: AgencyTicketChatAreaProps) {
                   <p className="text-xs font-medium text-muted-foreground mb-1">Descrição do chamado:</p>
                   <p className="text-sm whitespace-pre-wrap">{ticket.description}</p>
                 </div>
+                <span className="text-[10px] text-muted-foreground mt-1 block">
+                  {formatDateBR(ticket.created_at, "HH:mm")}
+                </span>
               </div>
             </div>
           )}
