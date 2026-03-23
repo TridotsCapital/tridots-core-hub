@@ -104,30 +104,42 @@ serve(async (req) => {
     const recipients: { email: string; name: string; user_id?: string }[] = [];
 
     if (notificationDirection === 'tridots_to_agency') {
-      // Notify agency: responsavel_email + assigned collaborator
-      // 1. E-mail principal da imobiliária
-      if (agency.responsavel_email) {
+      // Notify agency: all agency_users + responsavel_email
+      // 1. Fetch all agency users with their emails
+      const { data: agencyUsers } = await supabase
+        .from('agency_users')
+        .select('user_id')
+        .eq('agency_id', ticket.agency_id);
+
+      const agencyUserIds = agencyUsers?.map(u => u.user_id) || [];
+      const agencyEmails = new Set<string>();
+
+      if (agencyUserIds.length > 0) {
+        const { data: agencyProfiles } = await supabase
+          .from('profiles')
+          .select('id, email, full_name')
+          .in('id', agencyUserIds);
+
+        if (agencyProfiles) {
+          for (const profile of agencyProfiles) {
+            if (profile.email) {
+              agencyEmails.add(profile.email);
+              recipients.push({
+                email: profile.email,
+                name: profile.full_name || 'Colaborador',
+                user_id: profile.id
+              });
+            }
+          }
+        }
+      }
+
+      // 2. E-mail principal da imobiliária (se não já incluído via agency_users)
+      if (agency.responsavel_email && !agencyEmails.has(agency.responsavel_email)) {
         recipients.push({
           email: agency.responsavel_email,
           name: agency.responsavel_nome || agency.nome_fantasia || agency.razao_social
         });
-      }
-
-      // 2. Colaborador designado no chamado (se diferente do responsável)
-      if (ticket.assigned_to) {
-        const { data: assignedUser } = await supabase
-          .from('profiles')
-          .select('id, email, full_name')
-          .eq('id', ticket.assigned_to)
-          .single();
-
-        if (assignedUser?.email && assignedUser.email !== agency.responsavel_email) {
-          recipients.push({
-            email: assignedUser.email,
-            name: assignedUser.full_name || 'Colaborador',
-            user_id: assignedUser.id
-          });
-        }
       }
     } else if (notificationDirection === 'agency_to_tridots') {
       // Notify Tridots: all active master/analyst users
