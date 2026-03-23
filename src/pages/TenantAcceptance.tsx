@@ -1280,8 +1280,8 @@ export default function TenantAcceptance() {
           </Card>
         )}
 
-        {/* Step 4: Guarantee Payment */}
-        {currentStep === 4 && (
+        {/* Step 4: Guarantee Payment (or Step 3 when setup is exempt) */}
+        {(currentStep === 4 || (currentStep === 3 && isSetupExempt && !isBoletoUnificado)) && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
