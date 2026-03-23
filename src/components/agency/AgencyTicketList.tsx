@@ -186,9 +186,9 @@ export function AgencyTicketList({
                     "group w-full text-left p-4 rounded-lg border transition-all relative",
                     "hover:border-primary/50 hover:shadow-sm",
                     selectedTicketId === ticket.id
-                      ? "border-primary bg-primary/5"
+                      ? "border-primary bg-primary/5 shadow-sm"
                       : hasUnread
-                        ? "bg-blue-50/60 dark:bg-blue-950/30 border-border"
+                        ? "bg-blue-50/70 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800 shadow-sm ring-1 ring-blue-100 dark:ring-blue-900/50"
                         : "border-border bg-card"
                   )}
                 >
