@@ -1442,7 +1442,15 @@ export default function TenantAcceptance() {
             )}
           </p>
           <p className="mt-2">
-            Dúvidas? Entre em contato com a imobiliária {agency?.nome}
+            Dúvidas? Entre em contato com a{' '}
+            <a 
+              href="https://wa.me/5544991778859" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="font-medium text-primary hover:underline"
+            >
+              Tridots Capital pelo WhatsApp (44) 9 9177-8859
+            </a>
           </p>
         </footer>
       </main>
