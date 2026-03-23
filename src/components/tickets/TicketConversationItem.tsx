@@ -54,10 +54,10 @@ export function TicketConversationItem({
         "group flex items-start gap-3 p-4 cursor-pointer transition-all duration-200 relative",
         "hover:bg-muted/50",
         isSelected 
-          ? "bg-primary/5" 
+          ? "bg-primary/5 border-l-3 border-l-primary" 
           : hasUnread 
-            ? "bg-blue-50/60 dark:bg-blue-950/30" 
-            : ""
+            ? "bg-blue-50/70 dark:bg-blue-950/40 border-l-3 border-l-blue-500" 
+            : "border-l-3 border-l-transparent"
       )}
     >
       {/* Read/Unread toggle on hover — replaces unread dot */}
