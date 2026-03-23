@@ -1,28 +1,28 @@
 
 
-# Plano: Simplificar Destaque de Não Lidos nos Chamados
+# Plano: Corrigir Data/Hora da Primeira Mensagem dos Chamados
 
 ## Problema
 
-O `TicketConversationItem` usa `border-l-4` com 3 cores diferentes (vermelho = urgente/demorado, verde = recente/resolvido, azul = não lido), criando ruído visual. O `AgencyTicketList` também usa `border-l-4 border-l-blue-500` para não lidos.
+A "primeira mensagem" de cada chamado é na verdade o campo `ticket.description`, renderizado como uma mensagem visual no chat, mas **sem data/hora**. As mensagens reais (tabela `ticket_messages`) mostram horário normalmente.
 
-## Solução: Remover bordas coloridas, usar apenas fundo + bold
+## Solução
 
-Abordagem minimalista — chamados não lidos se destacam apenas por:
-- **Fundo azul sutil** (`bg-blue-50/60`)
-- **Assunto em negrito** (`font-bold`)
-- **Bolinha pulsante** (já existe, mantém)
-- **Sem borda lateral colorida** em nenhum caso
+### 1. Exibir data/hora na descrição (ambos portais)
 
-Chamados lidos ficam com fundo normal, sem borda, sem destaque.
-
-### Arquivos alterados
+Usar `ticket.created_at` como timestamp da descrição, já que é quando o chamado foi criado.
 
 | Arquivo | Alteração |
 |---------|-----------|
-| `src/components/tickets/TicketConversationItem.tsx` | Remover `getWaitTimeColor()` e `border-l-4`. Não lido = `bg-blue-50/60` + bold. Lido = sem destaque. |
-| `src/components/agency/AgencyTicketList.tsx` | Remover `border-l-4 border-l-blue-500`. Não lido = `bg-blue-50/60` + bold. Lido = sem destaque. |
-| `src/pages/agency/AgencySupport.tsx` | Mesmo ajuste na lista inline (se aplicável). |
+| `src/components/tickets/TicketChatMessages.tsx` | Receber `createdAt` como prop e exibir horário abaixo da descrição (mesmo formato das outras mensagens) |
+| `src/components/tickets/TicketChatArea.tsx` | Passar `ticket.created_at` para o componente |
+| `src/components/agency/AgencyTicketChatArea.tsx` | Adicionar horário abaixo da descrição usando `ticket.created_at` |
 
-Resultado: visual limpo, apenas 1 forma de destaque (fundo claro + bold), sem bordas laterais coloridas.
+### 2. Correção retroativa — sem necessidade de migração
+
+Não há dados faltando no banco. O `ticket.created_at` já existe e está correto para todos os chamados. O problema é apenas de **exibição** — a UI não mostrava esse timestamp.
+
+## Resumo
+
+Alteração puramente visual em 3 arquivos. Sem mudanças no banco de dados.
 
