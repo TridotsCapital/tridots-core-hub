@@ -229,9 +229,9 @@ export function AgencyTicketList({
                     </Tooltip>
                   </div>
                   
-                  {/* Header: ID + Category */}
+                  {/* ID line */}
                   <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
-                    <span className="text-xs font-mono text-muted-foreground shrink-0">
+                    <span className={cn("text-xs font-mono shrink-0", hasUnread ? "text-blue-600 dark:text-blue-400 font-semibold" : "text-muted-foreground")}>
                       #{ticket.id.slice(0, 8).toUpperCase()}
                     </span>
                     <Badge
