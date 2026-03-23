@@ -186,9 +186,9 @@ export function AgencyTicketList({
                     "group w-full text-left p-4 rounded-lg border transition-all relative",
                     "hover:border-primary/50 hover:shadow-sm",
                     selectedTicketId === ticket.id
-                      ? "border-primary bg-primary/5"
+                      ? "border-primary bg-primary/5 shadow-sm"
                       : hasUnread
-                        ? "bg-blue-50/60 dark:bg-blue-950/30 border-border"
+                        ? "bg-blue-50/70 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800 shadow-sm ring-1 ring-blue-100 dark:ring-blue-900/50"
                         : "border-border bg-card"
                   )}
                 >
@@ -229,9 +229,9 @@ export function AgencyTicketList({
                     </Tooltip>
                   </div>
                   
-                  {/* Header: ID + Category */}
+                  {/* ID line */}
                   <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
-                    <span className="text-xs font-mono text-muted-foreground shrink-0">
+                    <span className={cn("text-xs font-mono shrink-0", hasUnread ? "text-blue-600 dark:text-blue-400 font-semibold" : "text-muted-foreground")}>
                       #{ticket.id.slice(0, 8).toUpperCase()}
                     </span>
                     <Badge
@@ -260,13 +260,13 @@ export function AgencyTicketList({
                   </div>
 
                   {/* Subject */}
-                  <h4 className={cn("text-foreground line-clamp-2 break-words mb-2 pr-6", hasUnread ? "font-bold" : "font-medium")}>
+                  <h4 className={cn("line-clamp-2 break-words mb-2 pr-6", hasUnread ? "font-bold text-foreground" : "font-medium text-foreground")}>
                     {ticket.subject}
                   </h4>
 
                   {/* Footer: Time + Status */}
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1 pr-6">
-                    <span className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
+                    <span className={cn("flex items-center gap-1 text-xs shrink-0", hasUnread ? "text-blue-600 dark:text-blue-400 font-medium" : "text-muted-foreground")}>
                       <Clock className="h-3 w-3" />
                       {formatDistanceToNow(new Date(ticket.created_at), {
                         addSuffix: true,

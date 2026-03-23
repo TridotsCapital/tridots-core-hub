@@ -54,10 +54,10 @@ export function TicketConversationItem({
         "group flex items-start gap-3 p-4 cursor-pointer transition-all duration-200 relative",
         "hover:bg-muted/50",
         isSelected 
-          ? "bg-primary/5" 
+          ? "bg-primary/5 border-l-3 border-l-primary" 
           : hasUnread 
-            ? "bg-blue-50/60 dark:bg-blue-950/30" 
-            : ""
+            ? "bg-blue-50/70 dark:bg-blue-950/40 border-l-3 border-l-blue-500" 
+            : "border-l-3 border-l-transparent"
       )}
     >
       {/* Read/Unread toggle on hover — replaces unread dot */}
@@ -102,13 +102,13 @@ export function TicketConversationItem({
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2">
-          <span className="font-semibold text-sm truncate">{agencyName}</span>
-          <span className="text-xs text-muted-foreground whitespace-nowrap">
+          <span className={cn("text-sm truncate", hasUnread ? "font-bold text-foreground" : "font-semibold")}>{agencyName}</span>
+          <span className={cn("text-xs whitespace-nowrap", hasUnread ? "font-semibold text-blue-600 dark:text-blue-400" : "text-muted-foreground")}>
             {formatDistanceToNow(new Date(ticket.updated_at), { addSuffix: false, locale: ptBR })}
           </span>
         </div>
 
-        <p className={cn("text-sm line-clamp-2 break-words mt-0.5 pr-6", hasUnread ? "font-bold" : "font-medium")}>{ticket.subject}</p>
+        <p className={cn("text-sm line-clamp-2 break-words mt-0.5 pr-6", hasUnread ? "font-bold text-foreground" : "font-medium")}>{ticket.subject}</p>
 
         <p className="text-xs text-muted-foreground line-clamp-2 break-words mt-1 pr-6">
           {lastMessage || ticket.description || 'Sem mensagens ainda'}
