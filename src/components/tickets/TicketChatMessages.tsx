@@ -19,6 +19,7 @@ import { toast } from "sonner";
 interface TicketChatMessagesProps {
   messages: TicketMessage[];
   description?: string;
+  descriptionCreatedAt?: string;
   currentUserId?: string;
   isLoading: boolean;
   typingUsers?: TypingIndicator[];
