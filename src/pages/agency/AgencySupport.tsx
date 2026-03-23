@@ -268,12 +268,12 @@ export default function AgencySupport() {
                         key={ticket.id}
                         onClick={() => handleSelectTicket(ticket.id)}
                         className={cn(
-                          "group w-full text-left p-4 transition-all relative hover:bg-muted/50 border-l-4",
+                          "group w-full text-left p-4 transition-all relative hover:bg-muted/50",
                           selectedTicketId === ticket.id
-                            ? "bg-primary/5 border-l-primary"
+                            ? "bg-primary/5"
                             : hasUnread
-                              ? "bg-blue-50 dark:bg-blue-950/30 border-l-blue-500"
-                              : "border-l-transparent"
+                              ? "bg-blue-50/60 dark:bg-blue-950/30"
+                              : ""
                         )}
                       >
                         {/* Read/Unread toggle */}

@@ -57,13 +57,13 @@ export function TicketConversationItem({
     <div
       onClick={onClick}
       className={cn(
-        "group flex items-start gap-3 p-4 cursor-pointer transition-all duration-200 border-l-4 relative",
+        "group flex items-start gap-3 p-4 cursor-pointer transition-all duration-200 relative",
         "hover:bg-muted/50",
         isSelected 
-          ? "bg-primary/5 border-l-primary" 
+          ? "bg-primary/5" 
           : hasUnread 
-            ? "bg-blue-50 dark:bg-blue-950/30 border-l-blue-500" 
-            : getWaitTimeColor()
+            ? "bg-blue-50/60 dark:bg-blue-950/30" 
+            : ""
       )}
     >
       {/* Read/Unread toggle on hover — replaces unread dot */}
