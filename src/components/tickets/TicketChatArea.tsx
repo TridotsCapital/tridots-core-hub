@@ -230,6 +230,7 @@ export function TicketChatArea({ ticketId, onClose }: TicketChatAreaProps) {
       <TicketChatMessages
         messages={messages}
         description={ticket.description || undefined}
+        descriptionCreatedAt={ticket.created_at}
         currentUserId={user?.id}
         isLoading={messagesLoading}
         typingUsers={typingIndicators}

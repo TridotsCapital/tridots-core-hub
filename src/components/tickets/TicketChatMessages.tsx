@@ -19,6 +19,7 @@ import { toast } from "sonner";
 interface TicketChatMessagesProps {
   messages: TicketMessage[];
   description?: string;
+  descriptionCreatedAt?: string;
   currentUserId?: string;
   isLoading: boolean;
   typingUsers?: TypingIndicator[];
@@ -27,6 +28,7 @@ interface TicketChatMessagesProps {
 export function TicketChatMessages({
   messages,
   description,
+  descriptionCreatedAt,
   currentUserId,
   isLoading,
   typingUsers = [],
@@ -86,6 +88,11 @@ export function TicketChatMessages({
                 <p className="text-sm font-medium text-muted-foreground mb-1">Descrição do chamado:</p>
                 <p className="text-sm whitespace-pre-wrap">{description}</p>
               </div>
+              {descriptionCreatedAt && (
+                <span className="text-[10px] text-muted-foreground mt-1 block">
+                  {formatDateBR(descriptionCreatedAt, "HH:mm")}
+                </span>
+              )}
             </div>
           </div>
         )}
