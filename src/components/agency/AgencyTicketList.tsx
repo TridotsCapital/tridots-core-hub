@@ -266,7 +266,7 @@ export function AgencyTicketList({
 
                   {/* Footer: Time + Status */}
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1 pr-6">
-                    <span className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
+                    <span className={cn("flex items-center gap-1 text-xs shrink-0", hasUnread ? "text-blue-600 dark:text-blue-400 font-medium" : "text-muted-foreground")}>
                       <Clock className="h-3 w-3" />
                       {formatDistanceToNow(new Date(ticket.created_at), {
                         addSuffix: true,

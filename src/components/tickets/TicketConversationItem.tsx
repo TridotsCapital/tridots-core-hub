@@ -102,13 +102,13 @@ export function TicketConversationItem({
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2">
-          <span className="font-semibold text-sm truncate">{agencyName}</span>
-          <span className="text-xs text-muted-foreground whitespace-nowrap">
+          <span className={cn("text-sm truncate", hasUnread ? "font-bold text-foreground" : "font-semibold")}>{agencyName}</span>
+          <span className={cn("text-xs whitespace-nowrap", hasUnread ? "font-semibold text-blue-600 dark:text-blue-400" : "text-muted-foreground")}>
             {formatDistanceToNow(new Date(ticket.updated_at), { addSuffix: false, locale: ptBR })}
           </span>
         </div>
 
-        <p className={cn("text-sm line-clamp-2 break-words mt-0.5 pr-6", hasUnread ? "font-bold" : "font-medium")}>{ticket.subject}</p>
+        <p className={cn("text-sm line-clamp-2 break-words mt-0.5 pr-6", hasUnread ? "font-bold text-foreground" : "font-medium")}>{ticket.subject}</p>
 
         <p className="text-xs text-muted-foreground line-clamp-2 break-words mt-1 pr-6">
           {lastMessage || ticket.description || 'Sem mensagens ainda'}
