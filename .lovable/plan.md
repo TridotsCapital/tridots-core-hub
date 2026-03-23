@@ -1,53 +1,52 @@
 
 
-# Plano: Migração de 3 Contratos — Correção Manual de Datas
+# Plano: Migração de 2 Contratos — Natan e Leticia (Datas Corrigidas para 2026)
 
-## Dados Identificados
+## Dados Corrigidos
 
 | Inquilino | Contract ID | Analysis ID | created_at sistema | Data correta | Fim (+12m) |
 |-----------|-------------|-------------|-------------------|--------------|------------|
-| Ricardo | f8729310-... | 572ac02b-... | 2026-03-19 | 18/12/2025 | 18/12/2026 |
-| Marcia | 5a2dd867-... | b8e9ed87-... | 2026-03-18 | 16/12/2025 | 16/12/2026 |
-| Gilda | 80ac3238-... | 0dc7c264-... | 2026-03-13 | 27/11/2025 | 27/11/2026 |
+| Natan Fratta da Silva | a843a9ec-... | 1aa4dbdc-... | 16/03/2026 | 02/02/2026 | 02/02/2027 |
+| Leticia Renata de Oliveira | f6b6f948-... | c5ecbff1-... | 27/02/2026 | 10/02/2026 | 10/02/2027 |
 
-**Nota**: Desta vez as datas são de 2025 (não 2024 como na migração anterior). Os contratos vencem em 2026, então algumas parcelas terão vencimento **antes** do `created_at` do sistema (marcadas como "paga") e outras **depois** (permanecem "pendente").
+**Diferença vs. plano anterior**: As datas corretas são **2026** (não 2025). Isso muda significativamente a lógica de parcelas — os contratos terminam em fev/2027, e a maioria das parcelas fica **após** o created_at do sistema.
 
-## Lógica de corte das parcelas
+## Lógica de parcelas (due_date < created_at → paga)
 
-Usando a regra de migração: parcelas com `due_date < contract.created_at` → `paga`, demais → `pendente`.
+| Contrato | Parcelas pagas | Parcelas pendentes |
+|----------|---------------|--------------------|
+| Natan (início 02/02/2026, created_at 16/03/2026) | Parcela 1 (02/03/2026) → **1 paga** | Parcelas 2-12 → **11 pendentes** |
+| Leticia (início 10/02/2026, created_at 27/02/2026) | Nenhuma (10/03/2026 > 27/02/2026) → **0 pagas** | Parcelas 1-12 → **12 pendentes** |
 
-| Contrato | Parcelas com due_date < created_at | Parcelas pendentes |
-|----------|------------------------------------|--------------------|
-| Ricardo (início 18/12/2025, created_at 19/03/2026) | Parcelas 1-3 (jan, fev, mar 2026) → paga | Parcelas 4-12 → pendente |
-| Marcia (início 16/12/2025, created_at 18/03/2026) | Parcelas 1-3 (jan, fev, mar 2026) → paga | Parcelas 4-12 → pendente |
-| Gilda (início 27/11/2025, created_at 13/03/2026) | Parcelas 1-3 (dez 2025, jan, fev 2026) → paga | Parcelas 4-12 → pendente |
-
-## Operações (via insert tool — dados, não schema)
+## Operações
 
 ### 1. UPDATE analyses — `guarantee_payment_date`
-- Ricardo: `2025-12-18`
-- Marcia: `2025-12-16`
-- Gilda: `2025-11-27`
+- Natan: `2026-02-02`
+- Leticia: `2026-02-10`
 
 ### 2. UPDATE contracts — `is_migrated = true` + `data_fim_contrato`
-- Ricardo: `data_fim_contrato = 2026-12-18`, `is_migrated = true`
-- Marcia: `data_fim_contrato = 2026-12-16`, `is_migrated = true`
-- Gilda: `data_fim_contrato = 2026-11-27`, `is_migrated = true`
+- Natan: `data_fim_contrato = 2027-02-02`, `is_migrated = true`
+- Leticia: `data_fim_contrato = 2027-02-10`, `is_migrated = true`
 
-### 3. DELETE parcelas atuais + INSERT 12 novas por contrato
-Cada contrato terá 12 parcelas com `due_date` baseada na data correta (+1, +2, ..., +12 meses). As 3 primeiras de cada serão `status = 'paga'`, as 9 restantes `status = 'pendente'`.
+### 3. Desvincular faturas + limpar invoice_items
+- Desvincular `invoice_item_id` nas parcelas atuais
+- Deletar invoice_items vinculados
+- Recalcular `total_value` das faturas afetadas (ou deletar as vazias)
 
-### 4. INSERT eventos `manual_date_correction` na `analysis_timeline`
-Um evento por análise com metadados (datas antigas → novas), visível em ambos os portais.
+### 4. DELETE parcelas atuais + INSERT 12 novas por contrato
+- Natan: 1 paga + 11 pendentes
+- Leticia: 0 pagas + 12 pendentes
+
+### 5. INSERT eventos `manual_date_correction` na `analysis_timeline`
 
 ## Resumo
 
 | Tabela | Operação | Registros |
 |--------|----------|-----------|
-| analyses | UPDATE | 3 |
-| contracts | UPDATE | 3 |
-| guarantee_installments | DELETE + INSERT | 36 removidos, 36 inseridos |
-| analysis_timeline | INSERT | 3 |
-
-A badge "Migrado" e a timeline já estão implementados — aparecerão automaticamente em ambos os portais.
+| analyses | UPDATE | 2 |
+| contracts | UPDATE | 2 |
+| guarantee_installments | DELETE + INSERT | 24 removidos, 24 inseridos |
+| invoice_items | DELETE | ~24 |
+| agency_invoices | UPDATE ou DELETE | faturas afetadas |
+| analysis_timeline | INSERT | 2 |
 
