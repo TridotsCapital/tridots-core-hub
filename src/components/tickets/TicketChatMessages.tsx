@@ -28,6 +28,7 @@ interface TicketChatMessagesProps {
 export function TicketChatMessages({
   messages,
   description,
+  descriptionCreatedAt,
   currentUserId,
   isLoading,
   typingUsers = [],
