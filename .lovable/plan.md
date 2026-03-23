@@ -1,52 +1,28 @@
 
 
-# Plano: Migração de 2 Contratos — Natan e Leticia (Datas Corrigidas para 2026)
+# Plano: Simplificar Destaque de Não Lidos nos Chamados
 
-## Dados Corrigidos
+## Problema
 
-| Inquilino | Contract ID | Analysis ID | created_at sistema | Data correta | Fim (+12m) |
-|-----------|-------------|-------------|-------------------|--------------|------------|
-| Natan Fratta da Silva | a843a9ec-... | 1aa4dbdc-... | 16/03/2026 | 02/02/2026 | 02/02/2027 |
-| Leticia Renata de Oliveira | f6b6f948-... | c5ecbff1-... | 27/02/2026 | 10/02/2026 | 10/02/2027 |
+O `TicketConversationItem` usa `border-l-4` com 3 cores diferentes (vermelho = urgente/demorado, verde = recente/resolvido, azul = não lido), criando ruído visual. O `AgencyTicketList` também usa `border-l-4 border-l-blue-500` para não lidos.
 
-**Diferença vs. plano anterior**: As datas corretas são **2026** (não 2025). Isso muda significativamente a lógica de parcelas — os contratos terminam em fev/2027, e a maioria das parcelas fica **após** o created_at do sistema.
+## Solução: Remover bordas coloridas, usar apenas fundo + bold
 
-## Lógica de parcelas (due_date < created_at → paga)
+Abordagem minimalista — chamados não lidos se destacam apenas por:
+- **Fundo azul sutil** (`bg-blue-50/60`)
+- **Assunto em negrito** (`font-bold`)
+- **Bolinha pulsante** (já existe, mantém)
+- **Sem borda lateral colorida** em nenhum caso
 
-| Contrato | Parcelas pagas | Parcelas pendentes |
-|----------|---------------|--------------------|
-| Natan (início 02/02/2026, created_at 16/03/2026) | Parcela 1 (02/03/2026) → **1 paga** | Parcelas 2-12 → **11 pendentes** |
-| Leticia (início 10/02/2026, created_at 27/02/2026) | Nenhuma (10/03/2026 > 27/02/2026) → **0 pagas** | Parcelas 1-12 → **12 pendentes** |
+Chamados lidos ficam com fundo normal, sem borda, sem destaque.
 
-## Operações
+### Arquivos alterados
 
-### 1. UPDATE analyses — `guarantee_payment_date`
-- Natan: `2026-02-02`
-- Leticia: `2026-02-10`
+| Arquivo | Alteração |
+|---------|-----------|
+| `src/components/tickets/TicketConversationItem.tsx` | Remover `getWaitTimeColor()` e `border-l-4`. Não lido = `bg-blue-50/60` + bold. Lido = sem destaque. |
+| `src/components/agency/AgencyTicketList.tsx` | Remover `border-l-4 border-l-blue-500`. Não lido = `bg-blue-50/60` + bold. Lido = sem destaque. |
+| `src/pages/agency/AgencySupport.tsx` | Mesmo ajuste na lista inline (se aplicável). |
 
-### 2. UPDATE contracts — `is_migrated = true` + `data_fim_contrato`
-- Natan: `data_fim_contrato = 2027-02-02`, `is_migrated = true`
-- Leticia: `data_fim_contrato = 2027-02-10`, `is_migrated = true`
-
-### 3. Desvincular faturas + limpar invoice_items
-- Desvincular `invoice_item_id` nas parcelas atuais
-- Deletar invoice_items vinculados
-- Recalcular `total_value` das faturas afetadas (ou deletar as vazias)
-
-### 4. DELETE parcelas atuais + INSERT 12 novas por contrato
-- Natan: 1 paga + 11 pendentes
-- Leticia: 0 pagas + 12 pendentes
-
-### 5. INSERT eventos `manual_date_correction` na `analysis_timeline`
-
-## Resumo
-
-| Tabela | Operação | Registros |
-|--------|----------|-----------|
-| analyses | UPDATE | 2 |
-| contracts | UPDATE | 2 |
-| guarantee_installments | DELETE + INSERT | 24 removidos, 24 inseridos |
-| invoice_items | DELETE | ~24 |
-| agency_invoices | UPDATE ou DELETE | faturas afetadas |
-| analysis_timeline | INSERT | 2 |
+Resultado: visual limpo, apenas 1 forma de destaque (fundo claro + bold), sem bordas laterais coloridas.
 
