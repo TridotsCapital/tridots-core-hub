@@ -1,57 +1,78 @@
 
 
-# Plano: Corrigir Link de Pagamento da Garantia + Texto de Contato
+# Plano: Corrigir Parcelas Marcadas como "Paga" sem Fatura Paga
 
-## Problema 1: Tela vazia no Step 3 (Pagamento Garantia)
+## Problema Identificado
 
-O bug é um desalinhamento entre o **número do step lógico** e o **número do step no código**:
+A análise dos dados revelou a **causa raiz**: os dois contratos (`298e7156` e `73d93ca5`) são **contratos migrados** (`is_migrated = true`). A lógica de migração marca automaticamente como "paga" parcelas com `due_date` anterior à `created_at` do sistema — mas essa regra está incorreta para contratos Boleto Unificado, pois **a parcela só deve ser "paga" quando a fatura correspondente é efetivamente paga pela imobiliária**.
 
-- Quando `setup_fee_exempt = true`, o fluxo tem 3 steps: Termos (1), Confirmação (2), Pagamento Garantia (3)
-- Após o step 2, o código faz `setCurrentStep(3)`
-- **Porém**, o card de "Pagamento da Garantia" só renderiza quando `currentStep === 4` (linha 1284)
-- O card de step 3 (`currentStep === 3 && !isSetupExempt`) é o de Setup Payment, que fica oculto porque `isSetupExempt = true`
-- Resultado: **tela vazia** — nenhum card é renderizado no step 3
+**Dados encontrados:**
+- Contrato `298e7156`: parcela #1 (março/2026), `due_date = 2026-03-10`, `created_at = 2026-03-11`, `paid_at = 2026-03-11` → Fatura `a51ad834` com status `gerada` (NÃO paga)
+- Contrato `73d93ca5`: parcela #1 (março/2026), `due_date = 2026-03-10`, `created_at = 2026-03-12`, `paid_at = 2026-03-12` → Fatura `a51ad834` com status `gerada` (NÃO paga)
 
-## Problema 2: Texto de contato errado no rodapé
-
-O rodapé diz "Dúvidas? Entre em contato com a imobiliária {nome}". O correto é direcionar para a Tridots Capital via WhatsApp.
+**Escopo total do problema**: Apenas essas 2 parcelas estão incorretas (parcelas com `invoice_item_id` vinculado a faturas não pagas). As demais parcelas "paga" de contratos migrados sem `invoice_item_id` são históricas e corretas (pré-sistema).
 
 ## Solução
 
-### Arquivo: `src/pages/TenantAcceptance.tsx`
+### 1. Migração SQL — Correção retroativa dos dados
 
-**1. Corrigir renderização do step de garantia**
+Executar uma migração que:
+- Corrige as 2 parcelas afetadas: de `status = 'paga'` → `status = 'faturada'`, `paid_at = NULL`
+- A query genérica corrige **qualquer** parcela que tenha `status = 'paga'` mas cuja fatura vinculada **não está paga**:
 
-Alterar a condição do card de Pagamento da Garantia de:
+```sql
+UPDATE guarantee_installments gi
+SET status = 'faturada', paid_at = NULL
+FROM invoice_items ii
+JOIN agency_invoices ai ON ai.id = ii.invoice_id
+WHERE gi.invoice_item_id = ii.id
+  AND gi.status = 'paga'
+  AND ai.status != 'paga';
 ```
-currentStep === 4
-```
-Para:
-```
-(currentStep === 4) || (currentStep === 3 && isSetupExempt && !isBoletoUnificado)
+
+### 2. Safeguard no código — Prevenir recorrência
+
+Modificar o hook `useAgencyInvoices.ts` no `useRegisterInvoicePayment` para adicionar uma **verificação pré-condição**: antes de marcar parcelas como pagas, verificar que a fatura realmente acabou de ser paga com sucesso.
+
+Isso já é feito corretamente no fluxo atual — o problema veio da lógica de migração manual. A prevenção real está na **Etapa 3**.
+
+### 3. Safeguard na Edge Function `generate-installments`
+
+Garantir que a função **nunca** crie ou altere parcelas com `status = 'paga'` — todas devem ser criadas como `'pendente'` e movidas para `'faturada'` ao vincular à fatura. Atualmente a função já faz isso corretamente, então o problema foi externo (migração manual).
+
+Para prevenir futuras migrações incorretas, adicionar um **trigger de validação** no banco que impede `status = 'paga'` se a fatura vinculada não estiver paga:
+
+```sql
+CREATE OR REPLACE FUNCTION validate_installment_paid_status()
+RETURNS trigger AS $$
+BEGIN
+  IF NEW.status = 'paga' AND NEW.invoice_item_id IS NOT NULL THEN
+    IF NOT EXISTS (
+      SELECT 1 FROM invoice_items ii
+      JOIN agency_invoices ai ON ai.id = ii.invoice_id
+      WHERE ii.id = NEW.invoice_item_id AND ai.status = 'paga'
+    ) THEN
+      -- Allow if no invoice linked (legacy migrated)
+      RAISE EXCEPTION 'Não é possível marcar parcela como paga quando a fatura vinculada não está paga';
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 ```
 
-Isso faz o card aparecer no step 3 quando setup é isento (não existe step de setup para pular).
+**Nota**: este trigger precisa ser `SECURITY DEFINER` e deve permitir a exceção quando o `registerPayment` no `useAgencyInvoices` atualiza a fatura para "paga" primeiro e depois atualiza as parcelas (a fatura já estará paga quando as parcelas forem atualizadas).
 
-**2. Corrigir botão "Voltar" no card de garantia quando renderizado no step 3**
+## Arquivos Alterados
 
-Ajustar o `onClick` do botão Voltar para considerar que o step anterior é 2 (e não 3).
+| Arquivo/Recurso | Operação |
+|---|---|
+| Nova migração SQL | Correção retroativa + trigger de validação |
+| Nenhum arquivo `.ts` | O fluxo de código já está correto |
 
-**3. Corrigir texto do rodapé (linha 1444-1446)**
+## Resultado
 
-De:
-```
-Dúvidas? Entre em contato com a imobiliária {agency?.nome}
-```
-Para:
-```
-Dúvidas? Entre em contato com a Tridots Capital pelo WhatsApp (44) 9 9177-8859
-```
-Com link clicável para `https://wa.me/5544991778859`.
-
-## Impacto
-
-- 1 arquivo alterado (`TenantAcceptance.tsx`)
-- Corrige o bug crítico que impede inquilinos de verem o link de pagamento
-- Corrige o texto de contato em todas as páginas de aceite
+- As 2 parcelas afetadas voltam ao status `faturada`
+- A Fatura 03/2026 da Massaru exibirá corretamente as parcelas como pendentes
+- O trigger impede que qualquer processo futuro marque parcelas como pagas sem fatura correspondente paga
 
