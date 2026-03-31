@@ -181,7 +181,28 @@ export function ContractList({ contracts, isLoading, onRenew, onFlagPendency, on
             <Download className="h-4 w-4 mr-2" />
             Exportar
           </Button>
+          {isMaster && (
+            <Button size="sm" variant="destructive" onClick={() => setShowBulkDelete(true)}>
+              <Trash2 className="h-4 w-4 mr-2" />
+              Excluir Selecionados
+            </Button>
+          )}
         </div>
+      )}
+
+      {isMaster && (
+        <BulkDeleteContractsModal
+          open={showBulkDelete}
+          onOpenChange={setShowBulkDelete}
+          contracts={contracts
+            .filter(c => selectedIds.includes(c.id))
+            .map(c => ({
+              id: c.id,
+              tenantName: c.analysis?.inquilino_nome || 'Sem nome',
+              code: c.id.slice(0, 8).toUpperCase(),
+            }))}
+          onComplete={() => setSelectedIds([])}
+        />
       )}
 
       <div className="rounded-md border">
