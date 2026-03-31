@@ -159,7 +159,7 @@ async function handleContractDelete(
 
   const tenantName = (contract as any).analysis?.inquilino_nome || 'Desconhecido';
 
-  // Check for active claims (block)
+  // Count active claims (will be deleted in cascade)
   const { data: activeClaims } = await supabase
     .from('claims')
     .select('id, public_status')
@@ -167,18 +167,7 @@ async function handleContractDelete(
     .is('canceled_at', null)
     .neq('public_status', 'finalizado');
 
-  if (activeClaims?.length) {
-    if (dryRun) {
-      return jsonResponse({
-        blocked: true,
-        blocked_by: { type: 'claim', id: activeClaims[0].id, label: `Garantia #${activeClaims[0].id.slice(0, 8).toUpperCase()} (${activeClaims[0].public_status})` },
-        entity_type: 'contract',
-        entity_id: contractId,
-        tenant_name: tenantName,
-      });
-    }
-    return jsonResponse({ error: 'Exclua a garantia ativa vinculada antes de excluir o contrato' }, 409);
-  }
+  const activeClaimsCount = activeClaims?.length || 0;
 
   // Count children
   const [installments, renewals, renewalNotifs] = await Promise.all([
@@ -210,6 +199,7 @@ async function handleContractDelete(
   summary.renovacoes = renewals.count || 0;
   summary.lembretes_renovacao = renewalNotifs.count || 0;
   summary.garantias_finalizadas = finalizedClaimsCount || 0;
+  summary.garantias_ativas = activeClaimsCount;
   summary.faturas_afetadas = invoiceCount;
   summary.chamados_preservados = ticketCount || 0;
 
@@ -294,25 +284,7 @@ async function handleAnalysisDelete(
 
   if (contract) {
     // Check for active claims on the contract
-    const { data: activeClaims } = await supabase
-      .from('claims')
-      .select('id, public_status')
-      .eq('contract_id', contract.id)
-      .is('canceled_at', null)
-      .neq('public_status', 'finalizado');
-
-    if (activeClaims?.length) {
-      if (dryRun) {
-        return jsonResponse({
-          blocked: true,
-          blocked_by: { type: 'claim', id: activeClaims[0].id, label: `Garantia #${activeClaims[0].id.slice(0, 8).toUpperCase()} (${activeClaims[0].public_status})` },
-          entity_type: 'analysis',
-          entity_id: analysisId,
-          tenant_name: tenantName,
-        });
-      }
-      return jsonResponse({ error: 'Exclua a garantia ativa vinculada antes de excluir a análise' }, 409);
-    }
+    // Active claims will be deleted in cascade via handleContractDelete
   }
 
   // Count analysis children
