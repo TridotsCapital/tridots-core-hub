@@ -72,10 +72,11 @@ export function useCascadeDelete() {
       queryClient.invalidateQueries({ queryKey: ['tickets'] });
 
       toast.success('Exclusão realizada com sucesso!');
-      return true;
+      return { success: true };
     } catch (err: any) {
-      toast.error(err.message || 'Erro ao executar exclusão');
-      return false;
+      const msg = err.message || 'Erro ao executar exclusão';
+      toast.error(msg);
+      return { success: false, errorMessage: msg };
     } finally {
       setIsLoading(false);
     }

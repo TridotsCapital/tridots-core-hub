@@ -73,13 +73,13 @@ export function BulkDeleteContractsModal({ open, onOpenChange, contracts, onComp
       setCurrentIndex(i);
 
       try {
-        const success = await executeDeletion('contract', contract.id);
+        const result = await executeDeletion('contract', contract.id);
         newResults.push({
           id: contract.id,
           tenantName: contract.tenantName,
           code: contract.code,
-          success,
-          error: success ? undefined : 'Falha ao excluir',
+          success: result.success,
+          error: result.success ? undefined : (result.errorMessage || 'Falha ao excluir'),
         });
       } catch (err: any) {
         newResults.push({

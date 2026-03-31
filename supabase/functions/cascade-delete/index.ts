@@ -223,7 +223,7 @@ async function markTicketsDeleted(
     // Delete ticket notifications
     await supabase.from('ticket_notifications').delete().in('ticket_id', ticketIds);
 
-    // Mark tickets with deleted link info
+    // Mark tickets with deleted link info AND null the FK column to prevent blocking
     const deletedLinkInfo = {
       entity_type: entityType,
       entity_id: entityId,
@@ -232,9 +232,13 @@ async function markTicketsDeleted(
       tenant_name: tenantName,
     };
 
+    // Build update payload: set deleted_link_info + null the FK reference
+    const updatePayload: Record<string, unknown> = { deleted_link_info: deletedLinkInfo };
+    updatePayload[filterColumn] = null;
+
     await supabase
       .from('tickets')
-      .update({ deleted_link_info: deletedLinkInfo })
+      .update(updatePayload)
       .eq(filterColumn, filterValue);
   }
 }
