@@ -260,7 +260,48 @@ async function handleContractDelete(
     new_data: { deleted_by: userName, summary },
   });
 
-  await supabase.from('contracts').delete().eq('id', contractId);
+  const { error: contractDelError } = await supabase.from('contracts').delete().eq('id', contractId);
+  if (contractDelError) {
+    console.error('Error deleting contract:', contractId, contractDelError);
+    return jsonResponse({ error: 'Erro ao excluir contrato: ' + contractDelError.message }, 500);
+  }
+
+  // Also delete the linked analysis and its children
+  const analysisId = (contract as any).analysis?.id;
+  if (analysisId) {
+    console.log('Deleting linked analysis:', analysisId);
+
+    // Delete storage files
+    const { data: analysisDocs } = await supabase.from('analysis_documents').select('file_path').eq('analysis_id', analysisId);
+    if (analysisDocs?.length) {
+      await supabase.storage.from('analysis-documents').remove(analysisDocs.map((d: any) => d.file_path));
+    }
+
+    // Delete analysis children
+    await supabase.from('analysis_documents').delete().eq('analysis_id', analysisId);
+    await supabase.from('analysis_timeline').delete().eq('analysis_id', analysisId);
+    await supabase.from('commissions').delete().eq('analysis_id', analysisId);
+    await supabase.from('digital_acceptances').delete().eq('analysis_id', analysisId);
+    await supabase.from('internal_notes').delete().eq('reference_id', analysisId);
+
+    // Mark analysis tickets
+    await markTicketsDeleted(supabase, { analysis_id: analysisId }, 'analysis', analysisId, userName, tenantName);
+
+    // Audit for analysis
+    await supabase.from('audit_logs').insert({
+      user_id: userId,
+      table_name: 'analyses',
+      record_id: analysisId,
+      action: 'CASCADE_DELETE',
+      old_data: (contract as any).analysis,
+      new_data: { deleted_by: userName, deleted_via: 'contract_cascade', contract_id: contractId },
+    });
+
+    const { error: analysisDelError } = await supabase.from('analyses').delete().eq('id', analysisId);
+    if (analysisDelError) {
+      console.error('Error deleting linked analysis:', analysisId, analysisDelError);
+    }
+  }
 
   return jsonResponse({ success: true, summary, entity_type: 'contract' });
 }
