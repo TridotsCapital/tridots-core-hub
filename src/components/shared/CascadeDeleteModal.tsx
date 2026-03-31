@@ -79,8 +79,8 @@ export function CascadeDeleteModal({
   }, [open, entityId]);
 
   const handleConfirmDelete = async () => {
-    const success = await executeDeletion(entityType, entityId);
-    if (success) {
+    const result = await executeDeletion(entityType, entityId);
+    if (result.success) {
       onOpenChange(false);
       onDeleted?.();
     }
