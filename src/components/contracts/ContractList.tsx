@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   Table,
   TableBody,
@@ -30,11 +31,13 @@ import {
   FileCheck,
   ShieldAlert,
   ArrowRightLeft,
+  Trash2,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatCurrency } from '@/lib/validators';
 import { useContractsWithActiveClaims } from '@/hooks/useContractsWithActiveClaims';
+import { BulkDeleteContractsModal } from './BulkDeleteContractsModal';
 import type { Database } from '@/integrations/supabase/types';
 
 type ContractStatus = Database['public']['Enums']['contract_status'];
@@ -86,7 +89,9 @@ interface Props {
 
 export function ContractList({ contracts, isLoading, onRenew, onFlagPendency, onViewPayments }: Props) {
   const navigate = useNavigate();
+  const { isMaster } = useAuth();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [showBulkDelete, setShowBulkDelete] = useState(false);
   
   const contractIds = useMemo(() => contracts.map(c => c.id), [contracts]);
   const { data: contractsWithActiveClaims } = useContractsWithActiveClaims(contractIds);
@@ -176,7 +181,28 @@ export function ContractList({ contracts, isLoading, onRenew, onFlagPendency, on
             <Download className="h-4 w-4 mr-2" />
             Exportar
           </Button>
+          {isMaster && (
+            <Button size="sm" variant="destructive" onClick={() => setShowBulkDelete(true)}>
+              <Trash2 className="h-4 w-4 mr-2" />
+              Excluir Selecionados
+            </Button>
+          )}
         </div>
+      )}
+
+      {isMaster && (
+        <BulkDeleteContractsModal
+          open={showBulkDelete}
+          onOpenChange={setShowBulkDelete}
+          contracts={contracts
+            .filter(c => selectedIds.includes(c.id))
+            .map(c => ({
+              id: c.id,
+              tenantName: c.analysis?.inquilino_nome || 'Sem nome',
+              code: c.id.slice(0, 8).toUpperCase(),
+            }))}
+          onComplete={() => setSelectedIds([])}
+        />
       )}
 
       <div className="rounded-md border">
