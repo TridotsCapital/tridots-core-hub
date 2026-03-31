@@ -44,7 +44,7 @@ export function useCascadeDelete() {
   const executeDeletion = async (
     entityType: 'analysis' | 'contract' | 'claim',
     entityId: string
-  ): Promise<boolean> => {
+  ): Promise<{ success: boolean; errorMessage?: string }> => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('cascade-delete', {
@@ -54,12 +54,12 @@ export function useCascadeDelete() {
       if (error) {
         const errorMsg = (data as any)?.error || error.message;
         toast.error(errorMsg);
-        return false;
+        return { success: false, errorMessage: errorMsg };
       }
 
       if (data?.error) {
         toast.error(data.error);
-        return false;
+        return { success: false, errorMessage: data.error };
       }
 
       // Invalidate all related queries
@@ -72,10 +72,11 @@ export function useCascadeDelete() {
       queryClient.invalidateQueries({ queryKey: ['tickets'] });
 
       toast.success('Exclusão realizada com sucesso!');
-      return true;
+      return { success: true };
     } catch (err: any) {
-      toast.error(err.message || 'Erro ao executar exclusão');
-      return false;
+      const msg = err.message || 'Erro ao executar exclusão';
+      toast.error(msg);
+      return { success: false, errorMessage: msg };
     } finally {
       setIsLoading(false);
     }

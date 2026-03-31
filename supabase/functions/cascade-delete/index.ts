@@ -117,37 +117,53 @@ async function deleteContractChildren(supabase: SupaClient, contractId: string, 
     await supabase.from('claims').delete().eq('id', c.id);
   }
 
-  // 2. Handle invoice items: remove items linked via installments, recalculate or delete invoices
+  // 2. Handle invoice items via installments + direct contract_id
+  // 2a. Collect invoice_item_ids from installments
   const { data: contractInstallments } = await supabase
     .from('guarantee_installments')
     .select('invoice_item_id')
     .eq('contract_id', contractId)
     .not('invoice_item_id', 'is', null);
   
-  const invoiceItemIds = contractInstallments?.map((i: any) => i.invoice_item_id).filter(Boolean) || [];
+  const installmentItemIds = contractInstallments?.map((i: any) => i.invoice_item_id).filter(Boolean) || [];
 
-  if (invoiceItemIds.length > 0) {
-    const { data: invoiceItems } = await supabase.from('invoice_items').select('id, invoice_id').in('id', invoiceItemIds);
-    const invoiceIds = [...new Set(invoiceItems?.map((i: any) => i.invoice_id) || [])];
+  // 2b. Collect ALL invoice_items linked directly by contract_id
+  const { data: directItems } = await supabase
+    .from('invoice_items')
+    .select('id, invoice_id')
+    .eq('contract_id', contractId);
+  
+  const directItemIds = directItems?.map((i: any) => i.id) || [];
 
-    // Clear installment refs first so FK doesn't block
-    await supabase.from('guarantee_installments').update({ invoice_item_id: null }).eq('contract_id', contractId);
+  // Merge both sets of item IDs
+  const allItemIds = [...new Set([...installmentItemIds, ...directItemIds])];
 
-    // Delete invoice items
-    if (invoiceItemIds.length > 0) {
-      await supabase.from('invoice_items').delete().in('id', invoiceItemIds);
-    }
+  // Collect all affected invoice IDs
+  let affectedInvoiceIds: string[] = [];
+  if (installmentItemIds.length > 0) {
+    const { data: instItems } = await supabase.from('invoice_items').select('invoice_id').in('id', installmentItemIds);
+    affectedInvoiceIds.push(...(instItems?.map((i: any) => i.invoice_id) || []));
+  }
+  affectedInvoiceIds.push(...(directItems?.map((i: any) => i.invoice_id) || []));
+  const uniqueInvoiceIds = [...new Set(affectedInvoiceIds)];
 
-    // Check if invoices are now empty → delete; otherwise recalculate total
-    for (const invId of invoiceIds) {
-      const { count } = await supabase.from('invoice_items').select('id', { count: 'exact' }).eq('invoice_id', invId);
-      if (count === 0) {
-        await supabase.from('agency_invoices').delete().eq('id', invId);
-      } else {
-        const { data: remainingItems } = await supabase.from('invoice_items').select('value').eq('invoice_id', invId);
-        const newTotal = remainingItems?.reduce((sum: number, i: any) => sum + (i.value || 0), 0) || 0;
-        await supabase.from('agency_invoices').update({ total_value: newTotal }).eq('id', invId);
-      }
+  // Clear installment refs first so FK doesn't block
+  await supabase.from('guarantee_installments').update({ invoice_item_id: null }).eq('contract_id', contractId);
+
+  // Delete all invoice items
+  if (allItemIds.length > 0) {
+    await supabase.from('invoice_items').delete().in('id', allItemIds);
+  }
+
+  // Check if invoices are now empty → delete; otherwise recalculate total
+  for (const invId of uniqueInvoiceIds) {
+    const { count } = await supabase.from('invoice_items').select('id', { count: 'exact' }).eq('invoice_id', invId);
+    if (count === 0) {
+      await supabase.from('agency_invoices').delete().eq('id', invId);
+    } else {
+      const { data: remainingItems } = await supabase.from('invoice_items').select('value').eq('invoice_id', invId);
+      const newTotal = remainingItems?.reduce((sum: number, i: any) => sum + (i.value || 0), 0) || 0;
+      await supabase.from('agency_invoices').update({ total_value: newTotal }).eq('id', invId);
     }
   }
 
@@ -158,7 +174,7 @@ async function deleteContractChildren(supabase: SupaClient, contractId: string, 
     supabase.from('contract_renewals').delete().eq('contract_id', contractId),
   ]);
 
-  // 4. Mark contract tickets
+  // 4. Mark contract tickets and NULL out the FK reference
   await markTicketsDeleted(supabase, 'contract_id', contractId, 'contract', contractId, userName, tenantName);
 }
 
@@ -169,19 +185,20 @@ async function deleteAnalysisChildren(supabase: SupaClient, analysisId: string, 
     await supabase.storage.from('analysis-documents').remove(analysisDocs.map((d: any) => d.file_path));
   }
 
-  // Delete all analysis children in parallel
+  // Delete all analysis children in parallel (including internal_chat)
   await Promise.all([
     supabase.from('analysis_documents').delete().eq('analysis_id', analysisId),
     supabase.from('analysis_timeline').delete().eq('analysis_id', analysisId),
     supabase.from('commissions').delete().eq('analysis_id', analysisId),
     supabase.from('digital_acceptances').delete().eq('analysis_id', analysisId),
     supabase.from('internal_notes').delete().eq('reference_id', analysisId),
+    supabase.from('internal_chat').delete().eq('analysis_id', analysisId),
   ]);
 
   // Clean up orphaned notifications referencing this analysis
   await supabase.from('notifications').delete().eq('reference_id', analysisId);
 
-  // Mark analysis tickets
+  // Mark analysis tickets and NULL out the FK reference
   await markTicketsDeleted(supabase, 'analysis_id', analysisId, 'analysis', analysisId, userName, tenantName);
 }
 
@@ -206,7 +223,7 @@ async function markTicketsDeleted(
     // Delete ticket notifications
     await supabase.from('ticket_notifications').delete().in('ticket_id', ticketIds);
 
-    // Mark tickets with deleted link info
+    // Mark tickets with deleted link info AND null the FK column to prevent blocking
     const deletedLinkInfo = {
       entity_type: entityType,
       entity_id: entityId,
@@ -215,9 +232,13 @@ async function markTicketsDeleted(
       tenant_name: tenantName,
     };
 
+    // Build update payload: set deleted_link_info + null the FK reference
+    const updatePayload: Record<string, unknown> = { deleted_link_info: deletedLinkInfo };
+    updatePayload[filterColumn] = null;
+
     await supabase
       .from('tickets')
-      .update({ deleted_link_info: deletedLinkInfo })
+      .update(updatePayload)
       .eq(filterColumn, filterValue);
   }
 }
