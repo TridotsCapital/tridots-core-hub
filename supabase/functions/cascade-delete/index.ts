@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ error: 'entity_type inválido' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
   } catch (error) {
-    console.error('Cascade delete error:', error);
+    console.error('Cascade delete error:', error, JSON.stringify(error));
     return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Erro interno' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 });
