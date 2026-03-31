@@ -284,25 +284,7 @@ async function handleAnalysisDelete(
 
   if (contract) {
     // Check for active claims on the contract
-    const { data: activeClaims } = await supabase
-      .from('claims')
-      .select('id, public_status')
-      .eq('contract_id', contract.id)
-      .is('canceled_at', null)
-      .neq('public_status', 'finalizado');
-
-    if (activeClaims?.length) {
-      if (dryRun) {
-        return jsonResponse({
-          blocked: true,
-          blocked_by: { type: 'claim', id: activeClaims[0].id, label: `Garantia #${activeClaims[0].id.slice(0, 8).toUpperCase()} (${activeClaims[0].public_status})` },
-          entity_type: 'analysis',
-          entity_id: analysisId,
-          tenant_name: tenantName,
-        });
-      }
-      return jsonResponse({ error: 'Exclua a garantia ativa vinculada antes de excluir a análise' }, 409);
-    }
+    // Active claims will be deleted in cascade via handleContractDelete
   }
 
   // Count analysis children
