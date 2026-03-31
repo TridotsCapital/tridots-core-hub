@@ -1,62 +1,43 @@
 
 
-# Plano: Corrigir Valores de Aluguel + Remover Duplicatas de Faturas
+# Plano: Exclusão em Massa de Contratos (Master Only)
 
-## Problema 1 — Valores invertidos (Nathaniely e Gislaine)
+## Objetivo
+Adicionar botão de exclusão em massa na barra de ações bulk da lista de contratos (`ContractList`), visível apenas para usuários `master`. Utiliza o `cascade-delete` existente para cada contrato selecionado, com modal de confirmação e progresso.
 
-Na alteração anterior, o valor informado (que era o **aluguel corrigido**) foi aplicado diretamente como `garantia_anual`. O correto é:
+## Arquivos a criar/modificar
 
-| Contrato | Inquilino | valor_aluguel atual | Correto | garantia_anual atual | Correta (aluguel × 12 × 10%) |
-|---|---|---|---|---|---|
-| #844217A0 | Nathaniely | R$ 1.307,75 | **R$ 1.465,82** | R$ 1.465,82 | **R$ 1.758,98** |
-| #078FBDAD | Gislaine | R$ 740,10 | **R$ 762,30** | R$ 762,30 | **R$ 914,76** |
+### 1. Criar `src/components/contracts/BulkDeleteContractsModal.tsx`
+Modal com 3 etapas:
+- **Resumo**: lista os contratos selecionados (nome do inquilino + código), mostra aviso de irreversibilidade
+- **Confirmação final**: texto "Tem certeza absoluta?" com contagem total
+- **Progresso**: executa `cascade-delete` sequencialmente para cada contrato, exibindo barra de progresso e status (sucesso/erro por contrato). Contratos bloqueados (com claim ativa) serão pulados e listados ao final como "não excluídos"
 
-## Problema 2 — Invoice items duplicados
+### 2. Modificar `src/components/contracts/ContractList.tsx`
+- Importar `useAuth` e `BulkDeleteContractsModal`
+- Na barra de ações bulk (linha ~170), quando `isMaster && selectedIds.length > 0`, exibir botão "Excluir Selecionados" (vermelho, com ícone Trash2)
+- Ao clicar, abrir `BulkDeleteContractsModal` passando os IDs e nomes dos contratos selecionados
+- Após conclusão, limpar seleção e invalidar queries
 
-Contratos com itens duplicados em **todas as 12 faturas mensais**:
+### 3. Modificar `src/pages/Contracts.tsx`
+- Passar callback `onRefresh` para `ContractList` para forçar recarga após exclusão em massa
 
-**Massaru Imóveis** (2 contratos):
-- Natan Fratta da Silva (#a843a9ec) — 12 meses duplicados
-- Leticia Renata de Oliveira (#f6b6f948) — 12 meses duplicados
+## Fluxo do usuário
+1. Master seleciona contratos via checkbox (qualquer status)
+2. Clica em "Excluir Selecionados" na barra de ações
+3. Vê modal com lista dos contratos e aviso de cascata
+4. Confirma → sistema executa cascade-delete um a um
+5. Barra de progresso mostra andamento
+6. Ao final, resumo: X excluídos, Y falhas/bloqueados
+7. Lista recarrega automaticamente
 
-**Canah Imóveis** (7 contratos):
-- Anne Raissa, Carlos Eduardo, Ediucio, Gilda, Leonardo, Marcia, Ricardo — todos com 12 meses duplicados
-
-**Total**: 9 contratos × 12 meses = **~108 invoice_items duplicados** a remover.
-
-Causa provável: a reconciliação anterior criou novos `invoice_items` sem verificar que já existiam itens vinculados para o mesmo contrato/mês.
-
-## Execução
-
-### Etapa 1 — Corrigir valores (Nathaniely e Gislaine)
-- Atualizar `valor_aluguel` e `valor_total` na tabela `analyses`
-- Recalcular `garantia_anual = valor_total × 12 × taxa_garantia_percentual / 100`
-- Atualizar valor mensal em todas as 12 `guarantee_installments` e `invoice_items`
-- Recalcular `total_value` das faturas impactadas
-- Registrar auditoria na `analysis_timeline`
-
-### Etapa 2 — Remover duplicatas (9 contratos, 2 imobiliárias)
-- Para cada contrato/mês duplicado: manter o `invoice_item` mais antigo (menor `created_at`), deletar o(s) mais novo(s)
-- Garantir que a `guarantee_installment` aponte para o item mantido (`invoice_item_id`)
-- Recalcular `total_value` de todas as faturas afetadas pela soma real dos itens restantes
-
-### Etapa 3 — Migração: prevenir recorrência
-- Criar constraint `UNIQUE(invoice_id, contract_id, installment_number)` na tabela `invoice_items`
-- Isso impede que qualquer processo futuro (reconciliação, geração) crie itens duplicados
-
-### Etapa 4 — Verificação
-- Zero duplicatas em `invoice_items` no sistema inteiro
-- Valores corretos para Nathaniely e Gislaine
-- Totais das faturas batendo com a soma dos itens
+## Segurança
+- Botão visível apenas quando `isMaster === true` (do `useAuth()`)
+- A edge function `cascade-delete` já valida role no servidor
+- Sem alteração de schema necessária
 
 ## Detalhes técnicos
-
-| Recurso | Operação |
-|---|---|
-| `analyses` | UPDATE valor_aluguel, valor_total, garantia_anual (2 contratos) |
-| `guarantee_installments` | UPDATE value (24 parcelas) |
-| `invoice_items` | UPDATE value (24 itens) + DELETE ~108 duplicatas |
-| `agency_invoices` | UPDATE total_value (faturas impactadas) |
-| `analysis_timeline` | INSERT eventos de auditoria |
-| Nova migração SQL | UNIQUE constraint em invoice_items |
+- Nenhuma migração SQL necessária
+- Reutiliza `useCascadeDelete` existente (chamando `executeDeletion('contract', id)` em loop)
+- Contratos com claims ativas serão tentados e o erro será capturado e exibido no resumo final (a edge function já retorna erro nesses casos)
 
