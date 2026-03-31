@@ -37,6 +37,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatCurrency } from '@/lib/validators';
 import { useContractsWithActiveClaims } from '@/hooks/useContractsWithActiveClaims';
+import { BulkDeleteContractsModal } from './BulkDeleteContractsModal';
 import type { Database } from '@/integrations/supabase/types';
 
 type ContractStatus = Database['public']['Enums']['contract_status'];
