@@ -199,6 +199,7 @@ async function handleContractDelete(
   summary.renovacoes = renewals.count || 0;
   summary.lembretes_renovacao = renewalNotifs.count || 0;
   summary.garantias_finalizadas = finalizedClaimsCount || 0;
+  summary.garantias_ativas = activeClaimsCount;
   summary.faturas_afetadas = invoiceCount;
   summary.chamados_preservados = ticketCount || 0;
 
