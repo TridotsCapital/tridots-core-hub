@@ -74,6 +74,21 @@ function jsonResponse(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 }
 
+function ensureNoError(
+  error: unknown,
+  stage: string,
+  entityType: 'analysis' | 'contract' | 'claim',
+  entityId: string,
+) {
+  if (!error) return;
+
+  const err = error as { message?: string; code?: string; details?: string };
+  const suffix = [err.code, err.details].filter(Boolean).join(' | ');
+  throw new Error(
+    `[${stage}] ${entityType}:${entityId} - ${err.message || 'Erro desconhecido'}${suffix ? ` (${suffix})` : ''}`,
+  );
+}
+
 // ===== HELPERS: Delete children of each entity type =====
 
 async function deleteClaimChildren(supabase: SupaClient, claimId: string) {
