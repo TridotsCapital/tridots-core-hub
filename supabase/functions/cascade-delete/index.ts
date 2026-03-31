@@ -185,19 +185,20 @@ async function deleteAnalysisChildren(supabase: SupaClient, analysisId: string, 
     await supabase.storage.from('analysis-documents').remove(analysisDocs.map((d: any) => d.file_path));
   }
 
-  // Delete all analysis children in parallel
+  // Delete all analysis children in parallel (including internal_chat)
   await Promise.all([
     supabase.from('analysis_documents').delete().eq('analysis_id', analysisId),
     supabase.from('analysis_timeline').delete().eq('analysis_id', analysisId),
     supabase.from('commissions').delete().eq('analysis_id', analysisId),
     supabase.from('digital_acceptances').delete().eq('analysis_id', analysisId),
     supabase.from('internal_notes').delete().eq('reference_id', analysisId),
+    supabase.from('internal_chat').delete().eq('analysis_id', analysisId),
   ]);
 
   // Clean up orphaned notifications referencing this analysis
   await supabase.from('notifications').delete().eq('reference_id', analysisId);
 
-  // Mark analysis tickets
+  // Mark analysis tickets and NULL out the FK reference
   await markTicketsDeleted(supabase, 'analysis_id', analysisId, 'analysis', analysisId, userName, tenantName);
 }
 
