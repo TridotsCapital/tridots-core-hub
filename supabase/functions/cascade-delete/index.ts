@@ -202,6 +202,7 @@ async function handleContractDelete(
   summary.garantias_ativas = activeClaimsCount;
   summary.faturas_afetadas = invoiceCount;
   summary.chamados_preservados = ticketCount || 0;
+  summary.analise_vinculada = (contract as any).analysis?.id ? 1 : 0;
 
   if (dryRun) {
     return jsonResponse({ summary, entity_type: 'contract', entity_id: contractId, tenant_name: tenantName });
