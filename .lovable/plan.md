@@ -1,45 +1,63 @@
 
-Objetivo: corrigir de forma definitiva a exclusão em massa/cascata para não sobrar contratos parcialmente excluídos nem análises “Ativas” órfãs.
 
-Diagnóstico já confirmado (não é chute):
-1) O erro `non-2xx` vem de FK: `claims_contract_id_fkey` (contrato ainda referenciado por `claims`).
-2) A causa raiz é a exclusão de claim falhar silenciosamente quando há ticket com `tickets.claim_id` preenchido (a função hoje preserva ticket, mas não remove o vínculo FK).
-3) Há outra regra incompleta: `invoice_items` ligados por `contract_id` (sem `guarantee_installments.invoice_item_id`) não entram no cleanup atual e também bloqueiam exclusão em alguns contratos.
-4) Existem análises órfãs legadas (status `aprovada`, exibido como “Ativa”) porque houve exclusões parciais anteriores.
+# Plano: Correção Definitiva do Cascade-Delete
 
-Plano de correção (varredura completa):
-1) Endurecer a função de cascata (`cascade-delete`) para nunca “falhar em silêncio”
-- Validar `error` em toda operação `delete/update/storage`.
-- Interromper com erro explícito por etapa (claim/parcelas/faturas/contrato/análise), incluindo IDs no retorno.
-- Remover o comportamento de “sucesso parcial sem aviso” quando a análise não for apagada.
+## Diagnóstico Confirmado
 
-2) Corrigir preservação de tickets sem quebrar FK
-- Ao preservar ticket, além de gravar `deleted_link_info`, também limpar a coluna de vínculo correspondente (`claim_id`, `contract_id`, `analysis_id`) antes de apagar entidade pai.
-- Aplicar isso no fluxo de contrato, claim e análise.
+### Causa raiz dos erros "non-2xx"
+A tabela `invoice_items` tem FK `invoice_items_contract_id_fkey` com `ON DELETE RESTRICT`. A função só remove itens encontrados via `guarantee_installments.invoice_item_id`, mas **não remove itens ligados diretamente por `contract_id`** que não passaram por installments. Esses itens bloqueiam a exclusão do contrato.
 
-3) Cobrir todos os vínculos de fatura/itens na exclusão de contrato
-- Deletar `invoice_items` por duas rotas:
-  a) itens vindos de `guarantee_installments.invoice_item_id`
-  b) itens ligados diretamente por `invoice_items.contract_id`
-- Recalcular faturas remanescentes e excluir fatura vazia (como já previsto), agora com conjunto completo de itens.
+Da mesma forma, `claims_contract_id_fkey` é `NO ACTION` (RESTRICT por padrão) e `commissions_analysis_id_fkey` é `ON DELETE RESTRICT`. Se qualquer falha silenciosa ocorrer na deleção de filhos, o pai fica bloqueado.
 
-4) Blindagem de schema para evitar recorrência
-- Migração de FK de `tickets.claim_id` para `ON DELETE SET NULL` (mantém ticket preservado e impede bloqueio futuro por FK).
-- Sem alterar regra de negócio de preservação de chamados.
+### Análises órfãs
+13 análises com status `aprovada` sem contrato vinculado (resíduo de exclusões parciais anteriores).
 
-5) Correção retroativa dos dados já quebrados
-- Rodar rotina de saneamento para análises órfãs exibidas como “Ativas” (sem contrato), removendo dependências e a análise de forma consistente com a regra atual.
-- Reprocessar os contratos que ficaram pendentes por falha anterior (incluindo os da Demo), agora com a cascata corrigida.
+---
 
-6) Melhorar feedback no portal TRIDOTS
-- No modal de exclusão em massa, mostrar erro real por contrato (ex.: “claim vinculada por ticket”, “invoice_items diretos”), em vez de só “non-2xx”.
-- Manter resumo final com sucessos/falhas detalhados.
+## Correções (3 frentes)
 
-Validação final (obrigatória):
-- Testar novamente exclusão em massa no portal TRIDOTS (incluindo os contratos que falharam).
-- Confirmar:
-  1) contratos removidos;
-  2) claims vinculadas removidas;
-  3) tickets preservados com `deleted_link_info` e vínculos nulos;
-  4) nenhuma análise `aprovada/ativo` sem contrato;
-  5) sem retorno `non-2xx` para o mesmo cenário.
+### 1. Migração SQL — blindagem de FKs
+
+Alterar FKs problemáticas para `ON DELETE CASCADE` como rede de segurança:
+
+| FK | Tabela | Ação atual | Nova ação |
+|---|---|---|---|
+| `claims_contract_id_fkey` | claims → contracts | NO ACTION | CASCADE |
+| `guarantee_installments_contract_id_fkey` | guarantee_installments → contracts | RESTRICT | CASCADE |
+| `invoice_items_contract_id_fkey` | invoice_items → contracts | RESTRICT | CASCADE |
+| `commissions_analysis_id_fkey` | commissions → analyses | RESTRICT | CASCADE |
+| `contracts_analysis_id_fkey` | contracts → analyses | RESTRICT | CASCADE |
+
+Isso garante que mesmo que a função falhe em algum passo, o banco não bloqueia.
+
+### 2. Edge Function — cobrir invoice_items diretos + internal_chat
+
+No `deleteContractChildren`:
+- **Após** o cleanup via installments, adicionar: deletar **todos** `invoice_items` restantes por `contract_id` diretamente
+- Recalcular/excluir faturas afetadas por esses itens extras
+
+No `deleteAnalysisChildren`:
+- Adicionar limpeza de `internal_chat` por `analysis_id` (hoje depende apenas do CASCADE)
+
+### 3. Limpeza de dados — análises órfãs
+
+Usar insert tool para deletar as 13 análises órfãs e seus filhos (documentos, timeline, comissões, aceites, notas internas, internal_chat, notificações).
+
+### 4. Melhorar feedback no modal
+
+No `BulkDeleteContractsModal`, capturar a mensagem de erro real retornada pela edge function (campo `data.error`) e exibir no resultado por contrato, em vez do genérico "Falha ao excluir".
+
+No `useCascadeDelete.executeDeletion`, quando `error` vem do invoke, extrair `data?.error` e lançar com a mensagem real.
+
+---
+
+## Arquivos modificados
+
+| Arquivo | Mudança |
+|---|---|
+| Nova migração SQL | ALTER FK × 5 para ON DELETE CASCADE |
+| `supabase/functions/cascade-delete/index.ts` | Adicionar cleanup de `invoice_items` por `contract_id` + `internal_chat` |
+| `src/hooks/useCascadeDelete.ts` | Propagar mensagem de erro real |
+| `src/components/contracts/BulkDeleteContractsModal.tsx` | Exibir erro detalhado por contrato |
+| Dados (insert tool) | Deletar 13 análises órfãs + filhos |
+
