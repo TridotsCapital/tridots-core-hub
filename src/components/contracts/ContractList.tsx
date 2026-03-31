@@ -89,7 +89,9 @@ interface Props {
 
 export function ContractList({ contracts, isLoading, onRenew, onFlagPendency, onViewPayments }: Props) {
   const navigate = useNavigate();
+  const { isMaster } = useAuth();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [showBulkDelete, setShowBulkDelete] = useState(false);
   
   const contractIds = useMemo(() => contracts.map(c => c.id), [contracts]);
   const { data: contractsWithActiveClaims } = useContractsWithActiveClaims(contractIds);
