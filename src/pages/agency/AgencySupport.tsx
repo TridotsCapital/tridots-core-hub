@@ -115,10 +115,12 @@ export default function AgencySupport() {
     setSearchParams({});
   };
 
-  // Sort tickets by most recent activity
-  const sortedTickets = [...tickets].sort((a, b) => 
-    new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
-  );
+  // Sort tickets by last message date (descending), fallback to created_at
+  const sortedTickets = [...tickets].sort((a, b) => {
+    const dateA = (a as any).last_message_at || a.created_at;
+    const dateB = (b as any).last_message_at || b.created_at;
+    return new Date(dateB).getTime() - new Date(dateA).getTime();
+  });
 
   // Filter tickets
   const filteredTickets = sortedTickets.filter((ticket) => {
