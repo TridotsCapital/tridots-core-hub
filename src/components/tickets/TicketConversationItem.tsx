@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Ticket, ticketStatusConfig, ticketPriorityConfig } from "@/types/tickets";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, differenceInHours, format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { FileText, Shield, Mail, MailOpen } from "lucide-react";
@@ -31,6 +31,13 @@ export function TicketConversationItem({
 }: TicketConversationItemProps) {
   const statusConfig = ticketStatusConfig[ticket.status];
   const priorityConfig = ticketPriorityConfig[ticket.priority];
+
+  const displayDate = ticket.last_message_at || ticket.created_at;
+  const parsedDate = parseISO(displayDate);
+  const hoursAgo = differenceInHours(new Date(), parsedDate);
+  const formattedDate = hoursAgo < 24
+    ? formatDistanceToNow(parsedDate, { addSuffix: false, locale: ptBR })
+    : format(parsedDate, "dd/MM HH:mm", { locale: ptBR });
 
 
 
@@ -104,7 +111,7 @@ export function TicketConversationItem({
         <div className="flex items-center justify-between gap-2">
           <span className={cn("text-sm truncate", hasUnread ? "font-bold text-foreground" : "font-semibold")}>{agencyName}</span>
           <span className={cn("text-xs whitespace-nowrap", hasUnread ? "font-semibold text-blue-600 dark:text-blue-400" : "text-muted-foreground")}>
-            {formatDistanceToNow(new Date(ticket.updated_at), { addSuffix: false, locale: ptBR })}
+            {formattedDate}
           </span>
         </div>
 

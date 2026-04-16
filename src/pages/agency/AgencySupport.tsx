@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, differenceInHours, format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { TicketStatus, TicketCategory } from "@/types/tickets";
 import { cn } from "@/lib/utils";
@@ -115,10 +115,12 @@ export default function AgencySupport() {
     setSearchParams({});
   };
 
-  // Sort tickets by most recent activity
-  const sortedTickets = [...tickets].sort((a, b) => 
-    new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
-  );
+  // Sort tickets by last message date (descending), fallback to created_at
+  const sortedTickets = [...tickets].sort((a, b) => {
+    const dateA = (a as any).last_message_at || a.created_at;
+    const dateB = (b as any).last_message_at || b.created_at;
+    return new Date(dateB).getTime() - new Date(dateA).getTime();
+  });
 
   // Filter tickets
   const filteredTickets = sortedTickets.filter((ticket) => {
@@ -351,10 +353,14 @@ export default function AgencySupport() {
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 pr-6">
                           <span className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
                             <Clock className="h-3 w-3" />
-                            {formatDistanceToNow(new Date(ticket.created_at), {
-                              addSuffix: true,
-                              locale: ptBR,
-                            })}
+                            {(() => {
+                              const displayDate = (ticket as any).last_message_at || ticket.created_at;
+                              const parsedDate = parseISO(displayDate);
+                              const hoursAgo = differenceInHours(new Date(), parsedDate);
+                              return hoursAgo < 24
+                                ? formatDistanceToNow(parsedDate, { addSuffix: true, locale: ptBR })
+                                : format(parsedDate, "dd/MM HH:mm", { locale: ptBR });
+                            })()}
                           </span>
                           <Badge
                             variant="outline"

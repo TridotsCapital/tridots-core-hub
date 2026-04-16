@@ -103,8 +103,28 @@ export function useAgencyTickets(agencyId: string | undefined) {
         }
       }
       
+      // Fetch last message dates
+      const ticketIds = data.map(t => t.id);
+      let lastMessageMap: Record<string, string> = {};
+      if (ticketIds.length > 0) {
+        const { data: lastMessages } = await supabase
+          .from("ticket_messages")
+          .select("ticket_id, created_at")
+          .in("ticket_id", ticketIds)
+          .order("created_at", { ascending: false });
+        
+        if (lastMessages) {
+          for (const msg of lastMessages) {
+            if (!lastMessageMap[msg.ticket_id]) {
+              lastMessageMap[msg.ticket_id] = msg.created_at;
+            }
+          }
+        }
+      }
+
       return data.map(ticket => ({
         ...ticket,
+        last_message_at: lastMessageMap[ticket.id] || null,
         contract: ticket.analysis_id ? contractsMap[ticket.analysis_id] || null : null,
       }));
     },
@@ -176,8 +196,28 @@ export function useTickets(filters?: TicketFilters) {
         }
       }
       
+      // Fetch last message dates
+      const ticketIds = data.map(t => t.id);
+      let lastMessageMap: Record<string, string> = {};
+      if (ticketIds.length > 0) {
+        const { data: lastMessages } = await supabase
+          .from("ticket_messages")
+          .select("ticket_id, created_at")
+          .in("ticket_id", ticketIds)
+          .order("created_at", { ascending: false });
+        
+        if (lastMessages) {
+          for (const msg of lastMessages) {
+            if (!lastMessageMap[msg.ticket_id]) {
+              lastMessageMap[msg.ticket_id] = msg.created_at;
+            }
+          }
+        }
+      }
+
       return data.map(ticket => ({
         ...ticket,
+        last_message_at: lastMessageMap[ticket.id] || null,
         contract: ticket.analysis_id ? contractsMap[ticket.analysis_id] || null : null,
       })) as Ticket[];
     },
@@ -192,6 +232,14 @@ export function useTickets(filters?: TicketFilters) {
         { event: "*", schema: "public", table: "tickets" },
         () => {
           queryClient.invalidateQueries({ queryKey: ["tickets"] });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "ticket_messages" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["tickets"] });
+          queryClient.invalidateQueries({ queryKey: ["agency-tickets"] });
         }
       )
       .subscribe();

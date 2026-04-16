@@ -47,6 +47,8 @@ export interface Ticket {
     email: string;
     avatar_url: string | null;
   };
+  // Last message timestamp for sorting
+  last_message_at?: string;
   // Linked contract/analysis data
   analysis?: {
     id: string;

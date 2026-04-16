@@ -73,10 +73,12 @@ const TicketCenter = () => {
     setSearchParams({});
   };
 
-  // Sort tickets by most recent activity (updated_at)
-  const sortedTickets = [...tickets].sort((a, b) => 
-    new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
-  );
+  // Sort tickets by last message date (descending), fallback to created_at
+  const sortedTickets = [...tickets].sort((a, b) => {
+    const dateA = a.last_message_at || a.created_at;
+    const dateB = b.last_message_at || b.created_at;
+    return new Date(dateB).getTime() - new Date(dateA).getTime();
+  });
 
   // Filter by search term, contract, and link type
   const filteredTickets = sortedTickets.filter(ticket => {
