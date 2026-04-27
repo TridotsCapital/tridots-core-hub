@@ -1,129 +1,81 @@
 
 
-# Plano: Documentação Técnica + Relatório Institucional Tridots Capital
+# Plano: Rebrand Tridots → GarantFácil (apenas texto visível)
 
-## Entregáveis
+## Escopo confirmado
 
-Dois arquivos Markdown salvos em `/mnt/documents/`:
+- **Substituir**: todas as ocorrências de "Tridots" / "Tridots Capital" / "TRIDOTS CAPITAL" / "TRIDOTS" em **texto exibido ao usuário** por **"GarantFácil"**.
+- **Razão social** (somente em blocos legais — termo de aceite e rodapés de PDF): **"GarantFácil Serviços de Cobranças Ltda"** com **CNPJ 33.794.683/0001-55** (substitui "TRIDOTS SOLUTIONS LTDA / CNPJ 54.409.383/0001-85").
+- **NÃO mexer**: variáveis (`tridotsUsers`, `TRIDOTS_BLUE`), constantes, env vars (`TRIDOTS_NOTIFICATIONS_EMAIL`), coluna do banco (`rate_adjusted_by_tridots`), domínios (`tridotscapital.com`, `aceite.tridotscapital.com` etc.), nomes de arquivos (`logo-tridots-black.webp`), comentários de código, e-mails remetentes (`naoresponder@tridotscapital.com`).
+- **Logo**: arquivo permanece o mesmo; apenas o atributo `alt="Tridots Capital"` será atualizado para `alt="GarantFácil"`.
 
-1. **`tridots-documentacao-tecnica.md`** — referência técnica completa do sistema
-2. **`tridots-relatorio-institucional.md`** — documento institucional multi-público
+## Regras de substituição
 
-## Documento 1: Documentação Técnica
+| Texto atual | Substituir por |
+|---|---|
+| `Tridots Capital` / `TRIDOTS CAPITAL` | `GarantFácil` (ou `GARANTFÁCIL` em caixa alta de títulos/PDFs) |
+| `Tridots` (isolado, em frases) | `GarantFácil` |
+| `equipe Tridots` / `Suporte Tridots` / `Central Tridots` | `equipe GarantFácil` / `Suporte GarantFácil` / `Central GarantFácil` |
+| `pela Tridots`, `da Tridots`, `na Tridots`, `à Tridots`, `com a Tridots` | `pela GarantFácil`, `da GarantFácil`, `na GarantFácil`, `à GarantFácil`, `com a GarantFácil` |
+| `TRIDOTS SOLUTIONS LTDA` | `GarantFácil Serviços de Cobranças Ltda` |
+| `CNPJ: 54.409.383/0001-85` | `CNPJ: 33.794.683/0001-55` |
+| Cláusulas do termo: `TRIDOTS`, `serviços TRIDOTS` | `GARANTFÁCIL`, `serviços GARANTFÁCIL` (mantendo o estilo em caixa alta original do contrato jurídico) |
+| Atributos `alt="Tridots Capital"` em `<img>` | `alt="GarantFácil"` |
 
-Estrutura prevista (~15-20 mil palavras):
+## Arquivos afetados (visão por categoria)
 
-### Parte A — Visão geral por módulo
-Cada módulo com: propósito, fluxo principal, entidades envolvidas, regras de negócio aplicáveis, telas relacionadas.
+### 1. Frontend — UI exibida ao usuário (~25 arquivos)
+- **Páginas**: `src/pages/TenantAcceptance.tsx` (95 ocorrências, inclui termo jurídico completo + bloco GARANTIDOR), `src/pages/AcceptanceSuccess.tsx`, `src/pages/RenewalAcceptance.tsx`, `src/pages/RenewalAcceptanceSuccess.tsx`, `src/pages/ResetPassword.tsx`, `src/pages/Auth.tsx`, `src/pages/agency/AgencyDashboard.tsx`, `src/pages/agency/AgencyNewAnalysis.tsx`, `src/pages/agency/AgencyDocuments.tsx`, `src/pages/agency/AgencyProfile.tsx`, `src/pages/agency/AgencyInvoiceDetail.tsx`, `src/pages/agency/AgencyHelp.tsx`, `src/pages/agency/AgencySupport.tsx`, `src/pages/TicketCenter.tsx`.
+- **Componentes**: `src/components/auth/AgencySignupForm.tsx`, `src/components/auth/TeamSignupForm.tsx`, `src/components/users/AddUserDialog.tsx`, `src/components/agency/GuaranteeSimulator.tsx`, `src/components/agency/ContractRenewalModal.tsx`, `src/components/agency/NewAnalysisSteps/PropertyStep.tsx`, `src/components/agency/PendingApprovalBanner.tsx`, `src/components/agency/BillingBlockedBanner.tsx`, `src/components/contracts/ContractRenewalTab.tsx`, `src/components/contracts/TridotsRenewalModal.tsx` (apenas strings visíveis; nome do arquivo/componente fica), `src/components/payment/PaymentMethodDisplay.tsx`, `src/components/help-admin/*` (textos visíveis se houver).
+- **Hooks visíveis ao usuário**: `src/hooks/useAuditLogs.ts` (linha 151: rótulo "Tridots Capital" exibido na UI de auditoria).
 
-- **Autenticação & Roles** (master, analyst, agency users; impersonation mode)
-- **Imobiliárias (Agencies)** — onboarding, ativação, documentos, billing status
-- **Análises (Analyses)** — ciclo de vida pendente→aprovada/reprovada, kanban, draft, taxa de garantia
-- **Aceite Digital (Tenant Acceptance)** — token 48h, etapas dinâmicas, assinaturas
-- **Contratos (Contracts)** — 4 documentos obrigatórios, ativação, datas de vigência, migrados
-- **Renovações (Contract Renewals)** — fluxo de 12 meses sem setup, aprovação Tridots
-- **Garantias Solicitadas (Claims)** — status público vs interno, prazos, deadline 30 dias
-- **Faturas (Agency Invoices) / Boleto Unificado** — ciclo de faturamento, hard lock 72h
-- **Comissões** — setup + recorrente, pagamento dia 10
-- **Tickets (Suporte)** — categorias, prioridades, ordenação por última mensagem
-- **Notificações** — in-app + e-mail, sistema unificado
-- **Help Center** — admin de capítulos/seções, feedback
-- **Auditoria & Cloud Monitoring** — audit_logs, function_logs
+### 2. Conteúdo embutido (manuais, help, seed)
+- `src/lib/help-seed-data.ts` — todo o conteúdo do Help Center (capítulos, tips, FAQs).
+- `supabase/functions/upload-manual-document/index.ts` — `MANUAL_CONTENT` completo.
 
-### Parte B — Banco de dados
-Para cada tabela (~40 tabelas): colunas principais, defaults, políticas RLS, relacionamentos lógicos, observações de uso. Agrupadas por domínio.
+### 3. E-mails transacionais (HTML e cópias visíveis)
+- `supabase/functions/_shared/email-templates.ts` — todos os templates HTML (subjects, corpo, assinaturas). **Manter** o nome da constante `TRIDOTS_BLUE`/`TRIDOTS_ACCENT` (são identificadores) e o remetente `naoresponder@tridotscapital.com`. Trocar somente o texto visível: títulos, parágrafos, "Equipe Tridots Capital" → "Equipe GarantFácil", `from: 'Tridots Capital <...>'` → `from: 'GarantFácil <...>'` (a parte do display name é visível).
+- `supabase/functions/send-renewal-notification/index.ts` — `subject` e `from` (display name).
+- Demais funções com `subject`/HTML inline: `send-agency-activation`, `send-claim-notification`, `send-invoice-notification`, `send-payment-confirmation`, `send-ticket-notification`, `send-contract-activated`, `send-weekly-commission-report`, `send-claim-deadline-alert`, `send-new-agency-notification`, `test-email-notifications`.
 
-### Parte C — Edge Functions
-Para cada uma das ~40 functions: propósito, gatilho (cron, webhook, frontend), inputs, outputs, dependências (Resend, Stripe, Storage), `verify_jwt`.
+### 4. PDFs gerados
+- `supabase/functions/generate-invoice-pdf/index.ts` — `<h1>TRIDOTS CAPITAL</h1>` → `<h1>GARANTFÁCIL</h1>`, rodapé "sistema Tridots Capital" → "sistema GarantFácil".
+- `supabase/functions/generate-invoice-excel/index.ts` — strings visíveis em cabeçalhos/rodapés.
 
-### Parte D — Frontend (Hooks & Componentes)
-- Inventário dos hooks (`useTickets`, `useClaims`, `useAgencyUser`, `useContracts`, etc.) com responsabilidade de cada um
-- Componentes-chave por módulo (Kanbans, Drawers, Forms, Modals)
-- Padrões transversais: `formatDateBR`, `buildStoragePath`, `isMaster`, impersonation context
+### 5. Metadata / SEO
+- `index.html` — `<title>`, `<meta name="description">`, `<meta name="author">`, `og:title`, `og:description`, `twitter:title`, `twitter:description`. **Não** trocar `og:image` (URL do domínio).
 
-### Parte E — Padrões técnicos
-Convenções de storage, datas, segurança de roles, downloads via Blob, RLS standards, automações cron.
+## O que NÃO será alterado (intencional)
 
-## Documento 2: Relatório Institucional Tridots Capital
+- Domínios: `tridotscapital.com`, `aceite.tridotscapital.com`, `app.tridotscapital.com`, `portal.tridotscapital.com`, `tridots-core-hub.lovable.app`.
+- E-mails remetentes/destinatários técnicos: `naoresponder@tridotscapital.com`, `cadastros@tridotscapital.com`, `testes@tridotscapital.com`, `testes@tridots.com.br`, `seu@tridots.com.br` (placeholder).
+- Env vars: `TRIDOTS_NOTIFICATIONS_EMAIL`, `ACCEPTANCE_BASE_URL`.
+- Identificadores de código: `TRIDOTS_BLUE`, `TRIDOTS_ACCENT`, `tridotsUsers`, `tridotsEmail`, `logoTridots`, `logoBlack`, `TridotsRenewalModal`, `request_source: 'tridots'`.
+- Coluna do banco: `rate_adjusted_by_tridots`.
+- Arquivos de logo: `logo-tridots-black.webp`, `logo-tridots-white.webp`.
+- Comentários iniciados com `//` ou `/* */` no código.
+- Documentos gerados em `/mnt/documents/` (relatórios criados em mensagens anteriores).
 
-Documento multi-público (~20-25 mil páginas), dividido em seções claramente marcadas. Onde faltarem dados institucionais reais, usarei marcadores `[A PREENCHER: descrição]`.
+## Cuidados especiais
 
-### Capítulo 1 — Sobre a Tridots Capital
-- Identidade `[A PREENCHER: CNPJ, endereço, fundação, sócios]`
-- Missão, visão, valores `[A PREENCHER ou inferir do produto]`
-- Posicionamento: garantidora de aluguel B2B2C via imobiliárias
-- Marca, domínios, canais oficiais
+- **Termo jurídico de aceite** (`TenantAcceptance.tsx`, lines 745–869): cláusulas usam `TRIDOTS` em caixa alta como nome contratual da parte. Será trocado para `GARANTFÁCIL` mantendo o estilo. O bloco GARANTIDOR no fim do termo recebe a nova razão social e CNPJ.
+- **WhatsApp**: a frase "Tridots Capital pelo WhatsApp (44) 9 9177-8859" vira "GarantFácil pelo WhatsApp (44) 9 9177-8859" (número mantido).
+- **`useAuditLogs.ts`** linha 151: o literal `"Tridots Capital"` é exibido na UI como rótulo de organização — será trocado para `"GarantFácil"`.
+- **Subject de e-mail** com `Tridots Capital` no fim (ex.: `... - Tridots Capital`) é visível ao destinatário → trocar.
+- **Memória do projeto** (`mem://...`): será atualizada uma nova entrada `mem://branding/garantfacil-rebrand` registrando: marca = GarantFácil, razão social = GarantFácil Serviços de Cobranças Ltda, CNPJ = 33.794.683/0001-55, garantidor antigo (Tridots Solutions / 54.409.383/0001-85) substituído. Memórias existentes que mencionam "Tridots" como entidade visível ao usuário receberão nota de rebrand no índice.
 
-### Capítulo 2 — Modelo de negócio (Investidores)
-- Como a Tridots ganha dinheiro: setup fee + taxa de garantia anual + comissões recorrentes
-- Estrutura de planos: START / PRIME / EXCLUSIVE — taxas, coberturas, limites
-- Limite de R$ 4.000 de aluguel total
-- Métodos de pagamento: PIX, Cartão, Boleto Unificado
-- Unit economics base `[A PREENCHER: ticket médio, CAC, LTV]`
-- Fluxo financeiro completo: análise → aprovação → pagamento → comissão dia 10
+## Execução
 
-### Capítulo 3 — Operação interna (Onboarding)
-- Papéis: Master, Analyst, Imobiliária (titular + colaboradores)
-- Jornada da análise: pendente → em análise → aprovada → contrato ativo
-- Jornada do contrato: documentação pendente → 4 docs aprovados → ativo → renovação
-- Jornada da garantia (claim): solicitado → em análise → pago/negado, prazo 30 dias
-- Modo Suporte (impersonation), Help Center, Tickets
-- Automações diárias (crons): faturamento, inadimplência, alertas
+1. Criar tarefas no tracker (1 por categoria de arquivo).
+2. Aplicar substituições em lote por arquivo, preservando capitalização contextual (caixa alta em títulos/cláusulas, caixa natural em frases).
+3. Validar visualmente trechos críticos: termo de aceite, e-mail de boas-vindas, PDF de fatura, manual.
+4. Atualizar `mem://index.md` + criar `mem://branding/garantfacil-rebrand`.
 
-### Capítulo 4 — Regras de negócio consolidadas
-Compilado das ~70 regras documentadas em memória:
-- Análises (limite R$4k, validação cônjuge, ciclo, recálculo de taxa)
-- Contratos (datas, migração, documentos, renovação)
-- Aceite (token 48h, etapas dinâmicas, branding Tridots)
-- Boleto Unificado (ciclo, weekend, retroativo, hard lock)
-- Comissões (dia 10, todas modalidades)
-- Claims (60 dias submissão, alertas escalonados, deadline 30 dias)
-- Imobiliárias (onboarding, restrições inativas, PIX dinâmico)
+## Não inclui
 
-### Capítulo 5 — Marketing & Comercial
-- Personas: Imobiliária pequena/média, Imobiliária grande, Inquilino final
-- Diferenciais: 100% digital, aceite em 48h, sem fiador, Boleto Unificado
-- Funil de aquisição sugerido `[A PREENCHER: canais ativos]`
-- Cenários de campanha: lançamento Boleto Unificado, captação de imobiliárias, retenção pós-renovação
-- Argumentos por persona (problemas resolvidos)
-- Prova social `[A PREENCHER: casos, números reais]`
-
-### Capítulo 6 — Financeiro & Administrativo
-- Régua de cobrança: faturamento mensal, vencimento configurável (5/10/15), hard lock em 72h
-- Reconciliação de boletos
-- Comissionamento: cálculo, status (pendente/a_pagar/pago), relatório semanal
-- Auditoria e logs
-- KPIs operacionais sugeridos
-
-### Capítulo 7 — Tecnologia (visão executiva)
-Resumo não-técnico do que existe, em 2-3 páginas, citando: stack, infraestrutura cloud, segurança (RLS, storage privado), automações, integrações (Stripe, Resend).
-
-### Capítulo 8 — O que foi construído (status atual)
-Lista priorizada e categorizada de funcionalidades já entregues (Core, Financeiro, Suporte, Compliance, UX).
-
-### Capítulo 9 — Roadmap & ideias no radar
-- Prioridades sugeridas baseadas em gaps observados no código
-- Ideias para evolução: dashboards executivos, BI, app mobile, IA para análise de risco, integração com CRMs imobiliários
-- `[A PREENCHER: prioridades estratégicas definidas pela liderança]`
-
-### Capítulo 10 — Apêndices
-- Glossário de termos
-- Mapa de e-mails transacionais
-- Lista de domínios e ambientes
-- Índice de regras de negócio com referência cruzada
-
-## Método de execução
-
-1. Ler memória do projeto (`mem://`) para consolidar regras de negócio
-2. Inspecionar `src/pages`, `src/hooks`, `supabase/functions/` e migrações relevantes para mapear módulos
-3. Consultar schema completo do banco via `supabase--read_query` (information_schema)
-4. Gerar os dois `.md` em `/mnt/documents/` com formatação consistente (headings hierárquicos, tabelas markdown, blocos de código onde útil)
-5. Validar tamanho e cobertura antes de entregar
-
-## Observações
-
-- Sem geração de UI nem alterações de código
-- Não fará leitura linha a linha de todos os arquivos — usará leituras estratégicas + listagens + busca
-- Marcadores `[A PREENCHER: ...]` apenas em dados institucionais que não estão no código
-- Tempo estimado de execução: longo (várias chamadas de leitura sequenciais)
+- Troca de logo (arquivo de imagem).
+- Troca de domínios ou env vars.
+- Renomeação de variáveis, componentes (`TridotsRenewalModal`), arquivos ou colunas.
+- Alteração de e-mails remetentes técnicos.
+- Reescrita dos documentos `.md` já entregues em `/mnt/documents/`.
 
