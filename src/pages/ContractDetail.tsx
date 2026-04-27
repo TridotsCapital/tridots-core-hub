@@ -563,7 +563,7 @@ export default function ContractDetail() {
           )}
 
           <TabsContent value="overview" className="space-y-6 mt-6">
-            {/* Custos da Garantia Tridots - NO TOPO */}
+            {/* Custos da Garantia GarantFácil - NO TOPO */}
             <GuaranteeCostsSection
               valorAluguel={analysis.valor_aluguel}
               valorCondominio={analysis.valor_condominio}
@@ -871,7 +871,7 @@ export default function ContractDetail() {
           </TabsContent>
 
           <TabsContent value="financial" className="mt-6 space-y-6">
-            {/* Custos da Garantia Tridots */}
+            {/* Custos da Garantia GarantFácil */}
             <GuaranteeCostsSection
               valorAluguel={analysis.valor_aluguel}
               valorCondominio={analysis.valor_condominio}

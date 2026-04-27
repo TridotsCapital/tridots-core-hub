@@ -166,7 +166,7 @@ export const useMonthlyInvoiceSummary = (agencyId?: string) => {
 };
 
 /**
- * Hook para buscar imobiliárias com fatura em um mês específico (para Tridots)
+ * Hook para buscar imobiliárias com fatura em um mês específico (para GarantFácil)
  * Simplificado: faturas sempre existem (criadas na ativação do contrato)
  */
 export const useAgenciesWithInvoiceInMonth = (month: number, year: number) => {

@@ -1,4 +1,4 @@
-// Types for the TRIDOTS CAPITAL system
+// Types for the GARANTFÁCIL system
 
 export type AppRole = 'master' | 'analyst' | 'agency_user';
 

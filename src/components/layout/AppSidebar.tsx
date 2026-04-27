@@ -143,7 +143,7 @@ export function AppSidebar() {
       <SidebarHeader className="border-b border-sidebar-border p-4">
         <div className="flex items-center justify-between">
           <Link to="/">
-            <img src={logoWhite} alt="Tridots Capital" className="h-10 w-auto object-contain" />
+            <img src={logoWhite} alt="GarantFácil" className="h-10 w-auto object-contain" />
           </Link>
           <NotificationCenter isAgencyPortal={false} />
         </div>

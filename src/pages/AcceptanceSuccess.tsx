@@ -12,7 +12,7 @@ export default function AcceptanceSuccess() {
       <Card className="w-full max-w-md text-center">
         <CardHeader>
           <div className="mx-auto mb-4">
-            <img src={logoTridots} alt="Tridots Capital" className="h-10 mx-auto" />
+            <img src={logoTridots} alt="GarantFácil" className="h-10 mx-auto" />
           </div>
           <div className="flex justify-center mb-4">
             <div className="relative">
@@ -32,7 +32,7 @@ export default function AcceptanceSuccess() {
             <ul className="text-sm text-muted-foreground space-y-2">
               <li className="flex items-start gap-2">
                 <span className="text-primary font-bold">1.</span>
-                <span>A Tridots irá validar seus pagamentos</span>
+                <span>A GarantFácil irá validar seus pagamentos</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-primary font-bold">2.</span>
@@ -51,7 +51,7 @@ export default function AcceptanceSuccess() {
             onClick={() => window.open('https://www.tridotscapital.com', '_blank')}
           >
             <ExternalLink className="h-4 w-4 mr-2" />
-            Conhecer a Tridots Capital
+            Conhecer a GarantFácil
           </Button>
 
           <p className="text-xs text-muted-foreground pt-2">

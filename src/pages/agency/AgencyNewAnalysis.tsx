@@ -45,7 +45,7 @@ export default function AgencyNewAnalysis() {
               <h3 className="text-xl font-semibold">Funcionalidade Bloqueada</h3>
               <p className="text-muted-foreground max-w-md">
                 A criação de novas análises estará disponível após a aprovação do seu cadastro 
-                pela equipe Tridots. Você será notificado quando seu perfil for ativado.
+                pela equipe GarantFácil. Você será notificado quando seu perfil for ativado.
               </p>
             </div>
           </CardContent>

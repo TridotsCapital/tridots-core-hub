@@ -7,7 +7,7 @@ const corsHeaders = {
 
 // Full manual content embedded
 const MANUAL_CONTENT = `# Manual do Portal Imobiliária
-## Tridots Capital - A garantia locatícia mais segura e completa do Brasil
+## GarantFácil - A garantia locatícia mais segura e completa do Brasil
 
 **Versão:** 1.0  
 **Data:** Janeiro 2026  
@@ -27,23 +27,23 @@ const MANUAL_CONTENT = `# Manual do Portal Imobiliária
 8. [Renovação de Contratos](#cap-8-renovação-de-contratos)
 9. [Garantias Solicitadas (Sinistros)](#cap-9-garantias-solicitadas-sinistros)
 10. [Minhas Comissões](#cap-10-minhas-comissões)
-11. [Chamados - Suporte Tridots](#cap-11-chamados---suporte-tridots)
+11. [Chamados - Suporte GarantFácil](#cap-11-chamados---suporte-tridots)
 12. [Drive de Documentos e Colaboradores](#cap-12-drive-de-documentos-e-colaboradores)
 
 ---
 
 # Cap 1: Introdução e Primeiro Acesso
 
-## O que é o Portal Imobiliária Tridots
+## O que é o Portal Imobiliária GarantFácil
 
-O Portal Imobiliária é a plataforma exclusiva para parceiros da Tridots Capital. Através dele, sua imobiliária pode:
+O Portal Imobiliária é a plataforma exclusiva para parceiros da GarantFácil. Através dele, sua imobiliária pode:
 
 - Solicitar análises de crédito para novos inquilinos
 - Acompanhar o status de todas as análises em tempo real
 - Gerenciar contratos de garantia locatícia
 - Solicitar acionamento de garantias em caso de inadimplência
 - Acompanhar comissões e ganhos
-- Comunicar-se diretamente com a equipe Tridots
+- Comunicar-se diretamente com a equipe GarantFácil
 
 ## Benefícios da Parceria
 
@@ -65,7 +65,7 @@ Para utilizar o portal, você precisa de:
 
 ## Primeiro Login
 
-1. Acesse o endereço do portal fornecido pela Tridots
+1. Acesse o endereço do portal fornecido pela GarantFácil
 2. Na tela de login, insira o **e-mail** cadastrado
 3. Digite a **senha temporária** recebida por e-mail
 4. Clique em **"Entrar"**
@@ -120,7 +120,7 @@ Não recomendamos. Cada colaborador deve ter seu próprio acesso para melhor ras
 
 ## Por que a conta inicia bloqueada
 
-Após o cadastro inicial, sua imobiliária precisa passar por um processo de verificação antes de operar no portal. Isso garante a segurança e conformidade de todas as parcerias Tridots.
+Após o cadastro inicial, sua imobiliária precisa passar por um processo de verificação antes de operar no portal. Isso garante a segurança e conformidade de todas as parcerias GarantFácil.
 
 Durante esse período, você verá um banner informativo no topo da tela indicando o status atual.
 
@@ -131,7 +131,7 @@ Dependendo da etapa do processo, você verá diferentes mensagens:
 | Banner | Significado |
 |--------|-------------|
 | 🟡 **Documentação Pendente** | Faltam documentos obrigatórios |
-| 🔵 **Documentos em Análise** | Tridots está revisando seus documentos |
+| 🔵 **Documentos em Análise** | GarantFácil está revisando seus documentos |
 | 🔴 **Documento Rejeitado** | Um ou mais documentos precisam ser reenviados |
 | 🟢 **Assine o Termo de Aceite** | Documentos aprovados, falta assinar o termo |
 | 🔵 **Termo em Análise** | Termo assinado está sendo verificado |
@@ -228,7 +228,7 @@ O Termo de Adesão deve ser assinado digitalmente:
 
 ### Upload do Termo Assinado
 
-1. Volte ao portal Tridots
+1. Volte ao portal GarantFácil
 2. Na aba Documentos do Perfil
 3. Localize **"Termo de Adesão Assinado"**
 4. Clique em **"Enviar"** e selecione o arquivo assinado
@@ -238,7 +238,7 @@ O Termo de Adesão deve ser assinado digitalmente:
 
 Após a aprovação do Termo assinado:
 
-1. A equipe Tridots fará a ativação manual
+1. A equipe GarantFácil fará a ativação manual
 2. Você receberá uma notificação por e-mail
 3. O banner de pendência desaparecerá
 4. Todas as funcionalidades serão liberadas!
@@ -267,7 +267,7 @@ Acesse gov.br/assinar, faça login, envie o documento, assine e baixe a versão 
 
 ## Visão Geral
 
-O Dashboard é sua página inicial no portal. Ele apresenta um resumo completo da sua operação com a Tridots, permitindo acompanhar indicadores, identificar pendências e acessar rapidamente as principais funcionalidades.
+O Dashboard é sua página inicial no portal. Ele apresenta um resumo completo da sua operação com a GarantFácil, permitindo acompanhar indicadores, identificar pendências e acessar rapidamente as principais funcionalidades.
 
 [SCREENSHOT: Dashboard completo]
 
@@ -313,7 +313,7 @@ Os indicadores-chave ficam em destaque no topo:
 Abaixo dos KPIs, três cards apresentam informações de performance:
 
 ### Ranking de Parceiros
-Sua posição entre as imobiliárias parceiras da Tridots, baseada no volume de contratos ativos.
+Sua posição entre as imobiliárias parceiras da GarantFácil, baseada no volume de contratos ativos.
 
 ### Projeção de Ganhos
 Estimativa de comissões para o período com base nos contratos ativos.
@@ -346,7 +346,7 @@ O Mini Kanban mostra o funil das suas análises em andamento:
 | Coluna | Significado |
 |--------|-------------|
 | **Pendente** | Aguardando início da análise |
-| **Em Análise** | Sendo avaliada pela Tridots |
+| **Em Análise** | Sendo avaliada pela GarantFácil |
 | **Aguardando Pagamento** | Aprovada, inquilino precisa aceitar |
 | **Aprovada** | Contrato gerado |
 
@@ -374,7 +374,7 @@ Existem contratos aguardando documentação. Clique para ver a lista.
 ### FAQ do Capítulo
 
 **O que significa "Total Garantido por mês"?**
-É a soma de todos os valores de aluguel + encargos dos seus contratos ativos. Representa o risco total coberto pela Tridots mensalmente.
+É a soma de todos os valores de aluguel + encargos dos seus contratos ativos. Representa o risco total coberto pela GarantFácil mensalmente.
 
 **Como funciona o ranking entre imobiliárias?**
 O ranking considera o volume total de contratos ativos. Quanto mais contratos, melhor sua posição.
@@ -518,7 +518,7 @@ Selecione a preferência de pagamento do inquilino:
 | **PIX** | Pagamento à vista com desconto (se habilitado para sua imobiliária) |
 | **Cartão de Crédito** | Parcelamento via Stripe |
 
-> ❗ **IMPORTANTE:** A forma de pagamento é obrigatória. Se a opção PIX não aparecer, significa que sua imobiliária ainda não tem esse benefício habilitado. Entre em contato com a Tridots.
+> ❗ **IMPORTANTE:** A forma de pagamento é obrigatória. Se a opção PIX não aparecer, significa que sua imobiliária ainda não tem esse benefício habilitado. Entre em contato com a GarantFácil.
 
 ### Resumo dos Custos
 
@@ -588,7 +588,7 @@ O portal salva automaticamente seu progresso:
 Não diretamente. Se precisar de correções, abra um Chamado vinculado à análise explicando a situação.
 
 **Por que a opção PIX está indisponível?**
-O desconto PIX é um benefício que precisa ser habilitado pela Tridots. Se você não vê essa opção, entre em contato para verificar sua elegibilidade.
+O desconto PIX é um benefício que precisa ser habilitado pela GarantFácil. Se você não vê essa opção, entre em contato para verificar sua elegibilidade.
 
 **O que acontece se eu fechar sem enviar?**
 Seus dados ficam salvos como rascunho. Um banner aparecerá no Dashboard para você continuar.
@@ -633,12 +633,12 @@ No topo da tela, você encontra:
 O Kanban organiza as análises em colunas que representam cada etapa do processo:
 
 ### Coluna: Pendente
-- **Significado**: Análise enviada, aguardando início pela Tridots
+- **Significado**: Análise enviada, aguardando início pela GarantFácil
 - **Ação esperada**: Aguardar
 - **Tempo médio**: 1-2 dias úteis
 
 ### Coluna: Em Análise
-- **Significado**: A equipe Tridots está avaliando o perfil de crédito
+- **Significado**: A equipe GarantFácil está avaliando o perfil de crédito
 - **Ação esperada**: Aguardar ou responder solicitações via Chamados
 - **Tempo médio**: 1-3 dias úteis
 
@@ -721,7 +721,7 @@ Quando há atualizações em uma análise que você ainda não visualizou:
 Você recebe notificações quando:
 
 - Uma análise muda de status
-- A Tridots solicita informações adicionais
+- A GarantFácil solicita informações adicionais
 - Um pagamento é confirmado
 - Uma análise é reprovada
 
@@ -811,7 +811,7 @@ Se o inquilino escolher PIX:
 
 1. Ele recebe as instruções de pagamento
 2. Realiza a transferência
-3. A Tridots valida manualmente o comprovante
+3. A GarantFácil valida manualmente o comprovante
 4. Após validação, o contrato é gerado
 
 **Tempo de validação**: até 1 dia útil
@@ -850,7 +850,7 @@ Se o link expirou ou o inquilino não recebeu:
 4. Clique em **"Novo Chamado"**
 5. Selecione a categoria **"Solicitação de Link"**
 6. Descreva a necessidade
-7. A equipe Tridots gerará um novo link
+7. A equipe GarantFácil gerará um novo link
 
 ---
 
@@ -863,7 +863,7 @@ Verifique se o e-mail está correto na análise. Se estiver, peça ao inquilino 
 Abra um Chamado vinculado à análise com categoria "Solicitação de Link".
 
 **Quanto tempo demora a validação do PIX?**
-Até 1 dia útil. A Tridots precisa confirmar o comprovante manualmente.
+Até 1 dia útil. A GarantFácil precisa confirmar o comprovante manualmente.
 
 **Posso alterar a forma de pagamento depois?**
 Não. A forma de pagamento é definida na análise e confirmada pelo inquilino no aceite.
@@ -1014,7 +1014,7 @@ Quando todos os documentos forem aprovados:
 ### FAQ do Capítulo
 
 **Por que meu contrato está "Pendente de Documentação"?**
-Você precisa enviar os 4 documentos obrigatórios e aguardar aprovação da Tridots.
+Você precisa enviar os 4 documentos obrigatórios e aguardar aprovação da GarantFácil.
 
 **Quanto tempo para aprovar os documentos?**
 Normalmente até 2 dias úteis. Documentos claros e completos aceleram o processo.
@@ -1031,7 +1031,7 @@ A garantia entra em vigor quando todos os documentos são aprovados e o status m
 
 ## Quando Renovar
 
-Os contratos de garantia Tridots têm vigência de **12 meses**. A renovação pode ser solicitada:
+Os contratos de garantia GarantFácil têm vigência de **12 meses**. A renovação pode ser solicitada:
 
 - **A partir de**: 30 dias antes do vencimento
 - **Até**: 30 dias após o vencimento (período de tolerância)
@@ -1070,7 +1070,7 @@ O indicador "Contratos para Renovar" mostra a quantidade.
 Após solicitar, você pode acompanhar:
 
 ### Status da Renovação
-- **Solicitada**: Aguardando análise da Tridots
+- **Solicitada**: Aguardando análise da GarantFácil
 - **Aprovada**: Renovação confirmada
 - **Rejeitada**: Não foi possível renovar (ver motivo)
 
@@ -1084,7 +1084,7 @@ Registro de comunicações enviadas ao inquilino sobre a renovação.
 
 ## O Processo de Renovação
 
-Quando a Tridots aprova a renovação:
+Quando a GarantFácil aprova a renovação:
 
 1. O inquilino é notificado por e-mail
 2. Ele recebe um link para aceitar a renovação
@@ -1132,7 +1132,7 @@ A partir de 30 dias antes do vencimento do contrato.
 Sim, ele receberá um e-mail com link para aceitar a renovação e realizar o pagamento da nova garantia anual.
 
 **Os valores mudam na renovação?**
-Podem mudar. A Tridots pode aplicar reajustes conforme as condições do contrato.
+Podem mudar. A GarantFácil pode aplicar reajustes conforme as condições do contrato.
 
 **E se o contrato já venceu?**
 Se venceu há menos de 30 dias, ainda é possível renovar. Após 30 dias, uma nova análise será necessária.
@@ -1145,7 +1145,7 @@ Se venceu há menos de 30 dias, ainda é possível renovar. Após 30 dias, uma n
 
 A "Garantia" (também chamada de sinistro) é o acionamento da cobertura contratada em caso de **inadimplência do inquilino**.
 
-Quando o inquilino deixa de pagar o aluguel, você pode solicitar que a Tridots cubra os valores devidos, respeitando os limites do plano contratado.
+Quando o inquilino deixa de pagar o aluguel, você pode solicitar que a GarantFácil cubra os valores devidos, respeitando os limites do plano contratado.
 
 ---
 
@@ -1396,13 +1396,13 @@ Sim, use o filtro de período para navegar pelo histórico.
 
 ---
 
-# Cap 11: Chamados - Suporte Tridots
+# Cap 11: Chamados - Suporte GarantFácil
 
 ## O Sistema de Chamados
 
-Os Chamados são o canal oficial de comunicação entre sua imobiliária e a equipe Tridots. 
+Os Chamados são o canal oficial de comunicação entre sua imobiliária e a equipe GarantFácil. 
 
-> ❗ **IMPORTANTE:** Toda comunicação com a Tridots deve ser feita pelos Chamados do portal. Não utilizamos WhatsApp, e-mail direto ou telefone para suporte.
+> ❗ **IMPORTANTE:** Toda comunicação com a GarantFácil deve ser feita pelos Chamados do portal. Não utilizamos WhatsApp, e-mail direto ou telefone para suporte.
 
 ---
 
@@ -1464,7 +1464,7 @@ Relacionados a uma Análise, Contrato ou Garantia específica.
 - Acompanhamento de uma garantia
 - Solicitação de novo link de aceite
 
-> 💡 **DICA:** Chamados vinculados facilitam o atendimento porque a equipe Tridots já tem todo o contexto da situação.
+> 💡 **DICA:** Chamados vinculados facilitam o atendimento porque a equipe GarantFácil já tem todo o contexto da situação.
 
 ---
 
@@ -1520,8 +1520,8 @@ Para criar um chamado vinculado:
 
 | Status | Significado |
 |--------|-------------|
-| **Aberto** | Aguardando resposta da Tridots |
-| **Em Atendimento** | Tridots está respondendo |
+| **Aberto** | Aguardando resposta da GarantFácil |
+| **Em Atendimento** | GarantFácil está respondendo |
 | **Aguardando Resposta** | É sua vez de responder |
 | **Resolvido** | Chamado finalizado |
 
@@ -1529,7 +1529,7 @@ Para criar um chamado vinculado:
 
 ## Notificações de Novas Mensagens
 
-Quando a Tridots responde seu chamado:
+Quando a GarantFácil responde seu chamado:
 
 - Uma **bolinha vermelha** aparece no chamado
 - Você recebe uma **notificação** no portal
@@ -1572,7 +1572,7 @@ Se a questão não foi resolvida, envie uma nova mensagem e o chamado será reab
 
 ### Acessando o Drive
 
-No menu lateral, clique em **"Drive Documentos"** para acessar os arquivos disponibilizados pela Tridots.
+No menu lateral, clique em **"Drive Documentos"** para acessar os arquivos disponibilizados pela GarantFácil.
 
 ### O que Você Encontra
 
@@ -1806,13 +1806,13 @@ No Drive de Documentos, acessível pelo menu lateral.
 | **Data de Criação** | Janeiro 2026 |
 | **Última Atualização** | Janeiro 2026 |
 | **Formato** | Documento base para diagramação |
-| **Autor** | Tridots Capital |
+| **Autor** | GarantFácil |
 | **Público-alvo** | Imobiliárias Parceiras |
 | **Idioma** | Português (Brasil) |
 
 ---
 
-*Tridots Capital - A garantia locatícia mais segura e completa do Brasil*
+*GarantFácil - A garantia locatícia mais segura e completa do Brasil*
 `;
 
 Deno.serve(async (req) => {

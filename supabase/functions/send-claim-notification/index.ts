@@ -92,7 +92,7 @@ serve(async (req) => {
     const results: { email: string; success: boolean; error?: string }[] = [];
 
     if (event_type === 'new_claim') {
-      // Send to all active Tridots masters
+      // Send to all active GarantFácil masters
       const { data: roleEntries } = await supabase
         .from('user_roles')
         .select('user_id')

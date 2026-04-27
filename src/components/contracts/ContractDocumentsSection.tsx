@@ -457,7 +457,7 @@ export function ContractDocumentsSection({
                     </div>
                   )}
 
-                  {/* Tridots: Upload button (any status) */}
+                  {/* GarantFácil: Upload button (any status) */}
                   {!isAgencyView && (
                     <div>
                       <Input
@@ -489,7 +489,7 @@ export function ContractDocumentsSection({
                     </div>
                   )}
 
-                  {/* Tridots: Approve/Reject buttons (if enviado) */}
+                  {/* GarantFácil: Approve/Reject buttons (if enviado) */}
                   {!isAgencyView && status === 'enviado' && (
                     <>
                       <Button

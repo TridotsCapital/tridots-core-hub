@@ -252,7 +252,7 @@ export function AgencyAnalysisDrawer({
                       </p>}
                   </div>}
 
-                {/* Custos da Garantia Tridots - NO TOPO */}
+                {/* Custos da Garantia GarantFácil - NO TOPO */}
                 <GuaranteeCostsSection 
                   valorAluguel={analysis.valor_aluguel} 
                   valorCondominio={analysis.valor_condominio} 

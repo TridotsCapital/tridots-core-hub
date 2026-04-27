@@ -147,7 +147,7 @@ serve(async (req) => {
         sent_at: tenantResult.success ? new Date().toISOString() : null
       });
 
-      // Criar notificação in-app para usuários Tridots
+      // Criar notificação in-app para usuários GarantFácil
       await supabase.rpc('create_email_sent_notification', {
         p_template_type: 'contract_activated_tenant',
         p_recipient_email: analysis.inquilino_email,
@@ -206,7 +206,7 @@ serve(async (req) => {
               sent_at: agencyResult.success ? new Date().toISOString() : null
             });
 
-            // Criar notificação in-app para usuários Tridots (apenas uma vez por colaborador)
+            // Criar notificação in-app para usuários GarantFácil (apenas uma vez por colaborador)
             await supabase.rpc('create_email_sent_notification', {
               p_template_type: 'contract_activated_agency',
               p_recipient_email: profile.email,

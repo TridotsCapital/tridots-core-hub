@@ -162,7 +162,7 @@ export const useCancelRenewal = () => {
   });
 };
 
-// Approve a renewal (Tridots side) and process installments
+// Approve a renewal (GarantFácil side) and process installments
 export const useApproveRenewal = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -223,7 +223,7 @@ export const useApproveRenewal = () => {
   });
 };
 
-// Reject a renewal (Tridots side)
+// Reject a renewal (GarantFácil side)
 export const useRejectRenewal = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -264,7 +264,7 @@ export const useRejectRenewal = () => {
   });
 };
 
-// Initiate a renewal internally (Tridots side) - immediately approved
+// Initiate a renewal internally (GarantFácil side) - immediately approved
 export const useInitiateRenewal = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -273,7 +273,7 @@ export const useInitiateRenewal = () => {
     mutationFn: async (data: RenewalRequestData & { durationMonths: number; newPaymentMethod?: 'pix' | 'card' | 'boleto_imobiliaria' }) => {
       if (!user) throw new Error('Usuário não autenticado');
 
-      // For Tridots-initiated renewals, they're immediately approved
+      // For GarantFácil-initiated renewals, they're immediately approved
       const { data: renewal, error } = await supabase
         .from('contract_renewals' as any)
         .insert({

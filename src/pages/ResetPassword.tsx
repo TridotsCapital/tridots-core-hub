@@ -87,7 +87,7 @@ export default function ResetPassword() {
         <div className="absolute inset-0 gradient-hero" />
         <Card className="w-full max-w-md relative glass-strong shadow-2xl">
           <CardHeader className="text-center space-y-4">
-            <img src={logoBlack} alt="Tridots Capital" className="h-16 w-auto mx-auto" />
+            <img src={logoBlack} alt="GarantFácil" className="h-16 w-auto mx-auto" />
             <CardDescription>Link inválido ou expirado</CardDescription>
           </CardHeader>
           <CardContent className="text-center space-y-4">
@@ -133,7 +133,7 @@ export default function ResetPassword() {
       
       <Card className="w-full max-w-md relative glass-strong shadow-2xl animate-scale-in">
         <CardHeader className="text-center space-y-4">
-          <img src={logoBlack} alt="Tridots Capital" className="h-16 w-auto mx-auto" />
+          <img src={logoBlack} alt="GarantFácil" className="h-16 w-auto mx-auto" />
           <CardDescription>Defina sua nova senha</CardDescription>
         </CardHeader>
 

@@ -200,7 +200,7 @@ export function SummaryStep({ form, descontoPix }: SummaryStepProps) {
         );
       })()}
 
-      {/* Custos da Garantia Tridots */}
+      {/* Custos da Garantia GarantFácil */}
       <GuaranteeCostsSection
         valorAluguel={values.valorAluguel || 0}
         valorCondominio={values.valorCondominio}
@@ -275,7 +275,7 @@ export function SummaryStep({ form, descontoPix }: SummaryStepProps) {
                 </p>
                 <p className="text-xs text-muted-foreground">
                   Ao enviar esta análise, você declara que as informações são verdadeiras e autoriza 
-                  a Tridots a realizar a análise de crédito do inquilino.
+                  a GarantFácil a realizar a análise de crédito do inquilino.
                 </p>
               </div>
             </label>

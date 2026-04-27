@@ -562,7 +562,7 @@ export default function AnalysisForm() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="taxa_garantia_percentual">Taxa de Garantia Tridots (%)</Label>
+              <Label htmlFor="taxa_garantia_percentual">Taxa de Garantia GarantFácil (%)</Label>
               <Input
                 id="taxa_garantia_percentual"
                 type="number"

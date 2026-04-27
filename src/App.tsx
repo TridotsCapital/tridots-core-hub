@@ -63,7 +63,7 @@ const queryClient = new QueryClient();
 
 /**
  * Internal Portal Routes (app.tridotscapital.com)
- * These are the routes for Tridots team members (master, analyst)
+ * These are the routes for GarantFácil team members (master, analyst)
  */
 function InternalRoutes() {
   return (
@@ -173,7 +173,7 @@ function AppRoutes() {
       {/* Development/Preview: Both portals available */}
       {isUnknownPortal && (
         <>
-          {/* Tridots Team Routes */}
+          {/* GarantFácil Team Routes */}
           {InternalRoutes()}
           
           {/* Agency Portal Routes (prefixed with /agency) */}

@@ -99,7 +99,7 @@ export function GuaranteeSimulator({ onStartAnalysis, initialValues, descontoPix
         <Alert variant="destructive" className="border-destructive bg-destructive/10">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription className="font-medium">
-            🚫 A Tridots Capital atende apenas locações de até R$ 4.000,00 de valor locatício mensal. 
+            🚫 A GarantFácil atende apenas locações de até R$ 4.000,00 de valor locatício mensal. 
             O total informado é de {totalEncargos.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}.
           </AlertDescription>
         </Alert>
@@ -201,17 +201,17 @@ export function GuaranteeSimulator({ onStartAnalysis, initialValues, descontoPix
 
         {/* Results - Always visible */}
         <div className="rounded-lg border bg-card p-4 space-y-3">
-          {/* Section 1: Tridots Guarantee Costs - HIGHLIGHTED */}
+          {/* Section 1: GarantFácil Guarantee Costs - HIGHLIGHTED */}
           <div className="bg-primary/10 -mx-4 -mt-4 px-4 pt-4 pb-3 rounded-t-lg border-b border-primary/20">
             <div className="flex items-center gap-2 text-sm font-semibold text-primary mb-3">
               <Shield className="h-4 w-4" />
-              Custos da Garantia Tridots
+              Custos da Garantia GarantFácil
             </div>
             
             <div className="space-y-2">
               {/* Taxa Mensal - MAIN HIGHLIGHT */}
               <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">Taxa Mensal Tridots ({taxaGarantia}%)</span>
+                <span className="text-sm font-medium">Taxa Mensal GarantFácil ({taxaGarantia}%)</span>
                 <span className="text-xl font-bold text-primary">
                   {isValid ? formatCurrency(taxaMensal) : 'R$ --'}
                 </span>
@@ -287,7 +287,7 @@ export function GuaranteeSimulator({ onStartAnalysis, initialValues, descontoPix
             </TooltipTrigger>
             {excedeLimite && (
               <TooltipContent side="top" className="max-w-xs text-center">
-                <p>🔒 A Tridots Capital atende apenas locações de até R$ 4.000,00 de valor locatício mensal.</p>
+                <p>🔒 A GarantFácil atende apenas locações de até R$ 4.000,00 de valor locatício mensal.</p>
               </TooltipContent>
             )}
           </Tooltip>

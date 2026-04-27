@@ -740,7 +740,7 @@ export function AgencySignupForm({ onSubmit, loading }: AgencySignupFormProps) {
               <strong>Data de Vencimento:</strong> Escolha o dia do mês em que suas faturas vencem. Todas as suas parcelas de garantia serão consolidadas nessa data.
             </p>
             <p className="text-sm text-foreground mt-2">
-              <strong>Formas de Pagamento:</strong> A Tridots Capital também oferece pagamento direto com o inquilino via <strong>PIX</strong> ou <strong>cartão de crédito</strong>. A forma de pagamento pode ser escolhida na hora de contratar a garantia para cada inquilino.
+              <strong>Formas de Pagamento:</strong> A GarantFácil também oferece pagamento direto com o inquilino via <strong>PIX</strong> ou <strong>cartão de crédito</strong>. A forma de pagamento pode ser escolhida na hora de contratar a garantia para cada inquilino.
             </p>
           </div>
 

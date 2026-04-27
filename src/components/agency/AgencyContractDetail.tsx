@@ -197,7 +197,7 @@ export function AgencyContractDetail() {
     timelineEvents.push({
       date: analysis.approved_at,
       title: 'Análise Aprovada',
-      description: 'Crédito aprovado pela equipe Tridots',
+      description: 'Crédito aprovado pela equipe GarantFácil',
       icon: CheckCircle,
       iconColor: 'text-green-500',
       type: 'contract',
@@ -479,7 +479,7 @@ export function AgencyContractDetail() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6 mt-6">
-          {/* Custos da Garantia Tridots - NO TOPO */}
+          {/* Custos da Garantia GarantFácil - NO TOPO */}
           <GuaranteeCostsSection
             valorAluguel={analysis.valor_aluguel}
             valorCondominio={analysis.valor_condominio}

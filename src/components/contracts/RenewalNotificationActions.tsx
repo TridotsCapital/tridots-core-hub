@@ -40,7 +40,7 @@ export function RenewalNotificationActions({
 
 Seu contrato de locação do imóvel ${propertyAddress} está próximo do vencimento${dataFimContrato ? ` (${format(new Date(dataFimContrato), "dd/MM/yyyy", { locale: ptBR })})` : ''}.
 
-Para dar continuidade à sua garantia locatícia Tridots, é necessário aceitar os novos termos de renovação.
+Para dar continuidade à sua garantia locatícia GarantFácil, é necessário aceitar os novos termos de renovação.
 
 Acesse o link abaixo para visualizar e aceitar os termos:
 [Link será enviado automaticamente]
@@ -48,7 +48,7 @@ Acesse o link abaixo para visualizar e aceitar os termos:
 Em caso de dúvidas, entre em contato conosco.
 
 Atenciosamente,
-Equipe Tridots`;
+Equipe GarantFácil`;
 
   const [customMessage, setCustomMessage] = useState(defaultMessage);
 

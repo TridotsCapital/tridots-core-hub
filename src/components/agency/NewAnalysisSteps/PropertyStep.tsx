@@ -304,7 +304,7 @@ export function PropertyStep({ form }: PropertyStepProps) {
             <Alert variant="destructive" className="mt-4">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
-                A Tridots Capital atende apenas locações de até{' '}
+                A GarantFácil atende apenas locações de até{' '}
                 <strong>R$ {LIMITE_VALOR_LOCATICIO.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>{' '}
                 de valor locatício mensal (aluguel + condomínio + IPTU).
                 O valor informado é de{' '}

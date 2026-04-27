@@ -344,10 +344,10 @@ export default function AgencyForm() {
           </Card>
         )}
 
-        {/* Internal Observations - Only visible to Tridots */}
+        {/* Internal Observations - Only visible to GarantFácil */}
         <Card>
           <CardHeader>
-            <CardTitle>Observações Internas (apenas Tridots)</CardTitle>
+            <CardTitle>Observações Internas (apenas GarantFácil)</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
@@ -359,7 +359,7 @@ export default function AgencyForm() {
                 {...register('internal_observations' as any)}
               />
               <p className="text-xs text-muted-foreground">
-                Estas observações são visíveis apenas para a equipe Tridots
+                Estas observações são visíveis apenas para a equipe GarantFácil
               </p>
             </div>
           </CardContent>

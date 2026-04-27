@@ -133,7 +133,7 @@ export const useAuditLogs = (filters?: {
           return acc;
         }, {} as Record<string, string | null>);
 
-        // Fetch user roles to identify Tridots users
+        // Fetch user roles to identify GarantFácil users
         const { data: userRoles } = await supabase
           .from("user_roles")
           .select("user_id, role")
@@ -148,7 +148,7 @@ export const useAuditLogs = (filters?: {
         // Build organization map
         userIds.forEach(userId => {
           if (tridotsUsers.has(userId)) {
-            userOrgMap[userId] = "Tridots Capital";
+            userOrgMap[userId] = "GarantFácil";
           } else if (userToAgency[userId]) {
             userOrgMap[userId] = userToAgency[userId]!;
           } else {

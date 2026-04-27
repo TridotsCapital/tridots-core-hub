@@ -120,7 +120,7 @@ export function ContractRenewalApprovalModal({
             <div className="flex items-center justify-between mt-1">
               <span className="text-muted-foreground">Origem:</span>
               <Badge variant="outline">
-                {renewal.request_source === 'agency' ? 'Imobiliária' : 'Tridots'}
+                {renewal.request_source === 'agency' ? 'Imobiliária' : 'GarantFácil'}
               </Badge>
             </div>
           </div>

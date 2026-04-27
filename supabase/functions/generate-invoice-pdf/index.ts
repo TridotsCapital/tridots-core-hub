@@ -105,7 +105,7 @@ serve(async (req: Request): Promise<Response> => {
 </head>
 <body>
   <div class="header">
-    <h1>TRIDOTS CAPITAL</h1>
+    <h1>GARANTFÁCIL</h1>
     <p>A garantia locatícia mais segura e completa do Brasil</p>
   </div>
 
@@ -150,7 +150,7 @@ serve(async (req: Request): Promise<Response> => {
   </div>
 
   <div class="footer">
-    <p>Este é um documento eletrônico gerado automaticamente pelo sistema Tridots Capital</p>
+    <p>Este é um documento eletrônico gerado automaticamente pelo sistema GarantFácil</p>
     <p>Gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}</p>
   </div>
 </body>

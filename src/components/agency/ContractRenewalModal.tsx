@@ -70,7 +70,7 @@ export function ContractRenewalModal({ open, onOpenChange, contract }: ContractR
             Solicitar Renovação de Contrato
           </DialogTitle>
           <DialogDescription>
-            Informe os novos valores para a renovação. A Tridots analisará sua solicitação.
+            Informe os novos valores para a renovação. A GarantFácil analisará sua solicitação.
           </DialogDescription>
         </DialogHeader>
 
@@ -171,7 +171,7 @@ export function ContractRenewalModal({ open, onOpenChange, contract }: ContractR
 
           {/* Info message */}
           <p className="text-xs text-muted-foreground">
-            A renovação será analisada pela equipe Tridots. Você receberá uma notificação sobre o resultado.
+            A renovação será analisada pela equipe GarantFácil. Você receberá uma notificação sobre o resultado.
             Renovações são <strong>isentas de taxa de setup</strong>.
           </p>
 

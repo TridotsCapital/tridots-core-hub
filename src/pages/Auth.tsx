@@ -140,7 +140,7 @@ export default function Auth() {
         console.error('Error creating agency:', agencyError);
         toast.error('Conta criada, mas houve um erro ao cadastrar a imobiliária. Entre em contato com o suporte.');
       } else {
-        toast.success('Bem-vindo à Tridots! Seu cadastro foi realizado com sucesso.');
+        toast.success('Bem-vindo à GarantFácil! Seu cadastro foi realizado com sucesso.');
         // Navigate to agency dashboard (correct route is /agency, not /agency/dashboard)
         navigate('/agency');
       }
@@ -159,7 +159,7 @@ export default function Auth() {
   const getDescription = () => {
     if (isTeamSignup) return 'Cadastro de Membro da Equipe';
     if (isAgencyPortal) return 'Portal de Imobiliárias Parceiras';
-    if (isInternalPortal) return 'Portal Interno Tridots';
+    if (isInternalPortal) return 'Portal Interno GarantFácil';
     return 'A garantia locatícia mais segura e completa do Brasil.';
   };
 
@@ -177,7 +177,7 @@ export default function Auth() {
       <Card className={`w-full relative animate-scale-in glass-strong shadow-2xl ${showTeamSignup || showOnlyLogin ? 'max-w-md' : 'max-w-lg'}`}>
         <CardHeader className="text-center space-y-4 pb-2">
           <div className="mx-auto flex items-center justify-center">
-            <img src={logoBlack} alt="Tridots Capital" className="h-16 w-auto object-contain" />
+            <img src={logoBlack} alt="GarantFácil" className="h-16 w-auto object-contain" />
           </div>
           <CardDescription className="text-muted-foreground">
             {getDescription()}

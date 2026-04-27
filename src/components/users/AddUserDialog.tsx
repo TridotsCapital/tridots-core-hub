@@ -114,7 +114,7 @@ export function AddUserDialog({ open, onOpenChange, type, agencyId }: AddUserDia
           </DialogTitle>
           <DialogDescription>
             {isTeam
-              ? "Adicione um novo membro à equipe Tridots."
+              ? "Adicione um novo membro à equipe GarantFácil."
               : "Adicione um novo colaborador à sua imobiliária."}
           </DialogDescription>
         </DialogHeader>

@@ -92,7 +92,7 @@ export function ContractRenewalHistory({ contractId }: ContractRenewalHistoryPro
               )}
 
               <div className="text-xs text-muted-foreground">
-                Solicitado por: {renewal.request_source === 'agency' ? 'Imobiliária' : 'Tridots'}
+                Solicitado por: {renewal.request_source === 'agency' ? 'Imobiliária' : 'GarantFácil'}
               </div>
             </div>
           );

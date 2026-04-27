@@ -395,7 +395,7 @@ function AgencyProfileTab() {
                 className="bg-muted cursor-not-allowed max-w-[150px]"
               />
               <p className="text-xs text-muted-foreground">
-                Dia de vencimento definido pela Tridots para faturas do Boleto Unificado.
+                Dia de vencimento definido pela GarantFácil para faturas do Boleto Unificado.
               </p>
             </div>
           </div>

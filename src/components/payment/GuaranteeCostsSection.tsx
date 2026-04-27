@@ -78,7 +78,7 @@ export function GuaranteeCostsSection({
       <div className="flex items-center justify-between mb-3">
         <h4 className="text-sm font-semibold flex items-center gap-2">
           <Shield className="h-4 w-4 text-primary" />
-          Custos da Garantia Tridots
+          Custos da Garantia GarantFácil
         </h4>
         {plan && (
           <Badge className={plan.badgeClass}>

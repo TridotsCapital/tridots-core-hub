@@ -238,7 +238,7 @@ export function AgencyTicketDetail({ ticketId, onClose }: AgencyTicketDetailProp
                 ) : messages.length === 0 && !ticket.description ? (
                   <div className="text-center py-8 text-muted-foreground">
                     <p>Nenhuma mensagem ainda.</p>
-                    <p className="text-sm">Aguarde a resposta da equipe Tridots.</p>
+                    <p className="text-sm">Aguarde a resposta da equipe GarantFácil.</p>
                   </div>
                 ) : (
                   <>

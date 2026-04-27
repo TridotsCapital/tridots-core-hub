@@ -79,7 +79,7 @@ export default function AgencyDocuments() {
 
   if (isLoading) {
     return (
-      <AgencyLayout title="Documentos" description="Modelos e documentos da Tridots Capital">
+      <AgencyLayout title="Documentos" description="Modelos e documentos da GarantFácil">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {[...Array(6)].map((_, i) => (
             <Card key={i}>
@@ -97,13 +97,13 @@ export default function AgencyDocuments() {
 
   if (!templates?.length) {
     return (
-      <AgencyLayout title="Documentos" description="Modelos e documentos da Tridots Capital">
+      <AgencyLayout title="Documentos" description="Modelos e documentos da GarantFácil">
         <Card className="py-16">
           <CardContent className="flex flex-col items-center justify-center text-center">
             <FolderOpen className="h-16 w-16 text-muted-foreground/50 mb-4" />
             <h3 className="text-lg font-medium mb-2">Nenhum documento disponível</h3>
             <p className="text-muted-foreground text-sm max-w-md">
-              Os modelos e documentos da Tridots Capital aparecerão aqui quando disponíveis.
+              Os modelos e documentos da GarantFácil aparecerão aqui quando disponíveis.
             </p>
           </CardContent>
         </Card>
@@ -112,7 +112,7 @@ export default function AgencyDocuments() {
   }
 
   return (
-    <AgencyLayout title="Documentos" description="Modelos e documentos da Tridots Capital">
+    <AgencyLayout title="Documentos" description="Modelos e documentos da GarantFácil">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {templates.map((template) => (
           <Card 

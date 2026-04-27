@@ -564,7 +564,7 @@ export default function TenantAcceptance() {
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <div className="mx-auto mb-4">
-              <img src={logoTridots} alt="Tridots Capital" className="h-10 mx-auto" />
+              <img src={logoTridots} alt="GarantFácil" className="h-10 mx-auto" />
             </div>
             {status === 'expired' && (
               <>
@@ -605,7 +605,7 @@ export default function TenantAcceptance() {
       {/* Header */}
       <header className="bg-white border-b shadow-sm sticky top-0 z-10">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
-          <img src={logoTridots} alt="Tridots Capital" className="h-8" />
+          <img src={logoTridots} alt="GarantFácil" className="h-8" />
           {agency?.logo_url && (
             <img 
               src={agency.logo_url} 
@@ -744,30 +744,30 @@ export default function TenantAcceptance() {
                   {/* DAS CONDIÇÕES GERAIS */}
                   <p className="font-bold text-foreground mt-4 mb-2 border-b pb-1">DAS CONDIÇÕES GERAIS</p>
                   
-                  <p className="mb-2"><strong>Cláusula primeira:</strong> Os serviços prestados pela TRIDOTS trata-se de garantia para pagamentos de alugueis, taxa condominial, taxa anual de IPTU e encargos apresentados no contrato de locação, ou ainda, taxa de saída, com base na vistoria do imóvel, que vierem a ser inadimplidos, conforme os termos e condições apresentados na cláusula primeira e segunda do título "CLÁUSULAS CONTRATUAIS DO SERVIÇO".</p>
+                  <p className="mb-2"><strong>Cláusula primeira:</strong> Os serviços prestados pela GARANTFÁCIL trata-se de garantia para pagamentos de alugueis, taxa condominial, taxa anual de IPTU e encargos apresentados no contrato de locação, ou ainda, taxa de saída, com base na vistoria do imóvel, que vierem a ser inadimplidos, conforme os termos e condições apresentados na cláusula primeira e segunda do título "CLÁUSULAS CONTRATUAIS DO SERVIÇO".</p>
                   
-                  <p className="mb-1"><strong>Parágrafo primeiro:</strong> A TRIDOTS garante os valores inadimplentes de até 20 (vinte) vezes o valor do aluguel vigente no contrato de locação, com a possibilidade de utilizando, sem extrapolar o limite garantido, as seguintes despesas:</p>
+                  <p className="mb-1"><strong>Parágrafo primeiro:</strong> A GARANTFÁCIL garante os valores inadimplentes de até 20 (vinte) vezes o valor do aluguel vigente no contrato de locação, com a possibilidade de utilizando, sem extrapolar o limite garantido, as seguintes despesas:</p>
                   <ul className="list-disc ml-6 mb-2 space-y-1">
                     <li>até 3 (três) vezes o valor do aluguel para ser utilizados com reforma (pintura, parte hidráulica e elétrica etc), ou ainda, como taxa de saída;</li>
                     <li>até 3 (três) parcelas a título de taxa condominial;</li>
                     <li>36% (trinta e seis por cento) do limite máximo para valores a título de parcela anual de IPTU;</li>
                   </ul>
-                  <p className="mb-2">Fica autorizado desde já a TRIDOTS o direito de ressarcimento dos valores inadimplidos do inquilino/locatário indenizado ao locador, através de cobranças do cartão de crédito daquele ou ainda do garantidor.</p>
+                  <p className="mb-2">Fica autorizado desde já a GARANTFÁCIL o direito de ressarcimento dos valores inadimplidos do inquilino/locatário indenizado ao locador, através de cobranças do cartão de crédito daquele ou ainda do garantidor.</p>
                   
-                  <p className="mb-2"><strong>Cláusula segunda:</strong> Eventuais alterações realizadas no valor do aluguel, após a contratação dos serviços TRIDOTS só serão indenizáveis se devidamente comunicadas pelos contratantes, quais sejam cliente, garantidor, locador ou imobiliária, com o pagamento da diferente a TRIDOTS, bem como anteriormente a eventual inadimplência, nos termos da lei e sempre com anuência prévia expressa ou via eletrônica pela TRIDOTS.</p>
+                  <p className="mb-2"><strong>Cláusula segunda:</strong> Eventuais alterações realizadas no valor do aluguel, após a contratação dos serviços GARANTFÁCIL só serão indenizáveis se devidamente comunicadas pelos contratantes, quais sejam cliente, garantidor, locador ou imobiliária, com o pagamento da diferente a GARANTFÁCIL, bem como anteriormente a eventual inadimplência, nos termos da lei e sempre com anuência prévia expressa ou via eletrônica pela GARANTFÁCIL.</p>
                   
-                  <p className="mb-2"><strong>Cláusula terceira:</strong> Eventual alteração do garantidor somente será aceita por prévia autorização de crédito da TRIDOTS de forma expressa, seja escrita ou por meio eletrônico, reservado o direito da mesma em recusar o garantidor em caso de não aprovação pela TRIDOTS.</p>
+                  <p className="mb-2"><strong>Cláusula terceira:</strong> Eventual alteração do garantidor somente será aceita por prévia autorização de crédito da GARANTFÁCIL de forma expressa, seja escrita ou por meio eletrônico, reservado o direito da mesma em recusar o garantidor em caso de não aprovação pela GARANTFÁCIL.</p>
                   
-                  <p className="mb-2"><strong>Cláusula quarta:</strong> Na ocorrência de postergação de vencimentos ou modificações de forma e prazo convencionados originalmente para o pagamento dos aluguéis, por força de lei, decretos ou aditivos no contrato de locação, fica acordado, desde já, que os prazos de vencimento passarão a ser aquele apresentados em lei, decretos e aditivos para efeitos da TRIDOTS.</p>
+                  <p className="mb-2"><strong>Cláusula quarta:</strong> Na ocorrência de postergação de vencimentos ou modificações de forma e prazo convencionados originalmente para o pagamento dos aluguéis, por força de lei, decretos ou aditivos no contrato de locação, fica acordado, desde já, que os prazos de vencimento passarão a ser aquele apresentados em lei, decretos e aditivos para efeitos da GARANTFÁCIL.</p>
                   
-                  <p className="mb-2"><strong>Cláusula quinta:</strong> Para utilização e realização do cadastro do proponente locatário e/ou garantidor, por meio da imobiliário, é indispensável a leitura e aceitação na íntegra de todos os termos do presente contrato e políticas apresentadas pela TRIDOTS.</p>
+                  <p className="mb-2"><strong>Cláusula quinta:</strong> Para utilização e realização do cadastro do proponente locatário e/ou garantidor, por meio da imobiliário, é indispensável a leitura e aceitação na íntegra de todos os termos do presente contrato e políticas apresentadas pela GARANTFÁCIL.</p>
                   
-                  <p className="mb-2"><strong>Cláusula sexta:</strong> Qualquer pessoa que queira e pretenda utilizar os serviços ofertados pela TRIDOTS, deverá certificar de ter compreendido e aceitar todos os termos estabelecidos no presente contrato, bem como demais documentos incorporados ao mesmo.</p>
+                  <p className="mb-2"><strong>Cláusula sexta:</strong> Qualquer pessoa que queira e pretenda utilizar os serviços ofertados pela GARANTFÁCIL, deverá certificar de ter compreendido e aceitar todos os termos estabelecidos no presente contrato, bem como demais documentos incorporados ao mesmo.</p>
                   
                   <p className="mb-2"><strong>Cláusula sétima:</strong> Após o locador definir as condições em que aceita o serviço, o locatário e garantidor deverão escolher a modalidade de prestação de serviços dentre aquelas aceita pelo locador, ou seja, o numero de meses abrangidos.</p>
                   
-                  {/* DAS COBERTURAS EXCLUÍDAS PELA TRIDOTS */}
-                  <p className="font-bold text-foreground mt-4 mb-2 border-b pb-1">DAS COBERTURAS EXCLUÍDAS PELA TRIDOTS</p>
+                  {/* DAS COBERTURAS EXCLUÍDAS PELA GARANTFÁCIL */}
+                  <p className="font-bold text-foreground mt-4 mb-2 border-b pb-1">DAS COBERTURAS EXCLUÍDAS PELA GARANTFÁCIL</p>
                   
                   <p className="font-semibold mt-2 mb-1">LOCAÇÕES:</p>
                   <ul className="list-disc ml-6 mb-2 space-y-1">
@@ -798,15 +798,15 @@ export default function TenantAcceptance() {
                   <p className="font-bold text-foreground mt-4 mb-2 border-b pb-1">DO FUNCIONAMENTO DOS SERVIÇOS</p>
                   
                   <ol className="list-decimal ml-6 mb-2 space-y-2">
-                    <li>A imobiliária e TRIDOTS realização as negociações, onde todas as informações e dados do interessado serão captados por aquela, bem como do garantidor, a fim de realizar a contratação dos serviços oferecidos pela TRIDOTS.</li>
+                    <li>A imobiliária e GARANTFÁCIL realização as negociações, onde todas as informações e dados do interessado serão captados por aquela, bem como do garantidor, a fim de realizar a contratação dos serviços oferecidos pela GARANTFÁCIL.</li>
                     <li>Será cobrado do locatário um valor a título de setup no valor entre R$ 0,00 (zero) e R$235,00 (duzentos e trinta e cinco reais), ou seja, para análise e aprovação de cadastro, onde os valores serão pagos somente em cadastros aprovados, assim que for efetivada a aprovação.</li>
-                    <li>Cabe a TRIDOTS a análise de crédito para aprovação ou não do proponente locatário, garantindo àquela o direito de recusa, sem que haja qualquer justificativa da referida desaprovação.</li>
-                    <li>Aprovado o cadastro, com o aceite dos termos e condições pelo locatário e garantidor, bem como pela confirmação dos serviços contratados, os pagamentos devidos a TRIDOTS será realizado através de cartão de crédito, pix ou boleto único (disponível apenas para imobiliárias contratantes), do valor anual devido em uma única vez (pix) ou parcelado em 12 (doze) vezes mensais fixo. Após o pagamento, a confirmação do contrato com a TRIDOTS se concretizará.</li>
-                    <li>O vencimento dos valores devidos a TRIDOTS supramencionados no item 4 serão pagos da seguinte forma: se boleto (imobiliária) conforme vencimento acordado, em caso de parcelamento via cartão de crédito este respeitara o vecimento e fechamento de cada operadora de cartão. O valor da taxa de setup será de forma à vista ou parcelado em até 03 (três) vezes no cartão.</li>
-                    <li>A TRIDOTS cobrará o valor de 10% a 15%, conforme análise cadastral, do valor do aluguel, a ser debitado no cartão de crédito do locatário, conforme descrito no item 4 supramencionado, durante a vigência do contrato de locação, se renovando a cada 12 (doze) meses.</li>
-                    <li>Fica desde já expressamente autorizado pelo locatário e garantidor, a TRIDOTS realizar o protesto de títulos decorrentes de inadimplementos de débitos, bem como a inscrição em entidades de crédito, como SERASA, SPC e outros órgãos equivalentes.</li>
-                    <li>O locatário e garantidor ficam cientes, desde já, que a TRIDOTS procederá de forma judicial a cobrança de débitos inadimplidos dos devedores.</li>
-                    <li>Diante do item 8 supramencionado, fica autorizado expressamente pelo garantidor que o mesmo sub-rogasse ao pagamento do locatário em caso de inadimplemento, autorizando a cobrança de serviços em seu cartão de crédito apresentado na contratação dos serviços TRIDOTS.</li>
+                    <li>Cabe a GARANTFÁCIL a análise de crédito para aprovação ou não do proponente locatário, garantindo àquela o direito de recusa, sem que haja qualquer justificativa da referida desaprovação.</li>
+                    <li>Aprovado o cadastro, com o aceite dos termos e condições pelo locatário e garantidor, bem como pela confirmação dos serviços contratados, os pagamentos devidos a GARANTFÁCIL será realizado através de cartão de crédito, pix ou boleto único (disponível apenas para imobiliárias contratantes), do valor anual devido em uma única vez (pix) ou parcelado em 12 (doze) vezes mensais fixo. Após o pagamento, a confirmação do contrato com a GARANTFÁCIL se concretizará.</li>
+                    <li>O vencimento dos valores devidos a GARANTFÁCIL supramencionados no item 4 serão pagos da seguinte forma: se boleto (imobiliária) conforme vencimento acordado, em caso de parcelamento via cartão de crédito este respeitara o vecimento e fechamento de cada operadora de cartão. O valor da taxa de setup será de forma à vista ou parcelado em até 03 (três) vezes no cartão.</li>
+                    <li>A GARANTFÁCIL cobrará o valor de 10% a 15%, conforme análise cadastral, do valor do aluguel, a ser debitado no cartão de crédito do locatário, conforme descrito no item 4 supramencionado, durante a vigência do contrato de locação, se renovando a cada 12 (doze) meses.</li>
+                    <li>Fica desde já expressamente autorizado pelo locatário e garantidor, a GARANTFÁCIL realizar o protesto de títulos decorrentes de inadimplementos de débitos, bem como a inscrição em entidades de crédito, como SERASA, SPC e outros órgãos equivalentes.</li>
+                    <li>O locatário e garantidor ficam cientes, desde já, que a GARANTFÁCIL procederá de forma judicial a cobrança de débitos inadimplidos dos devedores.</li>
+                    <li>Diante do item 8 supramencionado, fica autorizado expressamente pelo garantidor que o mesmo sub-rogasse ao pagamento do locatário em caso de inadimplemento, autorizando a cobrança de serviços em seu cartão de crédito apresentado na contratação dos serviços GARANTFÁCIL.</li>
                   </ol>
                   
                   {/* DA ACEITAÇÃO, VIGÊNCIA E RENOVAÇÃO DO SERVIÇO */}
@@ -814,22 +814,22 @@ export default function TenantAcceptance() {
                   
                   <ol className="list-decimal ml-6 mb-2 space-y-2">
                     <li>A negociação com a aceitação de serviço será realizada através do e-mail informado pela imobiliária parceira.</li>
-                    <li>Os serviços da TRIDOTS serão ativos com a assinatura dos termos e condições do contrato estabelecidos, devendo ser realizado também pelo seu garantidor, com sua qualificação completa, bem como a efetivação do pagamentos devidos.</li>
-                    <li>A solicitação de documentos complementares poderá ser realizado a qualquer momento pela TRIDOTS, enquanto perdurar a vigência do contrato.</li>
-                    <li>Os serviços oferecidos pela TRIDOTS irá perdurar pelo prazo estipulado no contrato de locação.</li>
-                    <li>O presente contrato passa iniciar a sua vigência a partir do pagamento da taxa do serviço TRIDOTS, bem como a assinatura dos termos e condições, dando o seu aceite.</li>
-                    <li>Os serviços oferecidos pela TRIDOTS será renovado automaticamente, enquanto perdurar a vigência do contrato de locação, ou até a comunicação formal expressa de forma escrita ou por meio eletrônico a TRIDOTS, comunicando o encerramento do contrato de locação.</li>
+                    <li>Os serviços da GARANTFÁCIL serão ativos com a assinatura dos termos e condições do contrato estabelecidos, devendo ser realizado também pelo seu garantidor, com sua qualificação completa, bem como a efetivação do pagamentos devidos.</li>
+                    <li>A solicitação de documentos complementares poderá ser realizado a qualquer momento pela GARANTFÁCIL, enquanto perdurar a vigência do contrato.</li>
+                    <li>Os serviços oferecidos pela GARANTFÁCIL irá perdurar pelo prazo estipulado no contrato de locação.</li>
+                    <li>O presente contrato passa iniciar a sua vigência a partir do pagamento da taxa do serviço GARANTFÁCIL, bem como a assinatura dos termos e condições, dando o seu aceite.</li>
+                    <li>Os serviços oferecidos pela GARANTFÁCIL será renovado automaticamente, enquanto perdurar a vigência do contrato de locação, ou até a comunicação formal expressa de forma escrita ou por meio eletrônico a GARANTFÁCIL, comunicando o encerramento do contrato de locação.</li>
                   </ol>
                   
                   {/* DAS OBRIGAÇÕES GERAIS DO USUÁRIO */}
                   <p className="font-bold text-foreground mt-4 mb-2 border-b pb-1">DAS OBRIGAÇÕES GERAIS DO USUÁRIO</p>
                   
-                  <p className="mb-2">Cabe a imobiliária manter o contrato de locação em perfeita forma, bem como pelos meios legais, não realizando qualquer alteração do contrato de locação, sem a concordância prévia da TRIDOTS, sob pena de cancelamento/perda do direito da validação do crédito aprovado.</p>
+                  <p className="mb-2">Cabe a imobiliária manter o contrato de locação em perfeita forma, bem como pelos meios legais, não realizando qualquer alteração do contrato de locação, sem a concordância prévia da GARANTFÁCIL, sob pena de cancelamento/perda do direito da validação do crédito aprovado.</p>
                   
                   {/* DA LGPD */}
                   <p className="font-bold text-foreground mt-4 mb-2 border-b pb-1">DA LEI GERAL DE PROTEÇÃO DE DADOS, SIGILO E CONFIDENCIALIDADE</p>
                   
-                  <p className="mb-2">A TRIDOTS, por si e por seus colaboradores, obriga-se a atuar no presente contrato em conformidade com a Legislação vigente sobre Proteção de Dados Pessoais e as determinações de órgãos reguladores/fiscalizadores sobre a matéria, em especial a Lei 13.709/2018, além das demais normas e políticas de proteção de dados de cada país onde houver qualquer tipo de tratamento dos dados dos clientes, o que inclui os dados dos clientes desta. No manuseio dos dados a TRIDOTS deverá:</p>
+                  <p className="mb-2">A GARANTFÁCIL, por si e por seus colaboradores, obriga-se a atuar no presente contrato em conformidade com a Legislação vigente sobre Proteção de Dados Pessoais e as determinações de órgãos reguladores/fiscalizadores sobre a matéria, em especial a Lei 13.709/2018, além das demais normas e políticas de proteção de dados de cada país onde houver qualquer tipo de tratamento dos dados dos clientes, o que inclui os dados dos clientes desta. No manuseio dos dados a GARANTFÁCIL deverá:</p>
                   
                   <ul className="list-disc ml-6 mb-2 space-y-1">
                     <li>Tratar os dados pessoais a que tiver acesso apenas de acordo com as instruções do Cliente/Garantidor e em conformidade com estas cláusulas.</li>
@@ -837,13 +837,13 @@ export default function TenantAcceptance() {
                     <li>Acessar os dados dentro de seu escopo e na medida abrangida por sua permissão de acesso (autorização) e que os dados pessoais não podem ser lidos, copiados, modificados ou removidos sem autorização expressa e por escrito do Cliente/Garantidor.</li>
                     <li>Garantir, por si própria ou quaisquer de seus empregados, prepostos, sócios, diretores, representantes ou terceiros contratados, a confidencialidade dos dados processados, assegurando que todos os seus colaboradores prepostos, sócios, diretores, representantes ou terceiros contratados que lidam com os dados pessoais.</li>
                     <li>Os dados pessoais não poderão ser revelados a terceiros, com exceção da prévia autorização por escrito do Cliente/Garantidor, quer direta ou indiretamente, seja mediante a distribuição de cópias, resumos, compilações, extratos, análises, estudos ou outros meios que contenham ou de outra forma reflitam referidas Informações.</li>
-                    <li>Caso a TRIDOTS seja obrigada por determinação legal a fornecer dados pessoais a uma autoridade pública, deverá informar previamente ao Cliente/Garantidor para que esta tome as medidas que julgar cabíveis.</li>
+                    <li>Caso a GARANTFÁCIL seja obrigada por determinação legal a fornecer dados pessoais a uma autoridade pública, deverá informar previamente ao Cliente/Garantidor para que esta tome as medidas que julgar cabíveis.</li>
                   </ul>
                   
-                  <p className="mb-2">A TRIDOTS deverá notificar o Cliente/Garantidor em até 24 (vinte e quatro) horas a respeito de:</p>
+                  <p className="mb-2">A GARANTFÁCIL deverá notificar o Cliente/Garantidor em até 24 (vinte e quatro) horas a respeito de:</p>
                   <ul className="list-disc ml-6 mb-2 space-y-1">
-                    <li>Qualquer não cumprimento (ainda que suspeito) das disposições legais relativas à proteção de Dados Pessoais pela TRIDOTS, seus funcionários, ou terceiros autorizados;</li>
-                    <li>Qualquer outra violação de segurança no âmbito das atividades e responsabilidades da TRIDOTS.</li>
+                    <li>Qualquer não cumprimento (ainda que suspeito) das disposições legais relativas à proteção de Dados Pessoais pela GARANTFÁCIL, seus funcionários, ou terceiros autorizados;</li>
+                    <li>Qualquer outra violação de segurança no âmbito das atividades e responsabilidades da GARANTFÁCIL.</li>
                   </ul>
                   
                   {/* DO FORO */}
@@ -861,8 +861,8 @@ export default function TenantAcceptance() {
                       </div>
                       <div>
                         <p className="font-bold text-foreground">GARANTIDOR</p>
-                        <p className="text-sm mt-1">TRIDOTS SOLUTIONS LTDA</p>
-                        <p className="text-xs">CNPJ: 54.409.383/0001-85</p>
+                        <p className="text-sm mt-1">GarantFácil Serviços de Cobranças Ltda</p>
+                        <p className="text-xs">CNPJ: 33.794.683/0001-55</p>
                       </div>
                     </div>
                   </div>
@@ -1449,7 +1449,7 @@ export default function TenantAcceptance() {
               rel="noopener noreferrer"
               className="font-medium text-primary hover:underline"
             >
-              Tridots Capital pelo WhatsApp (44) 9 9177-8859
+              GarantFácil pelo WhatsApp (44) 9 9177-8859
             </a>
           </p>
         </footer>
