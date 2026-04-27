@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* TRIDOTS CAPITAL Design System
+/* GARANTFÁCIL Design System
    Professional blue theme based on brand identity
 */
 
@@ -71,7 +71,7 @@
     --font-mono: 'JetBrains Mono', monospace;
   }
 
-  /* Tema Admin Tridots - Sidebar Escura Sofisticada */
+  /* Tema Admin GarantFácil - Sidebar Escura Sofisticada */
   .theme-admin {
     --sidebar-background: 0 0% 7%;
     --sidebar-foreground: 0 0% 96%;

@@ -182,12 +182,12 @@ export default function AgencyInvoiceDetail() {
                 </div>
               )}
 
-              {/* Observations from Tridots */}
+              {/* Observations from GarantFácil */}
               {invoiceAny.boleto_observations && (
                 <div className="bg-muted/50 border rounded-lg p-4 flex gap-3">
                   <Info className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-sm font-medium mb-1">Observações da Tridots</p>
+                    <p className="text-sm font-medium mb-1">Observações da GarantFácil</p>
                     <p className="text-sm text-muted-foreground whitespace-pre-wrap">
                       {invoiceAny.boleto_observations}
                     </p>

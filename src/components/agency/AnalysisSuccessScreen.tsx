@@ -34,7 +34,7 @@ export function AnalysisSuccessScreen({ analysisId, onNewAnalysis }: AnalysisSuc
         </div>
 
         <p className="text-sm text-muted-foreground max-w-md mx-auto">
-          A equipe Tridots irá analisar sua solicitação em até 24 horas úteis. 
+          A equipe GarantFácil irá analisar sua solicitação em até 24 horas úteis. 
           Você receberá uma notificação quando houver atualizações.
         </p>
 

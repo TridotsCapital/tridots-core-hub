@@ -142,7 +142,7 @@ serve(async (req) => {
         });
       }
     } else if (notificationDirection === 'agency_to_tridots') {
-      // Notify Tridots: all active master/analyst users
+      // Notify GarantFácil: all active master/analyst users
       // First get user_ids from user_roles table (roles are NOT stored in profiles)
       const { data: roleEntries } = await supabase
         .from('user_roles')
@@ -164,7 +164,7 @@ serve(async (req) => {
           if (user.email) {
             recipients.push({
               email: user.email,
-              name: user.full_name || 'Tridots Team',
+              name: user.full_name || 'GarantFácil Team',
               user_id: user.id
             });
           }

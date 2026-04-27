@@ -194,7 +194,7 @@ export function TridotsRenewalModal({
                   Pendente
                 </Badge>
                 <span className="text-xs text-muted-foreground">
-                  Solicitada pela {pendingRenewal.request_source === 'agency' ? 'Imobiliária' : 'Tridots'} em{' '}
+                  Solicitada pela {pendingRenewal.request_source === 'agency' ? 'Imobiliária' : 'GarantFácil'} em{' '}
                   {formatDateBR(pendingRenewal.requested_at, "dd/MM/yyyy")}
                 </span>
               </div>

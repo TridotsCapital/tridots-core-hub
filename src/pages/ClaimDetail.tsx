@@ -280,7 +280,7 @@ export default function ClaimDetail() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Info */}
           <div className="space-y-4">
-            {/* Custos da Garantia Tridots - NO TOPO */}
+            {/* Custos da Garantia GarantFácil - NO TOPO */}
             {claim.contract?.analysis && (
               <GuaranteeCostsSection
                 valorAluguel={(claim.contract.analysis as any).valor_aluguel}

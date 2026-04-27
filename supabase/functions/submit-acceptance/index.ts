@@ -180,7 +180,7 @@ const handler = async (req: Request): Promise<Response> => {
       await supabase.rpc("log_analysis_timeline_event", {
         _analysis_id: analysis.id,
         _event_type: "acceptance_completed",
-        _description: description || "Aceite concluído - Aguardando validação da Tridots",
+        _description: description || "Aceite concluído - Aguardando validação da GarantFácil",
         _metadata: { payment_method: analysis.forma_pagamento_preferida },
       });
 
@@ -346,7 +346,7 @@ const handler = async (req: Request): Promise<Response> => {
         await supabase.rpc("log_analysis_timeline_event", {
           _analysis_id: analysis.id,
           _event_type: "acceptance_completed",
-          _description: "Aceite concluído - Aguardando validação da Tridots",
+          _description: "Aceite concluído - Aguardando validação da GarantFácil",
           _metadata: {},
         });
 

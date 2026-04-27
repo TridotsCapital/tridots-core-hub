@@ -72,7 +72,7 @@ export function AgencyClaimDetailView({ claim, onUpdate }: AgencyClaimDetailView
 
   return (
     <div className="space-y-6">
-      {/* Custos da Garantia Tridots - NO TOPO */}
+      {/* Custos da Garantia GarantFácil - NO TOPO */}
       {claim.contract?.analysis && (
         <GuaranteeCostsSection
           valorAluguel={(claim.contract.analysis as any).valor_aluguel}

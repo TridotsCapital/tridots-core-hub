@@ -302,7 +302,7 @@ export default function AgencyNewClaim() {
               <h3 className="text-xl font-semibold">Funcionalidade Bloqueada</h3>
               <p className="text-muted-foreground max-w-md">
                 A solicitação de garantias estará disponível após a aprovação do seu cadastro 
-                pela equipe Tridots. Você será notificado quando seu perfil for ativado.
+                pela equipe GarantFácil. Você será notificado quando seu perfil for ativado.
               </p>
               <Button variant="outline" onClick={() => navigate('/agency/claims')}>
                 <ArrowLeft className="h-4 w-4 mr-2" />

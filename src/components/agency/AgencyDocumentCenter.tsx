@@ -235,10 +235,10 @@ export function AgencyDocumentCenter({ analysisId, analysisStatus }: AgencyDocum
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <FileText className="h-4 w-4" />
-            Modelos e Termos Tridots
+            Modelos e Termos GarantFácil
           </CardTitle>
           <CardDescription>
-            Documentos padrão disponibilizados pela Tridots
+            Documentos padrão disponibilizados pela GarantFácil
           </CardDescription>
         </CardHeader>
         <CardContent>

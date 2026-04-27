@@ -101,7 +101,7 @@ export function PaymentOptionsDisplay({
       : {
           id: 'pix',
           label: 'PIX à vista',
-          description: 'PIX indisponível - entre em contato com a Tridots',
+          description: 'PIX indisponível - entre em contato com a GarantFácil',
           value: 0,
           blocked: true,
         },

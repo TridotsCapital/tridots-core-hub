@@ -206,7 +206,7 @@ export function ContractRenewalTab({
             </CardTitle>
             <CardDescription>
               Solicitada em {formatDateBR(pendingRenewal.requested_at, "dd/MM/yyyy 'às' HH:mm")}
-              {' '}pela {pendingRenewal.request_source === 'agency' ? 'Imobiliária' : 'Tridots'}
+              {' '}pela {pendingRenewal.request_source === 'agency' ? 'Imobiliária' : 'GarantFácil'}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -262,7 +262,7 @@ export function ContractRenewalTab({
         </Card>
       )}
 
-      {/* Notification Actions (only for Tridots when there's an approved renewal pending acceptance) */}
+      {/* Notification Actions (only for GarantFácil when there's an approved renewal pending acceptance) */}
       {!isAgencyView && (
         <RenewalNotificationActions
           contractId={contractId}
@@ -331,7 +331,7 @@ export function ContractRenewalTab({
                   )}
 
                   <div className="text-xs text-muted-foreground">
-                    Solicitado por: {renewal.request_source === 'agency' ? 'Imobiliária' : 'Tridots'}
+                    Solicitado por: {renewal.request_source === 'agency' ? 'Imobiliária' : 'GarantFácil'}
                   </div>
                 </div>
               );
@@ -340,7 +340,7 @@ export function ContractRenewalTab({
         </Card>
       )}
 
-      {/* Tridots Renewal Modal */}
+      {/* GarantFácil Renewal Modal */}
       <TridotsRenewalModal
         open={renewModalOpen}
         onOpenChange={setRenewModalOpen}

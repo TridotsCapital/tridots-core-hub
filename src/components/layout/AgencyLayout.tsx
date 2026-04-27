@@ -168,7 +168,7 @@ export function AgencyLayout({ children, title, description, actions }: AgencyLa
           <h2 className="text-xl font-semibold mb-2">Acesso Pendente</h2>
           <p className="text-muted-foreground mb-4">
             Sua conta ainda não está vinculada a uma imobiliária. 
-            Entre em contato com a equipe Tridots para ativar seu acesso.
+            Entre em contato com a equipe GarantFácil para ativar seu acesso.
           </p>
         </div>
       </div>

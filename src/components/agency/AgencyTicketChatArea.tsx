@@ -419,7 +419,7 @@ export function AgencyTicketChatArea({ ticketId }: AgencyTicketChatAreaProps) {
           ) : messages.length === 0 && !ticket.description ? (
             <div className="text-center py-4 text-muted-foreground">
               <p>Nenhuma mensagem ainda.</p>
-              <p className="text-sm">Aguarde a resposta da equipe Tridots.</p>
+              <p className="text-sm">Aguarde a resposta da equipe GarantFácil.</p>
             </div>
           ) : (
             messages.map((msg: any, index: number) => {

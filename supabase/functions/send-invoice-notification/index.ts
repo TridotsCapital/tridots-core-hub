@@ -243,7 +243,7 @@ serve(async (req: Request): Promise<Response> => {
       console.error("Failed to insert email_log:", logError);
     }
 
-    // Criar notificação in-app para usuários Tridots
+    // Criar notificação in-app para usuários GarantFácil
     const { error: rpcError } = await supabase.rpc('create_email_sent_notification', {
       p_template_type: `invoice_${notificationType}`,
       p_recipient_email: recipientEmail,

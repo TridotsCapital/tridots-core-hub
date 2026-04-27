@@ -253,7 +253,7 @@ Deno.serve(async (req) => {
         await supabaseAdmin.from("analysis_timeline").insert({
           analysis_id: analysis.id,
           event_type: "status_change",
-          description: "Análise iniciada pela equipe Tridots",
+          description: "Análise iniciada pela equipe GarantFácil",
           created_at: daysAgo(Math.floor(Math.random() * 3) + 1),
         });
       }

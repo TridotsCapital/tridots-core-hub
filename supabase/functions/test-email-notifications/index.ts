@@ -184,7 +184,7 @@ serve(async (req) => {
       }
       
       case 'T7': {
-        // Nova Imobiliária Pendente (Tridots Capital)
+        // Nova Imobiliária Pendente (GarantFácil)
         templateType = 'new_agency_pending';
         emailData = newAgencyPendingTemplate({
           agencyName: 'Imobiliária Recém Cadastrada Ltda',

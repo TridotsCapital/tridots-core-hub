@@ -135,7 +135,7 @@ export function AgencyTicketForm({ agencyId }: AgencyTicketFormProps) {
         <DialogHeader>
           <DialogTitle>Abrir Novo Chamado</DialogTitle>
           <DialogDescription>
-            Preencha os campos abaixo para abrir um chamado para a equipe Tridots.
+            Preencha os campos abaixo para abrir um chamado para a equipe GarantFácil.
           </DialogDescription>
         </DialogHeader>
 

@@ -49,7 +49,7 @@ export function PendingApprovalBanner({ className }: PendingApprovalBannerProps)
     iconColor = 'text-blue-600';
     titleColor = 'text-blue-700 dark:text-blue-500';
     title = 'Documentos em Análise';
-    description = 'Seus documentos estão sendo analisados pela equipe Tridots. Você será notificado assim que a análise for concluída.';
+    description = 'Seus documentos estão sendo analisados pela equipe GarantFácil. Você será notificado assim que a análise for concluída.';
     showLink = false;
   } else if (!onboardingStatus.hasTermoAceiteAssinado) {
     // All docs approved, need to sign term
@@ -67,7 +67,7 @@ export function PendingApprovalBanner({ className }: PendingApprovalBannerProps)
     iconColor = 'text-blue-600';
     titleColor = 'text-blue-700 dark:text-blue-500';
     title = 'Termo de Aceite em Análise';
-    description = 'O Termo de Aceite assinado está sendo analisado. Aguarde a aprovação final da Tridots.';
+    description = 'O Termo de Aceite assinado está sendo analisado. Aguarde a aprovação final da GarantFácil.';
     showLink = false;
   } else {
     // Everything approved, awaiting manual activation
@@ -76,7 +76,7 @@ export function PendingApprovalBanner({ className }: PendingApprovalBannerProps)
     iconColor = 'text-green-600';
     titleColor = 'text-green-700 dark:text-green-500';
     title = 'Aguardando Ativação';
-    description = 'Toda a documentação foi aprovada. A equipe Tridots está finalizando a ativação da sua imobiliária.';
+    description = 'Toda a documentação foi aprovada. A equipe GarantFácil está finalizando a ativação da sua imobiliária.';
     showLink = false;
   }
 

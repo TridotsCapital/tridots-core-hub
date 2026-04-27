@@ -68,7 +68,7 @@ export function AgencyClaimsKanban({ claims, onRefresh }: AgencyClaimsKanbanProp
     // Always show the message - user cannot change status
     toast({
       title: "Ação não permitida",
-      description: "Apenas a equipe Tridots pode alterar o status da garantia.",
+      description: "Apenas a equipe GarantFácil pode alterar o status da garantia.",
       variant: "destructive",
     });
   };

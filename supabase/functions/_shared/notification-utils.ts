@@ -73,7 +73,7 @@ export async function logEmailAndNotify(
     sent_at: params.success ? new Date().toISOString() : null,
   });
 
-  // Create in-app notification for Tridots users
+  // Create in-app notification for GarantFácil users
   await supabase.rpc('create_email_sent_notification', {
     p_template_type: params.templateType,
     p_recipient_email: finalRecipient,

@@ -76,7 +76,7 @@ export function AgencyKanbanBoard({ analyses, isLoading, autoOpenAnalysisId, onA
   const handleDragAttempt = (e: React.MouseEvent | React.TouchEvent) => {
     // Show toast only once per session
     if (!hasShownDragToast) {
-      toast.info("Apenas a equipe Tridots pode alterar o status", {
+      toast.info("Apenas a equipe GarantFácil pode alterar o status", {
         description: "Você pode acompanhar o progresso pelo Kanban e conversar com a equipe pelo chat."
       });
       setHasShownDragToast(true);

@@ -89,7 +89,7 @@ const handler = async (req: Request): Promise<Response> => {
             Authorization: `Bearer ${resendApiKey}`,
           },
           body: JSON.stringify({
-            from: "Tridots <noreply@tridots.com.br>",
+            from: "GarantFácil <noreply@tridots.com.br>",
             to: [tenantEmail],
             subject: "Renovação de Contrato - Aceite Necessário",
             html: `
@@ -103,7 +103,7 @@ const handler = async (req: Request): Promise<Response> => {
               </p>
               <p><strong>Atenção:</strong> Este link é válido por 72 horas.</p>
               <br>
-              <p>Atenciosamente,<br>Equipe Tridots</p>
+              <p>Atenciosamente,<br>Equipe GarantFácil</p>
             `,
           }),
         });

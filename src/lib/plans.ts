@@ -1,4 +1,4 @@
-// Guarantee Plans Configuration for Tridots Capital
+// Guarantee Plans Configuration for GarantFácil
 
 export const GUARANTEE_PLANS = {
   start: {

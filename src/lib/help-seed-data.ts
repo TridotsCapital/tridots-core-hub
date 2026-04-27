@@ -40,7 +40,7 @@ export const HELP_CHAPTERS: SeedChapter[] = [
         order_index: 1,
         slug: "bem-vindo",
         title: "Bem-vindo ao Portal",
-        content: `O **Portal de Imobiliárias da Tridots Capital** foi desenvolvido para facilitar sua gestão de garantias locatícias. Aqui você pode:
+        content: `O **Portal de Imobiliárias da GarantFácil** foi desenvolvido para facilitar sua gestão de garantias locatícias. Aqui você pode:
 
 - Solicitar análises de crédito para inquilinos
 - Acompanhar o status de cada análise em tempo real
@@ -62,7 +62,7 @@ O portal foi projetado para ser intuitivo e eficiente, permitindo que você gere
         title: "Primeiro Acesso",
         content: `Para acessar o portal pela primeira vez:
 
-1. Acesse o link fornecido pela equipe Tridots
+1. Acesse o link fornecido pela equipe GarantFácil
 2. Insira seu e-mail cadastrado
 3. Utilize a senha temporária enviada por e-mail
 4. Na primeira vez, você será solicitado a alterar sua senha
@@ -84,7 +84,7 @@ A senha deve conter no mínimo 8 caracteres, incluindo letras maiúsculas, minú
         content: `O portal é organizado com um **menu lateral** que dá acesso a todas as funcionalidades:
 
 - **Dashboard**: Visão geral com KPIs e alertas
-- **Chamados**: Comunicação com a equipe Tridots
+- **Chamados**: Comunicação com a equipe GarantFácil
 - **Minhas Análises**: Acompanhamento de análises de crédito
 - **Meus Contratos**: Gestão de contratos ativos
 - **Garantias**: Solicitação de garantias
@@ -174,7 +174,7 @@ Após o envio, nossa equipe irá analisar os documentos em até 2 dias úteis.`,
 
 [SCREENSHOT: termo-adesao]
 
-O termo de adesão formaliza a parceria entre sua imobiliária e a Tridots Capital, estabelecendo os termos de uso da garantia locatícia.`,
+O termo de adesão formaliza a parceria entre sua imobiliária e a GarantFácil, estabelecendo os termos de uso da garantia locatícia.`,
         tips: [
           "A assinatura via GOV.BR tem validade jurídica"
         ]
@@ -431,7 +431,7 @@ Esta informação ajudará na geração do link de aceite.`,
 
 [SCREENSHOT: summary-step]
 
-Confira cuidadosamente todos os dados antes de clicar em **"Enviar Análise"**. Após o envio, a análise entrará na fila de avaliação da equipe Tridots.`,
+Confira cuidadosamente todos os dados antes de clicar em **"Enviar Análise"**. Após o envio, a análise entrará na fila de avaliação da equipe GarantFácil.`,
         warnings: [
           "Após o envio, não é possível editar os dados da análise"
         ]
@@ -456,7 +456,7 @@ Confira cuidadosamente todos os dados antes de clicar em **"Enviar Análise"**. 
       {
         order_index: 4,
         question: "Posso alterar o plano após enviar a análise?",
-        answer: "Não diretamente. Caso necessário, entre em contato com a equipe Tridots via Chamados."
+        answer: "Não diretamente. Caso necessário, entre em contato com a equipe GarantFácil via Chamados."
       }
     ]
   },
@@ -613,7 +613,7 @@ O link tem validade de **48 horas**.`,
 
 1. Acesse a análise em **"Aguardando Pagamento"**
 2. Clique em **"Solicitar Novo Link"**
-3. Um novo link será gerado pela equipe Tridots
+3. Um novo link será gerado pela equipe GarantFácil
 
 [SCREENSHOT: request-new-link]
 
@@ -624,7 +624,7 @@ Aguarde a confirmação antes de enviar ao inquilino.`,
       {
         order_index: 1,
         question: "O que acontece se o link expirar?",
-        answer: "Você pode solicitar um novo link através da análise. A equipe Tridots irá gerar e enviar um novo link."
+        answer: "Você pode solicitar um novo link através da análise. A equipe GarantFácil irá gerar e enviar um novo link."
       },
       {
         order_index: 2,
@@ -709,7 +709,7 @@ Faça upload de cada documento na aba **"Documentos"** do contrato.`,
       {
         order_index: 3,
         question: "Quando o contrato é ativado?",
-        answer: "Após a aprovação dos 4 documentos obrigatórios pela equipe Tridots."
+        answer: "Após a aprovação dos 4 documentos obrigatórios pela equipe GarantFácil."
       }
     ]
   },
@@ -749,7 +749,7 @@ Você receberá alertas automáticos:
 
 [SCREENSHOT: renewal-request]
 
-A equipe Tridots analisará a solicitação e gerará um novo link de aceite para o inquilino.`,
+A equipe GarantFácil analisará a solicitação e gerará um novo link de aceite para o inquilino.`,
       },
       {
         order_index: 3,
@@ -878,7 +878,7 @@ A cobertura total (aluguel + encargos) é sempre **20x o valor locatício mensal
       {
         order_index: 3,
         question: "O que acontece após o pagamento da garantia?",
-        answer: "A Tridots assume a cobrança do inquilino. Você não precisa se preocupar com a recuperação do valor."
+        answer: "A GarantFácil assume a cobrança do inquilino. Você não precisa se preocupar com a recuperação do valor."
       }
     ]
   },
@@ -962,7 +962,7 @@ A cobertura total (aluguel + encargos) é sempre **20x o valor locatício mensal
   {
     order_index: 11,
     slug: "chamados",
-    title: "Chamados - Suporte Tridots",
+    title: "Chamados - Suporte GarantFácil",
     icon: "MessageSquare",
     is_new: false,
     sections: [
@@ -1013,7 +1013,7 @@ A cobertura total (aluguel + encargos) é sempre **20x o valor locatício mensal
 - Um contrato específico
 - Uma garantia específica
 
-Isso ajuda a equipe Tridots a entender o contexto rapidamente.
+Isso ajuda a equipe GarantFácil a entender o contexto rapidamente.
 
 [SCREENSHOT: linked-ticket]`,
         tips: [
@@ -1135,7 +1135,7 @@ Clique no documento desejado para fazer download.`,
       {
         order_index: 2,
         question: "Os documentos do Drive são atualizados?",
-        answer: "Sim, a equipe Tridots mantém os documentos sempre atualizados. Verifique a data de última atualização."
+        answer: "Sim, a equipe GarantFácil mantém os documentos sempre atualizados. Verifique a data de última atualização."
       },
       {
         order_index: 3,

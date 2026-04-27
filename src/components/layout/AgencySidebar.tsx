@@ -129,7 +129,7 @@ export function AgencySidebar() {
     <Sidebar className="border-r border-border/30 bg-white">
       <SidebarHeader className="border-b border-border/30 p-4 bg-gradient-to-br from-primary/5 to-transparent">
         <div className="flex items-center justify-between gap-2">
-          <img src={logoBlack} alt="Tridots Capital" className="h-10 w-auto object-contain flex-shrink-0" />
+          <img src={logoBlack} alt="GarantFácil" className="h-10 w-auto object-contain flex-shrink-0" />
           <NotificationCenter isAgencyPortal={true} />
         </div>
       </SidebarHeader>
