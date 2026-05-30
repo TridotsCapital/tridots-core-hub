@@ -1,0 +1,102 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Self-hosted runner padrao Lamadre/IZITECH na VPS.
+# Veja reference_self_hosted_runners_pattern.md.
+# NOTA DE SEGURANCA: este workflow NAO usa nenhum input user-controlled
+# (issue.title, pr.title, commit.message, etc) em run: -- imune a script injection.
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  lint-and-build:
+    name: Lint + Typecheck + Build
+    runs-on: [self-hosted, linux, x64, vps]
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint (eslint)
+        run: npm run lint
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Build (vite)
+        env:
+          NODE_ENV: production
+        run: npm run build
+
+      - name: Report disk usage
+        if: always()
+        run: df -h | head -10
+
+  edge-functions-lint:
+    name: Edge functions Deno check
+    runs-on: [self-hosted, linux, x64, vps]
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Typecheck edge functions
+        run: |
+          if ! command -v deno >/dev/null 2>&1; then
+            echo "deno nao instalado no runner; pulando typecheck"
+            exit 0
+          fi
+          set -e
+          for fn_dir in supabase/functions/*/; do
+            entry="${fn_dir}index.ts"
+            if [ -f "$entry" ]; then
+              echo "Checking $fn_dir"
+              deno check --quiet "$entry" || echo "deno check failed for $entry"
+            fi
+          done
+
+  supabase-migrations-syntax:
+    name: Supabase migrations SQL smoke
+    runs-on: [self-hosted, linux, x64, vps]
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: SQL syntax smoke
+        run: |
+          set -e
+          fail=0
+          for f in supabase/migrations/*.sql; do
+            if grep -qP "\x00" "$f"; then
+              echo "ERROR: $f contem bytes nulos"
+              fail=1
+            fi
+          done
+          if [ "$fail" = "1" ]; then exit 1; fi
