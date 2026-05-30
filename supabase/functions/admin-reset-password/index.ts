@@ -6,28 +6,41 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-function generateSecurePassword(length = 12): string {
-  const uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  const lowercase = "abcdefghijklmnopqrstuvwxyz";
-  const numbers = "0123456789";
+/**
+ * Generates a cryptographically-secure random password.
+ * Uses crypto.getRandomValues() (CSPRNG) instead of Math.random() (PRNG).
+ * Guarantees at least one upper, one lower, one digit and one special character.
+ *
+ * Fix TR-CRYPTO-001 — antes usava Math.random(), previsível dado seed + tempo.
+ */
+function generateSecurePassword(length = 14): string {
+  if (length < 8) throw new Error("Password length must be >= 8");
+  const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const lower = "abcdefghijklmnopqrstuvwxyz";
+  const digits = "0123456789";
   const special = "!@#$%&*";
-  
-  const allChars = uppercase + lowercase + numbers + special;
-  
-  // Ensure at least one of each type
-  let password = "";
-  password += uppercase[Math.floor(Math.random() * uppercase.length)];
-  password += lowercase[Math.floor(Math.random() * lowercase.length)];
-  password += numbers[Math.floor(Math.random() * numbers.length)];
-  password += special[Math.floor(Math.random() * special.length)];
-  
-  // Fill the rest
-  for (let i = password.length; i < length; i++) {
-    password += allChars[Math.floor(Math.random() * allChars.length)];
+  const all = upper + lower + digits + special;
+
+  const pickCSPRNG = (charset: string): string => {
+    const buf = new Uint8Array(1);
+    crypto.getRandomValues(buf);
+    return charset[buf[0] % charset.length];
+  };
+
+  const required = [pickCSPRNG(upper), pickCSPRNG(lower), pickCSPRNG(digits), pickCSPRNG(special)];
+  const remaining: string[] = [];
+  for (let i = 0; i < length - required.length; i++) remaining.push(pickCSPRNG(all));
+
+  const merged = [...required, ...remaining];
+
+  // Fisher-Yates shuffle using CSPRNG (não Math.random — vide TR-CRYPTO-001)
+  for (let i = merged.length - 1; i > 0; i--) {
+    const buf = new Uint32Array(1);
+    crypto.getRandomValues(buf);
+    const j = buf[0] % (i + 1);
+    [merged[i], merged[j]] = [merged[j], merged[i]];
   }
-  
-  // Shuffle the password
-  return password.split("").sort(() => Math.random() - 0.5).join("");
+  return merged.join("");
 }
 
 serve(async (req) => {

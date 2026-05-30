@@ -18,6 +18,45 @@ Deno.serve(async (req) => {
       { auth: { autoRefreshToken: false, persistSession: false } }
     );
 
+    // ─────────────────────────────────────────────────────────────────
+    // AUTH GUARD — TR-AUTH-001 fix
+    // seed-demo-agency NÃO PODE rodar sem auth em produção.
+    // Restrito a callers autenticados com role='master'.
+    // ─────────────────────────────────────────────────────────────────
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      { global: { headers: { Authorization: authHeader } } }
+    );
+    const { data: { user: caller }, error: authError } = await supabaseClient.auth.getUser();
+    if (authError || !caller) {
+      return new Response(
+        JSON.stringify({ error: "Invalid token" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { data: callerRole } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", caller.id)
+      .maybeSingle();
+    if (callerRole?.role !== "master") {
+      return new Response(
+        JSON.stringify({ error: "Forbidden: only masters can seed demo data" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    // ─────────────────────────────────────────────────────────────────
+
     // Check if demo agency already exists
     const { data: existingAgency } = await supabaseAdmin
       .from("agencies")
