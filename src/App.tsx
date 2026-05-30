@@ -17,6 +17,7 @@ import AnalysisForm from "./pages/AnalysisForm";
 import Commissions from "./pages/Commissions";
 import FinancialDashboard from "./pages/FinancialDashboard";
 import Inadimplentes from "./pages/Inadimplentes";
+import Simulador from "./pages/Simulador";
 import FinancialInvoices from "./pages/FinancialInvoices";
 import DocumentCenter from "./pages/DocumentCenter";
 import InvoiceDetail from "./pages/InvoiceDetail";
@@ -83,6 +84,7 @@ function InternalRoutes() {
       <Route path="/invoices/:invoiceId" element={<InvoiceDetail />} />
       <Route path="/financial" element={<FinancialDashboard />} />
       <Route path="/relatorios/inadimplentes" element={<Inadimplentes />} />
+      <Route path="/simulador" element={<Simulador />} />
       <Route path="/documents" element={<DocumentCenter />} />
       <Route path="/audit" element={<AuditViewer />} />
       <Route path="/cloud-monitoring" element={<CloudMonitoring />} />
