@@ -83,3 +83,9 @@ verify_jwt = false
 
 [functions.resolve-short-url]
 verify_jwt = false
+
+[functions.generate-approval-letter]
+verify_jwt = false
+
+[functions.generate-activation-letter]
+verify_jwt = false
