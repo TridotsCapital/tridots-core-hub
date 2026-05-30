@@ -26,9 +26,56 @@ serve(async (req: Request): Promise<Response> => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // ─────────────────────────────────────────────────────────────────
+    // AUTH GUARD — TR-AUTH-003 fix (mesma família do TR-AUTH-002 em PDF)
+    // ─────────────────────────────────────────────────────────────────
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "Missing authorization header" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const supabaseClient = createClient(
+      supabaseUrl,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+    const { data: { user: caller }, error: authError } = await supabaseClient.auth.getUser();
+    if (authError || !caller) {
+      return new Response(
+        JSON.stringify({ error: "Invalid token" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { data: callerRole } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", caller.id)
+      .maybeSingle();
+    const isMaster = callerRole?.role === "master";
+
+    let allowedAgencyIds: string[] | null = null;
+    if (!isMaster) {
+      const { data: links } = await supabase
+        .from("agency_users")
+        .select("agency_id")
+        .eq("user_id", caller.id);
+      allowedAgencyIds = (links ?? []).map((l: { agency_id: string }) => l.agency_id);
+      if (allowedAgencyIds.length === 0) {
+        return new Response(
+          JSON.stringify({ error: "Forbidden: caller has no agency link" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+    // ─────────────────────────────────────────────────────────────────
+
     const { invoiceId, month, year, startMonth, startYear, endMonth, endYear }: ExportRequest = await req.json();
 
-    console.log("[generate-invoice-excel] Processing export request");
+    console.log("[generate-invoice-excel] caller=", caller.id, "isMaster=", isMaster);
 
     // Build query based on parameters
     let query = supabase
@@ -61,6 +108,11 @@ serve(async (req: Request): Promise<Response> => {
         .or(
           `and(reference_year.eq.${startYear},reference_month.gte.${startMonth}),and(reference_year.gt.${startYear},reference_year.lt.${endYear}),and(reference_year.eq.${endYear},reference_month.lte.${endMonth})`
         );
+    }
+
+    // Tenant guard
+    if (allowedAgencyIds) {
+      query = query.in("agency_id", allowedAgencyIds);
     }
 
     const { data: invoices, error: invoiceError } = await query;
