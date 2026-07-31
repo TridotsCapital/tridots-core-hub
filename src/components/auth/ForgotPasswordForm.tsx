@@ -61,7 +61,7 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4" data-legacy-allow="true">
       <div className="text-center mb-4">
         <h3 className="text-lg font-semibold">Esqueci minha senha</h3>
         <p className="text-sm text-muted-foreground">

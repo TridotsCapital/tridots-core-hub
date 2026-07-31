@@ -20,7 +20,7 @@ export function LoginForm({ onSubmit, loading }: LoginFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4" data-legacy-allow="true">
       <div className="space-y-2">
         <Label htmlFor="login-email" className="font-medium">Email</Label>
         <Input
