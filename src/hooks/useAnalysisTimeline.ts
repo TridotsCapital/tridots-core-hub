@@ -22,7 +22,7 @@ export function useAnalysisTimeline(analysisId: string | undefined) {
       return (data || []).map(event => ({
         ...event,
         metadata: event.metadata as Record<string, unknown>,
-      })) as AnalysisTimelineEvent[];
+      })) as unknown as AnalysisTimelineEvent[];
     },
     enabled: !!analysisId,
   });
