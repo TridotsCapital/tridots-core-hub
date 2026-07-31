@@ -111,6 +111,7 @@ function scan(root: ParentNode) {
   if (root instanceof Element && root.matches(CONTROL_SELECTOR)) elements.push(root);
   elements.push(...Array.from(root.querySelectorAll(CONTROL_SELECTOR)));
   for (const el of elements) {
+    if (el.getAttribute('data-legacy-blocked') === 'true') continue;
     if (isMutatingControl(el)) disableControl(el);
   }
 }
@@ -135,7 +136,8 @@ export function LegacyModeGuard() {
         });
         if (record.type === 'attributes' && record.target.nodeType === Node.ELEMENT_NODE) {
           const el = record.target as Element;
-          if (isMutatingControl(el)) disableControl(el);
+          if (el.getAttribute('data-legacy-blocked') === 'true') continue;
+          if (el.matches(CONTROL_SELECTOR) && isMutatingControl(el)) disableControl(el);
         }
       }
     });
@@ -144,7 +146,7 @@ export function LegacyModeGuard() {
       childList: true,
       subtree: true,
       attributes: true,
-      attributeFilter: ['disabled', 'aria-label', 'title'],
+      attributeFilter: ['disabled', 'aria-label', 'href'],
     });
 
     const onCapture = (event: Event) => {
