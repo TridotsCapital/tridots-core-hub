@@ -23,7 +23,8 @@ export function LegacyModeBanner({ variant = 'app', className }: LegacyModeBanne
       className={cn(
         'w-full max-w-full min-w-0 border border-amber-300 bg-amber-50 text-amber-900 rounded-lg',
         'px-3 py-3 sm:px-4',
-        variant === 'app' && 'rounded-none border-x-0 border-t-0 sm:rounded-none',
+        variant === 'app' &&
+          'rounded-none border-x-0 border-t-0 sm:rounded-none sticky left-0 w-screen max-w-[100vw]',
         className
       )}
     >
