@@ -32,6 +32,7 @@ export type Database = {
           garantias_utilizadas: string[] | null
           id: string
           internal_observations: string | null
+          legacy_master_user_id: string | null
           logo_url: string | null
           nome_fantasia: string | null
           onboarding_completed: boolean | null
@@ -63,6 +64,7 @@ export type Database = {
           garantias_utilizadas?: string[] | null
           id?: string
           internal_observations?: string | null
+          legacy_master_user_id?: string | null
           logo_url?: string | null
           nome_fantasia?: string | null
           onboarding_completed?: boolean | null
@@ -94,6 +96,7 @@ export type Database = {
           garantias_utilizadas?: string[] | null
           id?: string
           internal_observations?: string | null
+          legacy_master_user_id?: string | null
           logo_url?: string | null
           nome_fantasia?: string | null
           onboarding_completed?: boolean | null
@@ -373,6 +376,7 @@ export type Database = {
           imovel_numero: string | null
           imovel_proprietario_cpf_cnpj: string | null
           imovel_proprietario_nome: string | null
+          imovel_tag: string | null
           imovel_tipo: string | null
           inquilino_cpf: string
           inquilino_data_nascimento: string | null
@@ -384,6 +388,8 @@ export type Database = {
           inquilino_rg: string | null
           inquilino_telefone: string | null
           inquilino_telefone_secundario: string | null
+          legacy_id: number | null
+          legacy_metadata: Json | null
           observacoes: string | null
           original_taxa_garantia_percentual: number | null
           payer_address: string | null
@@ -461,6 +467,7 @@ export type Database = {
           imovel_numero?: string | null
           imovel_proprietario_cpf_cnpj?: string | null
           imovel_proprietario_nome?: string | null
+          imovel_tag?: string | null
           imovel_tipo?: string | null
           inquilino_cpf: string
           inquilino_data_nascimento?: string | null
@@ -472,6 +479,8 @@ export type Database = {
           inquilino_rg?: string | null
           inquilino_telefone?: string | null
           inquilino_telefone_secundario?: string | null
+          legacy_id?: number | null
+          legacy_metadata?: Json | null
           observacoes?: string | null
           original_taxa_garantia_percentual?: number | null
           payer_address?: string | null
@@ -549,6 +558,7 @@ export type Database = {
           imovel_numero?: string | null
           imovel_proprietario_cpf_cnpj?: string | null
           imovel_proprietario_nome?: string | null
+          imovel_tag?: string | null
           imovel_tipo?: string | null
           inquilino_cpf?: string
           inquilino_data_nascimento?: string | null
@@ -560,6 +570,8 @@ export type Database = {
           inquilino_rg?: string | null
           inquilino_telefone?: string | null
           inquilino_telefone_secundario?: string | null
+          legacy_id?: number | null
+          legacy_metadata?: Json | null
           observacoes?: string | null
           original_taxa_garantia_percentual?: number | null
           payer_address?: string | null
@@ -630,6 +642,7 @@ export type Database = {
           file_size: number
           file_type: string | null
           id: string
+          legacy_id: number | null
           uploaded_by: string
         }
         Insert: {
@@ -640,6 +653,7 @@ export type Database = {
           file_size: number
           file_type?: string | null
           id?: string
+          legacy_id?: number | null
           uploaded_by: string
         }
         Update: {
@@ -650,6 +664,7 @@ export type Database = {
           file_size?: number
           file_type?: string | null
           id?: string
+          legacy_id?: number | null
           uploaded_by?: string
         }
         Relationships: [
@@ -670,6 +685,7 @@ export type Database = {
           description: string
           event_type: string
           id: string
+          legacy_id: number | null
           metadata: Json | null
         }
         Insert: {
@@ -679,6 +695,7 @@ export type Database = {
           description: string
           event_type: string
           id?: string
+          legacy_id?: number | null
           metadata?: Json | null
         }
         Update: {
@@ -688,6 +705,7 @@ export type Database = {
           description?: string
           event_type?: string
           id?: string
+          legacy_id?: number | null
           metadata?: Json | null
         }
         Relationships: [
@@ -713,6 +731,7 @@ export type Database = {
           created_at: string
           id: string
           ip_address: unknown
+          legacy_id: number | null
           new_data: Json | null
           old_data: Json | null
           record_id: string | null
@@ -725,6 +744,7 @@ export type Database = {
           created_at?: string
           id?: string
           ip_address?: unknown
+          legacy_id?: number | null
           new_data?: Json | null
           old_data?: Json | null
           record_id?: string | null
@@ -737,6 +757,7 @@ export type Database = {
           created_at?: string
           id?: string
           ip_address?: unknown
+          legacy_id?: number | null
           new_data?: Json | null
           old_data?: Json | null
           record_id?: string | null
@@ -1287,6 +1308,7 @@ export type Database = {
           id: string
           is_migrated: boolean
           last_renewal_id: string | null
+          legacy_analise_id: number | null
           payer_address: string | null
           payer_cep: string | null
           payer_city: string | null
@@ -1339,6 +1361,7 @@ export type Database = {
           id?: string
           is_migrated?: boolean
           last_renewal_id?: string | null
+          legacy_analise_id?: number | null
           payer_address?: string | null
           payer_cep?: string | null
           payer_city?: string | null
@@ -1391,6 +1414,7 @@ export type Database = {
           id?: string
           is_migrated?: boolean
           last_renewal_id?: string | null
+          legacy_analise_id?: number | null
           payer_address?: string | null
           payer_cep?: string | null
           payer_city?: string | null
@@ -1453,6 +1477,7 @@ export type Database = {
           geolocation_state: string | null
           id: string
           ip_address: unknown
+          legacy_analise_id: number | null
           term_template_id: string
           user_agent: string
         }
@@ -1469,6 +1494,7 @@ export type Database = {
           geolocation_state?: string | null
           id?: string
           ip_address: unknown
+          legacy_analise_id?: number | null
           term_template_id: string
           user_agent: string
         }
@@ -1485,6 +1511,7 @@ export type Database = {
           geolocation_state?: string | null
           id?: string
           ip_address?: unknown
+          legacy_analise_id?: number | null
           term_template_id?: string
           user_agent?: string
         }
@@ -1586,6 +1613,7 @@ export type Database = {
           id: string
           installment_number: number
           invoice_item_id: string | null
+          legacy_id: number | null
           paid_at: string | null
           reference_month: number
           reference_year: number
@@ -1600,6 +1628,7 @@ export type Database = {
           id?: string
           installment_number: number
           invoice_item_id?: string | null
+          legacy_id?: number | null
           paid_at?: string | null
           reference_month: number
           reference_year: number
@@ -1614,6 +1643,7 @@ export type Database = {
           id?: string
           installment_number?: number
           invoice_item_id?: string | null
+          legacy_id?: number | null
           paid_at?: string | null
           reference_month?: number
           reference_year?: number
@@ -2046,6 +2076,39 @@ export type Database = {
           },
         ]
       }
+      migration_tracking: {
+        Row: {
+          checksum: string | null
+          id: string
+          legacy_id: number
+          legacy_table: string
+          metadata: Json | null
+          migrated_at: string
+          new_id: string
+          new_table: string
+        }
+        Insert: {
+          checksum?: string | null
+          id?: string
+          legacy_id: number
+          legacy_table: string
+          metadata?: Json | null
+          migrated_at?: string
+          new_id: string
+          new_table: string
+        }
+        Update: {
+          checksum?: string | null
+          id?: string
+          legacy_id?: number
+          legacy_table?: string
+          metadata?: Json | null
+          migrated_at?: string
+          new_id?: string
+          new_table?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
@@ -2125,6 +2188,7 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          legacy_id: number | null
           phone: string | null
           updated_at: string
         }
@@ -2135,6 +2199,7 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          legacy_id?: number | null
           phone?: string | null
           updated_at?: string
         }
@@ -2145,6 +2210,7 @@ export type Database = {
           email?: string
           full_name?: string
           id?: string
+          legacy_id?: number | null
           phone?: string | null
           updated_at?: string
         }
@@ -2274,6 +2340,56 @@ export type Database = {
             columns: ["ticket_id"]
             isOneToOne: true
             referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      short_urls: {
+        Row: {
+          agency_id: string | null
+          click_count: number
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          legacy_id: number | null
+          metadata: Json | null
+          slug: string
+          target_url: string
+          updated_at: string
+        }
+        Insert: {
+          agency_id?: string | null
+          click_count?: number
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          legacy_id?: number | null
+          metadata?: Json | null
+          slug: string
+          target_url: string
+          updated_at?: string
+        }
+        Update: {
+          agency_id?: string | null
+          click_count?: number
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          legacy_id?: number | null
+          metadata?: Json | null
+          slug?: string
+          target_url?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "short_urls_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
             referencedColumns: ["id"]
           },
         ]
@@ -2764,6 +2880,32 @@ export type Database = {
           total_valor: number
         }[]
       }
+      get_inadimplentes: {
+        Args: {
+          p_agency_id?: string
+          p_atraso_max?: number
+          p_atraso_min?: number
+          p_valor_min?: number
+        }
+        Returns: {
+          agency_id: string
+          agency_nome: string
+          analysis_id: string
+          contract_id: string
+          dias_atraso_max: number
+          imovel_endereco: string
+          inquilino_cpf: string
+          inquilino_email: string
+          inquilino_nome: string
+          inquilino_telefone: string
+          primeira_parcela_atraso: string
+          qtd_parcelas_atraso: number
+          ultima_cobranca_at: string
+          ultima_parcela_atraso: string
+          valor_aluguel: number
+          valor_total_atraso: number
+        }[]
+      }
       get_suggested_analyst: { Args: never; Returns: string }
       get_user_agency_id: { Args: { user_uuid: string }; Returns: string }
       has_any_role: { Args: { _user_id: string }; Returns: boolean }
@@ -2774,6 +2916,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_short_url_click: { Args: { p_slug: string }; Returns: string }
       is_agency_user: { Args: { _user_id: string }; Returns: boolean }
       is_master: { Args: { _user_id: string }; Returns: boolean }
       log_analysis_timeline_event: {
