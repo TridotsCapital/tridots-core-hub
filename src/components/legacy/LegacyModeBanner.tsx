@@ -24,7 +24,9 @@ export function LegacyModeBanner({ variant = 'app', className }: LegacyModeBanne
         'w-full max-w-full min-w-0 border border-amber-300 bg-amber-50 text-amber-900 rounded-lg',
         'px-3 py-3 sm:px-4',
         variant === 'app' &&
-          'rounded-none border-x-0 border-t-0 sm:rounded-none sticky left-0 w-screen max-w-[100vw]',
+          // Fica preso à esquerda da área de conteúdo e nunca excede o espaço
+          // visível: 100vw no mobile, 100vw menos a sidebar no desktop.
+          'rounded-none border-x-0 border-t-0 sm:rounded-none sticky left-0 w-full max-w-[100vw] md:max-w-[calc(100vw-var(--sidebar-width,0px))]',
         className
       )}
     >
