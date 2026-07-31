@@ -12,6 +12,7 @@ import { AgencySignupForm, AgencySignupData } from '@/components/auth/AgencySign
 import { supabase } from '@/integrations/supabase/client';
 import logoBlack from "@/assets/logo-tridots-black.webp";
 import { isCorrectPortalForRole, getPortalUrlForRole } from '@/lib/subdomain';
+import { LegacyModeBanner } from '@/components/legacy';
 
 export default function Auth() {
   const [loading, setLoading] = useState(false);
@@ -164,7 +165,7 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden">
       {/* Background with gradient */}
       <div className="absolute inset-0 gradient-hero" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-white/10 via-transparent to-transparent" />
@@ -174,6 +175,10 @@ export default function Auth() {
       <div className="absolute top-20 left-20 w-72 h-72 bg-white/5 rounded-full blur-3xl" />
       <div className="absolute bottom-20 right-20 w-96 h-96 bg-white/5 rounded-full blur-3xl" />
       
+      <div className="w-full max-w-lg relative mb-4">
+        <LegacyModeBanner variant="auth" />
+      </div>
+
       <Card className={`w-full relative animate-scale-in glass-strong shadow-2xl ${showTeamSignup || showOnlyLogin ? 'max-w-md' : 'max-w-lg'}`}>
         <CardHeader className="text-center space-y-4 pb-2">
           <div className="mx-auto flex items-center justify-center">

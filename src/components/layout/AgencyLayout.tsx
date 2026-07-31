@@ -2,6 +2,7 @@ import { ReactNode, useEffect, useState, createContext, useContext } from "react
 import { Navigate } from "react-router-dom";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AgencySidebar } from "./AgencySidebar";
+import { LegacyModeBanner } from "@/components/legacy";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubdomain } from "@/contexts/SubdomainContext";
 import { NpsProvider } from "@/contexts/NpsContext";
@@ -181,6 +182,7 @@ export function AgencyLayout({ children, title, description, actions }: AgencyLa
         <AgencySidebar />
         <SidebarInset className="flex-1 flex flex-col overflow-hidden">
           {isImpersonating && <ImpersonationBanner />}
+          <LegacyModeBanner />
           <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-4 border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-6">
             <SidebarTrigger className="-ml-2" />
             <div className="flex-1 min-w-0">
