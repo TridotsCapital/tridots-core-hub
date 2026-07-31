@@ -52,7 +52,11 @@ function patchDataLayer() {
  * 2. Desabilitar controles mutantes na interface
  * ------------------------------------------------------------------ */
 
-const CONTROL_SELECTOR = 'button, [role="button"], input[type="file"], input[type="submit"]';
+const CONTROL_SELECTOR =
+  'button, [role="button"], input[type="file"], input[type="submit"], a[href]';
+
+/** Rotas de criação/edição — links que levam a operações mutantes. */
+const MUTATING_HREF = /(^|\/)(new|nova|novo|create|criar|edit|editar)(\/|$|\?)/i;
 
 function isAllowed(el: Element): boolean {
   return !!el.closest('[data-legacy-allow="true"]');
@@ -76,6 +80,12 @@ function isMutatingControl(el: Element): boolean {
   }
 
   if (el instanceof HTMLInputElement && el.type === 'file') return true;
+
+  if (el instanceof HTMLAnchorElement) {
+    const href = el.getAttribute('href') || '';
+    if (href.startsWith('http') || href.startsWith('mailto:') || href.startsWith('tel:')) return false;
+    if (MUTATING_HREF.test(href)) return true;
+  }
 
   const label = controlLabel(el);
   if (!label) return false;
