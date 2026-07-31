@@ -7,6 +7,7 @@ import { AppSidebar } from './AppSidebar';
 import { Separator } from '@/components/ui/separator';
 import { Building2 } from 'lucide-react';
 import { isCorrectPortalForRole, getPortalUrlForRole } from '@/lib/subdomain';
+import { LegacyModeBanner } from '@/components/legacy';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -83,6 +84,7 @@ export function DashboardLayout({ children, title, description }: DashboardLayou
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset>
+          <LegacyModeBanner />
           <header className="flex h-16 shrink-0 items-center gap-2 border-b-2 border-foreground/10 bg-card/95 backdrop-blur-sm px-6 sticky top-0 z-10">
             <SidebarTrigger className="-ml-2" />
             <Separator orientation="vertical" className="h-6" />

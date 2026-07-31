@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { SubdomainProvider, useSubdomain } from "@/contexts/SubdomainContext";
 import { ImpersonationProvider } from "@/contexts/ImpersonationContext";
 import { GlobalNotificationListener } from "@/components/notifications/GlobalNotificationListener";
+import { LegacyModeGuard } from "@/components/legacy";
 import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
@@ -196,6 +197,7 @@ const App = () => (
       <AuthProvider>
         <TooltipProvider>
           <GlobalNotificationListener />
+          <LegacyModeGuard />
           <Toaster />
           <Sonner />
           <BrowserRouter>
