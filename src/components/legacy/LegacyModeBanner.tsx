@@ -21,16 +21,16 @@ export function LegacyModeBanner({ variant = 'app', className }: LegacyModeBanne
       aria-live="polite"
       data-legacy-allow="true"
       className={cn(
-        'w-full border border-amber-300 bg-amber-50 text-amber-900 rounded-lg',
+        'w-full max-w-full min-w-0 border border-amber-300 bg-amber-50 text-amber-900 rounded-lg',
         'px-3 py-3 sm:px-4',
         variant === 'app' && 'rounded-none border-x-0 border-t-0 sm:rounded-none',
         className
       )}
     >
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-start gap-2 sm:items-center">
+      <div className="flex flex-col gap-3 min-w-0 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-2 min-w-0 sm:items-center">
           <AlertTriangle className="h-5 w-5 shrink-0 text-amber-600 mt-0.5 sm:mt-0" aria-hidden="true" />
-          <p className="text-sm font-medium leading-snug">{LEGACY_MODE.notice}</p>
+          <p className="text-sm font-medium leading-snug break-words">{LEGACY_MODE.notice}</p>
         </div>
 
         <a
